@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Keep shell scripts checked out with LF endings on Windows and Unix. The
+  host bootstrap and its sourced payload helper previously failed before
+  authority/network work when Git converted `set -euo pipefail` to CRLF.
+  A focused Bash portability regression covers both entry points; host
+  admission, activation and asynchronous correlation protocols are unchanged.
+
 - Separate CH all-local from optional assistant integration and portal RTC.
   Calls use a dedicated RTC provider; invitations, terminal states and
   unanswered audio remain canonical Communications.
