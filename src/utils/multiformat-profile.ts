@@ -1,6 +1,6 @@
 import { sha3_256, sha3_384 } from '@noble/hashes/sha3.js';
 import { utf8ToBytes } from '@noble/hashes/utils.js';
-import { encodeMultibase58btc } from 'gdc-common-utils-ts/utils/multibase58';
+import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
 
 /**
  * Local copy of the multiformat profile used by GW CORE at runtime.
@@ -55,7 +55,7 @@ export function buildRawCidV1FromUtf8String(
     encodeVarint(MULTICODEC_RAW_CODE),
     multihash,
   );
-  return encodeMultibase58btc(cidBytes);
+  return encodeBase58btc(cidBytes);
 }
 
 function encodeVarint(value: number): Uint8Array {

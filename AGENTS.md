@@ -1,5 +1,20 @@
 # AGENTS.md - sos-gw-node-ts
 
+## Project separation
+
+SOS must never import, depend on, wrap or re-export GDC, directly or
+transitively. Aliases and adapters cannot conceal a forbidden dependency.
+Every GDC mutation requires explicit user approval, including fixes,
+rollbacks, version changes and publications. SOS release tools must not mutate
+sibling projects. Historical source comparisons are read-only evidence.
+
+Canonical clinical/FHIR standards belong in `fhir-data-utils-ts`.
+Cross-sector ISCO belongs in `antifraud-data-utils-ts`, consumed by
+`sos-data-utils-ts`; FHIR does not depend on Antifraud for that catalog.
+SOS reusable contracts belong in SOS Data and runtime behavior in SOS SDK
+layers. A separately approved future GDC release may import and re-export
+these libraries. This never authorizes SOS to import GDC.
+
 ## Blocking Demo/Test Network parity
 
 Apply
@@ -40,8 +55,10 @@ publication, image construction and deployment.
 ## Purpose
 Shared SOS gateway trunk for asynchronous secure ingestion, indexing, search,
 care journeys and communications across human and animal emergency contexts.
-The implementation is derived directly from GDC Core. Common managers are
-implemented once; human and animal rules remain thin, neutral profiles.
+The implementation has historical GDC source ancestry. Shared behavior now
+belongs to the independent Antifraud, FHIR and SOS libraries; human and animal
+rules remain thin, neutral profiles. Historical ancestry grants no dependency
+or release permission.
 
 Provider gateways remain authoritative for their canonical subject indexes.
 This repository must not merge their tenants, data, KMS custody, ICA,
@@ -68,10 +85,11 @@ which is compatible with the canonical workspace Node.js 26.13.0 contract.
 1. Keep core GW scope explicit and testable.
 2. Features outside current core narrative must be documented as extension scope, not mixed into core acceptance criteria.
 3. OpenAPI/examples/tests must describe actual behavior, not aspirational behavior.
-4. Prove new shared GW behavior against the current GDC Core contract first.
-5. Record each applicable GDC Core change in `SYNC.md` as adopted, already
+4. Prove new shared GW behavior against its owning Antifraud, FHIR or SOS
+   contract. Historical compatibility comparisons never add GDC dependencies.
+5. Record read-only historical comparisons in `SYNC.md` as adopted, already
    equivalent, profile-specific or blocked. Never copy whole branches into
-   this trunk.
+   this trunk or modify the frozen project as part of SOS work.
 6. Do not cite downstream products or deprecated gateways as architectural
    sources, compatibility baselines, profiles or authorities.
 
@@ -93,8 +111,9 @@ must not be represented as the audited production profile.
 - `DocumentReference.contenthash` is content hash/CID
 - hash-based retrieval must use canonical claim name (`contenthash`), with legacy aliases only if documented.
 4. Communication atomic profile constraints must not be presented as native FHIR limitations.
-5. Activation controller checks must consume shared policy from
-`gdc-common-utils-ts` (no duplicated local role parsing).
+5. Activation controller checks consume shared SOS policy and neutral
+Antifraud evidence contracts; never duplicate local role parsing or infer
+authorization from an occupation code.
 6. Canonical examples/docs keep these dimensions separate:
 - legal-representative and technical occupations use ISCO-08;
 - tenant controller authority uses bare `RESPRSN` in
@@ -102,7 +121,7 @@ must not be represented as the audited production profile.
 - avoid `|RESPRSN` as canonical output.
 7. Never add a routable action that is absent from generated OpenAPI. Every
 public action must have route JSDoc, generated Swagger, a shared
-`gdc-common-utils-ts/examples` payload, and unit plus integration proof in the
+SOS-owned shared example payload, and unit plus integration proof in the
 same change.
 8. Organization teardown never uses wildcard ids, implicit cascades,
 `_disable-descendants`, or `_purge-descendants`. Controllers enumerate

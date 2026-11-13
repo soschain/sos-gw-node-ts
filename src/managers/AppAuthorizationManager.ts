@@ -17,7 +17,7 @@ import { normalizeSameAsHash, normalizeTelephoneHash } from 'gdc-common-utils-ts
 import { normalizeIndexedEmail, normalizeIndexedPhone } from '../utils/indexed-contact';
 import { DEFAULT_LICENSE_DEVICE_ALLOWANCE } from '../constants/domain';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
-import { decodeMultibase58btcToUUID } from 'gdc-common-utils-ts/utils/multibase58';
+import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import { normalizeCodeSystemAndValue } from '../utils/normalize-codeAndSystem';
 import { randomBytes } from 'node:crypto';
 import {
@@ -118,7 +118,9 @@ export class AppAuthorizationManager {
     }
     let employeeUuid: string;
     try {
-      employeeUuid = decodeMultibase58btcToUUID(employeeMemberId);
+      const hex = normalizeUuid(employeeMemberId);
+      if (!hex) throw new TypeError('employee_uuid_invalid');
+      employeeUuid = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
     } catch {
       throw new ManagerError('Professional licence not found for the supplied employee authorization.', IssueType.NotFound);
     }

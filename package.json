@@ -105,6 +105,7 @@
     "api:local-firestore-demo": "npm run build:swagger && npx dotenv -e .env.firestore-demo -- nodemon --legacy-watch --watch 'src/**/*.ts' --watch 'swagger.config.cjs' --exec 'TS_NODE_TRANSPILE_ONLY=1 TS_NODE_SKIP_IGNORE=1 TS_NODE_COMPILER_OPTIONS={\\\"module\\\":\\\"NodeNext\\\",\\\"moduleResolution\\\":\\\"NodeNext\\\",\\\"allowImportingTsExtensions\\\":true} node --loader ts-node/esm --experimental-specifier-resolution=node src/main.ts'"
   },
   "dependencies": {
+    "antifraud-data-utils-ts": "0.2.0",
     "@ahryman40k/ts-fhir-types": "^4.0.39",
     "@aws-sdk/client-kms": "3.1127.0",
     "@firebase/rules-unit-testing": "^5.0.0",

@@ -43,7 +43,7 @@ import { IVaultRepository } from '../database/repositories/vault/vault.repositor
 import { getSubjectScopedSectionId } from '../utils/individual-sections';
 import { getEnvSectionId } from '../utils/section-env';
 import { createHash } from 'crypto';
-import { encodeMultibase58btc } from 'gdc-common-utils-ts/utils/multibase58';
+import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
 import { applyFhirCidVersioningToEntry, fhirResourceToCid } from '../utils/fhir-versioning';
 import { canonicalizeFhirClaims, getClaimValue, normalizeContextualizedClaims } from '../utils/claims';
 import { persistConsentRuleAndAttachment } from '../utils/consent-storage';
@@ -1161,7 +1161,7 @@ export class CommunicationManager implements IJobProcessor {
       Buffer.from([0x55]),
       multihash,
     ]);
-    return encodeMultibase58btc(new Uint8Array(cidBytes));
+    return encodeBase58btc(new Uint8Array(cidBytes));
   }
 
   private buildStableProjectionRecordId(prefix: string, identity: string): string {

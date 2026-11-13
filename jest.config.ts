@@ -7,6 +7,7 @@ const includeArtifacts = process.env.TEST_ARTIFACTS === '1';
 const collectCoverage = process.env.COVERAGE === '1';
 
 const esmNodeModules = [
+  'antifraud-data-utils-ts',
   'gdc-common-utils-ts',
   'gdc-sdk-core-ts',
   'gdc-sdk-client-ts',

@@ -53,7 +53,7 @@ import {
   FhirIpsCreatorKinds,
   type ClinicalCreatorBinding,
 } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
-import { normalizeUuid } from 'gdc-common-utils-ts/utils/normalize-uuid';
+import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import { getHealthcareRoleByClaim } from 'gdc-common-utils-ts/constants/healthcare';
 import { getClinicalCreatorBindingsSectionId } from '../utils/clinical-creator-binding';
 import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';

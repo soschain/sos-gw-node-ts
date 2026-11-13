@@ -10,3 +10,11 @@ test('retired release-chain entry point stops before any package mutation', asyn
   assert.match(source, /exit 1\s*$/u)
   assert.match(source, /retired/iu)
 })
+
+test('Gateway governance preserves frozen-project and independent ownership boundaries', async () => {
+  const source = await readFile(new URL('../../AGENTS.md', import.meta.url), 'utf8')
+  assert.match(source, /SOS must never import, depend on, wrap or re-export GDC/u)
+  assert.match(source, /Every GDC mutation requires explicit user approval/u)
+  assert.match(source, /Cross-sector ISCO belongs in `antifraud-data-utils-ts`/u)
+  assert.doesNotMatch(source, /must consume shared policy from\s*`gdc-common-utils-ts`/u)
+})

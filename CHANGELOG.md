@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Consume neutral UUID normalization and base58 encoding directly from
+  Antifraud data utilities in Gateway storage, versioning and identity flows.
+  Reject encoded employee identities unless they contain exactly 16 bytes.
+  Replacement registry pins and full dependency removal remain pending.
+
 - Retire the inherited release-chain command, which could mutate and publish
   sibling libraries. The command now stops without changing packages; shared
   releases follow the local-first contract and this gateway remains private.

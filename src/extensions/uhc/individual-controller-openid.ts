@@ -11,7 +11,7 @@ import {
   normalizeClinicalCreatorBinding,
   type ClinicalCreatorBinding,
 } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
-import { normalizeUuid } from 'gdc-common-utils-ts/utils/normalize-uuid';
+import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { getEnvSectionId } from '../../utils/section-env';

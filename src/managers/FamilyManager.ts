@@ -41,7 +41,7 @@ import { getTenantVaultId, getTenantVaultIdFromIss } from '../utils/tenant';
 import { generateLicenseOffer } from '../utils/offer';
 import { getEnvSectionId } from '../utils/section-env';
 import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { normalizeUuid } from 'gdc-common-utils-ts/utils/normalize-uuid';
+import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import { EntityLifecycleStatus } from '../gdc-backend-utils-node/models/enums';
 import type { ITenantsManager } from './ITenantsManager';
 import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';

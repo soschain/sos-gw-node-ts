@@ -3,7 +3,7 @@
 
 import { sha3_384 } from '@noble/hashes/sha3.js';
 import { utf8ToBytes } from '@noble/hashes/utils.js';
-import { encodeMultibase58btc } from 'gdc-common-utils-ts/utils/multibase58';
+import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
 import { CompositionClaim } from 'gdc-common-utils-ts/models/interoperable-claims/composition-claims';
 import type { LedgerSafeMetaTag } from '../services/ai/metaTagSanitizer';
 import { extractLedgerSafeResearchTags } from './fhir-ingestion';
@@ -70,7 +70,7 @@ function sha3Multihash(value: string | Uint8Array): string {
     encodeVarint(MULTIHASH_SHA3_384_LEN),
     digest,
   );
-  return encodeMultibase58btc(multihash);
+  return encodeBase58btc(multihash);
 }
 
 /** Builds a private deterministic ledger link, hashing UUID references as their canonical 16 bytes. */

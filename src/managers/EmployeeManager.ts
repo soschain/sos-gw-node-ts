@@ -5,13 +5,13 @@ import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource
 import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
 import { getHealthcareRoleByClaim } from 'gdc-common-utils-ts/constants/healthcare';
 
+import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import { v4 as uuidv4 } from 'uuid';
 import {
   buildOrganizationAuthorizationUrnCds,
   buildOrganizationEmployeeAuthorizationUrnCds,
   FhirIpsCreatorKinds,
   OrganizationEmployeeSearchResponseEntryTypes,
-  normalizeUuid,
 } from 'gdc-common-utils-ts';
 import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
 import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';

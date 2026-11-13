@@ -5,7 +5,7 @@ import type { IVaultRepository } from '../database/repositories/vault/vault.repo
 import { normalizePhoneNumber } from '../utils/phone-number.js';
 import { getEnvSectionId } from '../utils/section-env.js';
 import { getTenantVaultId } from '../utils/tenant.js';
-import { normalizeUuid } from 'gdc-common-utils-ts';
+import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import type { ReminderRouteContext, VoiceTargetResolver } from './UhcReminderDaemon.js';
 
 const INDIVIDUAL_SECTION = getEnvSectionId('individual');

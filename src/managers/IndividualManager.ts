@@ -25,7 +25,7 @@ import { getTenantVaultId } from '../utils/tenant';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { determineResourceId } from '../utils/resource';
 import { uuidToBytes } from '../utils/uuid';
-import { encodeMultibase58btc } from 'gdc-common-utils-ts/utils/multibase58';
+import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
 import { getJurisdictionGroup } from '../utils/jurisdiction';
 import { normalizePhoneNumber } from '../utils/phone-number';
 import { parseIdentifierType } from '../utils/identifier-parser';
@@ -194,7 +194,7 @@ export class IndividualManager {
     const parametersToIndex = this._buildIndexParameters(aggregatedClaims);
     const indexedAttributes = await this.kmsService.protectAttributesNameAndValue(parametersToIndex, tenantVaultId);
 
-    const multibaseId = encodeMultibase58btc(uuidToBytes(internalId));
+    const multibaseId = encodeBase58btc(uuidToBytes(internalId));
     const customerUrn = `${tenantUrn}:individual:multibase:${multibaseId}`;
     
     const individualConfig: EntityConfig = {
