@@ -1811,8 +1811,8 @@
 - Initialize the independent VetChain GW from committed GW UNID baseline
   `bda3fce77f7cc28703dfbb3d4afc5ea456f547e6`, without copying its dirty
   working tree.
-- Add explicit VetChain staging and production profiles for tenant Business
-  Number `704457076`, `CA-BC` routing, `CA` certificate country and the
+- Add explicit VetChain staging and production profiles for the configured
+  Canadian tenant, `CA-BC` routing, `CA` certificate country and the
   `beta-gw.vetchain.app` / `<retired-private-product-alias>` hosts. The tenant id remains
   the bare Business Number and is never a composite identifier.
 - Rebase the single-tenant local bootstrap on the same bare `BN`, `CA-BC` and
