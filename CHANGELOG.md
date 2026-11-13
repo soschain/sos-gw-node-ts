@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Retire the inherited release-chain command, which could mutate and publish
+  sibling libraries. The command now stops without changing packages; shared
+  releases follow the local-first contract and this gateway remains private.
+- Add a regression check preventing package mutation commands from returning
+  to that retired entry point.
+
 - Keep shell scripts checked out with LF endings on Windows and Unix. The
   host bootstrap and its sourced payload helper previously failed before
   authority/network work when Git converted `set -euo pipefail` to CRLF.
