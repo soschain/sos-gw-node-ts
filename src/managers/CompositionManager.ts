@@ -7,11 +7,8 @@ import type { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'gdc-common-
 import type { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
 import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
 import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import {
-  DataCollectionIds,
-  HealthcareBasicSections,
-  ResourceTypesFhirR4,
-} from 'gdc-common-utils-ts/constants/index';
+import { DataCollectionIds, HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { createOperationOutcome } from '../utils/outcome';
 import {
   buildFhirClaimKeys,

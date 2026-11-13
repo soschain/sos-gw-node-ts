@@ -1,7 +1,7 @@
 // src/managers/EmployeeManager.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
 import { getHealthcareRoleByClaim } from 'gdc-common-utils-ts/constants/healthcare';
 

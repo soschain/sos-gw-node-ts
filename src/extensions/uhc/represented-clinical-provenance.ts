@@ -1,5 +1,5 @@
-import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-claims/communication-claims';
-import { CompositionClaim } from 'gdc-common-utils-ts/models/interoperable-claims/composition-claims';
+import { CommunicationClaim } from 'fhir-data-utils-ts';
+import { CompositionClaim } from 'fhir-data-utils-ts';
 import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import type { ClinicalCreatorBinding } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';

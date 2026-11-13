@@ -3,7 +3,7 @@
 import { GatewayInternalResourceTypes } from 'gdc-common-utils-ts/constants/gateway-response';
 import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
 import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';

@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Import canonical FHIR resource names and Consent, Composition, Communication,
+  RelatedPerson and Task claim vocabularies from FHIR data utilities. Read-only
+  compatibility checks confirm unchanged values for existing claim keys.
+- Regenerate inconsistent lock metadata for `error-ex`: its recorded version
+  now matches the already-resolved 1.3.4 archive and unchanged integrity.
+
 - Consume neutral UUID normalization and base58 encoding directly from
   Antifraud data utilities in Gateway storage, versioning and identity flows.
   Reject encoded employee identities unless they contain exactly 16 bytes.

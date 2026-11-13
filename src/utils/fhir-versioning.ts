@@ -4,7 +4,7 @@
 import { sha3_384 } from '@noble/hashes/sha3.js';
 import { utf8ToBytes } from '@noble/hashes/utils.js';
 import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
-import { CompositionClaim } from 'gdc-common-utils-ts/models/interoperable-claims/composition-claims';
+import { CompositionClaim } from 'fhir-data-utils-ts';
 import type { LedgerSafeMetaTag } from '../services/ai/metaTagSanitizer';
 import { extractLedgerSafeResearchTags } from './fhir-ingestion';
 import { ClinicalEvidenceChaincode, resolveClinicalDataChannel } from './ledger';

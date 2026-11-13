@@ -1,8 +1,8 @@
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { createHash } from 'crypto';
 import type { BundleEntry, BundleJsonApi } from 'gdc-common-utils-ts/models/bundle';
 import { HealthcareAllRolesByClaim } from 'gdc-common-utils-ts/constants/healthcare';
-import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'fhir-data-utils-ts';
 import { getClaimValue } from './claims';
 import { buildRawCidV1FromUtf8String, SHA3_384_MULTIHASH_PROFILE } from './multiformat-profile';
 

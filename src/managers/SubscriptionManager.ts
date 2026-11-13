@@ -1,6 +1,6 @@
-import { ResourceTypesFhirR5 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR5 } from 'fhir-data-utils-ts';
 import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
 import { randomUUID } from 'crypto';
 import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';

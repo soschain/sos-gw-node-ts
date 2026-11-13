@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
-import { ClaimConsent, ConsentDecisions } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent, ConsentDecisions } from 'fhir-data-utils-ts';
 import type { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
 import {
   isVetChainAnimalCardDid,

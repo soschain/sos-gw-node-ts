@@ -1,6 +1,6 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/routes/handlers/fhir/FhirController.ts
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 import { Request, Response, Router } from 'express';
 import { IAuthorizationManager } from '../../../managers/auth/IAuthorizationManager';

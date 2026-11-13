@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { canonicalizeFhirClaims, getClaimValue } from './claims';
 import { normalizeReference, tokenToCoding } from './fhir-data-utils';
 import { determineResourceId } from './resource';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { DIGITAL_TWIN_SEARCH_CLAIM_PREFIX } from './digital-twin-research-projection';
 import { convertClaimsToFhirResource } from 'gdc-common-utils-ts/utils/bundle-document-builder';
 

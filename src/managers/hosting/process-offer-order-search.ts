@@ -1,4 +1,4 @@
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { v4 as uuidv4 } from 'uuid';
 import type { BundleEntry, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
 import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';

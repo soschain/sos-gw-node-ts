@@ -2,11 +2,8 @@ import { randomUUID } from 'crypto';
 import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
 import type { BundleJsonApi } from 'gdc-common-utils-ts/models/bundle';
-import {
-  DataCollectionIds,
-  HealthcareSummarySections,
-  ResourceTypesFhirR4,
-} from 'gdc-common-utils-ts/constants/index';
+import { DataCollectionIds, HealthcareSummarySections } from 'gdc-common-utils-ts/constants/index';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { buildFhirClaimKeys, canonicalizeFhirClaims, getClaimValue, getFirstClaimValueByKeys, stripKnownFhirClaimContextPrefix } from '../utils/claims';
 import { getEnvSectionId } from '../utils/section-env';

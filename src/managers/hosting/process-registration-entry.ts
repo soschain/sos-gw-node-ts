@@ -1,4 +1,4 @@
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
 import type { BundleEntry, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
 import type { DidCommDecodedMetadata } from 'gdc-common-utils-ts/models/confidential-message';

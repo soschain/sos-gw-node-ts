@@ -4,7 +4,7 @@ import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import type { BundleEntry, BundleEntryRequest, BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
 import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
 import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
-import { TaskClaimsFhirApi } from 'gdc-common-utils-ts/models/interoperable-claims/task-claims';
+import { TaskClaimsFhirApi } from 'fhir-data-utils-ts';
 import { determineResourceId } from '../utils/resource';
 import { getBundleResponseTypeForAction } from '../utils/bundle';
 import { createOperationOutcome } from '../utils/outcome';

@@ -5,7 +5,7 @@ import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
 
 import { v4 as uuidv4} from 'uuid';
 import { BundleType, getBundleResponseTypeForAction } from '../utils/bundle';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { BundleJsonApi, BundleEntry, BundleEntryRequest, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
@@ -49,7 +49,7 @@ import {
 } from '../constants/domain';
 import type { ITenantsManager } from './ITenantsManager';
 import type { IHostRuntime } from './IHostRuntime';
-import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent } from 'fhir-data-utils-ts';
 import { getClaimValue } from '../utils/claims';
 import { buildSearchResponseEntries } from '../utils/didcomm-response';
 import { GatewayResponseEntryTypes } from '../shared/gateway-response-types';

@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'crypto';
 import type { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { getEnvSectionId } from './section-env';
 import { getClaimValue } from './claims';
 import type { OperationOutcome } from 'gdc-common-utils-ts/models/operation-outcome';

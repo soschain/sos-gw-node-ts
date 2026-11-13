@@ -4,7 +4,8 @@ import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
 import { randomUUID } from 'crypto';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { BundleEntryRequest, BundleJsonApi, BundleEntryResponse, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import { ConsentRule, ClaimConsent, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
+import { ConsentRule } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent, ConsentStatuses } from 'fhir-data-utils-ts';
 import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
 import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import { createOperationOutcome } from '../utils/outcome';
@@ -12,7 +13,7 @@ import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
 import { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
 import { buildConsentRuleKey, expandConsentActorRoles, hashConsentRuleId } from '../utils/consent';
 import { getClaimValue, normalizeContextualizedClaims } from '../utils/claims';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { getTenantVaultId } from '../utils/tenant';
 import {
   extractLedgerSafeResearchTags,

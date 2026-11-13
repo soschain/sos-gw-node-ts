@@ -1,5 +1,5 @@
 import { ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent } from 'fhir-data-utils-ts';
 
 /** Flat map of PDF form field names to raw values extracted from the individual onboarding PDF. */
 export type IndividualFormPdfFieldMap = Record<string, string | boolean | undefined | null>;

@@ -15,7 +15,7 @@ import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { getTenantVaultId } from '../utils/tenant';
 import { getEnvSectionId } from '../utils/section-env';
 import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { GatewayClaim } from '../shared/gateway-claim-contract';
 import { GatewayEnvelopeTypes, GatewayResponseEntryTypes } from '../shared/gateway-response-types';
 

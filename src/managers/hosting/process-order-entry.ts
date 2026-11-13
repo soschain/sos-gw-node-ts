@@ -36,7 +36,7 @@ import {
   ensureIssuedRoleLicenseOnLedger,
 } from '../../utils/ledger-role-license';
 import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { verifyBoundPostalActivationCode } from './postal-activation-code';
 import {
   HOST_ORDER_REQUIRED_INPUT_CLAIMS,

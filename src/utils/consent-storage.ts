@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
-import { ConsentRule, ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
+import { ConsentRule } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent } from 'fhir-data-utils-ts';
 import { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { getClaimValue } from './claims';

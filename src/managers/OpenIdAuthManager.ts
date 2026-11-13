@@ -1,6 +1,6 @@
 // src/managers/OpenIdAuthManager.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 import { IJobProcessor } from './registry';
 import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
@@ -29,7 +29,8 @@ import {
   HealthcareConsentPurposes,
 } from 'gdc-common-utils-ts/constants/healthcare';
 import { deriveGrantedSmartScopes } from 'gdc-common-utils-ts/utils/smart-scope';
-import { ClaimConsent, ConsentDecisions, ConsentStatuses, type ConsentRule } from 'gdc-common-utils-ts/models/consent-rule';
+import { type ConsentRule } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'fhir-data-utils-ts';
 import { getMatchingIndividualMemberCredentialFromVpToken } from 'gdc-common-utils-ts/utils/individual-smart';
 import { getMatchingProfessionalCredentialFromVpToken } from 'gdc-common-utils-ts/utils/professional-smart';
 import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';

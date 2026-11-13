@@ -35,7 +35,7 @@ import {
   ACTION_STATUS,
   SUBJECT_SECTION_INDIVIDUAL,
 } from '../../constants/domain';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
 import { GatewayClaim } from '../../shared/gateway-claim-contract';
 import { shouldUseFabricLedger } from '../../adapters/credential-ledger-resolver';

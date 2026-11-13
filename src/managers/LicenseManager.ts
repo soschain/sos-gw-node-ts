@@ -61,7 +61,7 @@ import {
 } from '../utils/ledger-role-license';
 import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
 import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { normalizeIndexedEmail, normalizeIndexedPhone } from '../utils/indexed-contact';
 import { REGISTERED_PROFILE_ACCOUNT_DIRECTORY_META } from '../utils/secure-route-bearer-binding';
 

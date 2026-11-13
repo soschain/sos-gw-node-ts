@@ -69,9 +69,9 @@ import {
 import { buildSearchResponseEntries } from '../utils/didcomm-response';
 import { GatewayResponseEntryTypes } from '../shared/gateway-response-types';
 import { AnimalIndividualRegistration, GatewayClaim, FamilyRegistrationStatus } from '../shared/gateway-claim-contract';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { Format } from 'gdc-common-utils-ts/constants/Schemas';
-import { RelatedPersonClaim } from 'gdc-common-utils-ts/models/interoperable-claims/related-person-claims';
+import { RelatedPersonClaim } from 'fhir-data-utils-ts';
 import { getSubjectScopedSectionId } from '../utils/individual-sections';
 import { validateFhirPayloadByVersion } from '../utils/fhir-ingestion';
 import { REGISTERED_PROFILE_ACCOUNT_DIRECTORY_META } from '../utils/secure-route-bearer-binding';

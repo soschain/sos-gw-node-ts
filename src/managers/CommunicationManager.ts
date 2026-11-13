@@ -1,19 +1,15 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/managers/CommunicationManager.ts
 // Description: Manager for handling business logic related to FHIR Communications.
-import { FhirDataTypes } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { FhirDataTypes } from 'fhir-data-utils-ts';
 import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
 import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
 
 import { CommMsgExtended, DataEntry, FhirCommunication } from 'gdc-common-utils-ts/models/comm';
-import {
-  DataCollectionIds,
-  FhirResourceTypeDataCollections,
-  HealthcareBasicSections,
-  ResourceTypesFhirR4,
-} from 'gdc-common-utils-ts/constants/index';
-import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-claims/communication-claims';
-import { CompositionAttesterModes, CompositionClaim } from 'gdc-common-utils-ts/models/interoperable-claims/composition-claims';
+import { DataCollectionIds, FhirResourceTypeDataCollections, HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
+import { CommunicationClaim } from 'fhir-data-utils-ts';
+import { CompositionAttesterModes, CompositionClaim } from 'fhir-data-utils-ts';
 import { Format } from 'gdc-common-utils-ts/constants/Schemas';
 import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
 import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
@@ -60,7 +56,7 @@ import {
   listEnabledDigitalTwinStudyTargets,
 } from '../utils/digital-twin-secondary-use';
 import { getAuthenticatedJobActorIdentifiers } from '../utils/authenticated-job-actor';
-import { ClaimConsent, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent, ConsentStatuses } from 'fhir-data-utils-ts';
 import { canonicalizeBundleEntryMetadata } from '../utils/canonical-entry-metadata';
 import {
   FhirIpsCreatorKinds,

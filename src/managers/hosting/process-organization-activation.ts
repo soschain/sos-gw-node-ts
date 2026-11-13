@@ -33,7 +33,7 @@ import {
 } from './hosting-claim-contracts';
 import { allowsLegacyRepresentativeBootstrap } from './legacy-representative-bootstrap-policy';
 import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { GatewayClaim } from '../../shared/gateway-claim-contract';
 
 type ActivationParticipantMaterial = {

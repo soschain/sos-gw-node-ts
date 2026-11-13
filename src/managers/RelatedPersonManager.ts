@@ -28,7 +28,7 @@ import { extractSearchFiltersFromEntry, extractSearchFiltersFromParametersResour
 import { buildSearchResponseEntries } from '../utils/didcomm-response';
 import { GatewayResponseEntryTypes } from '../shared/gateway-response-types';
 import { BundleType } from '../utils/bundle';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { requireExplicitLifecycleResourceId } from '../utils/lifecycle-resource-id';
 
 type FhirBundleEntryLike = {

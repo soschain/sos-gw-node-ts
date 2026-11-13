@@ -1,6 +1,6 @@
 // src/utils/jsonapi.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 import { safelyJoinUrl } from "gdc-common-utils-ts/utils/url";
 

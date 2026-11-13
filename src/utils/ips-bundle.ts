@@ -1,4 +1,5 @@
-import { DataCollectionIds, HealthcareBasicSections, ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/index';
+import { DataCollectionIds, HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { buildFhirResourceFromIndexedClaims } from './fhir-resource-rehydration';
 import { getClaimValue } from './claims';
