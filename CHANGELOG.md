@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Remove the unused frozen SDK client dependency and its Jest, TypeScript and
+  emitted-import resolution entries. Remaining GDC imports and transitive paths
+  are still tracked separately; this is not complete dependency independence.
+- Add the complete declaration/source/registry independence gate. It remains
+  red during migration and must pass before service promotion.
+
 - Use the neutral Antifraud cryptography engine and key/byte contracts for
   Gateway bootstrap, KMS, key handling and consuming tests. Preserve caller-
   owned key custody and the existing confidential envelope profiles.

@@ -15,6 +15,11 @@ SOS reusable contracts belong in SOS Data and runtime behavior in SOS SDK
 layers. A separately approved future GDC release may import and re-export
 these libraries. This never authorizes SOS to import GDC.
 
+Run `npm run check:project-boundaries` before accepting the independence
+migration or promoting the service. Its declaration, source/emitted-module and
+registry-lock checks must all pass. A functional test pass does not waive this
+gate while remaining dependencies are being migrated.
+
 ## Blocking Demo/Test Network parity
 
 Apply

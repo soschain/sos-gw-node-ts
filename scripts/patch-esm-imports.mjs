@@ -50,9 +50,7 @@ function resolveExtension(specifier, sourceFile) {
 function resolvePackageExtension(specifier) {
   if (hasRuntimeExtension(specifier)) return null;
 
-  const isLocalPackage =
-    specifier.startsWith('gdc-common-utils-ts/') ||
-    specifier.startsWith('gdc-sdk-client-ts/');
+  const isLocalPackage = specifier.startsWith('gdc-common-utils-ts/');
 
   if (!isLocalPackage) return null;
 
