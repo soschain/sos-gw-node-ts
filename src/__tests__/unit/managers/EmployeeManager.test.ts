@@ -118,6 +118,56 @@ describe('EmployeeManager', () => {
   });
 
   describe('Employee Creation (POST)', () => {
+    it('creates a phone-only dentist with the exact stable contact and no invented email', async () => {
+      const claims = { ...testClaimsTenant1Receptionist1,
+        [SchemaOrgPersonClaim.Email]: '', [SchemaOrgPersonClaim.Telephone]: SAFE.phoneE164,
+        [SchemaOrgPersonClaim.HasOccupation]: HealthcareActorRoles.Dentist,
+      };
+      const job = testBaseJobForEmployeeClaims(claims, TENANT_ALTERNATE_NAME, TENANT_SECTOR);
+      (job.content!.body as any).data[0].resource.id = SAFE.resourceUuid;
+      mockTenantsCacheManager.getTenantIdentifierUrn.mockResolvedValue(TENANT_URN);
+      mockVaultRepository.put.mockResolvedValue(true);
+      const response = await employeeManager.process(job);
+      expect((response.body as any).data[0].response.status).toBe('201');
+      const employee = mockKmsService.protectConfidentialData.mock.calls[0][0].content as EntityConfig;
+      expect(employee.claims?.[SchemaOrgPersonClaim.Email]).toBeFalsy();
+      expect(employee.didDocument?.id).toContain(buildStableActorIdentifier({ contactKind: 'phone', contact: SAFE.phoneE164 }).replace('urn:multibase:', ''));
+      expect(employee.didDocument?.id).toContain(`:instance:${SAFE.resourceUuid}`);
+      expect(mockVaultRepository.put).toHaveBeenCalledWith(TENANT_VAULT_ID, [expect.objectContaining({
+        kind: FhirIpsCreatorKinds.Professional,
+        actorIdentifier: `urn:uuid:${SAFE.resourceUuid}`,
+        verifiedContactIdentifiers: [buildStableActorIdentifier({ contactKind: 'phone', contact: SAFE.phoneE164 })],
+      })], getClinicalCreatorBindingsSectionId());
+    });
+
+    it('reuses an active phone-only employee for the same contact and role without another seat', async () => {
+      const claims = { ...testClaimsTenant1Receptionist1,
+        [SchemaOrgPersonClaim.Email]: '', [SchemaOrgPersonClaim.Telephone]: SAFE.phoneE164,
+        [SchemaOrgPersonClaim.HasOccupation]: HealthcareActorRoles.Dentist,
+      };
+      const job = testBaseJobForEmployeeClaims(claims, TENANT_ALTERNATE_NAME, TENANT_SECTOR);
+      (job.content!.body as any).data[0].resource.id = SAFE.resourceUuid;
+      mockTenantsCacheManager.getTenantIdentifierUrn.mockResolvedValue(TENANT_URN);
+      mockVaultRepository.query.mockResolvedValue([{ id: SAFE.resourceUuid, sequence: 0,
+        content: { id: SAFE.resourceUuid, status: 'active', claims },
+      }] as any);
+      const response = await employeeManager.process(job);
+      expect((response.body as any).data[0].response.status).toBe('200');
+      expect(mockKmsService.provisionKeys).not.toHaveBeenCalled();
+      expect(mockVaultRepository.put).not.toHaveBeenCalled();
+    });
+
+    it('rejects employee creation with neither email nor telephone before creating identity keys', async () => {
+      const job = testBaseJobForEmployeeClaims({ ...testClaimsTenant1Receptionist1,
+        [SchemaOrgPersonClaim.Email]: '', [SchemaOrgPersonClaim.Telephone]: '',
+      }, TENANT_ALTERNATE_NAME, TENANT_SECTOR);
+      mockTenantsCacheManager.getTenantIdentifierUrn.mockResolvedValue(TENANT_URN);
+      const response = await employeeManager.process(job);
+      expect((response.body as any).data[0].response.status).toBe('400');
+      expect(mockKmsService.provisionKeys).not.toHaveBeenCalled();
+      expect(mockVaultRepository.put).not.toHaveBeenCalled();
+    });
+
     it('preserves Person.sameAs CSV and indexes every employee alias independently', async () => {
       const professionalDid = 'did:web:professional.example.org:person:123';
       const licenceAlias = 'urn:example:professional-licence:456';
@@ -713,6 +763,37 @@ describe('EmployeeManager', () => {
   });
 
   describe('Employee Purge', () => {
+    it('releases a phone-bound invitation seat without subjectId when the matching employee is purged', async () => {
+      const claims = { ...testClaimsTenant1Receptionist1,
+        [SchemaOrgPersonClaim.Email]: '', [SchemaOrgPersonClaim.Telephone]: SAFE.phoneE164,
+        [SchemaOrgPersonClaim.HasOccupation]: HealthcareActorRoles.Dentist,
+      };
+      const job = testBaseJobForEmployeeClaims(claims, TENANT_ALTERNATE_NAME, TENANT_SECTOR);
+      job.action = '_purge';
+      (job.content!.body as any).data[0].resource.id = SAFE.resourceUuid;
+      mockTenantsCacheManager.getTenantIdentifierUrn.mockResolvedValue(TENANT_URN);
+      mockVaultRepository.get.mockResolvedValue({ id: SAFE.resourceUuid, sequence: 0, status: 'inactive', content: {
+        id: SAFE.resourceUuid, type: EntityType.Person, status: 'inactive', claims,
+      } } as any);
+      const invitationSeat = { ...structuredClone(EXAMPLE_DEVICE_LICENSE_AVAILABLE),
+        issuedToPhone: SAFE.phoneE164, issuedToRole: HealthcareActorRoles.Dentist,
+        status: 'issued', activationCode: 'synthetic-phone-invitation',
+      } as DeviceLicense & Record<string, unknown>;
+      delete invitationSeat.subjectId;
+      delete invitationSeat.issuedToEmail;
+      mockVaultRepository.getContainersInSection.mockResolvedValue([{ id: invitationSeat.id, sequence: 0,
+        status: invitationSeat.status, content: invitationSeat,
+      }] as any);
+      mockVaultRepository.put.mockResolvedValue(true);
+      const response = await employeeManager.process(job);
+      expect((response.body as any).data[0].response.status).toBe('200');
+      const released = mockVaultRepository.put.mock.calls.find(call => call[2] === getEnvSectionId('device-licenses'));
+      expect(released).toBeDefined();
+      const releasedDocument = released![1][0] as ConfidentialStorageDoc;
+      expect((releasedDocument.content as any).issuedToPhone).toBeUndefined();
+      expect(releasedDocument.status).toBe('available');
+    });
+
     it('should purge the employee using resource.id even when the identifier claim is not a UUID', async () => {
       const job = testBaseJobForEmployeeClaims(testClaimsTenant1Receptionist1, TENANT_ALTERNATE_NAME, TENANT_SECTOR);
       job.action = '_purge';

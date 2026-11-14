@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Support phone-only employee creation and idempotent role lookup with canonical
+  stable contact identifiers and phone-bound licences, preserving existing email
+  URNs and employee instances. Purge releases matching phone invitation seats
+  without manufacturing an email or treating another contact kind as equivalent.
 - Require verified controller contact or a DCR-bound, currently licensed
   professional with the routed organization's registration Group and active
   Subject registration Consent before retrieving onboarding documents or writing

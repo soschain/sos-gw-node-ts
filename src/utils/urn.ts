@@ -27,6 +27,7 @@ export interface StableEmployeeUrnParams {
   organizationUrn: string;
   stableActorIdentifier: string;
   role: string;
+  instanceId?: string;
 }
 
 function hashEmployeeEmail(email: string): string {
@@ -127,7 +128,9 @@ export function createEmployeeUrnFromStableActorIdentifier(params: StableEmploye
     throw new Error('Employee URN requires its canonical organization URN.');
   }
   if (!match) throw new Error('Employee URN requires its stable actor identifier.');
-  return `${organizationUrn}${EMPLOYEE_URN_SEGMENT}${match[1]}${EMPLOYEE_ROLE_URN_SEGMENT}${normalizeEmployeeRole(params.role)}`;
+  const instanceId = String(params.instanceId || '').trim().toLowerCase();
+  const instanceSuffix = instanceId ? `:instance:${instanceId}` : '';
+  return `${organizationUrn}${EMPLOYEE_URN_SEGMENT}${match[1]}${EMPLOYEE_ROLE_URN_SEGMENT}${normalizeEmployeeRole(params.role)}${instanceSuffix}`;
 }
 
 /** Resolves the privacy-safe role-bearing employee URN from its DID document. */

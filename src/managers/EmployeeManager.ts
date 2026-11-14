@@ -37,8 +37,8 @@ import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { generateLicenseOffer } from '../utils/offer';
 import { getEnvSectionId } from '../utils/section-env';
 import { getPersonOccupationClaim } from '../utils/occupation';
-import { createEmployeeUrn, parseTenantUrn } from '../utils/urn';
-import { normalizeIndexedEmail } from '../utils/indexed-contact';
+import { createEmployeeUrn, createEmployeeUrnFromStableActorIdentifier, parseTenantUrn } from '../utils/urn';
+import { normalizeIndexedEmail, normalizeIndexedPhone } from '../utils/indexed-contact';
 import { extractSearchFiltersFromEntry } from '../utils/search-request';
 import type { ITenantsManager } from './ITenantsManager';
 import type { ITenantDidRegistryMutator } from './ITenantDidRegistryMutator';
@@ -59,6 +59,7 @@ import {
 
 const EMPLOYEE_SECTION = getEnvSectionId('employees');
 const DEVICE_LICENSE_SECTION = getEnvSectionId('device-licenses');
+type EmployeeContact = Parameters<typeof buildStableActorIdentifier>[0];
 
 function canonicalUuidUrn(value: string): string | undefined {
   const hex = normalizeUuid(value);
@@ -381,16 +382,17 @@ export class EmployeeManager {
     let encrypterJwk: PublicJwk | undefined;
 
     const email = normalizeIndexedEmail(claims[SchemaOrgPersonClaim.Email]);
-    if (!email) {
-      throw new ManagerError('Missing or invalid email claim.', IssueType.Required);
-    }
+    const phone = normalizeIndexedPhone(claims[SchemaOrgPersonClaim.Telephone]);
+    const contact: EmployeeContact | undefined = email
+      ? { contactKind: 'email', contact: email } : phone ? { contactKind: 'phone', contact: phone } : undefined;
+    if (!contact) throw new ManagerError('A valid employee email or telephone is required.', IssueType.Required);
 
     const roleCode = getPersonOccupationClaim(claims); // canonical: hasOccupation.identifier.value (+ optional system)
     if (!roleCode) {
       throw new ManagerError('Missing or invalid hasOccupation claim.', IssueType.Required);
     }
 
-    const existingEmployee = await this.findEmployeeByEmailAndRole(employeeCollectionName, tenantVaultId, email, roleCode);
+    const existingEmployee = await this.findEmployeeByContactAndRole(employeeCollectionName, tenantVaultId, contact, roleCode);
     if (existingEmployee) {
       return this.upsertExistingEmployee(existingEmployee, employeeCollectionName, tenantVaultId, claims, entryType);
     }
@@ -411,7 +413,7 @@ export class EmployeeManager {
     });
     if (licenseOffer) return licenseOffer;
 
-    const employeeUrnForKeys = createEmployeeUrn({
+    const employeeUrnForKeys = email ? createEmployeeUrn({
       namespace: parsedTenantUrn.namespace,
       network: parsedTenantUrn.network,
       jurisdiction: parsedTenantUrn.jurisdiction,
@@ -420,6 +422,11 @@ export class EmployeeManager {
       idType: parsedTenantUrn.idType,
       idValue: parsedTenantUrn.idValue,
       email,
+      role: roleCode,
+      instanceId: employeeId,
+    }) : createEmployeeUrnFromStableActorIdentifier({
+      organizationUrn: tenantUrn,
+      stableActorIdentifier: buildStableActorIdentifier(contact),
       role: roleCode,
       instanceId: employeeId,
     });
@@ -530,7 +537,7 @@ export class EmployeeManager {
     };
 
     const attributesToIndex: ParameterData[] = [
-      { name: 'email', value: email, unique: true, type: 'string'},
+      { name: contact.contactKind, value: contact.contact, unique: true, type: 'string'},
       // The role code is normalized before HMAC to ensure consistent searching.
       { name: 'role', value: normalizeCodeSystemAndValue(roleCode), unique: false, type: 'token'},
       { name: 'kid', value: signerJwk.kid, unique: false, type: 'string'},
@@ -565,7 +572,7 @@ export class EmployeeManager {
       occupationId: occupationDoc.id,
       ownerIdentifier: organizationAuthorizationUrn,
       role: roleCode,
-      email,
+      contact,
     });
 
     return {
@@ -594,7 +601,7 @@ export class EmployeeManager {
     occupationId: string;
     ownerIdentifier?: string;
     role: string;
-    email: string;
+    contact: EmployeeContact;
   }): Promise<void> {
     if (getHealthcareRoleByClaim(params.role)?.family !== HealthcareRoleFamilies.ProfessionalOccupationIsco08) return;
     const actorIdentifier = canonicalUuidUrn(params.employeeId);
@@ -609,10 +616,7 @@ export class EmployeeManager {
       authorIdentifier,
       ownerIdentifier,
       role: params.role,
-      verifiedContactIdentifiers: [buildStableActorIdentifier({
-        contactKind: 'email',
-        contact: params.email,
-      })],
+      verifiedContactIdentifiers: [buildStableActorIdentifier(params.contact)],
     };
     await this.vaultRepository.put(
       params.tenantVaultId,
@@ -625,17 +629,17 @@ export class EmployeeManager {
    * Finds an existing employee by its functional business identity.
    *
    * In v1, employee onboarding is treated as an idempotent/upsert-like flow keyed by
-   * `email + role`. The physical record id can still vary across payloads, but the
+   * `contact kind + contact + role`. The physical record id can still vary across payloads, but the
    * business identity must not create duplicates for the same role assignment.
    */
-  private async findEmployeeByEmailAndRole(
+  private async findEmployeeByContactAndRole(
     employeeCollectionName: string,
     tenantVaultId: string,
-    email: string,
+    contact: EmployeeContact,
     roleCode: string,
   ): Promise<ConfidentialStorageDoc | undefined> {
     const queryAttributes: ParameterData[] = [
-      { name: 'email', value: email, unique: true, type: 'string' },
+      { name: contact.contactKind, value: contact.contact, unique: true, type: 'string' },
       { name: 'role', value: normalizeCodeSystemAndValue(roleCode), unique: false, type: 'token' },
     ];
 
@@ -864,6 +868,11 @@ export class EmployeeManager {
       || claims?.[SchemaOrgPersonClaim.Email]
       || '',
     );
+    const phone = normalizeIndexedPhone(
+      employee.claims?.[SchemaOrgPersonClaim.Telephone]
+      || claims?.[SchemaOrgPersonClaim.Telephone]
+      || '',
+    );
     const roleCode = normalizeCodeSystemAndValue(
       getPersonOccupationClaim(employee.claims as ClaimsRecord)
       || getPersonOccupationClaim(claims)
@@ -881,8 +890,8 @@ export class EmployeeManager {
       }
 
       const matchesSubject = license.subjectId === employeeId;
-      const matchesInvite = email
-        && normalizeIndexedEmail(String(license.issuedToEmail || '')) === email
+      const matchesInvite = ((email && normalizeIndexedEmail(license.issuedToEmail) === email)
+        || (phone && normalizeIndexedPhone(license.issuedToPhone) === phone))
         && roleCode
         && normalizeCodeSystemAndValue(String(license.issuedToRole || '')) === roleCode;
 
@@ -898,6 +907,7 @@ export class EmployeeManager {
       delete resetLicense.activationCode;
       delete resetLicense.issuedAt;
       delete resetLicense.issuedToEmail;
+      delete resetLicense.issuedToPhone;
       delete resetLicense.issuedToRole;
       delete resetLicense.activatedAt;
       delete resetLicense.deviceId;
