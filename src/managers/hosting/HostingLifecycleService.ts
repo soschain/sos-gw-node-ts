@@ -5,8 +5,8 @@ import {
   ClaimsOrganizationSchemaorg,
   ClaimsServiceSchemaorg,
 } from 'gdc-common-utils-ts/constants/schemaorg';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import {
   extractRepresentativeMemberOfLegalIdentifier,
   legalOrganizationIdentifiersMatch,

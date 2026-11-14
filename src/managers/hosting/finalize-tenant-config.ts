@@ -2,8 +2,8 @@ import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document'
 import type { DidDocument } from 'gdc-common-utils-ts/models/did';
 import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
 import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import type { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
 import { EntityLifecycleStatus, EntityType, NetworkAccessStatus, NetworkName } from '../../gdc-backend-utils-node/models/enums';
 import type { OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';

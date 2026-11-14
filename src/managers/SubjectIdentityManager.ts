@@ -8,8 +8,8 @@ import {
   readSubjectIdentityBundleEntry,
 } from 'gdc-common-utils-ts/utils/subject-identity';
 import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import type { ITenantsManager } from './ITenantsManager';

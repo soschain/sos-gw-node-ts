@@ -4,10 +4,10 @@
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { VerifiableCredentialV2, ProofEBSIv2 } from '../gdc-backend-utils-node/models/verifiable-credential';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { objectToBytes } from 'gdc-common-utils-ts/utils/object-convert';
 import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { generateVcId } from '../utils/vc-id';
 import { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
 import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';

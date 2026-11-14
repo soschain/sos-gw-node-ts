@@ -7,8 +7,8 @@ import { IJobProcessor } from './registry';
 import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
 
@@ -17,7 +17,7 @@ import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { getClaimValue, normalizeContextualizedClaims } from '../utils/claims';
 import type { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
 import { createOperationOutcome } from '../utils/outcome';
-import { IssueLevel } from 'gdc-common-utils-ts/models/issue';
+import { IssueLevel } from 'fhir-data-utils-ts/operation-outcome';
 import {
   issueActivationCodeFromPool,
 } from '../utils/license-issuance';

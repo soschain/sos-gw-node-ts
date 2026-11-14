@@ -3,7 +3,7 @@
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 import type { Request, Response } from 'express';
-import { IssueLevel, IssueTypeCode } from 'gdc-common-utils-ts/models/issue';
+import { IssueLevel, IssueTypeCode } from 'fhir-data-utils-ts/operation-outcome';
 import { createOperationOutcome } from './outcome';
 
 export type LegacyFhirErrorBody = {

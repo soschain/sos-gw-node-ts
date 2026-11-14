@@ -7,7 +7,7 @@ import { IAuthorizationManager } from '../../../managers/auth/IAuthorizationMana
 import { QueueAdapter } from '../../../adapters/queue';
 import { IAccessTokenClaims } from 'gdc-common-utils-ts/models/auth';
 import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { validOrNewUuidv4 } from '../../../utils/uuid';
 import { SUBJECT_SECTION_INDIVIDUAL } from '../../../constants/domain';
 import { v4 as uuidv4 } from 'uuid';

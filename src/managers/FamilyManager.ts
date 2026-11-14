@@ -19,7 +19,7 @@ import { BundleEntry, BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/mode
 import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
 import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
 import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
 import { ClaimsIndividualProductSchemaorg, ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
@@ -40,7 +40,7 @@ import { determineResourceId } from '../utils/resource';
 import { getTenantVaultId, getTenantVaultIdFromIss } from '../utils/tenant';
 import { generateLicenseOffer } from '../utils/offer';
 import { getEnvSectionId } from '../utils/section-env';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import { EntityLifecycleStatus } from '../gdc-backend-utils-node/models/enums';
 import type { ITenantsManager } from './ITenantsManager';

@@ -1,4 +1,6 @@
+// Flow contract: Fabric submit waits for a successful commit, rejects invalid commits, and closes its session on both paths.
 import { jest } from '@jest/globals';
+import { fileURLToPath } from 'node:url';
 
 const getStatus = jest.fn<() => Promise<any>>();
 const submit = jest.fn<() => Promise<any>>();
@@ -11,7 +13,7 @@ const gatewayClose = jest.fn();
 const clientClose = jest.fn();
 
 jest.unstable_mockModule(
-  new URL('../../../blockchain/fabric/v3/connect.ts', import.meta.url).pathname,
+  fileURLToPath(new URL('../../../blockchain/fabric/v3/connect.ts', import.meta.url)),
   () => ({
   newGrpcConnection: jest.fn(async () => ({ close: clientClose })),
   newGatewayConnection: jest.fn(async () => ({

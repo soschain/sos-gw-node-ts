@@ -14,6 +14,7 @@ const esmNodeModules = [
   'fhir-data-utils-ts',
   'tasks-core-node-ts',
   'sos-data-utils-ts',
+  'sos-sdk-core-ts',
   'sos-sdk-node-ts',
   'terminology-sdk-node-ts',
   'uhc-sdk-core-ts',

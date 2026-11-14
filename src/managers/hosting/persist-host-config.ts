@@ -1,5 +1,5 @@
 import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
 import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
 import { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
@@ -7,7 +7,7 @@ import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/
 import { OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
 import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
 import { DidDocument } from 'gdc-common-utils-ts/models/did';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { initializeHostServicesConfig } from '../../utils/services';
 import { composeHostDidWebId, populateDidDocumentFromJwks, applyLegacyX509Metadata } from '../../utils/did-backend';
 import { populateDidDocumentServices } from '../../utils/did-document';

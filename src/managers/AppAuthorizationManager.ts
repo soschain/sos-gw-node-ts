@@ -5,8 +5,8 @@ import { IVaultRepository } from '../database/repositories/vault/vault.repositor
 import { ITokenVerifier, VerificationResult } from '../auth/ITokenVerifier';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { ICryptography } from 'gdc-common-utils-ts/interfaces/ICryptography';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
 import { getTenantVaultId } from '../utils/tenant';

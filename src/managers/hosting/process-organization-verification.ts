@@ -12,8 +12,8 @@ import {
   ClaimsPersonSchemaorg,
   ClaimsServiceSchemaorg,
 } from 'gdc-common-utils-ts/constants/schemaorg';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
 import { getBundleResponseTypeForAction } from '../../utils/bundle';

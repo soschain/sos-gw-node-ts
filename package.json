@@ -143,6 +143,7 @@
     "pkijs": "^3.2.5",
     "redis": "^5.10.0",
     "sos-data-utils-ts": "0.6.28",
+    "sos-sdk-core-ts": "0.5.5",
     "stripe": "^20.4.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",

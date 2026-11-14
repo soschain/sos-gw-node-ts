@@ -7,8 +7,8 @@ import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { EntityLifecycleStatus } from '../../gdc-backend-utils-node/models/enums';
 import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import type { IServerConfig } from '../../config';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';

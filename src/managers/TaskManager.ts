@@ -3,7 +3,7 @@ import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confiden
 import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import type { BundleEntry, BundleEntryRequest, BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
 import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { TaskClaimsFhirApi } from 'fhir-data-utils-ts';
 import { determineResourceId } from '../utils/resource';
 import { getBundleResponseTypeForAction } from '../utils/bundle';

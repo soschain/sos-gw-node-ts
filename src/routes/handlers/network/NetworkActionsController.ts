@@ -3,8 +3,8 @@
 import { NextFunction, Request, Response } from 'express';
 import { QueueAdapter } from '../../../adapters/queue';
 import { createJobName } from '../../../utils/naming';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
 import { getTenantVaultId } from '../../../utils/tenant';
 import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';

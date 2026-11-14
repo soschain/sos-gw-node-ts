@@ -2,8 +2,8 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
-import { OperationOutcome } from 'gdc-common-utils-ts/models/operation-outcome';
-import { IssueLevel, IssueTypeCode } from 'gdc-common-utils-ts/models/issue';
+import { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
+import { IssueLevel, IssueTypeCode } from 'fhir-data-utils-ts/operation-outcome';
 
 /**
  * Creates a standardized FHIR OperationOutcome object.

@@ -14,8 +14,8 @@ import {
   OrganizationEmployeeSearchResponseEntryTypes,
 } from 'gdc-common-utils-ts';
 import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { ClaimsOfferSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { determineResourceId } from '../utils/resource';

@@ -16,8 +16,8 @@ import {
 import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
 import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
 import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 
 type VerificationInput = Readonly<{
   credential: VerifiableCredentialV2;

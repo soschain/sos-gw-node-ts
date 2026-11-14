@@ -11,7 +11,7 @@ import { IAsyncResponseStore } from '../adapters/async-response-store.mem';
 import { createJobName } from '../utils/naming';
 import { isRequestValid } from '../utils/request-validator';
 import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { Content } from 'gdc-common-utils-ts/utils/content';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import { JWK } from 'gdc-common-utils-ts/models/jwk';
@@ -47,7 +47,7 @@ import { decodeJwt } from 'jose';
 import { randomUUID } from 'node:crypto';
 import { enqueueAsyncJob } from '../services/async-job-submission';
 import type { FederatedSmartVerificationManager } from '../managers/FederatedSmartVerificationManager';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { buildDemoWorkspaceScope } from 'sos-data-utils-ts/demo-workspace-scope';
 import { DemoWorkspaceCardDirectory } from '../services/demo/DemoWorkspaceCardDirectory';
 

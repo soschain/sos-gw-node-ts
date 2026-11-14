@@ -4,8 +4,8 @@ import type { IVaultRepository } from '../database/repositories/vault/vault.repo
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { getEnvSectionId } from './section-env';
 import { getClaimValue } from './claims';
-import type { OperationOutcome } from 'gdc-common-utils-ts/models/operation-outcome';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import type { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { createOperationOutcome } from './outcome';
 import {
   getResearchTerminologyCodeClaim,

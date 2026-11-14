@@ -4,8 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
 import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import {
   DIDCOMM_DEFAULT_ACCEPT_HEADER,
 } from 'gdc-common-utils-ts/utils/didcomm-submit';

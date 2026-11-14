@@ -24,8 +24,8 @@ import {
   type ResearchAssetVersionMapping,
 } from './research-asset-versioning';
 import type { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
-import type { OperationOutcome } from 'gdc-common-utils-ts/models/operation-outcome';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import type { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { createOperationOutcome } from './outcome';
 import { ClinicalEvidenceChaincode } from './ledger';
 

@@ -3,8 +3,8 @@ import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
 import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
 import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import {
   normalizeProvenanceR5FlatClaimsResource,
   type ProvenanceR5FlatClaimsResource,

@@ -6,8 +6,8 @@ import {
   ClaimsServiceSchemaorg,
 } from 'gdc-common-utils-ts/constants/schemaorg';
 import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { EntityLifecycleStatus } from '../../gdc-backend-utils-node/models/enums';
 import type { IServerConfig } from '../../config';

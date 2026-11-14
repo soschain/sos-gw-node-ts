@@ -1,6 +1,6 @@
 import { DidCommDecodedMetadata } from 'gdc-common-utils-ts/models/confidential-message';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
 import { JwkSet } from 'gdc-common-utils-ts/models/jwk';
 import { normalizeTenantPublicUrl } from './activation-helpers';

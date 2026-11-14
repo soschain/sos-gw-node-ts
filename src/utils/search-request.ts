@@ -1,6 +1,6 @@
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 
 export type SearchFilters = Record<string, string[]>;
 export type DocumentReferenceSearchFilters = {

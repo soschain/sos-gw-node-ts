@@ -6,7 +6,7 @@ import { randomUUID } from 'crypto';
 import { IAsyncResponseStore, StoredJob } from '../adapters/async-response-store.mem';
 import { CredentialLedgerContext, ICredentialLedgerAdapter } from '../adapters/ICredentialLedgerAdapter';
 import { createOperationOutcome } from '../utils/outcome';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import type { ILedgerTenantRegistry } from '../managers/ILedgerTenantRegistry';
 import { getTenantVaultId } from '../utils/tenant';
 import { resolveHostRegistrySector } from '../utils/services';

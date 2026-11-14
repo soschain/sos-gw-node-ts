@@ -6,7 +6,7 @@ import { randomUUID } from 'crypto';
 import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
 import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import {
   buildFhirR5SubscriptionNotification,
   matchesFhirR5SubscriptionEvent,

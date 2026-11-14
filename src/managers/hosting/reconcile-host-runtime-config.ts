@@ -1,8 +1,8 @@
 import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
 import type { DidDocument } from 'gdc-common-utils-ts/models/did';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import type { OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';

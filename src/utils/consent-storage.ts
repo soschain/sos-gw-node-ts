@@ -8,7 +8,7 @@ import { buildConsentRuleStorageKey, expandConsentActorRoles, hashConsentRuleId 
 import { getIndividualSectionId, getSubjectScopedSectionId } from './individual-sections';
 import { applyDigitalTwinSecondaryUseDecision } from './digital-twin-secondary-use';
 import type { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
-import type { OperationOutcome } from 'gdc-common-utils-ts/models/operation-outcome';
+import type { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
 import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
 import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
 import { DataspaceSectors } from 'gdc-common-utils-ts/constants/sectors';

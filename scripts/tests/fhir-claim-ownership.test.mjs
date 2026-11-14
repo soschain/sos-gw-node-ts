@@ -9,6 +9,8 @@ const canonicalNames = new Set([
   'ClaimConsent', 'ConsentDecisions', 'ConsentStatuses',
   'CompositionClaim', 'CompositionAttesterModes', 'CommunicationClaim',
   'RelatedPersonClaim', 'TaskClaimsFhirApi',
+  'IssueType', 'IssueTypeCode', 'IssueLevel', 'IssueSeverity', 'IssueSeverityCode',
+  'OperationOutcome', 'OperationOutcomeDetails',
 ])
 
 test('production FHIR vocabularies have their canonical package owner', async () => {

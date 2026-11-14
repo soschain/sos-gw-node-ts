@@ -13,8 +13,8 @@ import { BundleJsonApi, BundleEntry, ErrorEntry } from 'gdc-common-utils-ts/mode
 import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
 import { DidDocument, DidService } from 'gdc-common-utils-ts/models/did';
 import { OrganizationConfig } from '../gdc-backend-utils-node/models/entity';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
 import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';

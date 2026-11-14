@@ -1,6 +1,6 @@
 import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { DidDocument } from 'gdc-common-utils-ts/models/did';
 import {
   DIDCOMM_DEFAULT_ACCEPT_HEADER,

@@ -1,6 +1,6 @@
 import { scryptSync, timingSafeEqual } from 'node:crypto';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { ClaimsOrderSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { POSTAL_ACTIVATION_CODE_BINDING_ALGORITHM, type PostalActivationCodeBinding } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
 

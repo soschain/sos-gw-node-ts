@@ -1,5 +1,14 @@
 ## Unreleased
 
+- Consume standard OperationOutcome issue codes from FHIR utilities and the
+  runtime ManagerError/status policy from SOS SDK Core in production and tests.
+  Unknown runtime issue codes now fail with exception/500 rather than reading
+  inherited mapping properties. Corrected registry pins remain pending.
+- Resolve the Fabric submit test's module URL with `fileURLToPath` so its commit
+  success/failure checks run on Windows as well as Unix.
+- Refresh stale source-manifest pin assertions. Document that this assertion
+  does not prove unpublished API availability or a GDC-free registry graph.
+
 - Import canonical FHIR resource names and Consent, Composition, Communication,
   RelatedPerson and Task claim vocabularies from FHIR data utilities. Read-only
   compatibility checks confirm unchanged values for existing claim keys.

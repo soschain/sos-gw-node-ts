@@ -4,7 +4,7 @@ import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
 
 import { BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { safelyJoinUrl } from 'gdc-common-utils-ts/utils/url';
 
 export const BundleType = {

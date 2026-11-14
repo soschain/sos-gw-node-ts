@@ -3,8 +3,8 @@ import type { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.type
 import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
 import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
 import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';

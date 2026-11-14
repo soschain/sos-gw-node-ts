@@ -1,8 +1,8 @@
 import { createHash } from 'crypto';
 import type { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
 import { ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { buildPdfSignatureEvidence } from '../../utils/pdf-evidence';
 
 type HandleServiceAttachmentDeps = Readonly<{

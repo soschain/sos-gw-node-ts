@@ -9,7 +9,7 @@ import { ClaimConsent, ConsentStatuses } from 'fhir-data-utils-ts';
 import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
 import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import { createOperationOutcome } from '../utils/outcome';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
 import { buildConsentRuleKey, expandConsentActorRoles, hashConsentRuleId } from '../utils/consent';
 import { getClaimValue, normalizeContextualizedClaims } from '../utils/claims';

@@ -4,8 +4,8 @@ import type { BundleEntry, ErrorEntry } from 'gdc-common-utils-ts/models/bundle'
 import type { DidCommDecodedMetadata } from 'gdc-common-utils-ts/models/confidential-message';
 import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
 import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { BundleEntryType } from '../../gdc-backend-utils-node/models/enums';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';

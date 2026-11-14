@@ -11,8 +11,8 @@ import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { CommunicationClaim } from 'fhir-data-utils-ts';
 import { CompositionAttesterModes, CompositionClaim } from 'fhir-data-utils-ts';
 import { Format } from 'gdc-common-utils-ts/constants/Schemas';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { claimsToContentCid } from 'gdc-common-utils-ts/utils/fhir-cid';
 import {
   buildCommunicationParticipantIndexAttributes,
@@ -28,7 +28,7 @@ import { buildConfidentialDocumentIndexedAttributes } from 'gdc-common-utils-ts/
 import { requireClaimsOnlyResourceShape } from '../utils/fhir-flat-claims';
 import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
 import { BundleJsonApi, BundleEntryResponse, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import type { OperationOutcome } from 'gdc-common-utils-ts/models/operation-outcome';
+import type { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
 import { determineResourceId } from '../utils/resource';
 import { v4 as uuidv4 } from 'uuid';
 import { IJobProcessor } from './registry';
