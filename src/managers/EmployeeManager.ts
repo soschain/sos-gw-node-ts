@@ -4,6 +4,7 @@ import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
 import { getHealthcareRoleByClaim, HealthcareRoleFamilies } from 'sos-data-utils-ts/healthcare-roles';
+import { readIsco08Code } from 'antifraud-data-utils-ts/isco-08';
 
 import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import { v4 as uuidv4 } from 'uuid';
@@ -285,6 +286,10 @@ export class EmployeeManager {
     return entries.every(([key, expectedValues]) => {
       const actualValue = this.resolveEmployeeSearchValue(claims, key);
       if (!actualValue) return false;
+      if (key === ClaimsPersonSchemaorg.hasOccupation || key === ClaimsPersonSchemaorg.hasOccupationalRoleValue) {
+        const actualCode = readIsco08Code(actualValue);
+        return expectedValues.some(value => value === actualValue || (actualCode !== undefined && readIsco08Code(value) === actualCode));
+      }
       return expectedValues.includes(actualValue);
     });
   }

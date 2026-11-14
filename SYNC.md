@@ -44,3 +44,11 @@ Validation: the ownership guard and type check pass. The 14 affected role and
 Consent suites pass 191 tests; the two family suites pass another 49 tests.
 The full project dependency-independence gate remains incomplete and blocks
 promotion until all remaining direct and transitive dependencies are removed.
+
+ISCO query compatibility is `profile-specific`: Antifraud owns recognition of
+the WHO SMART system URI, HL7 Terminology's OID URI, and existing compact or
+reverse-DNS identifiers. Employee search compares exact extracted occupation
+codes without modifying persisted claims; Consent preserves its existing wire
+normalization. Six affected suites pass 93 tests, including the real in-memory
+API, worker and polling flow with native `valueCoding.system` filters. A wrong
+code or unknown system produces no employee match.

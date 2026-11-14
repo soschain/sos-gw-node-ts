@@ -45,6 +45,7 @@ import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-iden
 import { getClinicalCreatorBindingsSectionId } from '../../../utils/clinical-creator-binding';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
+import { Isco08CodingSystem, Isco08Hl7CodingSystem } from 'antifraud-data-utils-ts/isco-08';
 
 const uuidMock = {
   v4: jest.fn(),
@@ -520,6 +521,33 @@ describe('EmployeeManager', () => {
 
     afterEach(() => {
       delete process.env[SearchResponseProfileEnvironment.Variable];
+    });
+
+    it.each([
+      [HealthcareActorRoles.Dentist, 1],
+      [`${Isco08CodingSystem}|2261`, 1],
+      [`${Isco08Hl7CodingSystem}|2261`, 1],
+      ['org.ilo.isco|2261', 1],
+      ['org.ilo.isco-08|2261', 1],
+      [`${Isco08Hl7CodingSystem}|2250`, 0],
+      ['unknown|2261', 0],
+    ])('matches equivalent occupation search tokens without changing stored claims: %s', async (role, count) => {
+      const claims = { ...testClaimsTenant1Receptionist1, [ClaimsPersonSchemaorg.hasOccupation]: HealthcareActorRoles.Dentist };
+      const job = testBaseJobForEmployeeClaims(claims, TENANT_ALTERNATE_NAME, TENANT_SECTOR);
+      job.action = '_search';
+      job.content!.body = { resourceType: 'Bundle', type: 'batch', entry: [{ request: {
+        method: 'GET', url: `Employee?${new URLSearchParams({ [ClaimsPersonSchemaorg.hasOccupation]: String(role) })}`,
+      } }] } as any;
+      mockTenantsCacheManager.getTenantIdentifierUrn.mockResolvedValue(TENANT_URN);
+      mockTenantsCacheManager.getCollectionName.mockResolvedValue(TENANT_VAULT_ID);
+      mockVaultRepository.getContainersInSection.mockResolvedValue([{
+        id: SAFE.resourceUuid, status: EntityLifecycleStatus.Active, sequence: 1,
+        content: { id: SAFE.resourceUuid, type: EntityType.Person, status: EntityLifecycleStatus.Active, claims },
+      }] as ConfidentialStorageDoc[]);
+      const response = await employeeManager.process(job);
+      expect(response.body.total).toBe(count);
+      if (count) expect((response.body.data[0] as any).resource.claims[ClaimsPersonSchemaorg.hasOccupation]).toBe(HealthcareActorRoles.Dentist);
+      expect(mockVaultRepository.put).not.toHaveBeenCalled();
     });
 
     it('keeps disabled employees visible but excludes terminal purge markers', async () => {

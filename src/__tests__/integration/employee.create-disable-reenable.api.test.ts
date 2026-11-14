@@ -1,5 +1,9 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { randomUUID } from 'node:crypto';
+import { Isco08CodingSystem, Isco08Hl7CodingSystem, Isco08Occupations, readIsco08Code } from 'antifraud-data-utils-ts/isco-08';
+import { SchemaOrgPersonClaim as Person } from 'sos-data-utils-ts/schema-org-claims';
+import { getPersonOccupationClaim } from '../../utils/occupation';
 import type { StoryHarness } from './helpers/story-flow';
 import {
   installBasicJsonFetchMock,
@@ -142,6 +146,41 @@ describe('Employee create/disable/re-enable route story', () => {
       type: 'Occupation',
       employeeId,
     })]);
+
+    // The same stored occupation is searchable through token and native Coding
+    // systems. Search must neither rewrite that claim nor broaden its code.
+    const storedRole = getPersonOccupationClaim(createdEntry.resource?.meta?.claims);
+    const occupationCode = readIsco08Code(storedRole);
+    expect(occupationCode).toBeDefined();
+    const otherCode = occupationCode === Isco08Occupations.Dentist.code
+      ? Isco08Occupations.Veterinarian.code : Isco08Occupations.Dentist.code;
+    for (const [system, code, expectedMatch] of [
+      ['ISCO-08', occupationCode, true],
+      ['org.ilo.isco', occupationCode, true],
+      ['org.ilo.isco-08', occupationCode, true],
+      [Isco08CodingSystem, occupationCode, true],
+      [Isco08Hl7CodingSystem, occupationCode, true],
+      [Isco08Hl7CodingSystem, otherCode, false],
+      ['unknown', occupationCode, false],
+    ] as const) {
+      const filtered = structuredClone(searchPayload);
+      filtered.thid = randomUUID();
+      filtered.jti = randomUUID();
+      filtered.body.entry[0].resource.parameter = [{ name: Person.HasOccupation, valueCoding: { system, code } }];
+      const submitted = await invokeExpress(harness.app, {
+        method: 'POST', url: employeeUrl.replace('/_batch', '/_search'),
+        headers: { 'content-type': 'application/json' }, body: filtered,
+      });
+      expect(submitted.status).toBe(202);
+      await harness.queueAdapter.waitForEmptyQueue();
+      const polled = await pollJsonBody(harness.app, submitted.headers.location, filtered.thid);
+      expect(polled.status).toBe(200);
+      const found = polled.body.data
+        .flatMap((entry: any) => Array.isArray(entry.resource?.data) ? entry.resource.data : [entry.resource])
+        .find((resource: any) => resource?.id === employeeId);
+      expect(Boolean(found)).toBe(expectedMatch);
+      if (found) expect(getPersonOccupationClaim(found.claims)).toBe(storedRole);
+    }
 
     const disablePayload = structuredClone(EMPLOYEE_DISABLE_REQUEST) as any;
     disablePayload.thid = 'employee-disable-story-thid';

@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Accept WHO/HL7 ISCO identifiers and compact/reverse-DNS equivalents in
+  employee occupation search and Consent matching. Search compares exact codes
+  without rewriting stored claims or granting a different occupation access.
 - Consume SOS-owned healthcare role lookup and Consent scope projection. Include
   Dentistry in clinical creator metadata while excluding Controller authority
   and preserving reverse-DNS occupation values and persisted Consent identifiers.

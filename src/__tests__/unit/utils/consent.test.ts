@@ -1,6 +1,7 @@
 // Flow contract: Consent actor roles normalize to the shared canonical healthcare vocabulary before authorization comparison.
 import {
   Isco08CodingSystem,
+  Isco08Hl7CodingSystem,
 } from 'antifraud-data-utils-ts/isco-08';
 import { getHealthcareRoleByClaim, HealthcareActorRoles, ISCO08_CODING_SYSTEM } from 'sos-data-utils-ts/healthcare-roles';
 import {
@@ -48,6 +49,7 @@ describe('consent utils', () => {
     expect(normalizeConsentActorRole(HealthcareActorRoles.Veterinarian, 'professional')).toBe(canonicalRole);
     expect(normalizeConsentActorRole(canonicalRole, 'professional')).toBe(canonicalRole);
     expect(normalizeConsentActorRole(`${Isco08CodingSystem}|${veterinarian!.code}`, 'professional')).toBe(canonicalRole);
+    expect(normalizeConsentActorRole(`${Isco08Hl7CodingSystem}|${veterinarian!.code}`, 'professional')).toBe(canonicalRole);
     expect(normalizeConsentActorRole(`org.ilo.isco-08|${veterinarian!.code}`, 'professional')).toBe(canonicalRole);
     expect(normalizeConsentActorRole(`unknown-isco-08|${veterinarian!.code}`, 'professional')).not.toBe(canonicalRole);
   });
@@ -55,6 +57,7 @@ describe('consent utils', () => {
   it('validates ISCO and FHIR role codes', () => {
     expect(isValidIsco08RoleCode('221')).toBe(true);
     expect(isValidIsco08RoleCode('ISCO-08|221')).toBe(true);
+    expect(isValidIsco08RoleCode(`${Isco08Hl7CodingSystem}|221`)).toBe(true);
     expect(isValidIsco08RoleCode('RESPRSN')).toBe(false);
 
     expect(isValidFhirRoleCode('RESPRSN')).toBe(true);

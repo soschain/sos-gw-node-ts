@@ -2,7 +2,7 @@
 
 import { createHash } from 'crypto';
 import { ISCO08_CODING_SYSTEM } from 'sos-data-utils-ts/healthcare-roles';
-import { Isco08CodingSystem } from 'antifraud-data-utils-ts/isco-08';
+import { isIsco08CodingSystem } from 'antifraud-data-utils-ts/isco-08';
 
 export type ConsentRuleKeyParts = {
   subjectId: string;
@@ -39,7 +39,7 @@ function normalizeTarget(target: string): string {
 
 function normalizeRoleSystem(inputSystem: string): string {
   const normalized = inputSystem.trim().toLowerCase();
-  if (['isco-08', 'org.ilo.isco-08', ISCO08_CODING_SYSTEM, Isco08CodingSystem.toLowerCase()].includes(normalized)) return ISCO08_CODING_SYSTEM;
+  if (isIsco08CodingSystem(inputSystem)) return ISCO08_CODING_SYSTEM;
   if (normalized.endsWith('v3-rolecode') || normalized.includes('/v3-rolecode')) return V3_ROLE_CODE_CANONICAL_SYSTEM;
   return inputSystem.trim();
 }
