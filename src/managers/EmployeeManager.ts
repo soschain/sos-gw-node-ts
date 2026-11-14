@@ -51,6 +51,7 @@ import type { ClinicalCreatorBinding } from 'sos-data-utils-ts/clinical-creator-
 import { getClinicalCreatorBindingsSectionId } from '../utils/clinical-creator-binding';
 import { canonicalizeBundleEntryMetadata } from '../utils/canonical-entry-metadata';
 import { requireExplicitLifecycleResourceId } from '../utils/lifecycle-resource-id';
+import { isVerifiedBearerBoundToActorDid } from '../utils/authenticated-job-actor';
 import {
   ACTION_PURGE,
   LICENSE_STATUS_AVAILABLE,
@@ -71,7 +72,7 @@ function canonicalUuidUrn(value: string): string | undefined {
 export class EmployeeManager {
   private vaultRepository: IVaultRepository;
   private kmsService: IKmsService;
-  private tenantsManager: Pick<ITenantsManager, 'getTenantIdentifierUrn' | 'getCollectionName'>;
+  private tenantsManager: Pick<ITenantsManager, 'getTenantIdentifierUrn' | 'getCollectionName' | 'getDidDocument'>;
   private tenantDidRegistryMutator: ITenantDidRegistryMutator;
   private hostRuntime: IHostRuntime;
 
@@ -83,6 +84,7 @@ export class EmployeeManager {
    * - this manager must not receive `TenantsCacheManager` directly
    * - it only needs:
    *   - tenant URN resolution for response `iss`
+   *   - public tenant DID document for current controller authority
    *   - a narrow DID-registry mutator to publish child verification methods
    *   - host runtime scalars for host-owned offers
    *
@@ -94,7 +96,7 @@ export class EmployeeManager {
   constructor(
     vaultRepository: IVaultRepository,
     kmsService: IKmsService,
-    tenantsManager: Pick<ITenantsManager, 'getTenantIdentifierUrn' | 'getCollectionName'>,
+    tenantsManager: Pick<ITenantsManager, 'getTenantIdentifierUrn' | 'getCollectionName' | 'getDidDocument'>,
     tenantDidRegistryMutator: ITenantDidRegistryMutator,
     hostRuntime: IHostRuntime,
   ) {
@@ -137,6 +139,7 @@ export class EmployeeManager {
 
     for (const entry of entries) {
       try {
+        await this.requireController(job, vaultId);
         // Pass the fetched URN and the job metadata down to the entry processor.
         const resultEntry = await this.processEntry(
           entry,
@@ -175,6 +178,18 @@ export class EmployeeManager {
       body: responseBundle,
     };
     return result;
+  }
+
+  private async requireController(job: JobRequest, vaultId: string): Promise<void> {
+    const issuer = String(job.content?.iss || '').trim();
+    const principal = job.content?.meta?.bearer?.jwt?.payload;
+    const did = await this.tenantsManager.getDidDocument(vaultId);
+    const controllers = (Array.isArray(did?.controller) ? did.controller : did?.controller ? [did.controller] : [])
+      .filter((controller): controller is string => typeof controller === 'string')
+      .map(controller => controller.trim());
+    if (!issuer || !controllers.includes(issuer) || !isVerifiedBearerBoundToActorDid(principal, issuer)) {
+      throw new ManagerError('Employee writes require the authenticated current tenant controller.', IssueType.Forbidden);
+    }
   }
 
   private async processSearch(

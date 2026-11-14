@@ -20,7 +20,7 @@ import { SchemaOrgOfferClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-
 import { RecordBase, ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { JwkSet } from '../../../gdc-backend-utils-node/models/jwk';
 import {
-  testBaseJobForEmployeeClaims as testBaseJobForEmployeeClaims,
+  testBaseJobForEmployeeClaims as unauthenticatedEmployeeJob,
   testClaimsTenant1Nurse1,
   testClaimsTenant1Receptionist1,
 } from '../../data/employee.data';
@@ -39,6 +39,7 @@ import {
   SearchResponseProfiles,
 } from '../../../utils/didcomm-response';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
+import { DidCoreContext } from 'antifraud-data-utils-ts/did-document';
 import { getClinicalCreatorBindingsSectionId } from '../../../utils/clinical-creator-binding';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
@@ -53,6 +54,21 @@ jest.unstable_mockModule('uuid', () => uuidMock);
 
 const { v4: uuidv4 } = await import('uuid');
 const { EmployeeManager } = await import('../../../managers/EmployeeManager');
+
+const currentControllerDid = `${SAFE.didWeb}:employee:${buildStableActorIdentifier({
+  contactKind: 'email', contact: SAFE.firstContactEmail,
+}).replace('urn:multibase:', '')}:${HealthcareActorRoles.Controller}`;
+
+// These lifecycle/schema cases run as an admitted controller; denial cases use
+// the separate real-manager authorization suite and retain untrusted inputs.
+function testBaseJobForEmployeeClaims(...args: Parameters<typeof unauthenticatedEmployeeJob>): JobRequest {
+  const job = unauthenticatedEmployeeJob(...args);
+  job.content!.iss = currentControllerDid;
+  job.content!.meta!.bearer = { jwt: { payload: {
+    sub: 'verified-controller-account', email: SAFE.firstContactEmail, email_verified: true,
+  } } };
+  return job;
+}
 
 describe('EmployeeManager', () => {
   let employeeManager: InstanceType<typeof EmployeeManager>;
@@ -85,6 +101,9 @@ describe('EmployeeManager', () => {
     );
     (uuidv4 as jest.Mock).mockReturnValue(MOCKED_OCCUPATION_UUID);
     jest.clearAllMocks();
+    mockTenantsCacheManager.getDidDocument.mockResolvedValue({
+      '@context': DidCoreContext, id: SAFE.didWeb, controller: [currentControllerDid],
+    });
 
     const availableLicense = structuredClone(EXAMPLE_DEVICE_LICENSE_AVAILABLE) as DeviceLicense;
     mockVaultRepository.getContainersInSection.mockResolvedValue([

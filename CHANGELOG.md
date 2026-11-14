@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Restrict Employee create, disable and purge writes to the current tenant
+  controller bound to the verified bearer. A professional licence or forged
+  controller issuer cannot administer staff. Registered employee-key transport
+  applies the same bearer/issuer binding as registered profile transport;
+  employee-directory search keeps its separate read path.
 - Support phone-only employee creation and idempotent role lookup with canonical
   stable contact identifiers and phone-bound licences, preserving existing email
   URNs and employee instances. Purge releases matching phone invitation seats

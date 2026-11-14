@@ -4890,6 +4890,17 @@ export function createApiRouter(
             // their HMAC-indexed DID entity in the physical tenant collection.
             const employeeDoc = queryResult[0];
             const employeeConfig = await kmsService.unprotectConfidentialData<EntityConfig>(employeeDoc, vaultId);
+            if (
+              requiresVerifiedBearerActorBindingForSecureRoute({
+                section,
+                format: req.params.format,
+                resourceType,
+                action,
+              })
+              && !isVerifiedBearerBoundToActorDid(verifiedBearerPayload, senderDid)
+            ) {
+              throw new Error(`Verified bearer identity does not match secure-message issuer '${senderDid}'.`);
+            }
             senderSigningKey = employeeConfig.didDocument?.verificationMethod?.find(
               (vm: VerificationMethod) => vm.id.endsWith(`#${senderSigningKeyId}`)
             )?.publicKeyJwk;
