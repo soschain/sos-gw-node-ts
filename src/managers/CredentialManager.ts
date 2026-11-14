@@ -9,7 +9,7 @@ import { objectToBytes } from 'gdc-common-utils-ts/utils/object-convert';
 import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { generateVcId } from '../utils/vc-id';
-import { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
 import { ParameterData } from 'gdc-common-utils-ts/models/params';
 import { parseValidityPeriod } from '../utils/time';

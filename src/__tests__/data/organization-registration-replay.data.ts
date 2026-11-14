@@ -1,4 +1,4 @@
-import type { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { DataspaceSectors } from 'gdc-common-utils-ts/constants/sectors';
 import type { Sector } from 'gdc-common-utils-ts/models/urlPath';

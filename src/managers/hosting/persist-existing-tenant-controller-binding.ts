@@ -1,5 +1,5 @@
 import { ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import type { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
 import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
 import type { Sector } from 'gdc-common-utils-ts/models/urlPath';

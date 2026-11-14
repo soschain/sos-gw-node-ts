@@ -1,3 +1,4 @@
+// Flow contract: credential issuance resolves the configured issuer, signs through KMS, and protects indexed content before persistence.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/__tests__/unit/managers/CredentialManager.test.ts
 
@@ -9,7 +10,7 @@ import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
 import { IServerConfig } from '../../../config';
 import { testClaimsTenant1Receptionist1, testTenant1Receptionist1Email, testTenant1Receptionist1Urn } from '../../data/employee.data';
-import { MldsaPublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import { MldsaPublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { ProofEBSIv2, VerifiableCredentialV2 } from '../../../gdc-backend-utils-node/models/verifiable-credential';
 import { JwsMultiSign } from 'gdc-common-utils-ts/models/jws';
 import { testHostDidWeb, testHostDomain, testTenant1IdentifierUrn, testTenant1VaultId } from '../../data/organization.data';

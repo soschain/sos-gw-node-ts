@@ -4,13 +4,13 @@
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { ITokenVerifier, VerificationResult } from '../auth/ITokenVerifier';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
-import { ICryptography } from 'gdc-common-utils-ts/interfaces/ICryptography';
+import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
 import { getTenantVaultId } from '../utils/tenant';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { Content } from 'antifraud-data-utils-ts/cryptography';
 import { getEnvSectionId } from '../utils/section-env';
 import { compactVerify, decodeProtectedHeader, importJWK, type JWK } from 'jose';
 import { normalizeSameAsHash, normalizeTelephoneHash } from 'gdc-common-utils-ts/utils/same-as';

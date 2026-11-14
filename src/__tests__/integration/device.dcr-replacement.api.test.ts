@@ -36,7 +36,7 @@ import { DeviceRegistrationManager } from '../../managers/DeviceRegistrationMana
 import { HostingManager } from '../../managers/HostingManager';
 import { Worker } from '../../worker';
 import { KmsService } from '../../services/KmsService';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { AdapterCryptoSdkNode } from '../../gdc-backend-utils-node/adapters/node/crypto';
 import { StorageMemAdapter } from '../../database/storage/mem.storage.adapter';
 import { ConsoleLogger } from '../../loggers/ConsoleLogger';

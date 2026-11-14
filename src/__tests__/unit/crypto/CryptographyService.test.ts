@@ -1,12 +1,12 @@
-// src/__tests__/unit/crypto/CryptographyService.test.ts
+// Flow contract: stateless crypto preserves envelope, signature and parser behavior while callers retain private-key custody.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { jest } from '@jest/globals';
-import type { MlkemPrivateJwk, MlkemPublicJwk, MldsaPublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import type { MlkemPrivateJwk, MlkemPublicJwk, MldsaPublicJwk } from 'antifraud-data-utils-ts/cryptography';
+import { Content } from 'antifraud-data-utils-ts/cryptography';
 import { randomBytes } from 'crypto';
-import type { JweObject, RecipientDataJWE } from 'gdc-common-utils-ts/models/jwe';
-import type { ProtectedDataAES } from 'gdc-common-utils-ts/models/aes';
+import type { JweObject, RecipientDataJWE } from 'antifraud-data-utils-ts/cryptography';
+import type { ProtectedDataAES } from 'antifraud-data-utils-ts/cryptography';
 
 const mlKemMock = {
   ml_kem768: {
@@ -40,9 +40,9 @@ jest.unstable_mockModule('@noble/post-quantum/ml-dsa.js', () => mlDsaMock);
 
 const { ml_kem768 } = await import('@noble/post-quantum/ml-kem.js');
 const mlDsa = await import('@noble/post-quantum/ml-dsa.js');
-const { CryptographyService } = await import('gdc-common-utils-ts/CryptographyService');
+const { CryptographyService } = await import('antifraud-data-utils-ts/cryptography');
 const { AdapterCryptoSdkNode } = await import('../../../gdc-backend-utils-node/adapters/node/crypto');
-const { AesManager } = await import('gdc-common-utils-ts');
+const { AesManager } = await import('antifraud-data-utils-ts/cryptography');
 
 const mockMlKem768 = ml_kem768 as jest.Mocked<typeof ml_kem768>;
 // Point the primary mock to the dsa44 variant, as it's our default
@@ -54,8 +54,6 @@ describe('CryptographyService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     cryptoService = new CryptographyService(new AdapterCryptoSdkNode());
-    jest.spyOn(cryptoService as any, 'loadMlKem').mockResolvedValue(mlKemMock);
-    jest.spyOn(cryptoService as any, 'loadMlDsa').mockResolvedValue(mlDsaMock);
   });
 
   // --- Formatting & Parsing Utilities ---
@@ -104,7 +102,8 @@ describe('CryptographyService', () => {
       const protectedB64 = Content.objectToRawBase64UrlSafe(protectedHeader);
       const payload = { data: 'test' };
       const payloadB64 = Content.objectToRawBase64UrlSafe(payload);
-      const compactJws = `${protectedB64}.${payloadB64}.signature`;
+      const signatureBytes = Uint8Array.of(1, 2, 3);
+      const compactJws = `${protectedB64}.${payloadB64}.${Content.bytesToRawBase64UrlSafe(signatureBytes)}`;
 
       // Act
       const jwsObject = cryptoService.parseCompactJws(compactJws);
@@ -113,6 +112,13 @@ describe('CryptographyService', () => {
       expect(jwsObject.protected).toEqual(protectedHeader);
       expect(jwsObject.payload).toEqual(payload);
       expect(jwsObject.signature).toBeInstanceOf(Uint8Array);
+      expect(jwsObject.signature).toEqual(signatureBytes);
+    });
+
+    it('rejects malformed base64url signature bytes instead of accepting a placeholder', () => {
+      const header = Content.objectToRawBase64UrlSafe({ alg: 'ML-DSA-44' });
+      const payload = Content.objectToRawBase64UrlSafe({ data: 'example' });
+      expect(() => cryptoService.parseCompactJws(`${header}.${payload}.a`)).toThrow();
     });
 
   });

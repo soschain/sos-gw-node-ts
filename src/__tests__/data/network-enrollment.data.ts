@@ -1,7 +1,7 @@
 // src/__tests__/data/network-enrollment.data.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
-import { MldsaPublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import { MldsaPublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { ClaimsActionSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { DidDocument } from '../../gdc-backend-utils-node/models/did';
 import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';

@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { QueueAdapter } from '../adapters/queue';
 import { IAsyncResponseStore } from '../adapters/async-response-store.mem';
 import { parseCdsRequest } from '../gdc-backend-utils-node/middleware/parseCdsRequest';
-import { ICryptography } from 'gdc-common-utils-ts/interfaces/ICryptography';
+import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { createDecodeRequestMiddleware } from '../gdc-backend-utils-node/middleware/decodeRequest';
 import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import { Worker } from '../worker';

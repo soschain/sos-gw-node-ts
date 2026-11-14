@@ -1,10 +1,10 @@
-// src/__tests__/unit/services/DemoKmsService.test.ts
+// Flow contract: Demo KMS handles its synthetic envelopes without representing decoded fixtures as verified production signatures.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { jest } from '@jest/globals';
 import { DemoKmsService } from '../../../services/DemoKmsService';
 import { KmsService } from '../../../services/KmsService';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { AdapterCryptoSdkNode } from '../../../gdc-backend-utils-node/adapters/node/crypto';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';

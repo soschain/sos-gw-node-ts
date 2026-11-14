@@ -5,7 +5,7 @@ import { AppAuthorizationManager } from '../../managers/AppAuthorizationManager'
 import { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { ITokenVerifier } from '../../auth/ITokenVerifier';
 import { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
-import { ICryptography } from 'gdc-common-utils-ts/interfaces/ICryptography';
+import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
 import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';

@@ -8,7 +8,7 @@ import { createApiRouter } from '../../../routes/api';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { AsyncResponseStoreMem } from '../../../adapters/async-response-store.mem';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { AdapterCryptoSdkNode } from '../../../gdc-backend-utils-node/adapters/node/crypto';
 import { mockKmsService } from '../../mocks/kms.mock';
 import { HostingManager } from '../../../managers/HostingManager';

@@ -6,17 +6,17 @@ import { JwsHeader, JwsMultiSign } from 'gdc-common-utils-ts/models/jws';
 import { ConfidentialStorageDoc, IndexedAttribute } from 'gdc-common-utils-ts/models/confidential-storage';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import type { SigningPurpose } from '../gdc-backend-utils-node/models/IKmsService';
-import { ICryptography } from 'gdc-common-utils-ts/interfaces/ICryptography';
+import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
 import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
 import { v4 as uuidv4 } from 'uuid';
-import { MldsaPublicJwk, MlkemPrivateJwk, MlkemPublicJwk, PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { MldsaPublicJwk, MlkemPrivateJwk, MlkemPublicJwk, PublicJwk } from 'antifraud-data-utils-ts/cryptography';
+import { Content } from 'antifraud-data-utils-ts/cryptography';
 import { createHash, randomBytes, createPrivateKey } from 'crypto';
 import { p256, p384 } from '@noble/curves/nist.js';
 import { deriveKeyPair } from '../utils/pki';
 import { computeHmacSha256Base64Url } from 'gdc-common-utils-ts/hmac';
-import { ProtectedDataAES } from 'gdc-common-utils-ts/models/aes';
+import { ProtectedDataAES } from 'antifraud-data-utils-ts/cryptography';
 import { ParameterData } from 'gdc-common-utils-ts/models/params';
 import { InMemoryKeyMaterialProvider } from './in-memory-key-material-provider';
 import type { KeyMaterialProvider, KeyMaterialPurpose } from './key-material-provider';
@@ -398,12 +398,24 @@ export class KmsService implements IKmsService {
     if ((protectedHeader as { cty?: string }).cty === 'JWS') {
       // Case 1: The payload is a JWS string, as indicated by the standard header.
       const dataJwt = this.crypto.parseCompactJws(decryptedPayload);
-      const jwsProtected = dataJwt.protected as JwsHeader;
-      job.content = dataJwt.payload as IDecodedDidcommPayload;
+      const jwsProtected = typeof dataJwt.protected === 'string'
+        ? Content.base64UrlSafeToJSON(dataJwt.protected)
+        : dataJwt.protected;
+      const decodedPayload = typeof dataJwt.payload === 'string'
+        ? Content.base64UrlSafeToJSON(dataJwt.payload)
+        : dataJwt.payload;
+      if (!jwsProtected || typeof jwsProtected !== 'object' || Array.isArray(jwsProtected)
+        || !decodedPayload || typeof decodedPayload !== 'object' || Array.isArray(decodedPayload)) {
+        throw new Error('Nested JWS header and payload must be JSON objects.');
+      }
+      const signatureBytes = typeof dataJwt.signature === 'string'
+        ? Content.base64ToBytes(dataJwt.signature)
+        : dataJwt.signature;
+      job.content = decodedPayload as IDecodedDidcommPayload;
       if (!job.content.meta) job.content.meta = {};
       job.content.meta.jws = { 
-        protected: jwsProtected, 
-        signature: dataJwt.signature ? Content.bytesToRawBase64UrlSafe(dataJwt.signature) : ''
+        protected: jwsProtected as JwsHeader,
+        signature: signatureBytes ? Content.bytesToRawBase64UrlSafe(signatureBytes) : ''
       };
       job.content.meta.jwe = { header: protectedHeader };
       return job;

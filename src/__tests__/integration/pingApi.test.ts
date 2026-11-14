@@ -1,8 +1,8 @@
-// TDD contract: ping routing fixtures make no JWS claim unless a complete signature is under test.
+// Flow contract: ping routing fixtures make no JWS claim unless a complete signature is under test.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import express from 'express';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { createApiRouter } from '../../routes/api';
 import { QueueAdapter } from '../../adapters/queue';
 import { TenantsCacheManager } from '../../managers/TenantsCacheManager';

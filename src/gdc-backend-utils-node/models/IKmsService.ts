@@ -1,12 +1,12 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: crypto-ts/interfaces/IKmsService.ts
 
-import { JwkSet, JWK } from 'gdc-common-utils-ts/models/jwk';
+import { JwkSet, JWK } from 'antifraud-data-utils-ts/cryptography';
 import { JwsMultiSign } from 'gdc-common-utils-ts/models/jws';
 import { ParameterData } from 'gdc-common-utils-ts/models/params'; // extends ParamAttribute with `type` and others.
 import { ConfidentialStorageDoc, IndexedAttribute } from 'gdc-common-utils-ts/models/confidential-storage';
 import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { MlkemPublicJwk, PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import { MlkemPublicJwk, PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 
 export type SigningPurpose = 'comm_sig' | 'vc_sign';
 

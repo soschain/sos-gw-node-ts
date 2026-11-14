@@ -9,7 +9,7 @@ import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import type { ITenantsManager } from './ITenantsManager';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { Content } from 'antifraud-data-utils-ts/cryptography';
 import { getTenantVaultId } from '../utils/tenant';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { getClaimValue } from '../utils/claims';

@@ -1,8 +1,8 @@
 import { DidCommDecodedMetadata } from 'gdc-common-utils-ts/models/confidential-message';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
-import { JwkSet } from 'gdc-common-utils-ts/models/jwk';
+import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
+import { JwkSet } from 'antifraud-data-utils-ts/cryptography';
 import { normalizeTenantPublicUrl } from './activation-helpers';
 
 export function normalizeBindingAliasList(value: unknown): string[] {

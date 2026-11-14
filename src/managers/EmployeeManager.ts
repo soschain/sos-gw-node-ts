@@ -31,7 +31,7 @@ import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
 import { getBundleResponseTypeForAction } from '../utils/bundle';
 import { normalizeCodeSystemAndValue } from '../utils/normalize-codeAndSystem';
 import { ParameterData } from 'gdc-common-utils-ts/models/params';
-import { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { DidDocument, VerificationMethod } from '../gdc-backend-utils-node/models/did';
 import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import { EntityLifecycleStatus, EntityType } from '../gdc-backend-utils-node/models/enums';

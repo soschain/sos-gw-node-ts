@@ -1,9 +1,9 @@
-// TDD contract: route-only network fixtures never pretend to contain an unverifiable nested signature.
+// Flow contract: route-only network enrollment fixtures never pretend to contain an unverifiable nested signature.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import express from 'express';
 import { createApiRouter } from '../../routes/api';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { QueueAdapter } from '../../adapters/queue';
 import { TenantsCacheManager } from '../../managers/TenantsCacheManager';
 import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';

@@ -2,7 +2,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import crypto from 'crypto';
-import { AesGcmComponents } from 'gdc-common-utils-ts/models/aes';
+import { AesGcmComponents } from 'antifraud-data-utils-ts/cryptography';
 
 /**
  * Manages the lifecycle and usage of the Key Encryption Key (KEK).

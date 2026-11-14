@@ -35,7 +35,7 @@ import { IServerConfig } from '../../../config';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { IStorageAdapter } from '../../../database/storage/IStorageAdapter';
-import { JwkSet } from 'gdc-common-utils-ts/models/jwk';
+import { JwkSet } from 'antifraud-data-utils-ts/cryptography';
 import { initializeHostServicesConfig, initializeTenantServicesConfig } from '../../../utils/services';
 import { populateDidDocumentServices } from '../../../utils/did-document';
 

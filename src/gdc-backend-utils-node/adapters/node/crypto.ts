@@ -2,7 +2,7 @@
 // File: gdc-backend-utils-node/adapters/node/crypto.ts
 
 import crypto from 'node:crypto';
-import { ICryptoHelper } from 'gdc-common-utils-ts/interfaces/ICryptoHelper';
+import { ICryptoHelper } from 'antifraud-data-utils-ts/cryptography';
 
 /**
  * Implements the SDK's ICryptoHelper interface using Node.js built-in crypto.

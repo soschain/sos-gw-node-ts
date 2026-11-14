@@ -9,8 +9,8 @@ import { JwsHeader, JwsMultiSign } from 'gdc-common-utils-ts/models/jws';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import type { SigningPurpose } from '../gdc-backend-utils-node/models/IKmsService';
 import { JwkSet, JWK } from '../gdc-backend-utils-node/models/jwk';
-import { Content } from 'gdc-common-utils-ts/utils/content';
-import { MlkemPublicJwk, PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import { Content } from 'antifraud-data-utils-ts/cryptography';
+import { MlkemPublicJwk, PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { ParameterData } from 'gdc-common-utils-ts/models/params';
 
 /**

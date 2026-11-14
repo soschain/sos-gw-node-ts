@@ -17,7 +17,7 @@ import type { IHostRuntime } from '../IHostRuntime';
 import { getEnvSectionId } from '../../utils/section-env';
 import { getTenantVaultId, isValidTenantAlternateName, resolveOrganizationRouteJurisdiction } from '../../utils/tenant';
 import { createOrganizationUrn } from '../../utils/urn';
-import type { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { PostalActivationCodeBinding } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
 import { isDeepStrictEqual } from 'node:util';
 import {

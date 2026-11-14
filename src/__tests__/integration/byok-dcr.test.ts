@@ -18,7 +18,7 @@ process.env.HOST_EXTERNAL_DOMAIN = 'provider.com';
 import { jest } from '@jest/globals';
 import type * as express from 'express';
 import type { Server } from 'http';
-import type { MldsaPrivateJwk, MlkemPrivateJwk, MlkemPublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import type { MldsaPrivateJwk, MlkemPrivateJwk, MlkemPublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { QueueAdapter } from '../../adapters/queue';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { TenantsCacheManager } from '../../managers/TenantsCacheManager';
@@ -27,7 +27,7 @@ import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confiden
 import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { startServer } from '../../server';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { Content } from 'gdc-common-utils-ts/utils/content';
 import { QueueAdapterMem } from '../../adapters/queue-mem';
 import { testPayloadCreateTenant1, testTenant1Data } from '../data/end-to-end.data';

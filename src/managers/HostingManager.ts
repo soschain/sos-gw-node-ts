@@ -43,7 +43,7 @@ import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import { ParameterData } from 'gdc-common-utils-ts/models/params';
 import { normalizeCodeSystemAndValue } from '../utils/normalize-codeAndSystem';
 import { VerificationMethod } from 'gdc-common-utils-ts/models/did';
-import { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { issueActivationCodeFromPool, reserveTechnicalControllerSeat } from '../utils/license-issuance';
 import {
@@ -170,7 +170,7 @@ import {
 } from './hosting/hosting-claim-contracts';
 import { SERVICE_ADDITIONAL_TYPE_CLAIM } from '../utils/service-capability-claims';
 import { ClearingHouseService, IClearingHouseService } from '../services/ClearingHouseService';
-import { JwkSet } from 'gdc-common-utils-ts/models/jwk';
+import { JwkSet } from 'antifraud-data-utils-ts/cryptography';
 import {
   parseServiceCapabilityTokens,
 } from 'gdc-common-utils-ts/constants/service-capabilities';
@@ -193,7 +193,7 @@ import {
   ACTION_STATUS,
 } from '../constants/domain';
 import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
-import type { ICryptography } from 'gdc-common-utils-ts/interfaces/ICryptography';
+import type { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { verifyOrganizationTestNetworkCredential } from './hosting/organization-test-network-credential';
 import { registerOrganizationOnLedger } from '../utils/ledger-organization-registration';
 import { OrganizationDidBindingEntryTypes } from 'gdc-common-utils-ts/utils/organization-did-binding';

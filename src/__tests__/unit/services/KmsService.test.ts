@@ -4,14 +4,15 @@
 import { jest } from '@jest/globals';
 import { KmsService } from '../../../services/KmsService';
 import { Content } from 'gdc-common-utils-ts/utils/content';
-import { ICryptography } from 'gdc-common-utils-ts/interfaces/ICryptography';
-import { MldsaPublicJwk, MlkemPublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
+import { MldsaPublicJwk, MlkemPublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { JWK } from '../../../gdc-backend-utils-node/models/jwk';
-import { DataCompactJWT } from 'gdc-common-utils-ts/models/jwt';
+import { DataCompactJWT } from 'antifraud-data-utils-ts/cryptography';
 import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { InMemoryEnvelopeAdapter } from '../../../services/kms-envelope-adapter';
 import { InMemoryWrappedKeyRepository } from '../../../services/wrapped-key-repository';
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 
 // Mock the dependency
 const mockCryptoService: jest.Mocked<ICryptography> = {
@@ -102,6 +103,51 @@ describe('KmsService', () => {
   });
 
   describe('decodeRequest', () => {
+    it('normalizes encoded JSON JWS fields before projecting the decoded request', async () => {
+      await kmsService.init();
+      const header = { alg: 'ML-DSA-44', kid: 'example-sender-key' };
+      const payload = { thid: SAFE.resourceUuid, iss: SAFE.didWeb, aud: SAFE.subjectCardProviders.humanIndexDid, type: 'api+json', body: { data: [] } };
+      const signature = Content.bytesToRawBase64UrlSafe(Uint8Array.of(1, 2, 3));
+      mockCryptoService.getRecipientKidsFromJwe.mockReturnValue([mockMlkemPublicKey.kid]);
+      mockCryptoService.decryptJwe.mockResolvedValue({ decryptedBytes: Content.stringToBytesUTF8('example-json-jws'), protectedHeader: { cty: 'JWS' } });
+      mockCryptoService.parseCompactJws.mockReturnValue({
+        protected: Content.objectToRawBase64UrlSafe(header),
+        payload: Content.objectToRawBase64UrlSafe(payload),
+        signature,
+      });
+      const job = await kmsService.decodeRequest('example-jwe');
+      expect(job.content?.body).toEqual(payload.body);
+      expect(job.content?.iss).toBe(payload.iss);
+      expect(job.content?.meta?.jws?.protected).toEqual(header);
+      expect(job.content?.meta?.jws?.signature).toBe(signature);
+    });
+
+    it.each(['protected', 'payload', 'signature'] as const)('rejects malformed encoded JSON JWS %s', async (field) => {
+      await kmsService.init();
+      const parsed: DataCompactJWT = {
+        protected: Content.objectToRawBase64UrlSafe({ alg: 'ML-DSA-44', kid: 'example-key' }),
+        payload: Content.objectToRawBase64UrlSafe({ body: { data: [] } }),
+        signature: Content.bytesToRawBase64UrlSafe(Uint8Array.of(1, 2, 3)),
+      };
+      parsed[field] = '%';
+      mockCryptoService.getRecipientKidsFromJwe.mockReturnValue([mockMlkemPublicKey.kid]);
+      mockCryptoService.decryptJwe.mockResolvedValue({ decryptedBytes: Content.stringToBytesUTF8('example-json-jws'), protectedHeader: { cty: 'JWS' } });
+      mockCryptoService.parseCompactJws.mockReturnValue(parsed);
+      await expect(kmsService.decodeRequest('example-jwe')).rejects.toThrow();
+    });
+
+    it.each(['null', '[]', '"text"'])('rejects a JSON JWS request payload outside the object profile: %s', async (payload) => {
+      await kmsService.init();
+      mockCryptoService.getRecipientKidsFromJwe.mockReturnValue([mockMlkemPublicKey.kid]);
+      mockCryptoService.decryptJwe.mockResolvedValue({ decryptedBytes: Content.stringToBytesUTF8('example-json-jws'), protectedHeader: { cty: 'JWS' } });
+      mockCryptoService.parseCompactJws.mockReturnValue({
+        protected: Content.objectToRawBase64UrlSafe({ alg: 'ML-DSA-44' }),
+        payload: Content.bytesToRawBase64UrlSafe(Content.stringToBytesUTF8(payload)),
+        signature: Content.bytesToRawBase64UrlSafe(Uint8Array.of(1, 2, 3)),
+      });
+      await expect(kmsService.decodeRequest('example-jwe')).rejects.toThrow('must be JSON objects');
+    });
+
     it('should decrypt a JWE and return the parsed JWS payload', async () => {
       // Arrange
       await kmsService.init(); 

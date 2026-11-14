@@ -7,7 +7,7 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
  */
 import * as express from 'express';
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { AdapterCryptoSdkNode } from '../../gdc-backend-utils-node/adapters/node/crypto';
 import { AsyncResponseStoreMem } from '../../adapters/async-response-store.mem';
 import { QueueAdapterMem } from '../../adapters/queue-mem';

@@ -2,8 +2,8 @@ import { validate as uuidValidate } from 'uuid';
 import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
 import { getBaseUrlFromDidWeb } from '../../utils/did-backend';
-import { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
-import { JwkSet } from 'gdc-common-utils-ts/models/jwk';
+import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
+import { JwkSet } from 'antifraud-data-utils-ts/cryptography';
 import {
   ORGANIZATION_ACTIVATION_VC_TYPES,
   REPRESENTATIVE_ACTIVATION_VC_TYPES,

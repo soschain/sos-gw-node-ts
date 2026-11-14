@@ -1,5 +1,15 @@
 ## Unreleased
 
+- Use the neutral Antifraud cryptography engine and key/byte contracts for
+  Gateway bootstrap, KMS, key handling and consuming tests. Preserve caller-
+  owned key custody and the existing confidential envelope profiles.
+- Normalize encoded and decoded nested JWS fields at the KMS adapter boundary;
+  reject malformed encodings and non-object request payloads before projecting
+  the job. This decoding step does not verify or authorize the nested signature.
+- Make the memory queue's drain helper wait for active workers and their final
+  response writes, including failures, rather than resolving when a job has
+  merely been dequeued. Keep existing processing concurrency unchanged.
+
 - Consume standard OperationOutcome issue codes from FHIR utilities and the
   runtime ManagerError/status policy from SOS SDK Core in production and tests.
   Unknown runtime issue codes now fail with exception/500 rather than reading

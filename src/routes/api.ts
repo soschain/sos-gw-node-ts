@@ -12,12 +12,12 @@ import { createJobName } from '../utils/naming';
 import { isRequestValid } from '../utils/request-validator';
 import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { Content } from 'antifraud-data-utils-ts/cryptography';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
-import { JWK } from 'gdc-common-utils-ts/models/jwk';
+import { JWK } from 'antifraud-data-utils-ts/cryptography';
 import { VerificationMethod } from '../gdc-backend-utils-node/models/did';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
-import { ICryptography } from 'gdc-common-utils-ts/interfaces/ICryptography';
+import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { getTenantVaultIdFromIss, getTenantVaultId } from '../utils/tenant';
 import { composeHostDidWebId } from '../utils/did-backend';
 import { buildGaiaXLegalParticipantOptionsFromClaims, createGaiaXLegalParticipantCredential } from '../utils/credential-generators';
@@ -34,7 +34,7 @@ import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confiden
 import { resolveHostRegistrySector } from '../utils/services';
 import { isEncryptionJwk, isSignatureJwk } from '../managers/hosting/registration-keys';
 import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import type { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { getClaimValue } from '../utils/claims';
 import { isVerifiedBearerBoundToActorDid } from '../utils/authenticated-job-actor';
 import {

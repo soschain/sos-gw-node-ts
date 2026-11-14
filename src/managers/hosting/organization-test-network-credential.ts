@@ -1,5 +1,5 @@
-import type { ICryptography } from 'gdc-common-utils-ts/interfaces/ICryptography';
-import type { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import type { ICryptography } from 'antifraud-data-utils-ts/cryptography';
+import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { DidDocument, VerificationMethod } from 'gdc-common-utils-ts/models/did';
 import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
 import {

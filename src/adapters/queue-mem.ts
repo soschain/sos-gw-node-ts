@@ -21,6 +21,7 @@ import { IAsyncResponseStore, StoredJob } from './async-response-store.mem';
  */
 export class QueueAdapterMem implements QueueAdapter {
   private queue: { name: string; request: JobRequest; priority: number }[] = [];
+  private activeJobs = 0;
   private responseStore: IAsyncResponseStore;
   private worker: Worker;
   private intervalId: NodeJS.Timeout | null = null;
@@ -54,6 +55,7 @@ export class QueueAdapterMem implements QueueAdapter {
           console.error(`Job ${job.name} is missing a 'thid'. Skipping.`);
           return;
         }
+        this.activeJobs += 1;
         try {
           // Delegate to the worker, which now returns the final, encrypted JWE string.
           const encryptedResult = await this.worker.process(job.name, job.request);
@@ -78,6 +80,8 @@ export class QueueAdapterMem implements QueueAdapter {
           console.error(errorMessage);
           const finalResult: StoredJob = { status: 'FAILED', result: JSON.stringify({ error: errorMessage }) };
           await this.responseStore.set(thid, finalResult);
+        } finally {
+          this.activeJobs -= 1;
         }
       }
     }
@@ -102,13 +106,13 @@ export class QueueAdapterMem implements QueueAdapter {
   }
   
   /**
-   * FOR TESTING ONLY: Returns a promise that resolves when the queue is empty.
+   * FOR TESTING ONLY: Resolves after queued jobs, active workers and response writes finish.
    * This is crucial for synchronous testing of asynchronous operations.
    */
   public async waitForEmptyQueue(): Promise<void> {
     return new Promise(resolve => {
       const checkQueue = () => {
-        if (this.queue.length === 0) {
+        if (this.queue.length === 0 && this.activeJobs === 0) {
           resolve();
         } else {
           setTimeout(checkQueue, 50); // Check again after a short delay

@@ -20,7 +20,7 @@ import { getTenantVaultId } from '../utils/tenant';
 import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
 import { DeviceLicense, DeviceInfo } from 'gdc-common-utils-ts/models/device-license';
 import { getEnvSectionId } from '../utils/section-env';
-import { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import { DidDocument, VerificationMethod } from '../gdc-backend-utils-node/models/did';
 import { registerSubjectKeysOnLedger, revokeSubjectKeysOnLedger } from '../utils/ledger-device-registration';

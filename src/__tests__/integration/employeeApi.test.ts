@@ -11,7 +11,7 @@
 
 import express from 'express';
 import { createApiRouter } from '../../routes/api';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { QueueAdapter } from '../../adapters/queue';
 import { TenantsCacheManager } from '../../managers/TenantsCacheManager';
 import { testEncryptedJwe1 } from '../data/async-response.data';

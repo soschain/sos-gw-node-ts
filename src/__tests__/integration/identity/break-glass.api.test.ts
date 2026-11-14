@@ -1,5 +1,6 @@
+// Flow contract: emergency access requires the route-bound subject and clinical evidence; cryptographic material alone grants no access.
 import express from 'express';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import type { QueueAdapter } from '../../../adapters/queue';
 import { AsyncResponseStoreMem } from '../../../adapters/async-response-store.mem';

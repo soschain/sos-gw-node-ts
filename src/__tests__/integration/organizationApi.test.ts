@@ -13,7 +13,7 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { createApiRouter } from '../../routes/api';
 import { QueueAdapter } from '../../adapters/queue';
 import { TenantsCacheManager } from '../../managers/TenantsCacheManager';
@@ -37,11 +37,11 @@ import {
 import { withCanonicalEntryClaims } from '../helpers/canonical-bundle-entry';
 import { ORGANIZATION_REGISTRATION_JOB } from '../data/example-jobs';
 import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { MlkemPrivateJwk, MlkemPublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import { MlkemPrivateJwk, MlkemPublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { createHash } from 'crypto';
 import { Content } from 'gdc-common-utils-ts/utils/content';
 import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { JWK } from 'gdc-common-utils-ts/models/jwk';
+import { JWK } from 'antifraud-data-utils-ts/cryptography';
 import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
 import { HostingManager } from '../../managers/HostingManager';
 import type { IHostRuntime } from '../../managers/IHostRuntime';

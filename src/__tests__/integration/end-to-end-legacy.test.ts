@@ -45,7 +45,7 @@ import { LicenseManager } from '../../managers/LicenseManager';
 import { ManagerRegistry } from '../../managers/registry';
 import { Worker } from '../../worker';
 import { KmsService } from '../../services/KmsService';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { AdapterCryptoSdkNode } from '../../gdc-backend-utils-node/adapters/node/crypto';
 import { BlockchainAdapterMem } from '../../adapters/BlockchainAdapterMem';
 import { StorageMemAdapter } from '../../database/storage/mem.storage.adapter';

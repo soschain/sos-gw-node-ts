@@ -1,7 +1,7 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { resolveHostPhysicalCollectionName } from '../../../config/storage-layout';
 import * as express from 'express';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import type { IServerConfig } from '../../../config';
 import { AsyncResponseStoreMem } from '../../../adapters/async-response-store.mem';
 import { QueueAdapterMem } from '../../../adapters/queue-mem';

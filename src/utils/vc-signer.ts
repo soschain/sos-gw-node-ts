@@ -4,7 +4,7 @@ import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { canonicalize } from './json-canon';
 import { createHash } from 'crypto';
 import { p256, p384 } from '@noble/curves/nist.js';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { Content } from 'antifraud-data-utils-ts/cryptography';
 
 /**
  * Creates the JWS detached payload by canonicalizing, hashing, and Base64Url-encoding the input object,

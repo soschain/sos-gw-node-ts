@@ -12,7 +12,7 @@ import { GcsStorageAdapter } from '../database/storage/gcs.storage.adapter';
 import { IpfsStorageAdapter } from '../database/storage/ipfs.storage.adapter';
 import { StorageMemAdapter } from '../database/storage/mem.storage.adapter';
 import { StorageAdapterConfidentialBlobStore } from '../database/storage/storage-adapter-confidential-blob.store';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { AdapterCryptoSdkNode } from '../gdc-backend-utils-node/adapters/node/crypto';
 import type { ILogger } from '../loggers/ILogger';
 import { ConsoleLogger } from '../loggers/ConsoleLogger';

@@ -1,10 +1,10 @@
-// src/__tests__/unit/managers/TenantsCacheManager.url.test.ts
+// Flow contract: tenant endpoint URLs derive from the configured route while tenant key material stays with the configured KMS.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
 import { KmsService } from '../../../services/KmsService';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { AdapterCryptoSdkNode } from '../../../gdc-backend-utils-node/adapters/node/crypto';
 import { testConfigTenant1, testTenant1IdentifierUrn, testHostDidWeb } from '../../data/organization.data';
 import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';

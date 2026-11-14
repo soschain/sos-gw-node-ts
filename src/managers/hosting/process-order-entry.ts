@@ -20,7 +20,7 @@ import { composeHostDidWebId, createHostedDidWeb } from '../../utils/did-backend
 import { generateTenantCollectionNameFromClaims, getTenantVaultId, resolveOrganizationRouteJurisdiction } from '../../utils/tenant';
 import { AllowedIndexableClaims } from '../../gdc-backend-utils-node/models/indexing';
 import { registerOrganizationOnLedger } from '../../utils/ledger-organization-registration';
-import type { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { issueActivationCodeFromPool, reserveTechnicalControllerSeat } from '../../utils/license-issuance';
 import { getPersonOccupationClaim } from '../../utils/occupation';

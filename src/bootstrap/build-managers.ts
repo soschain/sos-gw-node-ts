@@ -50,7 +50,7 @@ import { GroupManager } from '../managers/GroupManager';
 import { ConsentManager } from '../managers/ConsentManager';
 import { DiscoveryService } from '../services/DiscoveryService';
 import { ClearingHouseService } from '../services/ClearingHouseService';
-import type { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import type { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { buildUnidManagers } from '../extensions/unid/build-unid-managers';
 import { composeHostDidWebId } from '../utils/did-backend';
 import type { ITenantsManager } from '../managers/ITenantsManager';

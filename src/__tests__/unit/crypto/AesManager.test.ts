@@ -1,16 +1,17 @@
-// src/__tests__/unit/security/AesManager.test.ts
+// Flow contract: AES-GCM round-trips caller-owned bytes and rejects tampered authentication data.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { jest } from '@jest/globals';
 import { randomBytes } from 'crypto'; // Use Node.js native crypto module
-import { ProtectedDataAES } from 'gdc-common-utils-ts/models/aes';
-import { AesManager } from 'gdc-common-utils-ts';
+import { ProtectedDataAES } from 'antifraud-data-utils-ts/cryptography';
+import { AesManager } from 'antifraud-data-utils-ts/cryptography';
+import { AdapterCryptoSdkNode } from '../../../gdc-backend-utils-node/adapters/node/crypto';
 
 describe('AesManager', () => {
   let aesManager: AesManager;
 
   beforeEach(() => {
-    aesManager = new AesManager();
+    aesManager = new AesManager(new AdapterCryptoSdkNode());
   });
 
   it('should perform a round-trip (encrypt/decrypt) using base64url strings', async () => {
