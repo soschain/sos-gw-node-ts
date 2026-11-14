@@ -1,11 +1,8 @@
 import { createHash } from 'node:crypto';
 import type { ConfidentialBlobInfo, ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import {
-  CONFIDENTIAL_JWE_BLOB_CONTENT_TYPE,
-  hydrateConfidentialStorageDocFromPersistence,
-  isConfidentialStorageDocRecord,
-} from 'gdc-common-utils-ts';
-import { stripUndefinedDeep } from 'gdc-common-utils-ts';
+import { CONFIDENTIAL_JWE_BLOB_CONTENT_TYPE } from 'sos-data-utils-ts/confidential-storage';
+import { hydrateConfidentialStorageDocFromPersistence, isConfidentialStorageDocRecord } from 'sos-sdk-core-ts/confidential-storage-persistence';
+import { stripUndefinedDeep } from 'sos-data-utils-ts/json-projection';
 import type { IConfidentialBlobStore } from '../../storage/IConfidentialBlobStore';
 
 const textEncoder = new TextEncoder();

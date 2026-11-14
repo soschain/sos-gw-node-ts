@@ -4,6 +4,7 @@ import assert from 'node:assert/strict'
 import { readdir, readFile } from 'node:fs/promises'
 import ts from 'typescript'
 const owned=new Set(['RecordBase','VaultConfig','ClaimsRecord','ConfidentialStorageDoc','ConfidentialBlobInfo','IndexedAttribute','IndexedData','AuditInfo','PublicInfo','ResearchInfo','MetaTagCoding','UnprotectedStorageDoc','BundleEntry','BundleJsonApi','BundleEntryRequest','BundleEntryResponse','ErrorEntry','BundleRequest','BundleResponse','JobStatus','JobRequest','JobRequestInfo','DidCommDecodedMetadata','IDecodedDidcommPayload','ServiceEndpointSelector','SecureServiceEndpointSelector','JwsHeader','JwsMultiSign','JwsDetachedSignParts','HttpRequestMethods','HttpStatusCodes','HttpHeaderNames','HttpAuthorizationSchemes','HttpMediaTypes'])
+for (const name of ['stripUndefinedDeep','CONFIDENTIAL_JWE_BLOB_CONTENT_TYPE','hydrateConfidentialStorageDocFromPersistence','externalizeConfidentialStorageDocForPersistence','isConfidentialStorageDocRecord']) owned.add(name)
 test('migrated protocol and record imports/re-exports never use a frozen package',async()=>{
  const root=new URL('../../src/',import.meta.url),violations=[]
  for(const path of (await readdir(root,{recursive:true})).filter(path=>path.endsWith('.ts'))){

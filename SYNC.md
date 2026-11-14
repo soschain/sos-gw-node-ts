@@ -78,3 +78,12 @@ and type check pass. All 48 changed default suites plus three additional crypto,
 queue and storage suites pass 597 tests without pending cases. The full default
 261-suite result above belongs to the preceding foundation checkpoint; configured
 network and browser gates remain pending for the cumulative release.
+
+Encrypted persistence disposition: `adopted` through SOS Data's projection and
+SDK Core's explicit blob ports. Original repository:
+<https://github.com/Global-DataCare/gdc-common-utils-ts>; reviewed
+[persistence helper source](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/utils/confidential-storage-persistence.ts).
+Gateway adapters retain their inline-size policy and share the portable record
+and blob contracts. The type check, ownership guard and six affected repository,
+worker and hydration suites pass 41 tests. SDK Core's registry guard remains
+unresolved until corrected shared dependencies are published and pinned.

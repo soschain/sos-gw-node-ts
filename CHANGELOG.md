@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Use SOS Data's JSON projection/media type and SDK Core's encrypted-blob
+  hydration port in repository adapters. Reuse the shared blob-store contract
+  while retaining gateway-specific inline-size thresholds.
 - Link compatibility notes to the original GitHub repositories and reviewed
   source files instead of using package-version or change-control labels as attribution.
 - Use SOS-owned confidential record/job/batch contracts and HTTP descriptors,
