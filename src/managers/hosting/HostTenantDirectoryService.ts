@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
@@ -144,30 +144,30 @@ export class HostTenantDirectoryService {
   private toSummary(tenant: any): TenantSummary | undefined {
     const claims = tenant?.claims as Record<string, unknown> | undefined;
     if (!claims) return undefined;
-    if (normalized(claims[ClaimsOrganizationSchemaorg.alternateName]).toLowerCase() === 'host') return undefined;
-    const identifierType = normalized(claims[ClaimsOrganizationSchemaorg.identifierType]);
-    const identifierValue = normalized(claims[ClaimsOrganizationSchemaorg.identifierValue]);
+    if (normalized(claims[SchemaOrgOrganizationClaim.AlternateName]).toLowerCase() === 'host') return undefined;
+    const identifierType = normalized(claims[SchemaOrgOrganizationClaim.IdentifierType]);
+    const identifierValue = normalized(claims[SchemaOrgOrganizationClaim.IdentifierValue]);
     if (!identifierValue) return undefined;
-    const legalName = normalized(claims[ClaimsOrganizationSchemaorg.legalName]);
-    const name = normalized(claims[ClaimsOrganizationSchemaorg.name]);
+    const legalName = normalized(claims[SchemaOrgOrganizationClaim.LegalName]);
+    const name = normalized(claims[SchemaOrgOrganizationClaim.Name]);
     const jurisdiction = resolveOrganizationRouteJurisdiction(claims);
     const sector = normalized(
       tenant?.provider?.service?.sectorCategory
-      || claims[ClaimsServiceSchemaorg.category],
+      || claims[SchemaOrgServiceClaim.Category],
     );
     const authorizationStatus = getTenantAuthorizationStatus(tenant);
     const did = normalized(tenant?.didDocument?.id);
     const id = normalized(tenant?.id) || identifierValue;
     const projectedClaims: Record<string, unknown> = {
-      [ClaimsOrganizationSchemaorg.identifierType]: identifierType,
-      [ClaimsOrganizationSchemaorg.identifierValue]: identifierValue,
-      [ClaimsOrganizationSchemaorg.legalName]: legalName,
-      [ClaimsOrganizationSchemaorg.name]: name || legalName,
-      [ClaimsOrganizationSchemaorg.addressCountry]: jurisdiction,
-      [ClaimsServiceSchemaorg.category]: sector,
+      [SchemaOrgOrganizationClaim.IdentifierType]: identifierType,
+      [SchemaOrgOrganizationClaim.IdentifierValue]: identifierValue,
+      [SchemaOrgOrganizationClaim.LegalName]: legalName,
+      [SchemaOrgOrganizationClaim.Name]: name || legalName,
+      [SchemaOrgOrganizationClaim.AddressCountry]: jurisdiction,
+      [SchemaOrgServiceClaim.Category]: sector,
       [GatewayClaim.TenantAuthorizationStatus]: authorizationStatus,
     };
-    if (did) projectedClaims[ClaimsOrganizationSchemaorg.sameAs] = did;
+    if (did) projectedClaims[SchemaOrgOrganizationClaim.SameAs] = did;
     return {
       id,
       sortKey: [identifierValue.toLowerCase(), sector.toLowerCase(), did.toLowerCase()].join('\u0000'),
@@ -177,13 +177,13 @@ export class HostTenantDirectoryService {
 
   private matches(summary: TenantSummary, filters: Record<string, unknown>): boolean {
     const supportedFilters = [
-      ClaimsOrganizationSchemaorg.addressCountry,
-      ClaimsServiceSchemaorg.category,
+      SchemaOrgOrganizationClaim.AddressCountry,
+      SchemaOrgServiceClaim.Category,
       GatewayClaim.TenantAuthorizationStatus,
-      ClaimsOrganizationSchemaorg.identifierType,
-      ClaimsOrganizationSchemaorg.identifierValue,
-      ClaimsOrganizationSchemaorg.legalName,
-      ClaimsOrganizationSchemaorg.name,
+      SchemaOrgOrganizationClaim.IdentifierType,
+      SchemaOrgOrganizationClaim.IdentifierValue,
+      SchemaOrgOrganizationClaim.LegalName,
+      SchemaOrgOrganizationClaim.Name,
     ];
     return supportedFilters.every(name => {
       const expected = normalized(filters[name]).toLowerCase();

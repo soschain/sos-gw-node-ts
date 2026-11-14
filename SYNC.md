@@ -104,3 +104,16 @@ filter advertised capabilities before policy evaluation; family recognition alon
 does not grant access. The type check, scoped ownership guard and six affected
 hosting/discovery suites pass 105 tests with no pending cases. This slice does not
 resolve the remaining project-wide GDC dependencies or registry lockfile gate.
+
+Neutral flat-claim catalog disposition: `adopted` from Antifraud Data, including
+person, organization, service, action, offer, order and individual product fields.
+Original repository: <https://github.com/Global-DataCare/gdc-common-utils-ts>;
+reviewed [flat claim source](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/constants/schemaorg.ts).
+The migration resolves import symbols before changing member names, preserves
+exact indexed wire values and explicitly distinguishes containing identifier
+references from `identifier.value`. Qualified member type queries are migrated
+with their runtime counterparts. The type check, scoped ownership guard and all
+64 changed default consumer suites pass 470 tests without pending cases. This
+includes memory-backed API/queue flows for employees, registration, hosting
+orders and clinical/Consent searches. Configured browser/network gates and the
+project-wide dependency/registry gate remain pending for cumulative acceptance.

@@ -16,12 +16,7 @@ import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { generateTenantCollectionNameFromClaims } from '../../../utils/tenant';
 import { testClaimsHostInitialization } from '../../data/end-to-end.data';
 import { ORGANIZATION_ORDER_JOB, ORGANIZATION_REGISTRATION_JOB } from '../../data/example-jobs';
-import {
-  ClaimsOfferSchemaorg,
-  ClaimsOrderSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { getClaimValue } from '../../../utils/claims';
 import { withCanonicalEntryClaims } from '../../helpers/canonical-bundle-entry';
 import { FAMILY_REGISTRATION_REQUEST, withoutIncompleteJwsProof } from '../../data/example-payloads';
@@ -195,7 +190,7 @@ describe('[/individual/org.schema/Organization/_batch] Integration Tests (sandbo
       body: {
         ...regJob.content!.body,
         data: regJob.content!.body!.data.map((entry: any) => withCanonicalEntryClaims(entry, {
-          [ClaimsServiceSchemaorg.category]: Sector.HEALTH_CARE,
+          [SchemaOrgServiceClaim.Category]: Sector.HEALTH_CARE,
         })),
       },
     } as any;
@@ -203,14 +198,14 @@ describe('[/individual/org.schema/Organization/_batch] Integration Tests (sandbo
     expect(offerPayload.body.data[0]).toMatchObject({ response: { status: '201' } });
     const offerId = getClaimValue<string>(
       offerPayload.body.data[0].resource?.meta?.claims || {},
-      ClaimsOfferSchemaorg.identifier,
+      SchemaOrgOfferClaim.Identifier,
     );
     expect(offerId).toBeDefined();
     const orderJob = structuredClone(ORGANIZATION_ORDER_JOB);
     orderJob.sector = Sector.HEALTH_CARE;
     orderJob.jurisdiction = 'es';
     orderJob.content!.body!.data[0] = withCanonicalEntryClaims(orderJob.content!.body!.data[0]!, {
-      [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
+      [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
     });
     const orderPayload = await hostingManager.process(orderJob);
     expect(orderPayload.body.data[0]).toMatchObject({ response: { status: '201' } });
@@ -343,10 +338,10 @@ describe('[/individual/org.schema/Organization/_batch] Integration Tests (sandbo
           data: [{
             type: 'Family-purge-request-v1.0',
             resource: { meta: { claims: {
-                [ClaimsOrganizationSchemaorg.ownerTelephone]: '+34600000001',
-                [ClaimsOrganizationSchemaorg.ownerEmail]: 'parent@example.com',
-                [ClaimsOrganizationSchemaorg.alternateName]: 'Ana',
-                [ClaimsServiceSchemaorg.category]: Sector.HEALTH_CARE,
+                [SchemaOrgOrganizationClaim.OwnerTelephone]: '+34600000001',
+                [SchemaOrgOrganizationClaim.OwnerEmail]: 'parent@example.com',
+                [SchemaOrgOrganizationClaim.AlternateName]: 'Ana',
+                [SchemaOrgServiceClaim.Category]: Sector.HEALTH_CARE,
               } } },
           }],
         },

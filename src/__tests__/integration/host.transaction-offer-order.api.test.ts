@@ -1,8 +1,9 @@
+// Flow contract: independent identity and commerce claim catalogs preserve exact stored keys and authorization boundaries.
 import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import type { StoryHarness } from './helpers/story-flow';
 import { installIcaVerifyFetchMock, pollJsonBody, startStoryServer, stopStoryServer } from './helpers/story-flow';
 import { invokeExpress } from './helpers/invokeExpress';
-import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   HOST_ORDER_REQUIRED_INPUT_DISPLAY_CLAIMS,
   HOST_TRANSACTION_REQUIRED_INPUT_CLAIMS,
@@ -45,7 +46,7 @@ describe('Host transaction Offer/Order route story', () => {
     transactionPayload.body.data[0].resource.meta = {
       claims: {
         ...(transactionPayload.body.data[0].resource?.meta?.claims || {}),
-        [ClaimsPersonSchemaorg.email]: 'admin1@acme.org',
+        [SchemaOrgPersonClaim.Email]: 'admin1@acme.org',
         'org.schema.Person.hasOccupation.identifier.value': 'RESPRSN',
       },
     };
@@ -67,7 +68,7 @@ describe('Host transaction Offer/Order route story', () => {
     expect(transactionPoll.status).toBe(200);
 
     const transactionEntry = transactionPoll.body.data[0];
-    const offerId = String(transactionEntry.resource?.meta?.claims?.[ClaimsOfferSchemaorg.identifier] || '');
+    const offerId = String(transactionEntry.resource?.meta?.claims?.[SchemaOrgOfferClaim.Identifier] || '');
 
     expect(transactionEntry.response.status).toBe('200');
     expect(transactionEntry.resource?.next?.action).toBe('Order/_batch');
@@ -81,9 +82,9 @@ describe('Host transaction Offer/Order route story', () => {
       meta: {
         claims: {
           '@context': 'org.schema',
-          [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
-          [ClaimsOrderSchemaorg.paymentMethod]: 'Stripe',
-          [ClaimsOrderSchemaorg.partOfInvoice]: 'host-transaction-story-invoice',
+          [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
+          [SchemaOrgOrderClaim.PaymentMethod]: 'Stripe',
+          [SchemaOrgOrderClaim.PartOfInvoice]: 'host-transaction-story-invoice',
         },
       },
     };
@@ -105,7 +106,7 @@ describe('Host transaction Offer/Order route story', () => {
 
     const orderEntry = orderPoll.body.data[0];
     expect(orderEntry.response.status).toBe('201');
-    expect(orderEntry.resource?.meta?.claims?.[ClaimsOrderSchemaorg.acceptedOfferIdentifier]).toBe(offerId);
+    expect(orderEntry.resource?.meta?.claims?.[SchemaOrgOrderClaim.AcceptedOfferIdentifier]).toBe(offerId);
     expect(JSON.stringify(orderEntry.resource)).toContain(
       transactionPayload.body.data[0].resource.organization.did,
     );
@@ -127,7 +128,7 @@ describe('Host transaction Offer/Order route story', () => {
     transactionPayload.body.data[0].resource.meta = {
       claims: {
         ...(transactionPayload.body.data[0].resource?.meta?.claims || {}),
-        [ClaimsPersonSchemaorg.email]: 'admin1@acme.org',
+        [SchemaOrgPersonClaim.Email]: 'admin1@acme.org',
         'org.schema.Person.hasOccupation.identifier.value': 'RESPRSN',
       },
     };
@@ -151,8 +152,8 @@ describe('Host transaction Offer/Order route story', () => {
       meta: {
         claims: {
           '@context': 'org.schema',
-          [ClaimsOrderSchemaorg.paymentMethod]: 'Stripe',
-          [ClaimsOrderSchemaorg.partOfInvoice]: 'host-transaction-missing-offer',
+          [SchemaOrgOrderClaim.PaymentMethod]: 'Stripe',
+          [SchemaOrgOrderClaim.PartOfInvoice]: 'host-transaction-missing-offer',
         },
       },
     };
@@ -190,7 +191,7 @@ describe('Host transaction Offer/Order route story', () => {
     transactionPayload.body.data[0].resource.meta = {
       claims: {
         ...claims,
-        [ClaimsPersonSchemaorg.email]: 'admin1@acme.org',
+        [SchemaOrgPersonClaim.Email]: 'admin1@acme.org',
         'org.schema.Person.hasOccupation.identifier.value': 'RESPRSN',
       },
     };

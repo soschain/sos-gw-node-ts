@@ -16,7 +16,7 @@ import {
   resolveOrganizationRouteJurisdiction,
 } from '../utils/tenant';
 import { DidDocument, DidService, VerificationMethod } from '../gdc-backend-utils-node/models/did';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { getBaseUrlFromDidWeb, normalizeDidDocumentKeyRelationships } from '../utils/did-backend';
 import { parseTenantUrn } from '../utils/urn';
@@ -102,7 +102,7 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
 
   private withHydratedDidServiceConfig(tenantConfig: any): any {
     const alternateName = String(
-      tenantConfig?.claims?.[ClaimsOrganizationSchemaorg.alternateName]
+      tenantConfig?.claims?.[SchemaOrgOrganizationClaim.AlternateName]
       || tenantConfig?.claims?.alternateName
       || '',
     ).trim().toLowerCase();
@@ -112,7 +112,7 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
 
     const sector =
       tenantConfig?.provider?.service?.sectorCategory
-      || tenantConfig?.claims?.[ClaimsServiceSchemaorg.category]
+      || tenantConfig?.claims?.[SchemaOrgServiceClaim.Category]
       || undefined;
     const existingServices = Array.isArray(tenantConfig?.didConfig?.service)
       ? tenantConfig.didConfig.service
@@ -236,8 +236,8 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
       jurisdiction: tenantConfig?.claims
         ? resolveOrganizationRouteJurisdiction(tenantConfig.claims)
         : undefined,
-      alternateName: tenantConfig?.claims?.[ClaimsOrganizationSchemaorg.alternateName] as string | undefined,
-      domainUrl: getTenantServiceClaim(tenantConfig, ClaimsOrganizationSchemaorg.url),
+      alternateName: tenantConfig?.claims?.[SchemaOrgOrganizationClaim.AlternateName] as string | undefined,
+      domainUrl: getTenantServiceClaim(tenantConfig, SchemaOrgOrganizationClaim.Url),
       operationalUrl: getTenantServiceClaim(tenantConfig, SERVICE_OPERATIONAL_URL_CLAIM),
       sector: parseTenantUrn(tenantIdentifierUrn || '')?.sector as Sector | undefined,
       serviceCapabilityClaim: getTenantServiceCapabilityClaim(tenantConfig),
@@ -327,14 +327,14 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
     if (!target || target.toLowerCase() === 'host') return [];
 
     const hostConfig = await this.getTenant('host');
-    const hostIdentifierValue = String(hostConfig?.claims?.[ClaimsOrganizationSchemaorg.identifierValue] || '').trim();
+    const hostIdentifierValue = String(hostConfig?.claims?.[SchemaOrgOrganizationClaim.IdentifierValue] || '').trim();
     if (hostIdentifierValue && hostIdentifierValue === target) {
       return ['host'];
     }
 
     const results = await this.vaultRepository.query(
       this.hostCollectionName,
-      { sectionId: getEnvSectionId('tenants'), where: [{ name: ClaimsOrganizationSchemaorg.identifierValue, value: target }] },
+      { sectionId: getEnvSectionId('tenants'), where: [{ name: SchemaOrgOrganizationClaim.IdentifierValue, value: target }] },
       { hydrate: false },
     );
     const expectedIdentifierType = String(constraints.identifierType || '').trim().toLowerCase();
@@ -347,7 +347,7 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
       const tenantConfig = await this.getTenant(vaultId);
       const claims = tenantConfig?.claims || {};
       if (expectedIdentifierType
-        && String(claims[ClaimsOrganizationSchemaorg.identifierType] || '').trim().toLowerCase() !== expectedIdentifierType) {
+        && String(claims[SchemaOrgOrganizationClaim.IdentifierType] || '').trim().toLowerCase() !== expectedIdentifierType) {
         continue;
       }
       if (expectedTenantDid) {
@@ -356,7 +356,7 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
           ...(Array.isArray(tenantConfig?.didDocument?.alsoKnownAs)
             ? tenantConfig.didDocument.alsoKnownAs.map(String)
             : []),
-          ...normalizePublicAliasList(claims[ClaimsOrganizationSchemaorg.sameAs] as string | string[] | undefined),
+          ...normalizePublicAliasList(claims[SchemaOrgOrganizationClaim.SameAs] as string | string[] | undefined),
         ]);
         if (!tenantDids.includes(expectedTenantDid)) continue;
       }

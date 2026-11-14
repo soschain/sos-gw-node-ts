@@ -1,4 +1,4 @@
-import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
@@ -34,7 +34,7 @@ export async function hasActiveProfessionalIdentityAndLicense(input: {
     try {
       const employee = await input.kmsService.unprotectConfidentialData<any>(document, input.tenantVaultId);
       if (String(employee?.status || '').trim().toLowerCase() !== LICENSE_STATUS_ACTIVE) continue;
-      const email = normalizeIndexedEmail(employee?.claims?.[ClaimsPersonSchemaorg.email]);
+      const email = normalizeIndexedEmail(employee?.claims?.[SchemaOrgPersonClaim.Email]);
       const role = getPersonOccupationClaim(employee?.claims || {});
       if (!email || normalizeCodeSystemAndValue(role) !== normalizeCodeSystemAndValue(input.identity.role)) continue;
       if (buildStableActorIdentifier({ contactKind: 'email', contact: email }) === input.identity.stableActorIdentifier) {

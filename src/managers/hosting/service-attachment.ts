@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
 import type { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
-import { ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { buildPdfSignatureEvidence } from '../../utils/pdf-evidence';
@@ -32,7 +32,7 @@ export async function handleServiceAttachment(
   if (!service) return undefined;
   const claims = service.meta?.claims as Record<string, unknown> | undefined;
   if (!claims) return service;
-  const termsRaw = claims[ClaimsServiceSchemaorg.termsOfService];
+  const termsRaw = claims[SchemaOrgServiceClaim.TermsOfService];
   if (typeof termsRaw !== 'string') return service;
   let termsOfService = termsRaw as string | undefined;
 
@@ -61,8 +61,8 @@ export async function handleServiceAttachment(
       const uploadResult = await deps.storageAdapter.upload(pdfBytes, 'application/pdf');
       if (!uploadResult) throw new Error('Storage adapter returned undefined result.');
       const { publicUrl } = uploadResult;
-      service.meta!.claims[ClaimsServiceSchemaorg.termsOfService] = publicUrl;
-      (service.meta!.claims as any)[`${ClaimsServiceSchemaorg.termsOfService}#hash`] = createHash('sha256')
+      service.meta!.claims[SchemaOrgServiceClaim.TermsOfService] = publicUrl;
+      (service.meta!.claims as any)[`${SchemaOrgServiceClaim.TermsOfService}#hash`] = createHash('sha256')
         .update(pdfBytes)
         .digest('hex');
     } catch (error) {

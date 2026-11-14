@@ -60,7 +60,7 @@ import {
 } from '../constants/domain';
 import { isIso3166CountryCode, isIso3166SubdivisionForCountry } from 'vet-data-utils-ts/iso-jurisdictions';
 import { jurisdictionGrantCovers } from 'sos-data-utils-ts/professional-access-policy';
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { normalizePublicAliasList } from 'gdc-common-utils-ts/utils/same-as';
 import { getAuthenticatedJobActorIdentifiers } from '../utils/authenticated-job-actor';
 import { normalizeIndexedEmail, normalizeIndexedPhone } from '../utils/indexed-contact';
@@ -729,7 +729,7 @@ export class OpenIdAuthManager implements IJobProcessor {
       const aliases = candidateClaims
         && typeof candidateClaims === 'object'
         && !Array.isArray(candidateClaims)
-        ? normalizePublicAliasList(candidateClaims[ClaimsOrganizationSchemaorg.sameAs])
+        ? normalizePublicAliasList(candidateClaims[SchemaOrgOrganizationClaim.SameAs])
         : [];
       return aliases.includes(requestedSubjectDid);
     };

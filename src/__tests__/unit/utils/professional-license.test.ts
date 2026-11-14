@@ -1,6 +1,6 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { describe, expect, it, jest } from '@jest/globals';
-import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { LICENSE_STATUS_ACTIVE } from '../../../constants/domain';
@@ -60,8 +60,8 @@ function createHarness(
     if (document === employeeDocument) return {
       status: LICENSE_STATUS_ACTIVE,
       claims: {
-        [ClaimsPersonSchemaorg.email]: RESEARCH_STUDY_REVIEWER_EMAIL,
-        [ClaimsPersonSchemaorg.hasOccupation]: reviewerRole,
+        [SchemaOrgPersonClaim.Email]: RESEARCH_STUDY_REVIEWER_EMAIL,
+        [SchemaOrgPersonClaim.HasOccupation]: reviewerRole,
       },
     };
     if (document?.jwe?.ciphertext === 'corrupt') throw new Error('licence cannot be decrypted');

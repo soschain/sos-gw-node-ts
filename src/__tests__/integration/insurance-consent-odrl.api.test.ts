@@ -10,10 +10,7 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
  * Persistence invariant: divergent ODRL/claims write neither a rule nor an attachment.
  */
 import { afterEach, expect, it } from '@jest/globals';
-import {
-  ClaimsOrganizationSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
 import { knownDomainsReversedEnum, type Sector } from 'gdc-common-utils-ts/models/urlPath';
@@ -44,16 +41,16 @@ it('fails closed through the HTTP queue when an insurance Consent claim diverges
   const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
   try {
     const hostClaims = {
-      [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-      [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-      [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-      [ClaimsServiceSchemaorg.category]: 'system',
+      [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+      [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+      [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+      [SchemaOrgServiceClaim.Category]: 'system',
     };
     const tenantClaims = {
       ...(testPayloadCreateTenant1.body.data[0].resource.meta.claims as Record<string, unknown>),
-      [ClaimsOrganizationSchemaorg.alternateName]: tenantId,
-      [ClaimsOrganizationSchemaorg.addressCountry]: jurisdiction,
-      [ClaimsServiceSchemaorg.category]: DataspaceSectors.AnimalInsurance,
+      [SchemaOrgOrganizationClaim.AlternateName]: tenantId,
+      [SchemaOrgOrganizationClaim.AddressCountry]: jurisdiction,
+      [SchemaOrgServiceClaim.Category]: DataspaceSectors.AnimalInsurance,
     };
     const tenantVaultId = getTenantVaultId(DataspaceSectors.AnimalInsurance, tenantId);
     await kmsService.provisionKeys(tenantVaultId);

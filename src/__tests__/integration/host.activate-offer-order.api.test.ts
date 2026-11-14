@@ -31,12 +31,7 @@ import type { Server } from 'http';
 import type { QueueAdapterMem } from '../../adapters/queue-mem';
 import { startServer, resetServerConfig } from '../../server';
 import { invokeExpress } from './helpers/invokeExpress';
-import {
-  ClaimsOfferSchemaorg,
-  ClaimsOrderSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { testClaimsTenant1Registration } from '../data/end-to-end.data';
 import { ORGANIZATION_ORDER_REQUEST } from '../data/example-payloads';
 import { ManageAssetOrganization } from '../../blockchain/fabric/v3/manageAssetOrganization';
@@ -57,8 +52,8 @@ function buildActivationPayload(): Record<string, unknown> {
             credentialSubject: {
               id: 'did:web:api.acme.org',
               taxID: 'VATES-B00112233',
-              category: testClaimsTenant1Registration[ClaimsServiceSchemaorg.category],
-              serviceType: testClaimsTenant1Registration[ClaimsServiceSchemaorg.serviceType],
+              category: testClaimsTenant1Registration[SchemaOrgServiceClaim.Category],
+              serviceType: testClaimsTenant1Registration[SchemaOrgServiceClaim.ServiceType],
             },
           },
           {
@@ -99,8 +94,8 @@ function buildActivationPayload(): Record<string, unknown> {
         credentialSubject: {
           id: 'did:web:api.acme.org',
           taxID: 'VATES-B00112233',
-          category: testClaimsTenant1Registration[ClaimsServiceSchemaorg.category],
-          serviceType: testClaimsTenant1Registration[ClaimsServiceSchemaorg.serviceType],
+          category: testClaimsTenant1Registration[SchemaOrgServiceClaim.Category],
+          serviceType: testClaimsTenant1Registration[SchemaOrgServiceClaim.ServiceType],
         },
       },
       representativeCredential: {
@@ -244,7 +239,7 @@ describe('Host activation Offer/Order route story', () => {
 
     const activationResult = JSON.parse(activationPoll.text) as { data: Array<Record<string, any>> };
     const activationEntry = activationResult.data[0];
-    const canonicalOfferId = activationEntry.resource?.meta?.claims?.[ClaimsOfferSchemaorg.identifier];
+    const canonicalOfferId = activationEntry.resource?.meta?.claims?.[SchemaOrgOfferClaim.Identifier];
     const offerId = String(canonicalOfferId || '');
 
     expect(activationEntry.response.status).toBe('201');
@@ -269,9 +264,9 @@ describe('Host activation Offer/Order route story', () => {
     orderPayload.body.data[0].resource.meta = orderPayload.body.data[0].resource.meta || {};
     orderPayload.body.data[0].resource.meta.claims = {
       ...(orderPayload.body.data[0].resource?.meta?.claims || {}),
-      [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
-      [ClaimsOrderSchemaorg.paymentMethod]: 'Stripe',
-      [ClaimsOrderSchemaorg.partOfInvoice]: 'in_activation_route_story',
+      [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
+      [SchemaOrgOrderClaim.PaymentMethod]: 'Stripe',
+      [SchemaOrgOrderClaim.PartOfInvoice]: 'in_activation_route_story',
     };
     orderPayload.body.data[0].meta = {};
 
@@ -303,7 +298,7 @@ describe('Host activation Offer/Order route story', () => {
     // DEV_SEED already contains this tenant, so legacy re-registration is an
     // idempotent update and the Order reports the existing active resource.
     expect(orderEntry.response.status).toBe('200');
-    expect(orderEntry.resource?.meta?.claims?.[ClaimsOrderSchemaorg.acceptedOfferIdentifier]).toBe(offerId);
+    expect(orderEntry.resource?.meta?.claims?.[SchemaOrgOrderClaim.AcceptedOfferIdentifier]).toBe(offerId);
   });
 
   /**
@@ -320,9 +315,9 @@ describe('Host activation Offer/Order route story', () => {
     const uniqueAlternateName = 'acme-wrong-sector';
     activationPayload.body.organizationCredential.credentialSubject.taxID = uniqueTaxId;
     activationPayload.body.representativeCredential.credentialSubject.memberOf.taxID = uniqueTaxId;
-    activationPayload.body.data[0].resource.meta.claims[ClaimsOrganizationSchemaorg.identifierValue] = uniqueTaxId;
-    activationPayload.body.data[0].resource.meta.claims[ClaimsOrganizationSchemaorg.taxId] = uniqueTaxId;
-    activationPayload.body.data[0].resource.meta.claims[ClaimsOrganizationSchemaorg.alternateName] = uniqueAlternateName;
+    activationPayload.body.data[0].resource.meta.claims[SchemaOrgOrganizationClaim.IdentifierValue] = uniqueTaxId;
+    activationPayload.body.data[0].resource.meta.claims[SchemaOrgOrganizationClaim.TaxId] = uniqueTaxId;
+    activationPayload.body.data[0].resource.meta.claims[SchemaOrgOrganizationClaim.AlternateName] = uniqueAlternateName;
 
     const activationSubmit = await invokeExpress(app, {
       method: 'POST',
@@ -346,7 +341,7 @@ describe('Host activation Offer/Order route story', () => {
 
     const activationResult = JSON.parse(activationPoll.text) as { data: Array<Record<string, any>> };
     const offerId = String(
-      activationResult.data[0]?.resource?.meta?.claims?.[ClaimsOfferSchemaorg.identifier] || '',
+      activationResult.data[0]?.resource?.meta?.claims?.[SchemaOrgOfferClaim.Identifier] || '',
     );
     expect(offerId).toContain(':Offer:');
 
@@ -356,9 +351,9 @@ describe('Host activation Offer/Order route story', () => {
     orderPayload.body.data[0].resource = {
       meta: {
         claims: {
-          [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
-          [ClaimsOrderSchemaorg.paymentMethod]: 'Stripe',
-          [ClaimsOrderSchemaorg.partOfInvoice]: 'in_activation_wrong_sector_story',
+          [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
+          [SchemaOrgOrderClaim.PaymentMethod]: 'Stripe',
+          [SchemaOrgOrderClaim.PartOfInvoice]: 'in_activation_wrong_sector_story',
         },
       },
     };
@@ -384,11 +379,11 @@ describe('Host activation Offer/Order route story', () => {
     activationPayload.body.representativeCredential.credentialSubject.memberOf.taxID = uniqueTaxId;
 
     const claims = activationPayload.body.data[0].resource.meta.claims;
-    claims[ClaimsOrganizationSchemaorg.identifierValue] = uniqueTaxId;
-    claims[ClaimsOrganizationSchemaorg.taxId] = uniqueTaxId;
-    claims[ClaimsOrganizationSchemaorg.alternateName] = uniqueTaxId;
-    delete claims[ClaimsOrganizationSchemaorg.legalName];
-    delete claims[ClaimsOrganizationSchemaorg.addressCountry];
+    claims[SchemaOrgOrganizationClaim.IdentifierValue] = uniqueTaxId;
+    claims[SchemaOrgOrganizationClaim.TaxId] = uniqueTaxId;
+    claims[SchemaOrgOrganizationClaim.AlternateName] = uniqueTaxId;
+    delete claims[SchemaOrgOrganizationClaim.LegalName];
+    delete claims[SchemaOrgOrganizationClaim.AddressCountry];
 
     const activationSubmit = await invokeExpress(app, {
       method: HttpRequestMethods.Post,
@@ -412,7 +407,7 @@ describe('Host activation Offer/Order route story', () => {
 
     expect(activationPoll.status).toBe(200);
     expect(activationResult.data[0]?.response?.status).toBe('201');
-    expect(resultClaims?.[ClaimsOrganizationSchemaorg.legalName]).toBe('ICA VERIFIED ORGANIZATION SL');
-    expect(resultClaims?.[ClaimsOrganizationSchemaorg.addressCountry]).toBe('ES');
+    expect(resultClaims?.[SchemaOrgOrganizationClaim.LegalName]).toBe('ICA VERIFIED ORGANIZATION SL');
+    expect(resultClaims?.[SchemaOrgOrganizationClaim.AddressCountry]).toBe('ES');
   });
 });

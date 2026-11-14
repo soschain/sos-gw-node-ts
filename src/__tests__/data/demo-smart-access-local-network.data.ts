@@ -7,7 +7,7 @@ import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { HealthcareBasicSections } from 'gdc-common-utils-ts/constants/healthcare';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
-import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   EXAMPLE_API_ORGANIZATION_DID,
   EXAMPLE_CONSENT_ATTACHMENT_CONTENT_TYPE,
@@ -549,6 +549,6 @@ export function buildDemoResearchRequesterMatrix(): Readonly<{
 export function buildDemoResearchRequesterClaims(email: string): Readonly<Record<string, string>> {
   return Object.freeze({
     '@context': 'org.schema',
-    [ClaimsPersonSchemaorg.email]: String(email || '').trim(),
+    [SchemaOrgPersonClaim.Email]: String(email || '').trim(),
   });
 }

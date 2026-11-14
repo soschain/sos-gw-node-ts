@@ -15,7 +15,7 @@ import type { IVaultRepository } from '../../../database/repositories/vault/vaul
 import type { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
 import { buildOrganizationAuthorizationUrnCds, buildOrganizationEmployeeAuthorizationUrnCds } from 'sos-data-utils-ts/organization-authorization-urn';
 import { FhirIpsCreatorKinds, OrganizationEmployeeSearchResponseEntryTypes } from 'gdc-common-utils-ts';
-import { ClaimsOfferSchemaorg, ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { RecordBase, ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { JwkSet } from '../../../gdc-backend-utils-node/models/jwk';
 import {
@@ -122,7 +122,7 @@ describe('EmployeeManager', () => {
       const licenceAlias = 'urn:example:professional-licence:456';
       const claims = {
         ...testClaimsTenant1Receptionist1,
-        [ClaimsPersonSchemaorg.sameAs]: `${professionalDid}, ${licenceAlias}, ${professionalDid}`,
+        [SchemaOrgPersonClaim.SameAs]: `${professionalDid}, ${licenceAlias}, ${professionalDid}`,
       };
       const job = testBaseJobForEmployeeClaims(claims, TENANT_ALTERNATE_NAME, TENANT_SECTOR);
       mockVaultRepository.put.mockResolvedValue(true);
@@ -132,16 +132,16 @@ describe('EmployeeManager', () => {
 
       const indexedAttributes = (mockKmsService.protectAttributesNameAndValue as any).mock.calls[1][0];
       expect(indexedAttributes).toEqual(expect.arrayContaining([
-        { name: ClaimsPersonSchemaorg.sameAs, value: professionalDid, unique: false, type: 'string' },
-        { name: ClaimsPersonSchemaorg.sameAs, value: licenceAlias, unique: false, type: 'string' },
+        { name: SchemaOrgPersonClaim.SameAs, value: professionalDid, unique: false, type: 'string' },
+        { name: SchemaOrgPersonClaim.SameAs, value: licenceAlias, unique: false, type: 'string' },
       ]));
       expect(indexedAttributes.filter(
-        (attribute: any) => attribute.name === ClaimsPersonSchemaorg.sameAs,
+        (attribute: any) => attribute.name === SchemaOrgPersonClaim.SameAs,
       )).toHaveLength(2);
 
       const docToProtect = mockKmsService.protectConfidentialData.mock.calls[0][0];
       const employeeConfig = docToProtect.content as EntityConfig;
-      expect(employeeConfig.claims[ClaimsPersonSchemaorg.sameAs]).toBe(
+      expect(employeeConfig.claims[SchemaOrgPersonClaim.SameAs]).toBe(
         `${professionalDid}, ${licenceAlias}, ${professionalDid}`,
       );
       expect(employeeConfig.didDocument?.alsoKnownAs).toEqual(expect.arrayContaining([
@@ -159,9 +159,9 @@ describe('EmployeeManager', () => {
 
       const entry = response.body.data[0] as any;
       expect(entry.type).toBe('Employee-license-offer-v1.0');
-      expect(entry.resource.meta.claims[ClaimsOfferSchemaorg.identifier]).toBeDefined();
-      expect(entry.resource.meta.claims[ClaimsOfferSchemaorg.category]).toBe(TENANT_SECTOR);
-      expect(entry.resource.meta.claims[ClaimsOfferSchemaorg.identifier]).toContain(`:${EXAMPLE_JURISDICTION}:v1:${EXAMPLE_SECTOR}:`);
+      expect(entry.resource.meta.claims[SchemaOrgOfferClaim.Identifier]).toBeDefined();
+      expect(entry.resource.meta.claims[SchemaOrgOfferClaim.Category]).toBe(TENANT_SECTOR);
+      expect(entry.resource.meta.claims[SchemaOrgOfferClaim.Identifier]).toContain(`:${EXAMPLE_JURISDICTION}:v1:${EXAMPLE_SECTOR}:`);
       expect(mockVaultRepository.put).toHaveBeenCalledWith(
         HOST_COLLECTION_NAME,
         expect.any(Array),
@@ -169,8 +169,8 @@ describe('EmployeeManager', () => {
       );
       const persistedOffer = (mockVaultRepository.put as any).mock.calls[0][1][0] as ConfidentialStorageDoc;
       expect(persistedOffer.indexed?.attributes?.find(
-        (attribute) => attribute.name === ClaimsOfferSchemaorg.identifier,
-      )?.value).toBe(entry.resource.meta.claims[ClaimsOfferSchemaorg.identifier]);
+        (attribute) => attribute.name === SchemaOrgOfferClaim.Identifier,
+      )?.value).toBe(entry.resource.meta.claims[SchemaOrgOfferClaim.Identifier]);
       expect(mockKmsService.provisionKeys).not.toHaveBeenCalled();
     });
 
@@ -190,8 +190,8 @@ describe('EmployeeManager', () => {
       // Verify that all expected attributes were sent to be protected for indexing
       const signerKid = job.content?.meta?.jws?.protected?.jwk?.kid;
       const encrypterKid = job.content?.meta?.jwe?.header?.jwk?.kid;
-      const email = testClaimsTenant1Receptionist1[ClaimsPersonSchemaorg.email];
-      const roleCode = testClaimsTenant1Receptionist1[ClaimsPersonSchemaorg.hasOccupation];
+      const email = testClaimsTenant1Receptionist1[SchemaOrgPersonClaim.Email];
+      const roleCode = testClaimsTenant1Receptionist1[SchemaOrgPersonClaim.HasOccupation];
 
       expect(mockKmsService.protectAttributesNameAndValue).toHaveBeenNthCalledWith(
         2,
@@ -244,7 +244,7 @@ describe('EmployeeManager', () => {
       const providerDid = 'did:web:provider.example.com';
       const clinicalClaims = {
         ...testClaimsTenant1Receptionist1,
-        [ClaimsPersonSchemaorg.hasOccupation]: role,
+        [SchemaOrgPersonClaim.HasOccupation]: role,
       };
       const sector = role === HealthcareActorRoles.Dentist ? 'health-care' : TENANT_SECTOR;
       const tenantVaultId = `${sector}_${TENANT_ALTERNATE_NAME}`;
@@ -278,7 +278,7 @@ describe('EmployeeManager', () => {
           role,
           verifiedContactIdentifiers: [buildStableActorIdentifier({
             contactKind: 'email',
-            contact: testClaimsTenant1Receptionist1[ClaimsPersonSchemaorg.email],
+            contact: testClaimsTenant1Receptionist1[SchemaOrgPersonClaim.Email],
           })],
         }],
         getClinicalCreatorBindingsSectionId(),
@@ -295,13 +295,13 @@ describe('EmployeeManager', () => {
         occupationId: MOCKED_OCCUPATION_UUID,
         ownerIdentifier: TENANT_URN,
         role: HealthcareActorRoles.Controller,
-        email: testClaimsTenant1Receptionist1[ClaimsPersonSchemaorg.email],
+        email: testClaimsTenant1Receptionist1[SchemaOrgPersonClaim.Email],
       });
       expect(mockVaultRepository.put).not.toHaveBeenCalled();
     });
 
     it('does not create an IPS creator binding for an occupational role outside the governed clinical catalog', async () => {
-      const claims = { ...testClaimsTenant1Receptionist1, [ClaimsPersonSchemaorg.hasOccupation]: 'ISCO-08|9999' };
+      const claims = { ...testClaimsTenant1Receptionist1, [SchemaOrgPersonClaim.HasOccupation]: 'ISCO-08|9999' };
       const job = testBaseJobForEmployeeClaims(claims, TENANT_ALTERNATE_NAME, TENANT_SECTOR);
       (job.content as any).aud = 'did:web:provider.example.com';
       ((job.content as any).body.data[0] as any).resource.id = '31b2c3d4-e5f6-7890-1234-567890abcdef';
@@ -528,11 +528,11 @@ describe('EmployeeManager', () => {
       [`${Isco08Hl7CodingSystem}|2250`, 0],
       ['unknown|2261', 0],
     ])('matches equivalent occupation search tokens without changing stored claims: %s', async (role, count) => {
-      const claims = { ...testClaimsTenant1Receptionist1, [ClaimsPersonSchemaorg.hasOccupation]: HealthcareActorRoles.Dentist };
+      const claims = { ...testClaimsTenant1Receptionist1, [SchemaOrgPersonClaim.HasOccupation]: HealthcareActorRoles.Dentist };
       const job = testBaseJobForEmployeeClaims(claims, TENANT_ALTERNATE_NAME, TENANT_SECTOR);
       job.action = '_search';
       job.content!.body = { resourceType: 'Bundle', type: 'batch', entry: [{ request: {
-        method: 'GET', url: `Employee?${new URLSearchParams({ [ClaimsPersonSchemaorg.hasOccupation]: String(role) })}`,
+        method: 'GET', url: `Employee?${new URLSearchParams({ [SchemaOrgPersonClaim.HasOccupation]: String(role) })}`,
       } }] } as any;
       mockTenantsCacheManager.getTenantIdentifierUrn.mockResolvedValue(TENANT_URN);
       mockTenantsCacheManager.getCollectionName.mockResolvedValue(TENANT_VAULT_ID);
@@ -542,7 +542,7 @@ describe('EmployeeManager', () => {
       }] as ConfidentialStorageDoc[]);
       const response = await employeeManager.process(job);
       expect(response.body.total).toBe(count);
-      if (count) expect((response.body.data[0] as any).resource.claims[ClaimsPersonSchemaorg.hasOccupation]).toBe(HealthcareActorRoles.Dentist);
+      if (count) expect((response.body.data[0] as any).resource.claims[SchemaOrgPersonClaim.HasOccupation]).toBe(HealthcareActorRoles.Dentist);
       expect(mockVaultRepository.put).not.toHaveBeenCalled();
     });
 
@@ -599,7 +599,7 @@ describe('EmployeeManager', () => {
           {
             request: {
               method: 'GET',
-              url: `Employee?${ClaimsPersonSchemaorg.email}=${encodeURIComponent(String(testClaimsTenant1Receptionist1[ClaimsPersonSchemaorg.email]))}`,
+              url: `Employee?${SchemaOrgPersonClaim.Email}=${encodeURIComponent(String(testClaimsTenant1Receptionist1[SchemaOrgPersonClaim.Email]))}`,
             },
           },
         ],
@@ -611,7 +611,7 @@ describe('EmployeeManager', () => {
           id: MOCKED_OCCUPATION_UUID,
           type: 'Occupation',
           employeeId: 'employee-search-hit',
-          meta: { claims: { [ClaimsPersonSchemaorg.hasOccupation]: HealthcareActorRoles.NursingProfessional } },
+          meta: { claims: { [SchemaOrgPersonClaim.HasOccupation]: HealthcareActorRoles.NursingProfessional } },
         } as any,
         {
           id: 'employee-search-hit',
@@ -652,8 +652,8 @@ describe('EmployeeManager', () => {
       expect(response.body.data[0].type).toBe(OrganizationEmployeeSearchResponseEntryTypes.Employee);
       expect(response.body.total).toBe(1);
       expect((response.body.data[0] as any).resource.id).toBe('employee-search-hit');
-      expect((response.body.data[0] as any).resource.claims[ClaimsPersonSchemaorg.email]).toBe(
-        testClaimsTenant1Receptionist1[ClaimsPersonSchemaorg.email],
+      expect((response.body.data[0] as any).resource.claims[SchemaOrgPersonClaim.Email]).toBe(
+        testClaimsTenant1Receptionist1[SchemaOrgPersonClaim.Email],
       );
       expect((response.body.data[0] as any).resource.contained).toEqual([expect.objectContaining({
         id: MOCKED_OCCUPATION_UUID,
@@ -678,8 +678,8 @@ describe('EmployeeManager', () => {
               resourceType: 'Parameters',
               parameter: [
                 {
-                  name: ClaimsPersonSchemaorg.email,
-                  valueString: String(testClaimsTenant1Receptionist1[ClaimsPersonSchemaorg.email]),
+                  name: SchemaOrgPersonClaim.Email,
+                  valueString: String(testClaimsTenant1Receptionist1[SchemaOrgPersonClaim.Email]),
                 },
               ],
             },
@@ -806,7 +806,7 @@ describe('EmployeeManager', () => {
         exp: Math.floor(Date.now() / 1000) + 3600,
         subjectId: 'employee-to-purge',
         activationCode: 'lic-123',
-        issuedToEmail: String(testClaimsTenant1Receptionist1[ClaimsPersonSchemaorg.email]),
+        issuedToEmail: String(testClaimsTenant1Receptionist1[SchemaOrgPersonClaim.Email]),
         issuedToRole: 'ISCO-08|4226',
       } as any;
       const licenseDoc: ConfidentialStorageDoc = {
@@ -837,8 +837,8 @@ describe('EmployeeManager', () => {
     });
 
     it('should return a per-entry conflict for active employees and purge disabled employees in the same bundle', async () => {
-      const activeEmployeeId = String(testClaimsTenant1Receptionist1[ClaimsPersonSchemaorg.identifier]);
-      const disabledEmployeeId = String(testClaimsTenant1Nurse1[ClaimsPersonSchemaorg.identifier]);
+      const activeEmployeeId = String(testClaimsTenant1Receptionist1[SchemaOrgPersonClaim.Identifier]);
+      const disabledEmployeeId = String(testClaimsTenant1Nurse1[SchemaOrgPersonClaim.Identifier]);
       const disableJob = testBaseJobForEmployeeClaims(testClaimsTenant1Nurse1, TENANT_ALTERNATE_NAME, TENANT_SECTOR);
       disableJob.content!.body!.data[0].request.method = 'DELETE';
 
@@ -913,8 +913,8 @@ describe('EmployeeManager', () => {
               exp: Math.floor(Date.now() / 1000) + 3600,
               subjectId: disabledEmployeeId,
               activationCode: 'activation-code-1',
-              issuedToEmail: String(testClaimsTenant1Nurse1[ClaimsPersonSchemaorg.email]),
-              issuedToRole: String(testClaimsTenant1Nurse1[ClaimsPersonSchemaorg.hasOccupation]),
+              issuedToEmail: String(testClaimsTenant1Nurse1[SchemaOrgPersonClaim.Email]),
+              issuedToRole: String(testClaimsTenant1Nurse1[SchemaOrgPersonClaim.HasOccupation]),
             } as any,
           } as ConfidentialStorageDoc,
         ],

@@ -1,5 +1,5 @@
 import { validate as uuidValidate } from 'uuid';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { getBaseUrlFromDidWeb } from '../../utils/did-backend';
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
@@ -43,13 +43,13 @@ export function applyLegalOrganizationIdentityCompatibility(
   organizationCredential?: unknown,
 ): ClaimsRecord {
   const processedClaims = { ...claims };
-  const alternateName = String(processedClaims[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
+  const alternateName = String(processedClaims[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
   const isIndividualOrg = !!(
     processedClaims['org.schema.Organization.owner.telephone']
     || processedClaims['org.schema.Organization.owner.email']
   );
-  const identifierValue = String(processedClaims[ClaimsOrganizationSchemaorg.identifierValue] || '').trim();
-  const identifierType = String(processedClaims[ClaimsOrganizationSchemaorg.identifierType] || '').trim();
+  const identifierValue = String(processedClaims[SchemaOrgOrganizationClaim.IdentifierValue] || '').trim();
+  const identifierType = String(processedClaims[SchemaOrgOrganizationClaim.IdentifierType] || '').trim();
   const subject = Array.isArray((organizationCredential as any)?.credentialSubject)
     ? (organizationCredential as any).credentialSubject[0]
     : (organizationCredential as any)?.credentialSubject;
@@ -60,29 +60,29 @@ export function applyLegalOrganizationIdentityCompatibility(
 
   // The ICA credential has already crossed the activation trust boundary.
   // Legacy activation callers must not duplicate its verified legal identity.
-  if (!String(processedClaims[ClaimsOrganizationSchemaorg.legalName] || '').trim() && credentialLegalName) {
-    processedClaims[ClaimsOrganizationSchemaorg.legalName] = credentialLegalName;
+  if (!String(processedClaims[SchemaOrgOrganizationClaim.LegalName] || '').trim() && credentialLegalName) {
+    processedClaims[SchemaOrgOrganizationClaim.LegalName] = credentialLegalName;
   }
 
   if (!identifierValue && taxId) {
-    processedClaims[ClaimsOrganizationSchemaorg.identifierValue] = taxId;
+    processedClaims[SchemaOrgOrganizationClaim.IdentifierValue] = taxId;
   }
-  const finalIdentifierValue = String(processedClaims[ClaimsOrganizationSchemaorg.identifierValue] || '').trim();
+  const finalIdentifierValue = String(processedClaims[SchemaOrgOrganizationClaim.IdentifierValue] || '').trim();
   const normalizedUuidValue = finalIdentifierValue.startsWith('urn:uuid:')
     ? finalIdentifierValue.slice('urn:uuid:'.length)
     : finalIdentifierValue;
   if (!identifierType && finalIdentifierValue) {
-    processedClaims[ClaimsOrganizationSchemaorg.identifierType] = uuidValidate(normalizedUuidValue) ? 'UUID' : 'TAX';
+    processedClaims[SchemaOrgOrganizationClaim.IdentifierType] = uuidValidate(normalizedUuidValue) ? 'UUID' : 'TAX';
   }
-  if (!String(processedClaims[ClaimsOrganizationSchemaorg.addressCountry] || '').trim()) {
+  if (!String(processedClaims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim()) {
     const addressCountry = credentialAddressCountry
       || inferJurisdictionFromLegalIdentifier(taxId || finalIdentifierValue);
     if (addressCountry) {
-      processedClaims[ClaimsOrganizationSchemaorg.addressCountry] = addressCountry;
+      processedClaims[SchemaOrgOrganizationClaim.AddressCountry] = addressCountry;
     }
   }
   if (!alternateName && !isIndividualOrg && finalIdentifierValue) {
-    processedClaims[ClaimsOrganizationSchemaorg.alternateName] = finalIdentifierValue;
+    processedClaims[SchemaOrgOrganizationClaim.AlternateName] = finalIdentifierValue;
   }
   return processedClaims;
 }
@@ -229,7 +229,7 @@ export function getOperationalServiceBaseUrl(
   }
 
   const normalizedPublicUrl = normalizeTenantPublicUrl(
-    options?.publicTenantUrl || claims[ClaimsOrganizationSchemaorg.url] as string | undefined,
+    options?.publicTenantUrl || claims[SchemaOrgOrganizationClaim.Url] as string | undefined,
   );
   return normalizedPublicUrl;
 }
@@ -406,10 +406,10 @@ export function backfillOrganizationActivationRouteDefaults(
   routeJurisdiction?: string,
 ): ClaimsRecord {
   const processedClaims = { ...claims };
-  const currentCountry = String(processedClaims[ClaimsOrganizationSchemaorg.addressCountry] || '').trim();
+  const currentCountry = String(processedClaims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim();
   const fallbackCountry = String(routeJurisdiction || '').trim().toUpperCase();
   if (!currentCountry && fallbackCountry) {
-    processedClaims[ClaimsOrganizationSchemaorg.addressCountry] = fallbackCountry;
+    processedClaims[SchemaOrgOrganizationClaim.AddressCountry] = fallbackCountry;
   }
   return processedClaims;
 }
@@ -425,11 +425,11 @@ export function logActivationIdentityDiagnostics(input: {
   (input.logger || console).log('[HostingManager] activation identity diagnostics', {
     stage: input.stage,
     routeJurisdiction: String(input.routeJurisdiction || '').trim() || undefined,
-    addressCountry: input.claims[ClaimsOrganizationSchemaorg.addressCountry],
-    identifierType: input.claims[ClaimsOrganizationSchemaorg.identifierType],
-    identifierValue: input.claims[ClaimsOrganizationSchemaorg.identifierValue],
-    alternateName: input.claims[ClaimsOrganizationSchemaorg.alternateName],
-    category: input.claims[ClaimsServiceSchemaorg.category],
-    serviceType: input.claims[ClaimsServiceSchemaorg.serviceType],
+    addressCountry: input.claims[SchemaOrgOrganizationClaim.AddressCountry],
+    identifierType: input.claims[SchemaOrgOrganizationClaim.IdentifierType],
+    identifierValue: input.claims[SchemaOrgOrganizationClaim.IdentifierValue],
+    alternateName: input.claims[SchemaOrgOrganizationClaim.AlternateName],
+    category: input.claims[SchemaOrgServiceClaim.Category],
+    serviceType: input.claims[SchemaOrgServiceClaim.ServiceType],
   });
 }

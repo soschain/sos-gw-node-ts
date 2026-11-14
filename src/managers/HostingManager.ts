@@ -19,7 +19,7 @@ import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
 import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import { ClaimsIndividualProductSchemaorg, ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import type { PostalActivationCodeBinding } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
 import { getBundleResponseTypeForAction } from '../utils/bundle';
@@ -230,7 +230,7 @@ type LegalOrganizationVerificationTransactionNextStep = Readonly<{
   action: 'Order/_batch';
   acceptedOffer: {
     identifier?: string;
-    identifierClaim: typeof ClaimsOrderSchemaorg.acceptedOfferIdentifier;
+    identifierClaim: typeof SchemaOrgOrderClaim.AcceptedOfferIdentifier;
   };
 }>;
 type LegalOrganizationVerificationTransactionResponseResource = Readonly<{
@@ -544,14 +544,14 @@ export class HostingManager {
 
   private assertActivationUrnInputs(claims: ClaimsRecord): void {
     const missing: string[] = [];
-    if (!String(claims[ClaimsOrganizationSchemaorg.addressCountry] || '').trim()) {
-      missing.push(ClaimsOrganizationSchemaorg.addressCountry);
+    if (!String(claims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim()) {
+      missing.push(SchemaOrgOrganizationClaim.AddressCountry);
     }
-    if (!String(claims[ClaimsOrganizationSchemaorg.identifierType] || '').trim()) {
-      missing.push(ClaimsOrganizationSchemaorg.identifierType);
+    if (!String(claims[SchemaOrgOrganizationClaim.IdentifierType] || '').trim()) {
+      missing.push(SchemaOrgOrganizationClaim.IdentifierType);
     }
-    if (!String(claims[ClaimsOrganizationSchemaorg.identifierValue] || '').trim()) {
-      missing.push(ClaimsOrganizationSchemaorg.identifierValue);
+    if (!String(claims[SchemaOrgOrganizationClaim.IdentifierValue] || '').trim()) {
+      missing.push(SchemaOrgOrganizationClaim.IdentifierValue);
     }
     if (missing.length > 0) {
       throw new ManagerError(
@@ -570,10 +570,10 @@ export class HostingManager {
       return createOrganizationUrn({
         namespace: this.config.namespace,
         network: this.getCurrentUrnNetwork(),
-        jurisdiction: claims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+        jurisdiction: claims[SchemaOrgOrganizationClaim.AddressCountry] as string,
         sector: requestedSector,
-        idType: claims[ClaimsOrganizationSchemaorg.identifierType] as string,
-        idValue: claims[ClaimsOrganizationSchemaorg.identifierValue] as string,
+        idType: claims[SchemaOrgOrganizationClaim.IdentifierType] as string,
+        idValue: claims[SchemaOrgOrganizationClaim.IdentifierValue] as string,
       });
     } catch (error: any) {
       throw new ManagerError(
@@ -964,8 +964,8 @@ export class HostingManager {
     })) return undefined;
 
     validateNewOrganizationClaims(normalizedClaims);
-    const alternateName = String(normalizedClaims[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
-    const sector = String(normalizedClaims[ClaimsServiceSchemaorg.category] || '').trim() as Sector;
+    const alternateName = String(normalizedClaims[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
+    const sector = String(normalizedClaims[SchemaOrgServiceClaim.Category] || '').trim() as Sector;
     const vaultId = getTenantVaultId(sector, alternateName);
     if (!await this.vaultRepository.vaultExists(vaultId)) return undefined;
 
@@ -975,16 +975,16 @@ export class HostingManager {
     const tenantUrn = createOrganizationUrn({
       namespace: this.config.namespace,
       network: this.getCurrentUrnNetwork(),
-      jurisdiction: normalizedClaims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+      jurisdiction: normalizedClaims[SchemaOrgOrganizationClaim.AddressCountry] as string,
       sector,
-      idType: normalizedClaims[ClaimsOrganizationSchemaorg.identifierType] as string,
-      idValue: normalizedClaims[ClaimsOrganizationSchemaorg.identifierValue] as string,
+      idType: normalizedClaims[SchemaOrgOrganizationClaim.IdentifierType] as string,
+      idValue: normalizedClaims[SchemaOrgOrganizationClaim.IdentifierValue] as string,
     });
     const hostedTenantDid = createHostedDidWeb(
       composeHostDidWebId(this.config.apiBaseUrl, this.config.hostExternalDomain),
       alternateName,
       {
-        jurisdiction: normalizedClaims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+        jurisdiction: normalizedClaims[SchemaOrgOrganizationClaim.AddressCountry] as string,
         version: 'v1',
         sector,
       },
@@ -1038,10 +1038,10 @@ export class HostingManager {
     await this.tenantsCacheManager.refreshTenant(vaultId);
     return {
       ...normalizedClaims,
-      [ClaimsOrganizationSchemaorg.identifier]: tenantUrn,
+      [SchemaOrgOrganizationClaim.IdentifierReference]: tenantUrn,
       ...(representativeActivationCode ? {
-        [ClaimsIndividualProductSchemaorg.serialNumber]: representativeActivationCode,
-        [ClaimsIndividualProductSchemaorg.category]: 'professional',
+        [SchemaOrgIndividualProductClaim.SerialNumber]: representativeActivationCode,
+        [SchemaOrgIndividualProductClaim.Category]: 'professional',
       } : {}),
     };
   }
@@ -1071,7 +1071,7 @@ export class HostingManager {
       return license?.userClass === LICENSE_USER_CLASS_EMPLOYEE;
     });
     const email = normalizeIndexedEmail(
-      String(input.claims[ClaimsPersonSchemaorg.email] || ''),
+      String(input.claims[SchemaOrgPersonClaim.Email] || ''),
     );
     const role = getPersonOccupationClaim(input.claims);
     const representativeSeat = email && role ? employeeSeats.find((doc) => {
@@ -1114,7 +1114,7 @@ export class HostingManager {
     if (!email || !role) return undefined;
     const organizationOfficialId = resolveLedgerOrganizationId(input.claims);
     const jurisdiction = String(
-      input.claims[ClaimsOrganizationSchemaorg.addressCountry] || '',
+      input.claims[SchemaOrgOrganizationClaim.AddressCountry] || '',
     ).trim();
     if (!jurisdiction) {
       throw new Error('Legal-representative licence requires the authoritative organization jurisdiction.');
@@ -1145,14 +1145,14 @@ export class HostingManager {
           beforePersist: async () => {
             await ensureIssuedRoleLicenseOnLedger({
               identity: ledgerIdentity,
-              sector: String(input.claims[ClaimsServiceSchemaorg.category] || '').trim(),
+              sector: String(input.claims[SchemaOrgServiceClaim.Category] || '').trim(),
             });
           },
         });
     if (representativeSeat) {
       await ensureIssuedRoleLicenseOnLedger({
         identity: ledgerIdentity,
-        sector: String(input.claims[ClaimsServiceSchemaorg.category] || '').trim(),
+        sector: String(input.claims[SchemaOrgServiceClaim.Category] || '').trim(),
       });
       const current = representativeSeat.content as DeviceLicense;
       if (current.ownerOrganizationId !== organizationOfficialId
@@ -1201,8 +1201,8 @@ export class HostingManager {
       try {
         const tenant = await this.kmsService.unprotectConfidentialData<OrganizationConfig>(record, 'host');
         const claims = tenant?.claims as ClaimsRecord | undefined;
-        const tenantId = String(claims?.[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
-        const sector = String(claims?.[ClaimsServiceSchemaorg.category] || '').trim() as Sector;
+        const tenantId = String(claims?.[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
+        const sector = String(claims?.[SchemaOrgServiceClaim.Category] || '').trim() as Sector;
         if (!claims || !tenantId || !sector) continue;
         const tenantVaultId = getTenantVaultId(sector, tenantId);
         await this.reconcileLegacyRepresentativeEmployeeSeats({ tenantVaultId, tenantId, claims });
@@ -1240,7 +1240,7 @@ export class HostingManager {
               tenantVaultId,
             );
             const role = normalizeCodeSystemAndValue(String(
-              employee?.claims?.[ClaimsPersonSchemaorg.additionalType] || '',
+              employee?.claims?.[SchemaOrgPersonClaim.AdditionalType] || '',
             ));
             const did = String(employee?.didDocument?.id || '').trim();
             if (
@@ -1305,14 +1305,14 @@ export class HostingManager {
       if (!record?.id || record.id === 'host') continue;
       const tenant = await this.kmsService.unprotectConfidentialData<OrganizationConfig>(record, 'host');
       const claims = tenant?.claims as ClaimsRecord | undefined;
-      const tenantId = String(claims?.[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
+      const tenantId = String(claims?.[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
       if (!claims || !tenantId || !tenant.didDocument?.id) continue;
 
-      const sector = String(claims[ClaimsServiceSchemaorg.category] || '').trim() as Sector;
-      const jurisdiction = String(claims[ClaimsOrganizationSchemaorg.addressCountry] || '').trim();
+      const sector = String(claims[SchemaOrgServiceClaim.Category] || '').trim() as Sector;
+      const jurisdiction = String(claims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim();
       if (!sector || !jurisdiction) continue;
       const publicTenantUrl = this.normalizeTenantPublicUrl(
-        claims[ClaimsOrganizationSchemaorg.url] as string | undefined,
+        claims[SchemaOrgOrganizationClaim.Url] as string | undefined,
       );
       const operationalTenantUrl = this.getOperationalServiceBaseUrl(claims);
       const hostedByDefault = !publicTenantUrl?.startsWith('https://')
@@ -1325,7 +1325,7 @@ export class HostingManager {
       const didConfigServices = initializeTenantServicesConfig(
         sector,
         [],
-        claims[ClaimsServiceSchemaorg.serviceType] as string | undefined,
+        claims[SchemaOrgServiceClaim.ServiceType] as string | undefined,
         claims[SERVICE_ADDITIONAL_TYPE_CLAIM] as string | undefined,
       );
       const canonicalServices = populateDidDocumentServices(
@@ -1738,7 +1738,7 @@ export class HostingManager {
   ): ClaimsRecord {
     const hostDid = composeHostDidWebId(this.config.apiBaseUrl, this.config.hostExternalDomain);
     const requestedEmployeeCount = Number(
-      claims[ClaimsOrganizationSchemaorg.numberOfEmployees],
+      claims[SchemaOrgOrganizationClaim.NumberOfEmployees],
     );
     const employeeCount = Number.isInteger(requestedEmployeeCount) && requestedEmployeeCount > 0
       ? Math.max(2, requestedEmployeeCount)

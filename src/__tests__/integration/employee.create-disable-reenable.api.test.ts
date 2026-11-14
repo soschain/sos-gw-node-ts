@@ -19,7 +19,7 @@ import {
   EMPLOYEE_REGISTRATION_REQUEST,
 } from '../data/example-payloads';
 import { ORGANIZATION_ORDER_REQUEST } from '../data/example-payloads';
-import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { EXAMPLE_LICENSE_INVOICE_ID, EXAMPLE_LICENSE_PAYMENT_METHOD_STRIPE } from 'gdc-common-utils-ts/examples/shared';
 import { withCanonicalEntryClaims } from '../helpers/canonical-bundle-entry';
 
@@ -63,18 +63,18 @@ describe('Employee create/disable/re-enable route story', () => {
     const poll = await pollJsonBody(harness.app, submit.headers.location, payload.thid);
     expect(poll.status).toBe(200);
     expect(poll.body.data[0].type).toBe('Employee-license-offer-v1.0');
-    expect(poll.body.data[0].resource?.meta?.claims?.[ClaimsOfferSchemaorg.identifier]).toBeTruthy();
+    expect(poll.body.data[0].resource?.meta?.claims?.[SchemaOrgOfferClaim.Identifier]).toBeTruthy();
     expect(poll.body.data[0].resource?.id).toBeUndefined();
 
     // Confirm the exact Offer through the same auditable zero-price Order path
     // used by staging; the following lifecycle tests then consume that seat.
-    const offerId = poll.body.data[0].resource.meta.claims[ClaimsOfferSchemaorg.identifier];
+    const offerId = poll.body.data[0].resource.meta.claims[SchemaOrgOfferClaim.Identifier];
     const orderPayload = structuredClone(ORGANIZATION_ORDER_REQUEST) as any;
     orderPayload.body.data[0].meta = {};
     orderPayload.body.data[0].resource = { meta: { claims: {
-      [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
-      [ClaimsOrderSchemaorg.paymentMethod]: EXAMPLE_LICENSE_PAYMENT_METHOD_STRIPE,
-      [ClaimsOrderSchemaorg.partOfInvoice]: EXAMPLE_LICENSE_INVOICE_ID,
+      [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
+      [SchemaOrgOrderClaim.PaymentMethod]: EXAMPLE_LICENSE_PAYMENT_METHOD_STRIPE,
+      [SchemaOrgOrderClaim.PartOfInvoice]: EXAMPLE_LICENSE_INVOICE_ID,
     } } };
     const orderSubmit = await invokeExpress(harness.app, {
       method: 'POST',

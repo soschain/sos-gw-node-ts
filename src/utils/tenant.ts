@@ -1,7 +1,7 @@
 // src/utils/tenant.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { scopePhysicalCollectionName } from '../config/storage-layout';
@@ -12,8 +12,8 @@ import { scopePhysicalCollectionName } from '../config/storage-layout';
  * the ISO 3166-1 country remains the route jurisdiction.
  */
 export function resolveOrganizationRouteJurisdiction(claims: ClaimsRecord): string {
-  const country = String(claims[ClaimsOrganizationSchemaorg.addressCountry] || '').trim().toUpperCase();
-  const region = String(claims[ClaimsOrganizationSchemaorg.addressRegion] || '').trim().toUpperCase();
+  const country = String(claims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim().toUpperCase();
+  const region = String(claims[SchemaOrgOrganizationClaim.AddressRegion] || '').trim().toUpperCase();
   if (/^[A-Z]{2}-[A-Z0-9]{1,3}$/.test(region) && region.startsWith(`${country}-`)) return region;
   return country;
 }
@@ -34,9 +34,9 @@ export function resolveOrganizationRouteJurisdiction(claims: ClaimsRecord): stri
  */
 export function generateTenantCollectionNameFromClaims(claims: ClaimsRecord): string {
   const countryCode = resolveOrganizationRouteJurisdiction(claims);
-  const idType = claims[ClaimsOrganizationSchemaorg.identifierType];
-  const idValue = claims[ClaimsOrganizationSchemaorg.identifierValue];
-  const sector = claims[ClaimsServiceSchemaorg.category];
+  const idType = claims[SchemaOrgOrganizationClaim.IdentifierType];
+  const idValue = claims[SchemaOrgOrganizationClaim.IdentifierValue];
+  const sector = claims[SchemaOrgServiceClaim.Category];
 
   if (!countryCode || !idType || !idValue || !sector) {
     throw new Error(
@@ -105,7 +105,7 @@ export function getIdentifierUrnFromClaims(claims: any): string | undefined {
   if (!claims) {
     return undefined;
   }
-  return claims[ClaimsOrganizationSchemaorg.identifier] as string;
+  return claims[SchemaOrgOrganizationClaim.IdentifierReference] as string;
 }
 
 

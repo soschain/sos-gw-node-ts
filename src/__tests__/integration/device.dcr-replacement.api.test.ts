@@ -44,7 +44,7 @@ import { generateTenantCollectionNameFromClaims, getTenantVaultId } from '../../
 import { getEnvSectionId } from '../../utils/section-env';
 import { invokeExpress } from './helpers/invokeExpress';
 import { testClaimsHostInitialization, testClaimsTenant1Registration } from '../data/end-to-end.data';
-import { ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { EntityConfig } from '../../gdc-backend-utils-node/models/entity';
@@ -154,7 +154,7 @@ describe('Device DCR multi-device route story', () => {
     await tenantManager.loadHost();
 
     tenantVaultId = getTenantVaultId(
-      String(testClaimsTenant1Registration[ClaimsServiceSchemaorg.category]),
+      String(testClaimsTenant1Registration[SchemaOrgServiceClaim.Category]),
       String(testClaimsTenant1Registration['org.schema.Organization.alternateName']),
     );
     await kmsService.provisionKeys(tenantVaultId);
@@ -262,7 +262,7 @@ describe('Device DCR multi-device route story', () => {
       },
     } as any);
     const addJob = jest.spyOn(queueAdapter, 'addJob').mockResolvedValue(undefined);
-    const tenantSector = String(testClaimsTenant1Registration[ClaimsServiceSchemaorg.category]);
+    const tenantSector = String(testClaimsTenant1Registration[SchemaOrgServiceClaim.Category]);
     const dcrUrl = `/${testTenant1AlternateName}/cds-es/v1/${tenantSector}/${DCR_REGISTRATION_JOB.section}/${DCR_REGISTRATION_JOB.format}/${DCR_REGISTRATION_JOB.resourceType}/${DCR_REGISTRATION_JOB.action}`;
 
     const response = await invokeExpress(app, {
@@ -336,8 +336,8 @@ describe('Device DCR multi-device route story', () => {
       type: EntityType.Person,
       status: EntityLifecycleStatus.Active,
       claims: {
-        [ClaimsPersonSchemaorg.email]: 'doctor1@acme.org',
-        [ClaimsPersonSchemaorg.hasOccupation]: HealthcareActorRoles.Veterinarian,
+        [SchemaOrgPersonClaim.Email]: 'doctor1@acme.org',
+        [SchemaOrgPersonClaim.HasOccupation]: HealthcareActorRoles.Veterinarian,
       } as any,
       didDocument: {
         '@context': 'https://www.w3.org/ns/did/v1',

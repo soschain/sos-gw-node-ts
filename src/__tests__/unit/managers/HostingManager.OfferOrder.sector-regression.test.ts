@@ -8,7 +8,7 @@ import { IServerConfig } from '../../../config';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { ORGANIZATION_REGISTRATION_JOB } from '../../data/example-jobs';
 import { testClaimsHostInitialization } from '../../data/end-to-end.data';
-import { ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import * as tenantUtils from '../../../utils/tenant';
 import { mockKmsService, mockStorageAdapter, mockLogger } from './HostingManager.OfferOrder.test';
 
@@ -86,7 +86,7 @@ test('should FAIL if tenant vaultId is constructed with network sector instead o
     throw new Error('Malformed ORGANIZATION_REGISTRATION_JOB fixture');
   }
   // Forzamos el sector a uno de red (incorrecto para tenant)
-  registrationClaims[ClaimsServiceSchemaorg.category] = Sector.TEST;
+  registrationClaims[SchemaOrgServiceClaim.Category] = Sector.TEST;
   // El manager encapsula errores en el bundle de respuesta (no lanza excepción aquí).
   const response = await hostingManager.process(job as any);
   const issue = (response as any)?.body?.data?.[0]?.response?.outcome?.issue?.[0];

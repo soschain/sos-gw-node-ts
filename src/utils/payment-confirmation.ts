@@ -1,7 +1,7 @@
 // Copyright 2026 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import Stripe from 'stripe';
-import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import {
@@ -37,7 +37,7 @@ function normalizeText(value: unknown): string | undefined {
 }
 
 function resolveOrderPrice(claims: Record<string, unknown>): number {
-  const raw = claims[ClaimsOfferSchemaorg.price];
+  const raw = claims[SchemaOrgOfferClaim.Price];
   const parsed = typeof raw === 'number' ? raw : Number(raw || 0);
   return Number.isFinite(parsed) ? parsed : 0;
 }
@@ -108,24 +108,24 @@ export async function verifyOrderPaymentConfirmation(input: {
   if (amount <= 0 && resolvePaymentOrchestrationMode() === PAYMENT_ORCHESTRATION_MODE_GW_CORE) {
     return {
       verified: true,
-      paymentMethod: normalizeText(orderClaims[ClaimsOrderSchemaorg.paymentMethod]),
-      invoiceId: normalizeText(orderClaims[ClaimsOrderSchemaorg.partOfInvoice]),
-      paymentUrl: normalizeText(orderClaims[ClaimsOrderSchemaorg.paymentUrl]),
+      paymentMethod: normalizeText(orderClaims[SchemaOrgOrderClaim.PaymentMethod]),
+      invoiceId: normalizeText(orderClaims[SchemaOrgOrderClaim.PartOfInvoice]),
+      paymentUrl: normalizeText(orderClaims[SchemaOrgOrderClaim.PaymentUrl]),
     };
   }
 
   if (resolvePaymentOrchestrationMode() === PAYMENT_ORCHESTRATION_MODE_GW_CORE) {
     return {
       verified: true,
-      paymentMethod: normalizeText(orderClaims[ClaimsOrderSchemaorg.paymentMethod]),
-      invoiceId: normalizeText(orderClaims[ClaimsOrderSchemaorg.partOfInvoice]),
-      paymentUrl: normalizeText(orderClaims[ClaimsOrderSchemaorg.paymentUrl]),
+      paymentMethod: normalizeText(orderClaims[SchemaOrgOrderClaim.PaymentMethod]),
+      invoiceId: normalizeText(orderClaims[SchemaOrgOrderClaim.PartOfInvoice]),
+      paymentUrl: normalizeText(orderClaims[SchemaOrgOrderClaim.PaymentUrl]),
     };
   }
 
-  const paymentMethod = normalizeText(orderClaims[ClaimsOrderSchemaorg.paymentMethod]);
-  const invoiceId = normalizeText(orderClaims[ClaimsOrderSchemaorg.partOfInvoice]);
-  const paymentUrl = normalizeText(orderClaims[ClaimsOrderSchemaorg.paymentUrl]);
+  const paymentMethod = normalizeText(orderClaims[SchemaOrgOrderClaim.PaymentMethod]);
+  const invoiceId = normalizeText(orderClaims[SchemaOrgOrderClaim.PartOfInvoice]);
+  const paymentUrl = normalizeText(orderClaims[SchemaOrgOrderClaim.PaymentUrl]);
   if (!paymentMethod) {
     throw new ManagerError(
       'Portal-managed payment confirmation requires Order.paymentMethod in the order claims.',

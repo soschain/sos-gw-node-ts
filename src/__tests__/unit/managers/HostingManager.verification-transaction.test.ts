@@ -1,7 +1,7 @@
 // Flow contract: independent SOS record and job contracts preserve payload, route and lifecycle boundaries.
 // TDD contract: each verification transaction starts with an isolated tenant repository and preserves exact Offer/controller evidence.
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { getEnvSectionId } from '../../../utils/section-env';
 import { DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE } from 'gdc-common-utils-ts/utils/didcomm-submit';
 import {
@@ -109,8 +109,8 @@ function buildTransactionJob(): JobRequest {
     ...requestBody.data[0].resource.meta.claims,
     'org.schema.Organization.alternateName': EXAMPLE_TENANT_ALTERNATE_NAME,
   };
-  delete requestBody.data[0].resource.meta.claims[ClaimsPersonSchemaorg.hasOccupation];
-  requestBody.data[0].resource.meta.claims[ClaimsPersonSchemaorg.hasOccupationalRoleValue] = 'RESPRSN';
+  delete requestBody.data[0].resource.meta.claims[SchemaOrgPersonClaim.HasOccupation];
+  requestBody.data[0].resource.meta.claims[SchemaOrgPersonClaim.OccupationIdentifierValue] = 'RESPRSN';
   return {
     tenantId: 'host',
     jurisdiction: 'es',
@@ -251,7 +251,7 @@ describe('HostingManager legal organization verification transaction', () => {
     const job = buildTransactionJob();
     // The applicant country does not change the legal jurisdiction of an
     // Offer authored by the VetChain host.
-    (job.content!.body!.data[0]!.resource as any).meta.claims[ClaimsOrganizationSchemaorg.addressCountry] = 'US';
+    (job.content!.body!.data[0]!.resource as any).meta.claims[SchemaOrgOrganizationClaim.AddressCountry] = 'US';
     const response = await manager.process(job, 'test', false);
 
     expect(fetchCalls[0]?.url).toBe(
@@ -272,8 +272,8 @@ describe('HostingManager legal organization verification transaction', () => {
     expect(sentBody.attachments?.[0]?.data?.links?.[0]).toBe(
       ORGANIZATION_VERIFICATION_TRANSACTION_REQUEST.attachments?.[0]?.data?.links?.[0],
     );
-    expect(sentBody.body.data[0]?.resource?.meta?.claims?.[ClaimsServiceSchemaorg.serviceType]).toBe(
-      testClaimsRegisterTenantExpanded[ClaimsServiceSchemaorg.serviceType],
+    expect(sentBody.body.data[0]?.resource?.meta?.claims?.[SchemaOrgServiceClaim.ServiceType]).toBe(
+      testClaimsRegisterTenantExpanded[SchemaOrgServiceClaim.ServiceType],
     );
     expect(sentBody.body.data[0]?.meta).toBeUndefined();
 
@@ -282,15 +282,15 @@ describe('HostingManager legal organization verification transaction', () => {
     expect(response.body.data[0]?.response?.status).toBe(EXAMPLE_RESPONSE_STATUS_OK);
     expect(response.body.data[0]?.resource?.icaResponse).toEqual(icaVerifyResponse);
     expect(
-      (response.body.data[0]?.resource as any)?.meta?.claims?.[ClaimsServiceSchemaorg.category],
+      (response.body.data[0]?.resource as any)?.meta?.claims?.[SchemaOrgServiceClaim.Category],
     ).toBe(EXAMPLE_SECTOR);
-    const offerId = String((response.body.data[0]?.resource as any)?.meta?.claims?.[ClaimsOfferSchemaorg.identifier] || '');
+    const offerId = String((response.body.data[0]?.resource as any)?.meta?.claims?.[SchemaOrgOfferClaim.Identifier] || '');
     expect(offerId).toMatch(/^urn:cds:CA-BC:v1:health-care:product:org\.schema:Offer:/);
     expect(response.body.data[0]?.resource?.next).toEqual({
       action: EXAMPLE_NEXT_ACTION,
       acceptedOffer: {
         identifier: offerId,
-        identifierClaim: ClaimsOrderSchemaorg.acceptedOfferIdentifier,
+        identifierClaim: SchemaOrgOrderClaim.AcceptedOfferIdentifier,
       },
     });
     expect(mockVaultRepository.put).toHaveBeenCalledTimes(1);
@@ -384,7 +384,7 @@ describe('HostingManager legal organization verification transaction', () => {
 
       expect(response.body.data[0]?.response?.status).toBe(EXAMPLE_RESPONSE_STATUS_OK);
       expect(resource.next).toBeUndefined();
-      expect(resource.meta.claims[ClaimsOfferSchemaorg.identifier]).toBeUndefined();
+      expect(resource.meta.claims[SchemaOrgOfferClaim.Identifier]).toBeUndefined();
       expect(mockVaultRepository.put).toHaveBeenCalledWith(
         EXAMPLE_HOST_COLLECTION,
         [expect.objectContaining({
@@ -576,7 +576,7 @@ describe('HostingManager legal organization verification transaction', () => {
     );
 
     const job = buildTransactionJob();
-    delete (job.content as any).body.data[0].resource.meta.claims[ClaimsServiceSchemaorg.category];
+    delete (job.content as any).body.data[0].resource.meta.claims[SchemaOrgServiceClaim.Category];
 
     const response = await manager.process(job, 'test', false);
     const errorEntry = response.body.data[0];
@@ -725,7 +725,7 @@ describe('HostingManager legal organization verification transaction', () => {
     // Step 2: existing-tenant `_issue` is a controller/key/email reissue path,
     // not a new commercial onboarding. It must therefore not create a new
     // `org.schema.Offer.identifier`.
-    expect(claims[ClaimsOfferSchemaorg.identifier]).toBeUndefined();
+    expect(claims[SchemaOrgOfferClaim.Identifier]).toBeUndefined();
     // Step 3: no Offer means no workflow hint for `Order/_batch` either.
     expect((responseEntry as any)?.resource?.next).toBeUndefined();
     // Step 4: the License activation code is a separate claims projection. It
@@ -985,7 +985,7 @@ describe('HostingManager legal organization verification transaction', () => {
     const response = await manager.process(buildTransactionJob(), 'test', false);
     const responseEntry = response.body.data[0];
     const claims = (responseEntry?.resource as any)?.meta?.claims || {};
-    const offerId = String(claims[ClaimsOfferSchemaorg.identifier] || '');
+    const offerId = String(claims[SchemaOrgOfferClaim.Identifier] || '');
 
     // Step 1: first-time legal `_transaction` must create the canonical Offer.
     expect(responseEntry?.response?.status).toBe(EXAMPLE_RESPONSE_STATUS_OK);
@@ -994,7 +994,7 @@ describe('HostingManager legal organization verification transaction', () => {
     // source of truth for `Order/_batch`.
     expect((responseEntry as any)?.resource?.next?.acceptedOffer?.identifier).toBe(offerId);
     expect((responseEntry as any)?.resource?.next?.acceptedOffer?.identifierClaim).toBe(
-      ClaimsOrderSchemaorg.acceptedOfferIdentifier,
+      SchemaOrgOrderClaim.AcceptedOfferIdentifier,
     );
   });
 });

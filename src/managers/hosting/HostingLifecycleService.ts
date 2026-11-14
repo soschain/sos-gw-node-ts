@@ -1,10 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { BundleEntry, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { JobRequest } from 'sos-data-utils-ts/confidential-job';
-import {
-  ClaimsOrganizationSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import {
@@ -129,9 +126,9 @@ export class HostingLifecycleService {
       throw new ManagerError('Malformed lifecycle entry: missing meta.claims', IssueType.Required);
     }
 
-    const identifierValue = String(claims[ClaimsOrganizationSchemaorg.identifierValue] || '').trim();
+    const identifierValue = String(claims[SchemaOrgOrganizationClaim.IdentifierValue] || '').trim();
     if (!identifierValue) {
-      throw new ManagerError(`Missing required claim: '${ClaimsOrganizationSchemaorg.identifierValue}'`, IssueType.Required);
+      throw new ManagerError(`Missing required claim: '${SchemaOrgOrganizationClaim.IdentifierValue}'`, IssueType.Required);
     }
 
     /**
@@ -187,7 +184,7 @@ export class HostingLifecycleService {
           resource: { resourceType: ResourceTypesFhirR4.Organization, id: tenantConfig.id, meta: {
             claims: {
               ...claims,
-              [ClaimsOrganizationSchemaorg.identifierValue]: identifierValue,
+              [SchemaOrgOrganizationClaim.IdentifierValue]: identifierValue,
               [GatewayClaim.TenantAuthorizationStatus]: 'revoked',
               [GatewayClaim.TenantAuthorizationChangedBy]: authorization.actorDid || '',
               [GatewayClaim.TenantAuthorizationLifecycleDisposition]: 'purged',
@@ -210,7 +207,7 @@ export class HostingLifecycleService {
         resource: { resourceType: ResourceTypesFhirR4.Organization, id: tenantConfig.id, meta: {
           claims: {
             ...claims,
-            [ClaimsOrganizationSchemaorg.identifierValue]: identifierValue,
+            [SchemaOrgOrganizationClaim.IdentifierValue]: identifierValue,
             [GatewayClaim.TenantAuthorizationStatus]: 'revoked',
             [GatewayClaim.TenantAuthorizationChangedBy]: authorization.actorDid || '',
             [GatewayClaim.TenantAuthorizationLifecycleDisposition]: 'purged',
@@ -231,7 +228,7 @@ export class HostingLifecycleService {
       ? await this.vaultRepository.get<any>(hostCollectionName, 'host', getEnvSectionId('tenants'))
       : (await this.vaultRepository.query(
         hostCollectionName,
-        { sectionId: getEnvSectionId('tenants'), where: [{ name: ClaimsOrganizationSchemaorg.identifierValue, value: identifierValue }] },
+        { sectionId: getEnvSectionId('tenants'), where: [{ name: SchemaOrgOrganizationClaim.IdentifierValue, value: identifierValue }] },
         { hydrate: false },
       )).find((doc) => String(doc?.id || '').trim() === vaultId);
     if (!existing) {
@@ -258,7 +255,7 @@ export class HostingLifecycleService {
       resource: { resourceType: ResourceTypesFhirR4.Organization, id: tenantConfig.id, meta: {
         claims: {
           ...claims,
-          [ClaimsOrganizationSchemaorg.identifierValue]: identifierValue,
+          [SchemaOrgOrganizationClaim.IdentifierValue]: identifierValue,
           [GatewayClaim.TenantAuthorizationStatus]: nextStatus,
           [GatewayClaim.TenantAuthorizationChangedBy]: authorization.actorDid || '',
         },
@@ -286,7 +283,7 @@ export class HostingLifecycleService {
     }
     const claims = (tenantConfig.claims || {}) as Record<string, unknown>;
     const jurisdiction = String(
-      claims[ClaimsOrganizationSchemaorg.addressCountry]
+      claims[SchemaOrgOrganizationClaim.AddressCountry]
         || this.config.host.jurisdiction
         || '',
     );
@@ -298,7 +295,7 @@ export class HostingLifecycleService {
       organizationClaims: claims,
       tenantDid: tenantConfig.didDocument?.id,
       providerDomain: this.config.hostExternalDomain,
-      sector: String(claims[ClaimsServiceSchemaorg.category] || ''),
+      sector: String(claims[SchemaOrgServiceClaim.Category] || ''),
       jurisdiction,
       status,
     });
@@ -313,8 +310,8 @@ export class HostingLifecycleService {
     identifierValue: string,
     claims: Record<string, unknown>,
   ): Promise<string | undefined> {
-    const identifierType = String(claims[ClaimsOrganizationSchemaorg.identifierType] || '').trim();
-    const tenantDid = String(claims[ClaimsOrganizationSchemaorg.sameAs] || '').trim();
+    const identifierType = String(claims[SchemaOrgOrganizationClaim.IdentifierType] || '').trim();
+    const tenantDid = String(claims[SchemaOrgOrganizationClaim.SameAs] || '').trim();
     const matches = await this.tenantsCacheManager.findTenantVaultIdsByIdentifierValue(
       identifierValue,
       { identifierType, tenantDid },
@@ -365,8 +362,8 @@ export class HostingLifecycleService {
     }
 
     const targetIdentifier = {
-      type: tenantConfig.claims?.[ClaimsOrganizationSchemaorg.identifierType],
-      value: tenantConfig.claims?.[ClaimsOrganizationSchemaorg.identifierValue],
+      type: tenantConfig.claims?.[SchemaOrgOrganizationClaim.IdentifierType],
+      value: tenantConfig.claims?.[SchemaOrgOrganizationClaim.IdentifierValue],
     };
     if (!legalOrganizationIdentifiersMatch(
       extractRepresentativeMemberOfLegalIdentifier(representativeCredential),

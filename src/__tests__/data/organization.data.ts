@@ -4,7 +4,7 @@
 
 import { OrganizationConfig } from "../../gdc-backend-utils-node/models/entity";
 import { URN_NAMESPACE, URN_NETWORK, URN_VERSION } from "./urn.data";
-import { ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from "gdc-common-utils-ts/constants/schemaorg";
+import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { serializeServiceCapabilityTokens } from 'sos-data-utils-ts/service-capabilities';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { Sector } from "gdc-common-utils-ts/models/urlPath";
@@ -36,19 +36,19 @@ export const testDefaultHostServiceTypeClaim = serializeServiceCapabilityTokens(
 ]) as string;
 
 export const testClaimsRegisterTenantExpanded = {
-  [ClaimsOrganizationSchemaorg.addressCountry]: "ES",
-  [ClaimsOrganizationSchemaorg.alternateName]: "acme-id",
-  [ClaimsOrganizationSchemaorg.identifierType]: "TAX",
-  [ClaimsOrganizationSchemaorg.identifierValue]: "acme-id",
-  [ClaimsOrganizationSchemaorg.legalName]: "Acme Organization SL",
-  [ClaimsOrganizationSchemaorg.name]: "Acme Org",
-  [ClaimsOrganizationSchemaorg.numberOfEmployees]: 2,
-  [ClaimsOrganizationSchemaorg.url]: "api.acme.org",
-  [ClaimsPersonSchemaorg.email]: "admin1@acme.org",
-  [ClaimsPersonSchemaorg.hasOccupation]: "ISCO-08|1120",
-  [ClaimsServiceSchemaorg.category]: "health-care",
-  [ClaimsServiceSchemaorg.identifier]: "did:web:api-provider.example.com",
-  [ClaimsServiceSchemaorg.serviceType]: testDefaultTenantServiceTypeClaim,
+  [SchemaOrgOrganizationClaim.AddressCountry]: "ES",
+  [SchemaOrgOrganizationClaim.AlternateName]: "acme-id",
+  [SchemaOrgOrganizationClaim.IdentifierType]: "TAX",
+  [SchemaOrgOrganizationClaim.IdentifierValue]: "acme-id",
+  [SchemaOrgOrganizationClaim.LegalName]: "Acme Organization SL",
+  [SchemaOrgOrganizationClaim.Name]: "Acme Org",
+  [SchemaOrgOrganizationClaim.NumberOfEmployees]: 2,
+  [SchemaOrgOrganizationClaim.Url]: "api.acme.org",
+  [SchemaOrgPersonClaim.Email]: "admin1@acme.org",
+  [SchemaOrgPersonClaim.HasOccupation]: "ISCO-08|1120",
+  [SchemaOrgServiceClaim.Category]: "health-care",
+  [SchemaOrgServiceClaim.IdentifierReference]: "did:web:api-provider.example.com",
+  [SchemaOrgServiceClaim.ServiceType]: testDefaultTenantServiceTypeClaim,
 };
 
 // ===================================================================================
@@ -73,12 +73,12 @@ export const testConfigDataHost: OrganizationConfig = {
   status: EntityLifecycleStatus.Active,
   type: EntityType.Organization,
   claims: {
-    [ClaimsOrganizationSchemaorg.alternateName]: testHostAlternateName,
-    [ClaimsOrganizationSchemaorg.legalName]: testHostLegalName,
-    [ClaimsOrganizationSchemaorg.identifierType]: testHostIdType,
-    [ClaimsOrganizationSchemaorg.identifierValue]: testHostIdValue,
-    [ClaimsOrganizationSchemaorg.identifier]: testHostDidWeb,
-    [ClaimsOrganizationSchemaorg.addressCountry]: testHostAddressCountry,
+    [SchemaOrgOrganizationClaim.AlternateName]: testHostAlternateName,
+    [SchemaOrgOrganizationClaim.LegalName]: testHostLegalName,
+    [SchemaOrgOrganizationClaim.IdentifierType]: testHostIdType,
+    [SchemaOrgOrganizationClaim.IdentifierValue]: testHostIdValue,
+    [SchemaOrgOrganizationClaim.IdentifierReference]: testHostDidWeb,
+    [SchemaOrgOrganizationClaim.AddressCountry]: testHostAddressCountry,
   },
   didConfig: { service:[] },
   didDocument: { '@context': ``, id: `` },
@@ -97,24 +97,24 @@ export const testConfigDataHost: OrganizationConfig = {
 // TENANT 1 ORGANIZATION DATA (DERIVED FROM `testClaimsRegisterTenantExpanded`)
 // ===================================================================================
 const testTenant1Uuid = "c1c2c3d4-e5f6-7890-1234-567890abcdef";
-export const testTenant1LegalName = testClaimsRegisterTenantExpanded[ClaimsOrganizationSchemaorg.legalName];
-export const testTenant1AddressCountry = testClaimsRegisterTenantExpanded[ClaimsOrganizationSchemaorg.addressCountry];
-export const testTenant1IdType = testClaimsRegisterTenantExpanded[ClaimsOrganizationSchemaorg.identifierType];
-export const testTenant1IdValue = testClaimsRegisterTenantExpanded[ClaimsOrganizationSchemaorg.identifierValue];
+export const testTenant1LegalName = testClaimsRegisterTenantExpanded[SchemaOrgOrganizationClaim.LegalName];
+export const testTenant1AddressCountry = testClaimsRegisterTenantExpanded[SchemaOrgOrganizationClaim.AddressCountry];
+export const testTenant1IdType = testClaimsRegisterTenantExpanded[SchemaOrgOrganizationClaim.IdentifierType];
+export const testTenant1IdValue = testClaimsRegisterTenantExpanded[SchemaOrgOrganizationClaim.IdentifierValue];
 /**
  * Canonical tenant id used across legal-organization tests.
  *
  * For legal organizations in the current contract, tests should anchor on the
  * tax-id / identifier value (`acme-id` here), not on a separate marketing alias.
  */
-export const testTenant1TenantId = testClaimsRegisterTenantExpanded[ClaimsOrganizationSchemaorg.identifierValue];
+export const testTenant1TenantId = testClaimsRegisterTenantExpanded[SchemaOrgOrganizationClaim.IdentifierValue];
 /**
  * Legacy compatibility alias. Prefer `testTenant1TenantId` in new tests.
  */
 export const testTenant1AlternateName = testTenant1TenantId;
-export const testTenant1Domain = testClaimsRegisterTenantExpanded[ClaimsOrganizationSchemaorg.url];
-export const testTenant1ServiceProviderCategory = testClaimsRegisterTenantExpanded[ClaimsServiceSchemaorg.category] as Sector;
-export const testTenant1Admin1Email = testClaimsRegisterTenantExpanded[ClaimsPersonSchemaorg.email] as string;
+export const testTenant1Domain = testClaimsRegisterTenantExpanded[SchemaOrgOrganizationClaim.Url];
+export const testTenant1ServiceProviderCategory = testClaimsRegisterTenantExpanded[SchemaOrgServiceClaim.Category] as Sector;
+export const testTenant1Admin1Email = testClaimsRegisterTenantExpanded[SchemaOrgPersonClaim.Email] as string;
 
 // --- EXPORTED FOR DEPENDENCIES ---
 export const testTenant1UrlExternal = `https://${testTenant1Domain}/`;
@@ -130,12 +130,12 @@ export const testConfigTenant1: OrganizationConfig = {
   status: EntityLifecycleStatus.Active,
   type: EntityType.Organization,
   claims: {
-    [ClaimsOrganizationSchemaorg.legalName]: testTenant1LegalName,
-    [ClaimsOrganizationSchemaorg.identifierType]: testTenant1IdType,
-    [ClaimsOrganizationSchemaorg.identifierValue]: testTenant1IdValue,
-    [ClaimsOrganizationSchemaorg.identifier]: testTenant1IdentifierUrn,
-    [ClaimsOrganizationSchemaorg.alternateName]: testTenant1AlternateName,
-    [ClaimsOrganizationSchemaorg.addressCountry]: testTenant1AddressCountry,
+    [SchemaOrgOrganizationClaim.LegalName]: testTenant1LegalName,
+    [SchemaOrgOrganizationClaim.IdentifierType]: testTenant1IdType,
+    [SchemaOrgOrganizationClaim.IdentifierValue]: testTenant1IdValue,
+    [SchemaOrgOrganizationClaim.IdentifierReference]: testTenant1IdentifierUrn,
+    [SchemaOrgOrganizationClaim.AlternateName]: testTenant1AlternateName,
+    [SchemaOrgOrganizationClaim.AddressCountry]: testTenant1AddressCountry,
   },
   didConfig: { service:[] },
   didDocument: { '@context': ``, id: `` },  

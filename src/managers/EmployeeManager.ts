@@ -14,7 +14,7 @@ import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
-import { ClaimsOfferSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { determineResourceId } from '../utils/resource';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import { initializeEmployeeServices } from '../utils/services';
@@ -282,7 +282,7 @@ export class EmployeeManager {
     return entries.every(([key, expectedValues]) => {
       const actualValue = this.resolveEmployeeSearchValue(claims, key);
       if (!actualValue) return false;
-      if (key === ClaimsPersonSchemaorg.hasOccupation || key === ClaimsPersonSchemaorg.hasOccupationalRoleValue) {
+      if (key === SchemaOrgPersonClaim.HasOccupation || key === SchemaOrgPersonClaim.OccupationIdentifierValue) {
         const actualCode = readIsco08Code(actualValue);
         return expectedValues.some(value => value === actualValue || (actualCode !== undefined && readIsco08Code(value) === actualCode));
       }
@@ -291,7 +291,7 @@ export class EmployeeManager {
   }
 
   private resolveEmployeeSearchValue(claims: ClaimsRecord, key: string): string | undefined {
-    if (key === ClaimsPersonSchemaorg.hasOccupation || key === ClaimsPersonSchemaorg.hasOccupationalRoleValue) {
+    if (key === SchemaOrgPersonClaim.HasOccupation || key === SchemaOrgPersonClaim.OccupationIdentifierValue) {
       return getPersonOccupationClaim(claims) || undefined;
     }
 
@@ -357,7 +357,7 @@ export class EmployeeManager {
     const explicitResourceId = String((entry as any)?.resource?.id || '').trim();
     if (explicitResourceId) return explicitResourceId;
 
-    const identifierClaim = entry.resource?.meta?.claims?.[ClaimsPersonSchemaorg.identifier];
+    const identifierClaim = entry.resource?.meta?.claims?.[SchemaOrgPersonClaim.Identifier];
     if (typeof identifierClaim !== 'string' || !identifierClaim.trim()) {
       return undefined;
     }
@@ -379,7 +379,7 @@ export class EmployeeManager {
     let signerJwk: PublicJwk | undefined;
     let encrypterJwk: PublicJwk | undefined;
 
-    const email = normalizeIndexedEmail(claims[ClaimsPersonSchemaorg.email]);
+    const email = normalizeIndexedEmail(claims[SchemaOrgPersonClaim.Email]);
     if (!email) {
       throw new ManagerError('Missing or invalid email claim.', IssueType.Required);
     }
@@ -465,7 +465,7 @@ export class EmployeeManager {
       employeeUuid: employeeId,
       roleCode: normalizeCodeSystemAndValue(roleCode).split(/[:|]/).pop() || '',
     });
-    const employeeAliases = normalizePublicAliasList(claims[ClaimsPersonSchemaorg.sameAs]);
+    const employeeAliases = normalizePublicAliasList(claims[SchemaOrgPersonClaim.SameAs]);
 
     // Create verification methods from the provided JWKs
     const verificationMethods: VerificationMethod[] = [
@@ -523,7 +523,7 @@ export class EmployeeManager {
       employeeId: employeeId,
       meta: {
         claims: {
-          [ClaimsPersonSchemaorg.hasOccupation]: roleCode,
+          [SchemaOrgPersonClaim.HasOccupation]: roleCode,
         },
       },
     };
@@ -535,7 +535,7 @@ export class EmployeeManager {
       { name: 'kid', value: signerJwk.kid, unique: false, type: 'string'},
       { name: 'kid', value: encrypterJwk.kid, unique: false, type: 'string'},
       ...employeeAliases.map((alias) => ({
-        name: ClaimsPersonSchemaorg.sameAs,
+        name: SchemaOrgPersonClaim.SameAs,
         value: alias,
         unique: false,
         type: 'string',
@@ -741,7 +741,7 @@ export class EmployeeManager {
         allowedPaymentMethods,
         LICENSE_USER_CLASS_EMPLOYEE,
       );
-      offerClaims[ClaimsOrganizationSchemaorg.alternateName] = params.tenantId;
+      offerClaims[SchemaOrgOrganizationClaim.AlternateName] = params.tenantId;
       await this.persistHostCommercialOffer(offerClaims);
 
       return {
@@ -755,7 +755,7 @@ export class EmployeeManager {
   }
 
   private async persistHostCommercialOffer(claims: Record<string, unknown>): Promise<void> {
-    const offerId = String(claims[ClaimsOfferSchemaorg.identifier] || '').trim();
+    const offerId = String(claims[SchemaOrgOfferClaim.Identifier] || '').trim();
     if (!offerId) return;
 
     const communicationDoc: ConfidentialStorageDoc & { meta?: { claims: Record<string, unknown> } } = {
@@ -859,8 +859,8 @@ export class EmployeeManager {
     claims: ClaimsRecord,
   ): Promise<void> {
     const email = normalizeIndexedEmail(
-      employee.claims?.[ClaimsPersonSchemaorg.email]
-      || claims?.[ClaimsPersonSchemaorg.email]
+      employee.claims?.[SchemaOrgPersonClaim.Email]
+      || claims?.[SchemaOrgPersonClaim.Email]
       || '',
     );
     const roleCode = normalizeCodeSystemAndValue(

@@ -1,4 +1,4 @@
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
@@ -157,7 +157,7 @@ export async function persistHostConfig(deps: PersistHostConfigDeps): Promise<vo
   if (deps.isLedgerRegistrationEnabled()) {
     const containedService = deps.extractContainedService(deps.contained);
     const serviceEvidence = deps.extractServiceEvidence(containedService);
-    const orgId = (deps.allClaims as any)[ClaimsOrganizationSchemaorg.identifier] || deps.org.id;
+    const orgId = (deps.allClaims as any)[SchemaOrgOrganizationClaim.IdentifierReference] || deps.org.id;
     await registerOrganizationOnLedger({
       ledgerConfig: deps.config.ledger,
       hostJurisdiction: deps.config.host.jurisdiction,
@@ -255,7 +255,7 @@ export async function persistTenantConfig(deps: PersistTenantConfigDeps): Promis
     .map((claimKey) => ({
       name: claimKey,
       value: String(deps.allClaims[claimKey]),
-      ...(claimKey === ClaimsOrganizationSchemaorg.alternateName && { unique: true }),
+      ...(claimKey === SchemaOrgOrganizationClaim.AlternateName && { unique: true }),
     }))
     .filter((attr) => attr.value !== 'undefined' && attr.value !== 'null');
 

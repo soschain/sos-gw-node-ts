@@ -2,7 +2,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { v4 as uuidv4 } from 'uuid';
-import { ClaimsOfferSchemaorg, ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { LICENSE_USER_CLASS_EMPLOYEE, LICENSE_USER_CLASS_INDIVIDUAL } from '../constants/domain';
 import {
   resolveVetChainProfessionalLicenseTerms,
@@ -28,7 +28,7 @@ function determineLicenseTier(employeeCount: number): { name: string; price: str
  * @param {string} hostDid The DID of the host issuing the offer.
  * @param {string} jurisdiction The legal jurisdiction of the host issuing the Offer.
  * @param {string} sector The sector for the offer URN.
- * @returns {Record<string, any>} A record of claims compliant with `ClaimsOfferSchemaorg`.
+ * @returns {Record<string, any>} A record of claims using `SchemaOrgOfferClaim`.
  */
 export function generateLicenseOffer(
   employeeCount: number,
@@ -59,18 +59,18 @@ export function generateLicenseOffer(
   const serialNumbers = Array.from({ length: quantity }, () => `lic-${uuidv4().substring(0, 8)}`).join(',');
 
   const offerClaims: Record<string, any> = {
-    [ClaimsOfferSchemaorg.acceptedPaymentMethod]: allowedPaymentMethods.join(','),
-    [ClaimsOfferSchemaorg.category]: normalizedSector,
-    [ClaimsOfferSchemaorg.checkoutPageURLTemplate]: '<payment-url>', // Placeholder to be replaced by the order process
-    [ClaimsOfferSchemaorg.eligibleCustomerType]: eligibleCustomerType,
-    [ClaimsOfferSchemaorg.eligibleQuantityValue]: quantity,
-    [ClaimsOfferSchemaorg.identifier]: `urn:cds:${normalizedJurisdiction}:v1:${normalizedSector}:product:org.schema:Offer:${offerId}`,
-    [ClaimsOfferSchemaorg.itemOfferedName]: tier.name,
-    [ClaimsOfferSchemaorg.itemOfferedSku]: 'web-or-app-identifier',
-    [ClaimsOfferSchemaorg.offeredBy]: normalizedHostDid,
-    [ClaimsOfferSchemaorg.price]: tier.price,
-    [ClaimsOfferSchemaorg.priceCurrency]: professionalTerms?.currency || 'EUR',
-    [ClaimsOfferSchemaorg.serialNumber]: serialNumbers,
+    [SchemaOrgOfferClaim.AcceptedPaymentMethod]: allowedPaymentMethods.join(','),
+    [SchemaOrgOfferClaim.Category]: normalizedSector,
+    [SchemaOrgOfferClaim.CheckoutPageUrlTemplate]: '<payment-url>', // Placeholder to be replaced by the order process
+    [SchemaOrgOfferClaim.EligibleCustomerType]: eligibleCustomerType,
+    [SchemaOrgOfferClaim.EligibleQuantityValue]: quantity,
+    [SchemaOrgOfferClaim.Identifier]: `urn:cds:${normalizedJurisdiction}:v1:${normalizedSector}:product:org.schema:Offer:${offerId}`,
+    [SchemaOrgOfferClaim.ItemOfferedName]: tier.name,
+    [SchemaOrgOfferClaim.ItemOfferedSku]: 'web-or-app-identifier',
+    [SchemaOrgOfferClaim.OfferedBy]: normalizedHostDid,
+    [SchemaOrgOfferClaim.Price]: tier.price,
+    [SchemaOrgOfferClaim.PriceCurrency]: professionalTerms?.currency || 'EUR',
+    [SchemaOrgOfferClaim.SerialNumber]: serialNumbers,
   };
 
   return offerClaims;

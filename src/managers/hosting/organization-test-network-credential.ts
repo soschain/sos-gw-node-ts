@@ -16,7 +16,7 @@ import {
 } from 'gdc-common-utils-ts/utils/test-network-organization-credentials';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 
@@ -79,8 +79,8 @@ export async function verifyOrganizationTestNetworkCredential(
 
   const subject = credential.credentialSubject as Record<string, any>;
   const organizationIdentifier = String(
-    input.claims[ClaimsOrganizationSchemaorg.identifierValue]
-      || input.claims[ClaimsOrganizationSchemaorg.taxId]
+    input.claims[SchemaOrgOrganizationClaim.IdentifierValue]
+      || input.claims[SchemaOrgOrganizationClaim.TaxId]
       || '',
   ).trim();
   if (!organizationIdentifier || subject.organization?.identifier !== organizationIdentifier) {

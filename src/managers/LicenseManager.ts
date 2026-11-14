@@ -51,7 +51,7 @@ import {
   SUBJECT_SECTION_INDIVIDUAL,
 } from '../constants/domain';
 import type { ITenantsManager } from './ITenantsManager';
-import { ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { normalizePublicAliasList } from 'gdc-common-utils-ts/utils/same-as';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import type { OrganizationRoleLicenseSectorPolicy } from 'gdc-common-utils-ts/models/organization-role-license';
@@ -355,7 +355,7 @@ export class LicenseManager implements IJobProcessor {
         const filters = extractLicenseSearchFilters(entry);
         this.assertRegisteredProfileDirectoryContact(job, filters);
         const matches = await this.searchLicenseDocuments(tenantVaultId, filters);
-        if (filters[ClaimsPersonSchemaorg.email]?.length || filters[ClaimsPersonSchemaorg.telephone]?.length) {
+        if (filters[SchemaOrgPersonClaim.Email]?.length || filters[SchemaOrgPersonClaim.Telephone]?.length) {
           await this.repairLegacySelfSubjectBindings(tenantVaultId, matches);
         }
         responseEntries.push(...buildSearchResponseEntries(
@@ -413,10 +413,10 @@ export class LicenseManager implements IJobProcessor {
 
     const expectedEmail = normalizeIndexedEmail(binding.authenticatedEmail);
     const expectedPhone = normalizeIndexedPhone(binding.authenticatedTelephone);
-    const requestedEmails = (filters[ClaimsPersonSchemaorg.email] || [])
+    const requestedEmails = (filters[SchemaOrgPersonClaim.Email] || [])
       .map(normalizeIndexedEmail)
       .filter((value): value is string => Boolean(value));
-    const requestedPhones = (filters[ClaimsPersonSchemaorg.telephone] || [])
+    const requestedPhones = (filters[SchemaOrgPersonClaim.Telephone] || [])
       .map(normalizeIndexedPhone)
       .filter((value): value is string => Boolean(value));
     if ((expectedEmail && requestedEmails.includes(expectedEmail))
@@ -463,7 +463,7 @@ export class LicenseManager implements IJobProcessor {
         tenantVaultId,
       );
       const [authorizedSubjectDid] = normalizePublicAliasList(
-        String(organization?.claims?.[ClaimsOrganizationSchemaorg.sameAs] || ''),
+        String(organization?.claims?.[SchemaOrgOrganizationClaim.SameAs] || ''),
       );
       if (!authorizedSubjectDid) continue;
 

@@ -1,6 +1,6 @@
 // Flow contract: follow docs/LOCAL_FIRST_RELEASE_CONTRACT.md; GW accepts only BFF-reconciled provider-neutral EVM orders and never receives wallet or RPC evidence.
 import { describe, expect, it, beforeEach, afterEach } from '@jest/globals';
-import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { VET_PAYMENT_TEST_DATA } from 'vet-data-utils-ts/payment';
 import {
   PAYMENT_METHOD_STRIPE,
@@ -34,10 +34,10 @@ describe('payment-confirmation', () => {
     process.env.NETWORK_MODE = 'test';
     process.env.DEPLOYMENT_ENV = 'dev';
     const input = {
-      offerClaims: { [ClaimsOfferSchemaorg.price]: '0' },
+      offerClaims: { [SchemaOrgOfferClaim.Price]: '0' },
       orderClaims: {
-        [ClaimsOrderSchemaorg.paymentMethod]: PAYMENT_METHOD_TEST_NETWORK_VIRTUAL,
-        [ClaimsOrderSchemaorg.partOfInvoice]: 'virtual_test_network_zero_local',
+        [SchemaOrgOrderClaim.PaymentMethod]: PAYMENT_METHOD_TEST_NETWORK_VIRTUAL,
+        [SchemaOrgOrderClaim.PartOfInvoice]: 'virtual_test_network_zero_local',
       },
     };
 
@@ -51,11 +51,11 @@ describe('payment-confirmation', () => {
 
     const result = await verifyOrderPaymentConfirmation({
       offerClaims: {
-        [ClaimsOfferSchemaorg.price]: '49.99',
+        [SchemaOrgOfferClaim.Price]: '49.99',
       },
       orderClaims: {
-        [ClaimsOrderSchemaorg.paymentMethod]: PAYMENT_METHOD_STRIPE,
-        [ClaimsOrderSchemaorg.partOfInvoice]: 'in_test_001',
+        [SchemaOrgOrderClaim.PaymentMethod]: PAYMENT_METHOD_STRIPE,
+        [SchemaOrgOrderClaim.PartOfInvoice]: 'in_test_001',
       },
     });
 
@@ -69,10 +69,10 @@ describe('payment-confirmation', () => {
     process.env.NETWORK_MODE = 'test-network';
 
     await expect(verifyOrderPaymentConfirmation({
-      offerClaims: { [ClaimsOfferSchemaorg.price]: '0' },
+      offerClaims: { [SchemaOrgOfferClaim.Price]: '0' },
       orderClaims: {
-        [ClaimsOrderSchemaorg.paymentMethod]: PAYMENT_METHOD_TEST_NETWORK_VIRTUAL,
-        [ClaimsOrderSchemaorg.partOfInvoice]: 'virtual_test_network_zero_001',
+        [SchemaOrgOrderClaim.PaymentMethod]: PAYMENT_METHOD_TEST_NETWORK_VIRTUAL,
+        [SchemaOrgOrderClaim.PartOfInvoice]: 'virtual_test_network_zero_001',
       },
     })).resolves.toMatchObject({
       verified: true,
@@ -82,15 +82,15 @@ describe('payment-confirmation', () => {
 
     process.env.NETWORK_MODE = 'network';
     await expect(verifyOrderPaymentConfirmation({
-      offerClaims: { [ClaimsOfferSchemaorg.price]: '0' },
+      offerClaims: { [SchemaOrgOfferClaim.Price]: '0' },
       orderClaims: {
-        [ClaimsOrderSchemaorg.paymentMethod]: PAYMENT_METHOD_TEST_NETWORK_VIRTUAL,
-        [ClaimsOrderSchemaorg.partOfInvoice]: 'virtual_test_network_zero_001',
+        [SchemaOrgOrderClaim.PaymentMethod]: PAYMENT_METHOD_TEST_NETWORK_VIRTUAL,
+        [SchemaOrgOrderClaim.PartOfInvoice]: 'virtual_test_network_zero_001',
       },
     })).rejects.toThrow('restricted to Test Network');
 
     await expect(verifyOrderPaymentConfirmation({
-      offerClaims: { [ClaimsOfferSchemaorg.price]: '0' },
+      offerClaims: { [SchemaOrgOfferClaim.Price]: '0' },
       orderClaims: {},
     })).rejects.toThrow('Portal-managed payment confirmation requires Order.paymentMethod');
   });
@@ -101,7 +101,7 @@ describe('payment-confirmation', () => {
     await expect(
       verifyOrderPaymentConfirmation({
         offerClaims: {
-          [ClaimsOfferSchemaorg.price]: '49.99',
+          [SchemaOrgOfferClaim.Price]: '49.99',
         },
         orderClaims: {},
       }),
@@ -113,7 +113,7 @@ describe('payment-confirmation', () => {
 
     const result = await verifyOrderPaymentConfirmation({
       offerClaims: {
-        [ClaimsOfferSchemaorg.price]: '49.99',
+        [SchemaOrgOfferClaim.Price]: '49.99',
       },
       orderClaims: {},
     });
@@ -125,12 +125,12 @@ describe('payment-confirmation', () => {
     process.env.PAYMENT_ORCHESTRATION_MODE = PAYMENT_ORCHESTRATION_MODE_PORTAL_BFF;
     const result = await verifyOrderPaymentConfirmation({
       offerClaims: {
-        [ClaimsOfferSchemaorg.price]: VET_PAYMENT_TEST_DATA.priceText,
-        [ClaimsOfferSchemaorg.priceCurrency]: VET_PAYMENT_TEST_DATA.currency,
+        [SchemaOrgOfferClaim.Price]: VET_PAYMENT_TEST_DATA.priceText,
+        [SchemaOrgOfferClaim.PriceCurrency]: VET_PAYMENT_TEST_DATA.currency,
       },
       orderClaims: {
-        [ClaimsOrderSchemaorg.paymentMethod]: PAYMENT_METHOD_EVM_TRANSFER,
-        [ClaimsOrderSchemaorg.partOfInvoice]: VET_PAYMENT_TEST_DATA.invoiceId,
+        [SchemaOrgOrderClaim.PaymentMethod]: PAYMENT_METHOD_EVM_TRANSFER,
+        [SchemaOrgOrderClaim.PartOfInvoice]: VET_PAYMENT_TEST_DATA.invoiceId,
       },
     });
     expect(result).toEqual({
@@ -140,11 +140,11 @@ describe('payment-confirmation', () => {
       paymentUrl: undefined,
     });
     await expect(verifyOrderPaymentConfirmation({
-      offerClaims: { [ClaimsOfferSchemaorg.price]: VET_PAYMENT_TEST_DATA.priceText },
+      offerClaims: { [SchemaOrgOfferClaim.Price]: VET_PAYMENT_TEST_DATA.priceText },
       orderClaims: {
-        [ClaimsOrderSchemaorg.paymentMethod]: PAYMENT_METHOD_EVM_TRANSFER,
-        [ClaimsOrderSchemaorg.partOfInvoice]: VET_PAYMENT_TEST_DATA.invoiceId,
-        [ClaimsOrderSchemaorg.paymentUrl]: VET_PAYMENT_TEST_DATA.transactionHash,
+        [SchemaOrgOrderClaim.PaymentMethod]: PAYMENT_METHOD_EVM_TRANSFER,
+        [SchemaOrgOrderClaim.PartOfInvoice]: VET_PAYMENT_TEST_DATA.invoiceId,
+        [SchemaOrgOrderClaim.PaymentUrl]: VET_PAYMENT_TEST_DATA.transactionHash,
       },
     })).rejects.toThrow('must not send wallet or transaction data to GW');
   });

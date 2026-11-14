@@ -1,7 +1,7 @@
 import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import type { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
 import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import type { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
@@ -63,20 +63,20 @@ export async function finalizeTenantConfig(
       orgClaims[key] = deps.allClaims[key];
     }
   }
-  orgClaims[ClaimsServiceSchemaorg.category] = deps.allClaims[ClaimsServiceSchemaorg.category];
+  orgClaims[SchemaOrgServiceClaim.Category] = deps.allClaims[SchemaOrgServiceClaim.Category];
 
   const tenantUrn = createOrganizationUrn({
     namespace: deps.config.namespace,
     network: deps.getCurrentUrnNetwork(),
     jurisdiction: routeJurisdiction,
     sector: deps.sector,
-    idType: deps.allClaims[ClaimsOrganizationSchemaorg.identifierType] as string,
-    idValue: deps.allClaims[ClaimsOrganizationSchemaorg.identifierValue] as string,
+    idType: deps.allClaims[SchemaOrgOrganizationClaim.IdentifierType] as string,
+    idValue: deps.allClaims[SchemaOrgOrganizationClaim.IdentifierValue] as string,
   });
   const hostDid = composeHostDidWebId(deps.config.apiBaseUrl, deps.config.hostExternalDomain);
   const context = { jurisdiction: routeJurisdiction, version: 'v1', sector: deps.sector };
   const hostedDid = createHostedDidWeb(hostDid, deps.altName, context);
-  const publicTenantUrl = deps.options?.publicTenantUrl || deps.allClaims[ClaimsOrganizationSchemaorg.url] as string | undefined;
+  const publicTenantUrl = deps.options?.publicTenantUrl || deps.allClaims[SchemaOrgOrganizationClaim.Url] as string | undefined;
   const operationalTenantUrl = deps.getOperationalServiceBaseUrl(deps.allClaims, deps.options);
   const externalDid = deps.options?.primaryDid
     || (publicTenantUrl && publicTenantUrl.startsWith('https://') ? `did:web:${new URL(publicTenantUrl).hostname}` : undefined);
@@ -101,7 +101,7 @@ export async function finalizeTenantConfig(
   const didConfigServices = initializeTenantServicesConfig(
     deps.sector,
     [],
-    deps.allClaims[ClaimsServiceSchemaorg.serviceType] as string | undefined,
+    deps.allClaims[SchemaOrgServiceClaim.ServiceType] as string | undefined,
     deps.allClaims[deps.serviceAdditionalTypeClaim] as string | undefined,
   );
   const publicBaseUrl = isHosted ? deps.config.apiBaseUrl : (publicTenantUrl || deps.config.apiBaseUrl);
@@ -229,40 +229,40 @@ export function buildGaiaXLegalParticipantOptionsForTenant(input: {
 
   if (input.isDemoSecurityMode()) {
     const fallbackName = String(
-      enrichedClaims[ClaimsOrganizationSchemaorg.legalName]
-      || enrichedClaims[ClaimsOrganizationSchemaorg.identifierValue]
+      enrichedClaims[SchemaOrgOrganizationClaim.LegalName]
+      || enrichedClaims[SchemaOrgOrganizationClaim.IdentifierValue]
       || alternateName
       || '',
     ).trim();
-    if (fallbackName && !String(enrichedClaims[ClaimsOrganizationSchemaorg.legalName] || '').trim()) {
-      enrichedClaims[ClaimsOrganizationSchemaorg.legalName] = fallbackName;
+    if (fallbackName && !String(enrichedClaims[SchemaOrgOrganizationClaim.LegalName] || '').trim()) {
+      enrichedClaims[SchemaOrgOrganizationClaim.LegalName] = fallbackName;
     }
     const fallbackCountry = String(
-      enrichedClaims[ClaimsOrganizationSchemaorg.addressCountry]
+      enrichedClaims[SchemaOrgOrganizationClaim.AddressCountry]
       || input.hostJurisdiction
       || 'ES',
     ).trim();
-    if (fallbackCountry && !String(enrichedClaims[ClaimsOrganizationSchemaorg.addressCountry] || '').trim()) {
-      enrichedClaims[ClaimsOrganizationSchemaorg.addressCountry] = fallbackCountry;
+    if (fallbackCountry && !String(enrichedClaims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim()) {
+      enrichedClaims[SchemaOrgOrganizationClaim.AddressCountry] = fallbackCountry;
     }
     const fallbackVat = String(
-      enrichedClaims[ClaimsOrganizationSchemaorg.identifierValue]
+      enrichedClaims[SchemaOrgOrganizationClaim.IdentifierValue]
       || alternateName
       || '',
     ).trim();
-    if (fallbackVat && !String(enrichedClaims[ClaimsOrganizationSchemaorg.identifierValue] || '').trim()) {
-      enrichedClaims[ClaimsOrganizationSchemaorg.identifierValue] = fallbackVat;
+    if (fallbackVat && !String(enrichedClaims[SchemaOrgOrganizationClaim.IdentifierValue] || '').trim()) {
+      enrichedClaims[SchemaOrgOrganizationClaim.IdentifierValue] = fallbackVat;
     }
-    if (!String(enrichedClaims[ClaimsServiceSchemaorg.termsOfService] || '').trim()) {
-      enrichedClaims[ClaimsServiceSchemaorg.termsOfService] = 'https://example.org/terms';
+    if (!String(enrichedClaims[SchemaOrgServiceClaim.TermsOfService] || '').trim()) {
+      enrichedClaims[SchemaOrgServiceClaim.TermsOfService] = 'https://example.org/terms';
     }
     input.logger?.warn?.('[HostingManager] demo Gaia-X fallback', {
       alternateName,
       sector,
-      legalName: enrichedClaims[ClaimsOrganizationSchemaorg.legalName],
-      identifierValue: enrichedClaims[ClaimsOrganizationSchemaorg.identifierValue],
-      addressCountry: enrichedClaims[ClaimsOrganizationSchemaorg.addressCountry],
-      termsOfService: enrichedClaims[ClaimsServiceSchemaorg.termsOfService],
+      legalName: enrichedClaims[SchemaOrgOrganizationClaim.LegalName],
+      identifierValue: enrichedClaims[SchemaOrgOrganizationClaim.IdentifierValue],
+      addressCountry: enrichedClaims[SchemaOrgOrganizationClaim.AddressCountry],
+      termsOfService: enrichedClaims[SchemaOrgServiceClaim.TermsOfService],
     });
   }
 

@@ -12,7 +12,7 @@ import { getEnvSectionId } from '../../../utils/section-env';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { DidService } from '../../../gdc-backend-utils-node/models/did';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { buildOrganizationDidWeb } from 'gdc-common-utils-ts/utils/did';
 import { EXAMPLE_HOST_PUBLIC_DID } from 'gdc-common-utils-ts/examples/shared';
 import { testConfigDataHost, testConfigTenant1 } from '../../data/organization.data';
@@ -30,7 +30,7 @@ describe('TenantsCacheManager', () => {
   // --- Test Data ---
   const mockServices: DidService[] = [{ id: 'service-1', type: 'TestService', serviceEndpoint: 'https://test.com' }];
 
-  const hostUrn = (testClaimsHostInitialization as ClaimsRecord)[ClaimsOrganizationSchemaorg.identifier];
+  const hostUrn = (testClaimsHostInitialization as ClaimsRecord)[SchemaOrgOrganizationClaim.IdentifierReference];
   const hostConfig: EntityConfig = {
     id: testConfigDataHost.id,
     type: EntityType.Organization,
@@ -41,12 +41,12 @@ describe('TenantsCacheManager', () => {
     meta: { lastUpdated: '' },
   };
 
-  const tenantUrn = (testClaimsTenant1Registration as ClaimsRecord)[ClaimsOrganizationSchemaorg.identifier];
+  const tenantUrn = (testClaimsTenant1Registration as ClaimsRecord)[SchemaOrgOrganizationClaim.IdentifierReference];
   const healthTenantDid = buildOrganizationDidWeb({
     hostDidWeb: EXAMPLE_HOST_PUBLIC_DID,
-    tenantId: String(testClaimsTenant1Registration[ClaimsOrganizationSchemaorg.identifierValue]),
-    jurisdiction: String(testClaimsTenant1Registration[ClaimsOrganizationSchemaorg.addressCountry]),
-    sector: String(testClaimsTenant1Registration[ClaimsServiceSchemaorg.category]),
+    tenantId: String(testClaimsTenant1Registration[SchemaOrgOrganizationClaim.IdentifierValue]),
+    jurisdiction: String(testClaimsTenant1Registration[SchemaOrgOrganizationClaim.AddressCountry]),
+    sector: String(testClaimsTenant1Registration[SchemaOrgServiceClaim.Category]),
   });
   const acmeConfig: EntityConfig = {
     id: testConfigTenant1.id,
@@ -64,10 +64,10 @@ describe('TenantsCacheManager', () => {
       ...acmeConfig.claims,
     },
   } as EntityConfig;
-  delete (acmeConfigWithoutServiceType.claims as ClaimsRecord)[ClaimsServiceSchemaorg.serviceType];
+  delete (acmeConfigWithoutServiceType.claims as ClaimsRecord)[SchemaOrgServiceClaim.ServiceType];
 
-  const acmeSector = (acmeConfig.claims as ClaimsRecord)[ClaimsServiceSchemaorg.category] as Sector;
-  const acmeAlternateName = (acmeConfig.claims as ClaimsRecord)[ClaimsOrganizationSchemaorg.alternateName];
+  const acmeSector = (acmeConfig.claims as ClaimsRecord)[SchemaOrgServiceClaim.Category] as Sector;
+  const acmeAlternateName = (acmeConfig.claims as ClaimsRecord)[SchemaOrgOrganizationClaim.AlternateName];
   const acmeVaultId = getTenantVaultId(acmeSector, acmeAlternateName);
 
   beforeEach(() => {
@@ -91,8 +91,8 @@ describe('TenantsCacheManager', () => {
       // repository result for the shared legal identifier.
       const animalTenantDid = buildOrganizationDidWeb({
         hostDidWeb: EXAMPLE_HOST_PUBLIC_DID,
-        tenantId: String(testClaimsTenant1Registration[ClaimsOrganizationSchemaorg.identifierValue]),
-        jurisdiction: String(testClaimsTenant1Registration[ClaimsOrganizationSchemaorg.addressCountry]),
+        tenantId: String(testClaimsTenant1Registration[SchemaOrgOrganizationClaim.IdentifierValue]),
+        jurisdiction: String(testClaimsTenant1Registration[SchemaOrgOrganizationClaim.AddressCountry]),
         sector: DataspaceSectors.AnimalCare,
       });
       const animalConfig = {
@@ -100,7 +100,7 @@ describe('TenantsCacheManager', () => {
         didDocument: { ...acmeConfig.didDocument, id: animalTenantDid },
         claims: {
           ...acmeConfig.claims,
-          [ClaimsServiceSchemaorg.category]: DataspaceSectors.AnimalCare,
+          [SchemaOrgServiceClaim.Category]: DataspaceSectors.AnimalCare,
         },
       } as EntityConfig;
       const animalVaultId = getTenantVaultId(DataspaceSectors.AnimalCare, acmeAlternateName);
@@ -121,9 +121,9 @@ describe('TenantsCacheManager', () => {
       }) as IKmsService['unprotectConfidentialData']);
 
       await expect(tenantsCacheManager.findTenantVaultIdsByIdentifierValue(
-        String(testClaimsTenant1Registration[ClaimsOrganizationSchemaorg.identifierValue]),
+        String(testClaimsTenant1Registration[SchemaOrgOrganizationClaim.IdentifierValue]),
         {
-          identifierType: String(testClaimsTenant1Registration[ClaimsOrganizationSchemaorg.identifierType]),
+          identifierType: String(testClaimsTenant1Registration[SchemaOrgOrganizationClaim.IdentifierType]),
           tenantDid: animalTenantDid,
         },
       )).resolves.toEqual([animalVaultId]);
@@ -255,7 +255,7 @@ describe('TenantsCacheManager', () => {
       mockVaultRepository.get.mockResolvedValue({ id: acmeVaultId } as any);
       mockKmsService.unprotectConfidentialData.mockResolvedValue(acmeConfig);
       const jurisdiction = await tenantsCacheManager.getTenantJurisdiction(acmeVaultId);
-      expect(jurisdiction).toBe((acmeConfig.claims as ClaimsRecord)[ClaimsOrganizationSchemaorg.addressCountry]);
+      expect(jurisdiction).toBe((acmeConfig.claims as ClaimsRecord)[SchemaOrgOrganizationClaim.AddressCountry]);
     });
 
     it('keeps the ISO subdivision that owns a regional legal identifier as the route jurisdiction', async () => {
@@ -263,8 +263,8 @@ describe('TenantsCacheManager', () => {
         ...acmeConfig,
         claims: {
           ...acmeConfig.claims,
-          [ClaimsOrganizationSchemaorg.addressCountry]: 'CA',
-          [ClaimsOrganizationSchemaorg.addressRegion]: 'CA-BC',
+          [SchemaOrgOrganizationClaim.AddressCountry]: 'CA',
+          [SchemaOrgOrganizationClaim.AddressRegion]: 'CA-BC',
         },
       };
       mockVaultRepository.get.mockResolvedValue({ id: acmeVaultId } as any);

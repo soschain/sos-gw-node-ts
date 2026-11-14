@@ -3,11 +3,7 @@
 import type { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
-import {
-  ClaimsIndividualProductSchemaorg,
-  ClaimsOfferSchemaorg,
-  ClaimsPersonSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { getEnvSectionId } from './section-env';
 import { extractSearchFiltersFromEntry, type SearchFilters } from './search-request';
 import {
@@ -62,16 +58,16 @@ export function extractLicenseSearchFilters(entry: BundleEntry | Record<string, 
     }
   };
 
-  push(ClaimsOfferSchemaorg.serialNumber, claims[ClaimsOfferSchemaorg.serialNumber]);
-  push(ClaimsIndividualProductSchemaorg.category, claims[ClaimsIndividualProductSchemaorg.category]);
-  push(ClaimsIndividualProductSchemaorg.additionalType, claims[ClaimsIndividualProductSchemaorg.additionalType]);
-  push(ClaimsPersonSchemaorg.email, claims[ClaimsPersonSchemaorg.email]);
-  push(ClaimsPersonSchemaorg.telephone, claims[ClaimsPersonSchemaorg.telephone]);
-  push(ClaimsPersonSchemaorg.hasOccupationalRoleValue, claims[ClaimsPersonSchemaorg.hasOccupationalRoleValue]);
+  push(SchemaOrgOfferClaim.SerialNumber, claims[SchemaOrgOfferClaim.SerialNumber]);
+  push(SchemaOrgIndividualProductClaim.Category, claims[SchemaOrgIndividualProductClaim.Category]);
+  push(SchemaOrgIndividualProductClaim.AdditionalType, claims[SchemaOrgIndividualProductClaim.AdditionalType]);
+  push(SchemaOrgPersonClaim.Email, claims[SchemaOrgPersonClaim.Email]);
+  push(SchemaOrgPersonClaim.Telephone, claims[SchemaOrgPersonClaim.Telephone]);
+  push(SchemaOrgPersonClaim.OccupationIdentifierValue, claims[SchemaOrgPersonClaim.OccupationIdentifierValue]);
   push('status', meta.status ?? resourceMeta.status);
   push('subjectId', meta.subjectId ?? resourceMeta.subjectId);
   push('ownerOrganizationId', meta.ownerOrganizationId ?? resourceMeta.ownerOrganizationId);
-  push('orderId', claims[ClaimsOfferSchemaorg.identifier]);
+  push('orderId', claims[SchemaOrgOfferClaim.Identifier]);
   return filters;
 }
 
@@ -178,22 +174,22 @@ export function buildLicenseSearchClaims(
 ): Record<string, unknown> {
   const claims: Record<string, unknown> = {
     '@context': 'org.schema',
-    [ClaimsOfferSchemaorg.serialNumber]: license.id,
-    [ClaimsIndividualProductSchemaorg.category]: mapLicenseCategory(license.userClass as string | undefined),
-    [ClaimsIndividualProductSchemaorg.additionalType]: license.type,
+    [SchemaOrgOfferClaim.SerialNumber]: license.id,
+    [SchemaOrgIndividualProductClaim.Category]: mapLicenseCategory(license.userClass as string | undefined),
+    [SchemaOrgIndividualProductClaim.AdditionalType]: license.type,
   };
 
   if (license.orderId) {
-    claims[ClaimsOfferSchemaorg.identifier] = license.orderId;
+    claims[SchemaOrgOfferClaim.Identifier] = license.orderId;
   }
   if (license.issuedToEmail) {
-    claims[ClaimsPersonSchemaorg.email] = license.issuedToEmail;
+    claims[SchemaOrgPersonClaim.Email] = license.issuedToEmail;
   }
   if (license.issuedToPhone) {
-    claims[ClaimsPersonSchemaorg.telephone] = license.issuedToPhone;
+    claims[SchemaOrgPersonClaim.Telephone] = license.issuedToPhone;
   }
   if (license.issuedToRole) {
-    claims[ClaimsPersonSchemaorg.hasOccupationalRoleValue] = license.issuedToRole;
+    claims[SchemaOrgPersonClaim.OccupationIdentifierValue] = license.issuedToRole;
   }
 
   return claims;
@@ -228,7 +224,7 @@ export function resolveLicenseFilterValues(
   switch (key) {
     case 'id':
     case 'identifier':
-    case ClaimsOfferSchemaorg.serialNumber:
+    case SchemaOrgOfferClaim.SerialNumber:
       return toFilterValues(license.id);
     case 'status':
       return toFilterValues(license.status);
@@ -241,26 +237,26 @@ export function resolveLicenseFilterValues(
     case 'userClass':
     case 'License.userClass':
       return toFilterValues(license.userClass);
-    case ClaimsIndividualProductSchemaorg.category:
+    case SchemaOrgIndividualProductClaim.Category:
       return toFilterValues(mapLicenseCategory(license.userClass as string | undefined));
     case 'type':
     case 'License.type':
-    case ClaimsIndividualProductSchemaorg.additionalType:
+    case SchemaOrgIndividualProductClaim.AdditionalType:
       return toFilterValues(license.type);
     case 'orderId':
-    case ClaimsOfferSchemaorg.identifier:
+    case SchemaOrgOfferClaim.Identifier:
       return toFilterValues(license.orderId);
     case 'activationCode':
       return toFilterValues(license.activationCode);
     case 'email':
-    case ClaimsPersonSchemaorg.email:
+    case SchemaOrgPersonClaim.Email:
       return toFilterValues(license.issuedToEmail);
     case 'telephone':
-    case ClaimsPersonSchemaorg.telephone:
+    case SchemaOrgPersonClaim.Telephone:
       return toFilterValues(license.issuedToPhone);
     case 'role':
-    case ClaimsPersonSchemaorg.hasOccupationalRoleValue:
-    case ClaimsPersonSchemaorg.hasOccupation:
+    case SchemaOrgPersonClaim.OccupationIdentifierValue:
+    case SchemaOrgPersonClaim.HasOccupation:
       return toFilterValues(license.issuedToRole);
     case 'active':
       return toFilterValues(String(license.status === LICENSE_STATUS_ACTIVE));

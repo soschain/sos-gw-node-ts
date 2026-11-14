@@ -5,7 +5,7 @@ import { HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
 import { CompositionAttesterModes } from 'gdc-common-utils-ts';
 import { EXAMPLE_KYC_CONTROLLER_UUID } from 'gdc-common-utils-ts/examples/shared';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import {
@@ -181,12 +181,12 @@ function buildLabTenantClaims(): Record<string, unknown> {
   };
   return {
     ...baseClaims,
-    [ClaimsOrganizationSchemaorg.legalName]: 'Lab Research Org SL',
-    [ClaimsOrganizationSchemaorg.name]: 'Lab Research Org',
-    [ClaimsOrganizationSchemaorg.alternateName]: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerTenantId,
-    [ClaimsOrganizationSchemaorg.identifierValue]: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerTenantId,
-    [ClaimsOrganizationSchemaorg.url]: 'api.lab.org',
-    [ClaimsServiceSchemaorg.category]: 'health-research',
+    [SchemaOrgOrganizationClaim.LegalName]: 'Lab Research Org SL',
+    [SchemaOrgOrganizationClaim.Name]: 'Lab Research Org',
+    [SchemaOrgOrganizationClaim.AlternateName]: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerTenantId,
+    [SchemaOrgOrganizationClaim.IdentifierValue]: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerTenantId,
+    [SchemaOrgOrganizationClaim.Url]: 'api.lab.org',
+    [SchemaOrgServiceClaim.Category]: 'health-research',
   };
 }
 
@@ -432,7 +432,7 @@ export class TestResearchOrgControllerSdk {
     didDocumentId: string;
     sector: Sector;
   }): Promise<void> {
-    const tenantId = String(input.claims[ClaimsOrganizationSchemaorg.alternateName] || '');
+    const tenantId = String(input.claims[SchemaOrgOrganizationClaim.AlternateName] || '');
     const tenantVaultId = getTenantVaultId(String(input.sector), tenantId);
     await this.deps.kmsService.provisionKeys(tenantVaultId);
     const secureTenantRecord = await this.deps.kmsService.protectConfidentialData(

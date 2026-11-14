@@ -4,7 +4,7 @@ import type { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gatewa
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { ParameterData } from 'gdc-common-utils-ts/models/params';
 import type { JwkSet } from 'antifraud-data-utils-ts/cryptography';
-import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { buildProfessionalDidWeb } from 'gdc-common-utils-ts/utils/did';
 import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';
@@ -71,7 +71,7 @@ type StoreControllerEntityConfigDeps = Readonly<{
 export async function buildControllerEntityConfig(
   deps: BuildControllerEntityConfigDeps,
 ): Promise<EntityConfig> {
-  const email = normalizeIndexedEmail(deps.legalRep.meta?.claims?.[ClaimsPersonSchemaorg.email]) as string | undefined;
+  const email = normalizeIndexedEmail(deps.legalRep.meta?.claims?.[SchemaOrgPersonClaim.Email]) as string | undefined;
   const roleCode = getPersonOccupationClaim(deps.legalRep.meta?.claims as Record<string, any> | undefined);
   if (!email || !roleCode) {
     throw new ManagerError('Missing required admin Person claims (email, hasOccupation).', IssueType.Required);
@@ -151,9 +151,9 @@ export async function buildControllerEntityConfig(
     status: EntityLifecycleStatus.Active,
     claims: {
       ...(deps.legalRep.meta?.claims || {}),
-      [ClaimsPersonSchemaorg.identifier]: didId,
-      [ClaimsPersonSchemaorg.additionalType]: HealthcareActorRoles.Controller,
-      [ClaimsPersonSchemaorg.sameAs]: actorSameAs,
+      [SchemaOrgPersonClaim.Identifier]: didId,
+      [SchemaOrgPersonClaim.AdditionalType]: HealthcareActorRoles.Controller,
+      [SchemaOrgPersonClaim.SameAs]: actorSameAs,
     },
     didDocument: {
       ...didDocument,
@@ -172,7 +172,7 @@ export async function storeControllerEntityConfig(
   deps: StoreControllerEntityConfigDeps,
 ): Promise<void> {
   const verificationMethods = deps.controllerConfig.didDocument?.verificationMethod || [];
-  const email = normalizeIndexedEmail(deps.controllerConfig.claims?.[ClaimsPersonSchemaorg.email]) as string | undefined;
+  const email = normalizeIndexedEmail(deps.controllerConfig.claims?.[SchemaOrgPersonClaim.Email]) as string | undefined;
   const roleCode = getPersonOccupationClaim(deps.controllerConfig.claims as Record<string, any> | undefined);
 
   const attributesToIndex: ParameterData[] = [

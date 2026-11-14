@@ -4,7 +4,7 @@
 import { VETCHAIN_PRODUCT_BOUNDARY } from '../../../config/vetchain-product-boundary';
 import { generateLicenseOffer } from '../../../utils/offer';
 import { VET_PAYMENT_TEST_DATA } from 'vet-data-utils-ts/payment';
-import { ClaimsOfferSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 
 describe('generateLicenseOffer', () => {
   const originalDeploymentEnv = process.env.DEPLOYMENT_ENV;
@@ -31,8 +31,8 @@ describe('generateLicenseOffer', () => {
       VETCHAIN_PRODUCT_BOUNDARY.professionalSector,
       allowedPaymentMethods,
     );
-    expect(claims[ClaimsOfferSchemaorg.price]).toBe(VET_PAYMENT_TEST_DATA.priceText);
-    expect(claims[ClaimsOfferSchemaorg.priceCurrency]).toBe(VET_PAYMENT_TEST_DATA.currency);
+    expect(claims[SchemaOrgOfferClaim.Price]).toBe(VET_PAYMENT_TEST_DATA.priceText);
+    expect(claims[SchemaOrgOfferClaim.PriceCurrency]).toBe(VET_PAYMENT_TEST_DATA.currency);
   });
   const hostDid = 'did:web:host.example.com';
   const jurisdiction = 'es';
@@ -44,11 +44,11 @@ describe('generateLicenseOffer', () => {
     const offerClaims = generateLicenseOffer(5, hostDid, jurisdiction, sector, allowedPaymentMethods);
 
     // Assert
-    expect(offerClaims[ClaimsOfferSchemaorg.itemOfferedName]).toBe('License Tier XS');
-    expect(offerClaims[ClaimsOfferSchemaorg.price]).toBe('0.00');
-    expect(offerClaims[ClaimsOfferSchemaorg.eligibleQuantityValue]).toBe(5);
-    expect(offerClaims[ClaimsOfferSchemaorg.identifier]).toContain('urn:cds:ES:v1:health-care:product:org.schema:Offer:');
-    expect(offerClaims[ClaimsOfferSchemaorg.serialNumber].split(',')).toHaveLength(5);
+    expect(offerClaims[SchemaOrgOfferClaim.ItemOfferedName]).toBe('License Tier XS');
+    expect(offerClaims[SchemaOrgOfferClaim.Price]).toBe('0.00');
+    expect(offerClaims[SchemaOrgOfferClaim.EligibleQuantityValue]).toBe(5);
+    expect(offerClaims[SchemaOrgOfferClaim.Identifier]).toContain('urn:cds:ES:v1:health-care:product:org.schema:Offer:');
+    expect(offerClaims[SchemaOrgOfferClaim.SerialNumber].split(',')).toHaveLength(5);
   });
 
   it('should generate a "Tier S" offer for 20 or fewer employees', () => {
@@ -56,10 +56,10 @@ describe('generateLicenseOffer', () => {
     const offerClaims = generateLicenseOffer(20, hostDid, jurisdiction, sector, allowedPaymentMethods);
 
     // Assert
-    expect(offerClaims[ClaimsOfferSchemaorg.itemOfferedName]).toBe('License Tier S');
-    expect(offerClaims[ClaimsOfferSchemaorg.price]).toBe('49.99');
-    expect(offerClaims[ClaimsOfferSchemaorg.eligibleQuantityValue]).toBe(20);
-    expect(offerClaims[ClaimsOfferSchemaorg.serialNumber].split(',')).toHaveLength(20);
+    expect(offerClaims[SchemaOrgOfferClaim.ItemOfferedName]).toBe('License Tier S');
+    expect(offerClaims[SchemaOrgOfferClaim.Price]).toBe('49.99');
+    expect(offerClaims[SchemaOrgOfferClaim.EligibleQuantityValue]).toBe(20);
+    expect(offerClaims[SchemaOrgOfferClaim.SerialNumber].split(',')).toHaveLength(20);
   });
 
   it('should generate a "Tier M" offer for more than 20 employees', () => {
@@ -67,10 +67,10 @@ describe('generateLicenseOffer', () => {
     const offerClaims = generateLicenseOffer(21, hostDid, jurisdiction, sector, allowedPaymentMethods);
 
     // Assert
-    expect(offerClaims[ClaimsOfferSchemaorg.itemOfferedName]).toBe('License Tier M');
-    expect(offerClaims[ClaimsOfferSchemaorg.price]).toBe('99.99');
-    expect(offerClaims[ClaimsOfferSchemaorg.eligibleQuantityValue]).toBe(21);
-    expect(offerClaims[ClaimsOfferSchemaorg.serialNumber].split(',')).toHaveLength(21);
+    expect(offerClaims[SchemaOrgOfferClaim.ItemOfferedName]).toBe('License Tier M');
+    expect(offerClaims[SchemaOrgOfferClaim.Price]).toBe('99.99');
+    expect(offerClaims[SchemaOrgOfferClaim.EligibleQuantityValue]).toBe(21);
+    expect(offerClaims[SchemaOrgOfferClaim.SerialNumber].split(',')).toHaveLength(21);
   });
 
   it('should include all required offer claims', () => {
@@ -80,14 +80,14 @@ describe('generateLicenseOffer', () => {
     // Assert
     // NOTE: these claims are "flat" keys that contain dots (e.g., `org.schema.Offer.price`),
     // so we assert via bracket access instead of `toHaveProperty()` (which treats dots as path separators).
-    expect(offerClaims[ClaimsOfferSchemaorg.acceptedPaymentMethod]).toBeDefined();
-    expect(offerClaims[ClaimsOfferSchemaorg.category]).toBe(sector);
-    expect(offerClaims[ClaimsOfferSchemaorg.checkoutPageURLTemplate]).toBeDefined();
-    expect(offerClaims[ClaimsOfferSchemaorg.eligibleCustomerType]).toBeDefined();
-    expect(offerClaims[ClaimsOfferSchemaorg.identifier]).toBeDefined();
-    expect(offerClaims[ClaimsOfferSchemaorg.offeredBy]).toBe(hostDid);
-    expect(offerClaims[ClaimsOfferSchemaorg.priceCurrency]).toBeDefined();
-    expect(offerClaims[ClaimsOfferSchemaorg.serialNumber]).toBeDefined();
+    expect(offerClaims[SchemaOrgOfferClaim.AcceptedPaymentMethod]).toBeDefined();
+    expect(offerClaims[SchemaOrgOfferClaim.Category]).toBe(sector);
+    expect(offerClaims[SchemaOrgOfferClaim.CheckoutPageUrlTemplate]).toBeDefined();
+    expect(offerClaims[SchemaOrgOfferClaim.EligibleCustomerType]).toBeDefined();
+    expect(offerClaims[SchemaOrgOfferClaim.Identifier]).toBeDefined();
+    expect(offerClaims[SchemaOrgOfferClaim.OfferedBy]).toBe(hostDid);
+    expect(offerClaims[SchemaOrgOfferClaim.PriceCurrency]).toBeDefined();
+    expect(offerClaims[SchemaOrgOfferClaim.SerialNumber]).toBeDefined();
   });
 
   it('rejects a missing jurisdiction instead of persisting an undefined Offer URN', () => {
@@ -105,9 +105,9 @@ describe('generateLicenseOffer', () => {
 
   it('normalizes the route network and trims identity inputs in the Offer projection', () => {
     const claims = generateLicenseOffer(2, `  ${hostDid}  `, ' es ', ` ${sector} `, allowedPaymentMethods);
-    expect(claims[ClaimsOfferSchemaorg.identifier]).toMatch(/^urn:cds:ES:v1:health-care:product:/);
-    expect(claims[ClaimsOfferSchemaorg.offeredBy]).toBe(hostDid);
-    expect(claims[ClaimsOfferSchemaorg.category]).toBe(sector);
+    expect(claims[SchemaOrgOfferClaim.Identifier]).toMatch(/^urn:cds:ES:v1:health-care:product:/);
+    expect(claims[SchemaOrgOfferClaim.OfferedBy]).toBe(hostDid);
+    expect(claims[SchemaOrgOfferClaim.Category]).toBe(sector);
   });
 
   it('offers at least two VetChain professional seats for USD 0 through 31 December 2026', () => {
@@ -116,10 +116,10 @@ describe('generateLicenseOffer', () => {
       undefined, new Date('2026-12-31T23:59:59.999Z'),
     );
 
-    expect(claims[ClaimsOfferSchemaorg.itemOfferedName]).toBe('VetChain professional licence');
-    expect(claims[ClaimsOfferSchemaorg.eligibleQuantityValue]).toBe(2);
-    expect(claims[ClaimsOfferSchemaorg.price]).toBe('0.00');
-    expect(claims[ClaimsOfferSchemaorg.priceCurrency]).toBe('USD');
+    expect(claims[SchemaOrgOfferClaim.ItemOfferedName]).toBe('VetChain professional licence');
+    expect(claims[SchemaOrgOfferClaim.EligibleQuantityValue]).toBe(2);
+    expect(claims[SchemaOrgOfferClaim.Price]).toBe('0.00');
+    expect(claims[SchemaOrgOfferClaim.PriceCurrency]).toBe('USD');
   });
 
   it('prices each VetChain professional seat at USD 20 after the promotion', () => {
@@ -129,9 +129,9 @@ describe('generateLicenseOffer', () => {
       undefined, new Date('2027-01-01T00:00:00.000Z'),
     );
 
-    expect(claims[ClaimsOfferSchemaorg.eligibleQuantityValue]).toBe(2);
-    expect(claims[ClaimsOfferSchemaorg.price]).toBe('20.00');
-    expect(claims[ClaimsOfferSchemaorg.priceCurrency]).toBe('USD');
+    expect(claims[SchemaOrgOfferClaim.EligibleQuantityValue]).toBe(2);
+    expect(claims[SchemaOrgOfferClaim.Price]).toBe('20.00');
+    expect(claims[SchemaOrgOfferClaim.PriceCurrency]).toBe('USD');
     delete process.env.VETCHAIN_BILLING_MERCHANT_ID;
   });
 

@@ -6,7 +6,7 @@ import { jest } from '@jest/globals';
 import { mock, MockProxy } from 'jest-mock-extended';
 import type { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
-import { ClaimsOfferSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
@@ -108,7 +108,7 @@ describe('IndividualManager', () => {
       const savedDoc = mockKmsService.protectConfidentialData.mock.calls[0][0];
       const customerConfig = savedDoc.content as EntityConfig;
       expect(customerConfig.id).toBe(testCustomer1Uuid);
-      expect((customerConfig.claims as any)[ClaimsPersonSchemaorg.identifierValue]).toBe((testIndividualOnboardingBatchEntries[1].resource.meta.claims as any)[ClaimsPersonSchemaorg.identifierValue]);
+      expect((customerConfig.claims as any)[SchemaOrgPersonClaim.IdentifierValue]).toBe((testIndividualOnboardingBatchEntries[1].resource.meta.claims as any)[SchemaOrgPersonClaim.IdentifierValue]);
 
       // 2. Verify response structure
       const responseEntry = response.body.data[0];
@@ -122,9 +122,9 @@ describe('IndividualManager', () => {
       const personClaims = responseEntry.resource!.meta!.claims!;
       const serviceClaims = responseEntry.resource!.contained![0]!.meta!.claims!;
       
-      expect(personClaims[ClaimsPersonSchemaorg.email]).toBe((testIndividualOnboardingBatchEntries[0].resource.meta.claims as any)[ClaimsPersonSchemaorg.email]);
-      expect(personClaims[ClaimsPersonSchemaorg.identifierValue]).toBe((testIndividualOnboardingBatchEntries[1].resource.meta.claims as any)[ClaimsPersonSchemaorg.identifierValue]);
-      expect(serviceClaims[ClaimsServiceSchemaorg.termsOfService]).toBe((testIndividualOnboardingBatchEntries[0].resource.meta.claims as any)[ClaimsServiceSchemaorg.termsOfService]);
+      expect(personClaims[SchemaOrgPersonClaim.Email]).toBe((testIndividualOnboardingBatchEntries[0].resource.meta.claims as any)[SchemaOrgPersonClaim.Email]);
+      expect(personClaims[SchemaOrgPersonClaim.IdentifierValue]).toBe((testIndividualOnboardingBatchEntries[1].resource.meta.claims as any)[SchemaOrgPersonClaim.IdentifierValue]);
+      expect(serviceClaims[SchemaOrgServiceClaim.TermsOfService]).toBe((testIndividualOnboardingBatchEntries[0].resource.meta.claims as any)[SchemaOrgServiceClaim.TermsOfService]);
     });
 
     it('HU 1 (Self-Onboarding): should generate an identifier if none is provided', async () => {
@@ -147,7 +147,7 @@ describe('IndividualManager', () => {
                 resource: {
                   resourceType: 'Person',
                   meta: { claims: {
-                    [ClaimsPersonSchemaorg.email]: 'new.customer@example.com',
+                    [SchemaOrgPersonClaim.Email]: 'new.customer@example.com',
                   } },
                 },
                 request: { method: 'POST', url: '/' },
@@ -180,13 +180,13 @@ describe('IndividualManager', () => {
       expect(responseEntry.response.status).toBe('201');
       expect(responseEntry.resource?.id).toBe(generatedUuid);
       const finalClaims = responseEntry.resource!.meta!.claims!;
-      expect(finalClaims[ClaimsPersonSchemaorg.identifier]).toBe(`urn:uuid:${generatedUuid}`);
+      expect(finalClaims[SchemaOrgPersonClaim.Identifier]).toBe(`urn:uuid:${generatedUuid}`);
     });
 
     it('should return an error if batch entries have inconsistent identifiers', async () => {
 	        // ARRANGE
 	        const job = JSON.parse(JSON.stringify(testCreateCustomerJobRequestProfessionalOnboarding)) as JobRequest;
-	        (job.content!.body!.data[1].resource!.meta!.claims as any)[ClaimsPersonSchemaorg.identifier] = 'urn:uuid:different-uuid';
+	        (job.content!.body!.data[1].resource!.meta!.claims as any)[SchemaOrgPersonClaim.Identifier] = 'urn:uuid:different-uuid';
 	        mockTenantsCacheManager.getTenantIdentifierUrn.mockResolvedValue(TENANT_URN);
 
         // ACT
@@ -223,7 +223,7 @@ describe('IndividualManager', () => {
       const response = await individualManager.process(job);
       const entry = response.body.data[0] as any;
       expect(entry.type).toBe('Individual-license-offer-v1.0');
-      expect(entry.resource?.meta?.claims?.[ClaimsOfferSchemaorg.identifier]).toBeDefined();
+      expect(entry.resource?.meta?.claims?.[SchemaOrgOfferClaim.Identifier]).toBeDefined();
       expect(mockVaultRepository.put).toHaveBeenCalledTimes(1);
     });
   });
@@ -253,17 +253,17 @@ describe('IndividualManager', () => {
               // EU-based identifier
               {
                 type: 'Person-discover-v1.0',
-                resource: { resourceType: 'Person', meta: { claims: { [ClaimsPersonSchemaorg.identifierType]: 'NNES', [ClaimsPersonSchemaorg.identifierValue]: '12345678Z' } } }
+                resource: { resourceType: 'Person', meta: { claims: { [SchemaOrgPersonClaim.IdentifierType]: 'NNES', [SchemaOrgPersonClaim.IdentifierValue]: '12345678Z' } } }
               },
               // Global identifier
               {
                 type: 'Person-discover-v1.0',
-                resource: { resourceType: 'Person', meta: { claims: { [ClaimsPersonSchemaorg.telephone]: '+15551234567' } } }
+                resource: { resourceType: 'Person', meta: { claims: { [SchemaOrgPersonClaim.Telephone]: '+15551234567' } } }
               },
               // Another EU-based identifier to test grouping
               {
                 type: 'Person-discover-v1.0',
-                resource: { resourceType: 'Person', meta: { claims: { [ClaimsPersonSchemaorg.identifierType]: 'PPNFR', [ClaimsPersonSchemaorg.identifierValue]: '987654321' } } }
+                resource: { resourceType: 'Person', meta: { claims: { [SchemaOrgPersonClaim.IdentifierType]: 'PPNFR', [SchemaOrgPersonClaim.IdentifierValue]: '987654321' } } }
               },
             ]
           }

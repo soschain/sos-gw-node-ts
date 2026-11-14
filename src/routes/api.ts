@@ -33,7 +33,7 @@ import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { resolveHostRegistrySector } from '../utils/services';
 import { isEncryptionJwk, isSignatureJwk } from '../managers/hosting/registration-keys';
-import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { getClaimValue } from '../utils/claims';
 import { isVerifiedBearerBoundToActorDid } from '../utils/authenticated-job-actor';
@@ -80,7 +80,7 @@ function demoErrorStatus(error: unknown): number {
  * wire claims or their fully qualified storage form.
  */
 export function readPendingOrderAcceptedOfferId(claims: Record<string, unknown>): string {
-  return String(getClaimValue(claims, ClaimsOrderSchemaorg.acceptedOfferIdentifier) || '').trim();
+  return String(getClaimValue(claims, SchemaOrgOrderClaim.AcceptedOfferIdentifier) || '').trim();
 }
 
 function getVerifiedBearerPayload(verificationResult: any): Record<string, any> {
@@ -736,11 +736,11 @@ export function createApiRouter(
     if (!hostCollectionName) return undefined;
     const candidates = await vaultRepository.query(hostCollectionName, {
       sectionId: getEnvSectionId('tenants'),
-      where: [{ name: ClaimsOfferSchemaorg.identifier, value: offerId }],
+      where: [{ name: SchemaOrgOfferClaim.Identifier, value: offerId }],
     });
     for (const candidate of candidates || []) {
       const protectedContent = await kmsService.unprotectConfidentialData<any>(candidate, 'host');
-      if (String(protectedContent?.claims?.[ClaimsOfferSchemaorg.identifier] || '').trim() !== offerId) continue;
+      if (String(protectedContent?.claims?.[SchemaOrgOfferClaim.Identifier] || '').trim() !== offerId) continue;
       const registeredSenderDid = String(protectedContent?.registrationControllerDid || '').trim();
       if (registeredSenderDid !== senderDid) continue;
       const signerJwk = protectedContent?.registrationKeys?.signerJwk;

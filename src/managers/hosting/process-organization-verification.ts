@@ -5,13 +5,7 @@ import type { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
 import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import type { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import {
-  ClaimsOfferSchemaorg,
-  ClaimsOrderSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsPersonSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
@@ -63,7 +57,7 @@ type LegalOrganizationVerificationTransactionNextStep = Readonly<{
   action: 'Order/_batch';
   acceptedOffer: {
     identifier?: string;
-    identifierClaim: typeof ClaimsOrderSchemaorg.acceptedOfferIdentifier;
+    identifierClaim: typeof SchemaOrgOrderClaim.AcceptedOfferIdentifier;
   };
 }>;
 
@@ -153,7 +147,7 @@ export async function processOrganizationVerificationTransaction(
   const resource = (entry.resource || {}) as LegalOrganizationVerificationTransactionResource;
   const submittedClaims = resource.meta?.claims || {};
   const claims = normalizeContextualizedClaims(submittedClaims);
-  const requestedSector = String(claims[ClaimsServiceSchemaorg.category] || '').trim();
+  const requestedSector = String(claims[SchemaOrgServiceClaim.Category] || '').trim();
   const resourceType = String(resource.verification?.resourceType || 'contract').trim() || 'contract';
   const hostNetwork = String(deps.job.sector || '').trim().toLowerCase();
   const runtimeNetwork = String(deps.config.networkMode || '').trim().toLowerCase();
@@ -258,10 +252,10 @@ export async function processOrganizationIssue(
   const resource = (entry.resource || {}) as LegalOrganizationVerificationTransactionResource;
   const submittedClaims = resource.meta?.claims || {};
   const claims = normalizeContextualizedClaims(submittedClaims);
-  const requestedSector = String(claims[ClaimsServiceSchemaorg.category] || '').trim();
+  const requestedSector = String(claims[SchemaOrgServiceClaim.Category] || '').trim();
   const resourceType = String(resource.verification?.resourceType || 'contract').trim() || 'contract';
   if (!requestedSector) {
-    throw new ManagerError(`Missing required claim: '${ClaimsServiceSchemaorg.category}'`, IssueType.Required);
+    throw new ManagerError(`Missing required claim: '${SchemaOrgServiceClaim.Category}'`, IssueType.Required);
   }
 
   const icaResponse = await deps.forwardOrganizationVerificationTransactionToIca({
@@ -329,7 +323,7 @@ export function buildOrganizationVerificationTransactionResponseResource(
       action: ORGANIZATION_VERIFICATION_TRANSACTION_NEXT_ACTION,
       acceptedOffer: {
         ...(offerId ? { identifier: offerId } : {}),
-        identifierClaim: ClaimsOrderSchemaorg.acceptedOfferIdentifier,
+        identifierClaim: SchemaOrgOrderClaim.AcceptedOfferIdentifier,
       },
     } } : {}),
   };
@@ -367,26 +361,26 @@ export async function createOrganizationIssueClaims(
 ): Promise<ClaimsRecord> {
   const normalizedClaims = deps.applyLegalOrganizationIdentityCompatibility(deps.claims);
   const alternateName = String(
-    normalizedClaims[ClaimsOrganizationSchemaorg.alternateName]
+    normalizedClaims[SchemaOrgOrganizationClaim.AlternateName]
     || deps.fallbackAlternateName
     || '',
   ).trim();
   const enrichedClaims: ClaimsRecord = {
     ...normalizedClaims,
-    ...(alternateName ? { [ClaimsOrganizationSchemaorg.alternateName]: alternateName } : {}),
+    ...(alternateName ? { [SchemaOrgOrganizationClaim.AlternateName]: alternateName } : {}),
   };
   validateNewOrganizationClaims(enrichedClaims);
 
   if (!alternateName) {
-    throw new ManagerError(`Missing required claim: '${ClaimsOrganizationSchemaorg.alternateName}'`, IssueType.Required);
+    throw new ManagerError(`Missing required claim: '${SchemaOrgOrganizationClaim.AlternateName}'`, IssueType.Required);
   }
   if (!isValidTenantAlternateName(alternateName)) {
     throw new ManagerError(`Invalid alternateName format: '${alternateName}'`, IssueType.Value);
   }
 
-  const requestedSector = enrichedClaims[ClaimsServiceSchemaorg.category] as Sector;
+  const requestedSector = enrichedClaims[SchemaOrgServiceClaim.Category] as Sector;
   if (!requestedSector) {
-    throw new ManagerError(`Missing required claim for existing tenant: '${ClaimsServiceSchemaorg.category}'`, IssueType.Required);
+    throw new ManagerError(`Missing required claim for existing tenant: '${SchemaOrgServiceClaim.Category}'`, IssueType.Required);
   }
   if (requestedSector === 'system') {
     throw new ManagerError("The 'system' sector is a reserved keyword and cannot be used by tenants.", IssueType.Forbidden);
@@ -415,11 +409,11 @@ export async function createOrganizationIssueClaims(
   });
   const claimsForValidation: ClaimsRecord = {
     ...enrichedClaims,
-    ...(controllerIdentity.email && !enrichedClaims[ClaimsPersonSchemaorg.email]
-      ? { [ClaimsPersonSchemaorg.email]: controllerIdentity.email }
+    ...(controllerIdentity.email && !enrichedClaims[SchemaOrgPersonClaim.Email]
+      ? { [SchemaOrgPersonClaim.Email]: controllerIdentity.email }
       : {}),
     ...(controllerIdentity.role && !getPersonOccupationClaim(enrichedClaims as Record<string, any> | undefined)
-      ? { [ClaimsPersonSchemaorg.hasOccupation]: controllerIdentity.role }
+      ? { [SchemaOrgPersonClaim.HasOccupation]: controllerIdentity.role }
       : {}),
   };
   validateNewOrganizationClaims(claimsForValidation);
@@ -430,18 +424,18 @@ export async function createOrganizationIssueClaims(
 
   const jurisdiction = resolveOrganizationRouteJurisdiction(processedClaims);
   const isIndividualOrg = !!processedClaims['org.schema.Organization.owner.telephone'];
-  if (!processedClaims[ClaimsOrganizationSchemaorg.identifier]) {
+  if (!processedClaims[SchemaOrgOrganizationClaim.IdentifierReference]) {
     if (!isIndividualOrg) {
-      (processedClaims as any)[ClaimsOrganizationSchemaorg.identifier] = createOrganizationUrn({
+      (processedClaims as any)[SchemaOrgOrganizationClaim.IdentifierReference] = createOrganizationUrn({
         namespace: deps.config.namespace,
         network: deps.getCurrentUrnNetwork(),
         jurisdiction,
         sector: requestedSector,
-        idType: processedClaims[ClaimsOrganizationSchemaorg.identifierType] as string,
-        idValue: processedClaims[ClaimsOrganizationSchemaorg.identifierValue] as string,
+        idType: processedClaims[SchemaOrgOrganizationClaim.IdentifierType] as string,
+        idValue: processedClaims[SchemaOrgOrganizationClaim.IdentifierValue] as string,
       });
     } else {
-      (processedClaims as any)[ClaimsOrganizationSchemaorg.identifier] = alternateName || determineResourceId(organization.id, deps.environment);
+      (processedClaims as any)[SchemaOrgOrganizationClaim.IdentifierReference] = alternateName || determineResourceId(organization.id, deps.environment);
     }
   }
 
@@ -459,7 +453,7 @@ export async function createOrganizationIssueClaims(
     }),
   });
   if (!legalRepEmail) {
-    throw new ManagerError(`Missing required claim for Organization/_issue: '${ClaimsPersonSchemaorg.email}'`, IssueType.Required);
+    throw new ManagerError(`Missing required claim for Organization/_issue: '${SchemaOrgPersonClaim.Email}'`, IssueType.Required);
   }
   if (!legalRepRole) {
     throw new ManagerError('Missing required controller occupation claim for Organization/_issue.', IssueType.Required);
@@ -512,7 +506,7 @@ async function resolveOrganizationIssueControllerIdentity(input: {
   securityMode?: string;
   findStoredControllerRoleByEmail: (tenantVaultId: string, email: string | undefined) => Promise<string | undefined>;
 }): Promise<{ email?: string; role?: string }> {
-  const emailFromPayload = normalizeIndexedEmail(input.claims[ClaimsPersonSchemaorg.email]) as string | undefined;
+  const emailFromPayload = normalizeIndexedEmail(input.claims[SchemaOrgPersonClaim.Email]) as string | undefined;
   const emailFromBearer = normalizeIndexedEmail(
     (input.bearerPayload?.email as string | undefined)
     || (input.bearerPayload?.upn as string | undefined)
@@ -571,7 +565,7 @@ async function findStoredControllerRoleByEmail(input: {
         claims = claims || undefined;
       }
     }
-    const storedEmail = normalizeIndexedEmail(claims?.[ClaimsPersonSchemaorg.email]) as string | undefined;
+    const storedEmail = normalizeIndexedEmail(claims?.[SchemaOrgPersonClaim.Email]) as string | undefined;
     if (!storedEmail || storedEmail !== normalizedEmail) continue;
     const storedRole = getPersonOccupationClaim(claims);
     if (storedRole) return storedRole;

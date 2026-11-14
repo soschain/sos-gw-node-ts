@@ -8,12 +8,7 @@ import { testFamilyRegisterExpanded } from './family.data';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { HealthcareConsentActions } from 'gdc-common-utils-ts/constants/index';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
-import {
-  ClaimsOrderSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsPersonSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   EXAMPLE_EMPLOYEE_DOCTOR_ACTIVE,
   buildExampleEmployeeClaims,
@@ -188,18 +183,18 @@ const organizationVerificationTransactionBody = {
       meta: {
         claims: {
         '@context': 'org.schema',
-        [ClaimsOrganizationSchemaorg.legalName]: 'ACME HEALTH SL',
-        [ClaimsOrganizationSchemaorg.identifierType]: 'taxID',
-        [ClaimsOrganizationSchemaorg.identifierValue]: 'VATES-B00112233',
-        [ClaimsOrganizationSchemaorg.taxId]: 'VATES-B00112233',
-        [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-        [ClaimsPersonSchemaorg.email]: 'controller@example.org',
-        [ClaimsPersonSchemaorg.hasOccupationalRoleValue]: 'RESPRSN',
-        [ClaimsServiceSchemaorg.category]: 'health-care',
-        [ClaimsServiceSchemaorg.identifier]: 'did:web:tenant.example.org',
-        [ClaimsServiceSchemaorg.url]: 'https://operator.example.net/acme/cds-es/v1/health-care',
-        [ClaimsServiceSchemaorg.serviceType]:
-          testClaimsRegisterTenantExpanded[ClaimsServiceSchemaorg.serviceType],
+        [SchemaOrgOrganizationClaim.LegalName]: 'ACME HEALTH SL',
+        [SchemaOrgOrganizationClaim.IdentifierType]: 'taxID',
+        [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B00112233',
+        [SchemaOrgOrganizationClaim.TaxId]: 'VATES-B00112233',
+        [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+        [SchemaOrgPersonClaim.Email]: 'controller@example.org',
+        [SchemaOrgPersonClaim.OccupationIdentifierValue]: 'RESPRSN',
+        [SchemaOrgServiceClaim.Category]: 'health-care',
+        [SchemaOrgServiceClaim.IdentifierReference]: 'did:web:tenant.example.org',
+        [SchemaOrgServiceClaim.Url]: 'https://operator.example.net/acme/cds-es/v1/health-care',
+        [SchemaOrgServiceClaim.ServiceType]:
+          testClaimsRegisterTenantExpanded[SchemaOrgServiceClaim.ServiceType],
         },
       },
       controller: {
@@ -328,7 +323,7 @@ export const ORGANIZATION_ORDER_REQUEST = {
         "resourceType": "Order",
         "meta": { "claims": {
           "@context": "org.schema",
-          [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: "{{offerId}}",
+          [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: "{{offerId}}",
         } }
       }
     }]
@@ -1050,7 +1045,7 @@ export const FAMILY_ORDER_REQUEST = {
       "resource": { "meta": {
         "claims": {
           "@context": Format.SCHEMA,
-          [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: "{{offerId}}"
+          [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: "{{offerId}}"
         }
       } }
     }]

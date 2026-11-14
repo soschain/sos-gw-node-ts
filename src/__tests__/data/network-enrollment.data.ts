@@ -2,7 +2,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { MldsaPublicJwk } from 'antifraud-data-utils-ts/cryptography';
-import { ClaimsActionSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgActionClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { DidDocument } from '../../gdc-backend-utils-node/models/did';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { testTenant1Data, testClaimsTenant1Registration } from './end-to-end.data';
@@ -46,17 +46,17 @@ export const testNetworkEnrollmentClaims = {
     acc[`org.schema.Action.agent.${key.replace('org.schema.Organization.', '')}`] = value;
     return acc;
   }, {} as any),
-  [ClaimsActionSchemaorg.agentIdentifier]: testTenant1Data.identifier, // URN of Tenant C
+  [SchemaOrgActionClaim.AgentIdentifier]: testTenant1Data.identifier, // URN of Tenant C
 
   // The Participant is Controller T
-  [ClaimsActionSchemaorg.participantIdentifier]: testEmployeeUrnControllerT,
+  [SchemaOrgActionClaim.ParticipantIdentifier]: testEmployeeUrnControllerT,
 
   // The Provider is the Network
-  [ClaimsActionSchemaorg.providerIdentifier]: testInitialNetworkUrn,
-  [ClaimsActionSchemaorg.providerName]: 'Antifraud Test Network',
+  [SchemaOrgActionClaim.ProviderIdentifier]: testInitialNetworkUrn,
+  [SchemaOrgActionClaim.ProviderName]: 'Antifraud Test Network',
 
   // The Start Time of the action
-  [ClaimsActionSchemaorg.startTime]: new Date().toISOString(),
+  [SchemaOrgActionClaim.StartTime]: new Date().toISOString(),
 };
 
 // JOB REQUEST PAYLOAD

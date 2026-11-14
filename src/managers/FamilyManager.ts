@@ -22,7 +22,7 @@ import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import { ClaimsIndividualProductSchemaorg, ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { buildStableActorIdentifier, StableActorContactKinds } from 'antifraud-data-utils-ts/organization-identity';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { getBundleResponseTypeForAction } from '../utils/bundle';
@@ -100,20 +100,20 @@ function readAnimalRegistrationReadiness(claims: ClaimsRecord): {
   ready: boolean;
   missing: string[];
 } {
-  const isAnimal = String(claims[ClaimsOrganizationSchemaorg.additionalType] || '').trim() === ANIMAL_SUBJECT_KIND;
+  const isAnimal = String(claims[SchemaOrgOrganizationClaim.AdditionalType] || '').trim() === ANIMAL_SUBJECT_KIND;
   if (!isAnimal) return { isAnimal: false, ready: true, missing: [] };
-  const memberRole = String(claims[ClaimsOrganizationSchemaorg.memberRole] || '').trim();
+  const memberRole = String(claims[SchemaOrgOrganizationClaim.MemberRole] || '').trim();
   if (memberRole && memberRole !== INDIVIDUAL_SELF_ROLE) {
     throw new ManagerError(
       `An animal Individual Organization must identify its first member as '${INDIVIDUAL_SELF_ROLE}'; controller authority belongs to Organization.owner.`,
       IssueType.Invalid,
     );
   }
-  claims[ClaimsOrganizationSchemaorg.memberRole] = INDIVIDUAL_SELF_ROLE;
+  claims[SchemaOrgOrganizationClaim.MemberRole] = INDIVIDUAL_SELF_ROLE;
   const missing: string[] = [];
-  if (!String(claims[ClaimsOrganizationSchemaorg.alternateName] || '').trim()) missing.push('alternateName');
-  if (!NCBI_TAXONOMY_URI_PATTERN.test(String(claims[ClaimsOrganizationSchemaorg.memberAdditionalType] || '').trim())) missing.push('species');
-  if (!String(claims[ClaimsOrganizationSchemaorg.sameAs] || '').trim()) missing.push('card');
+  if (!String(claims[SchemaOrgOrganizationClaim.AlternateName] || '').trim()) missing.push('alternateName');
+  if (!NCBI_TAXONOMY_URI_PATTERN.test(String(claims[SchemaOrgOrganizationClaim.MemberAdditionalType] || '').trim())) missing.push('species');
+  if (!String(claims[SchemaOrgOrganizationClaim.SameAs] || '').trim()) missing.push('card');
   return { isAnimal: true, ready: missing.length === 0, missing };
 }
 
@@ -126,24 +126,24 @@ type IndividualRegistrationReadiness = Readonly<{
 
 /** Applies the human-card boundary without weakening the veterinary profile. */
 function readHumanRegistrationReadiness(claims: ClaimsRecord): IndividualRegistrationReadiness {
-  const alternateName = String(claims[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
-  const memberRole = String(claims[ClaimsOrganizationSchemaorg.memberRole] || '').trim();
-  if (!memberRole && !alternateName) claims[ClaimsOrganizationSchemaorg.memberRole] = INDIVIDUAL_SELF_ROLE;
-  const birthDate = String(claims[ClaimsPersonSchemaorg.birthDate] || '').trim();
+  const alternateName = String(claims[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
+  const memberRole = String(claims[SchemaOrgOrganizationClaim.MemberRole] || '').trim();
+  if (!memberRole && !alternateName) claims[SchemaOrgOrganizationClaim.MemberRole] = INDIVIDUAL_SELF_ROLE;
+  const birthDate = String(claims[SchemaOrgPersonClaim.BirthDate] || '').trim();
   const validBirthDate = /^(?:19|20)\d{2}(?:-(?:0[1-9]|1[0-2])(?:-(?:0[1-9]|[12]\d|3[01]))?)?$/u.test(birthDate);
   if (!alternateName && !validBirthDate) {
     throw new ManagerError(
-      `Missing required claims: '${ClaimsOrganizationSchemaorg.alternateName}' or a valid '${ClaimsPersonSchemaorg.birthDate}'`,
+      `Missing required claims: '${SchemaOrgOrganizationClaim.AlternateName}' or a valid '${SchemaOrgPersonClaim.BirthDate}'`,
       IssueType.Required,
     );
   }
   if (!alternateName) {
-    claims[ClaimsOrganizationSchemaorg.sameAs] = '';
+    claims[SchemaOrgOrganizationClaim.SameAs] = '';
     delete claims['org.schema.Organization.individualHmacPasskey'];
   }
   const missing = [
     ...(!alternateName ? ['alternateName'] : []),
-    ...(!String(claims[ClaimsOrganizationSchemaorg.sameAs] || '').trim() ? ['card'] : []),
+    ...(!String(claims[SchemaOrgOrganizationClaim.SameAs] || '').trim() ? ['card'] : []),
   ];
   return { profile: 'human', isDraft: missing.length > 0, ready: missing.length === 0, missing };
 }
@@ -164,11 +164,11 @@ function readIndividualRegistrationReadiness(claims: ClaimsRecord): IndividualRe
 
 /** Creates a public card alias only after a human draft has a display name. */
 function ensureNamedHumanSubjectCardAlias(claims: ClaimsRecord, documentId: string): void {
-  if (String(claims[ClaimsOrganizationSchemaorg.additionalType] || '').trim() === ANIMAL_SUBJECT_KIND) return;
-  if (!String(claims[ClaimsOrganizationSchemaorg.alternateName] || '').trim()) return;
-  if (String(claims[ClaimsOrganizationSchemaorg.sameAs] || '').trim()) return;
-  const providerDid = String(claims[ClaimsOfferSchemaorg.offeredBy] || '').trim();
-  if (providerDid) claims[ClaimsOrganizationSchemaorg.sameAs] = buildCanonicalIndividualSubjectDid(providerDid, documentId);
+  if (String(claims[SchemaOrgOrganizationClaim.AdditionalType] || '').trim() === ANIMAL_SUBJECT_KIND) return;
+  if (!String(claims[SchemaOrgOrganizationClaim.AlternateName] || '').trim()) return;
+  if (String(claims[SchemaOrgOrganizationClaim.SameAs] || '').trim()) return;
+  const providerDid = String(claims[SchemaOrgOfferClaim.OfferedBy] || '').trim();
+  if (providerDid) claims[SchemaOrgOrganizationClaim.SameAs] = buildCanonicalIndividualSubjectDid(providerDid, documentId);
 }
 
 export class FamilyManager {
@@ -318,12 +318,12 @@ export class FamilyManager {
     const matches: Record<string, unknown>[] = [];
     for (const secureDoc of records as ConfidentialStorageDoc[]) {
       const claims = readProjectedOfferOrderClaims(secureDoc);
-      if (!claims[ClaimsOfferSchemaorg.identifier]) continue;
+      if (!claims[SchemaOrgOfferClaim.Identifier]) continue;
       if (!matchOfferOrderSearchClaims(claims, filters)) continue;
       matches.push(buildOfferOrderSearchRow(
         secureDoc,
         claims,
-        ClaimsOfferSchemaorg.identifier,
+        SchemaOrgOfferClaim.Identifier,
       ));
     }
 
@@ -356,12 +356,12 @@ export class FamilyManager {
     const matches: Record<string, unknown>[] = [];
     for (const secureDoc of records as ConfidentialStorageDoc[]) {
       const claims = readProjectedOfferOrderClaims(secureDoc);
-      if (!claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier]) continue;
+      if (!claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier]) continue;
       if (!matchOfferOrderSearchClaims(claims, filters)) continue;
       matches.push(buildOfferOrderSearchRow(
         secureDoc,
         claims,
-        ClaimsOrderSchemaorg.acceptedOfferIdentifier,
+        SchemaOrgOrderClaim.AcceptedOfferIdentifier,
       ));
     }
 
@@ -389,9 +389,9 @@ export class FamilyManager {
       throw new ManagerError('Malformed entry: missing meta.claims', IssueType.Required);
     }
 
-    const requestedSector = claims[ClaimsServiceSchemaorg.category] as Sector | undefined;
+    const requestedSector = claims[SchemaOrgServiceClaim.Category] as Sector | undefined;
     if (!requestedSector) {
-      throw new ManagerError(`Missing required claim: '${ClaimsServiceSchemaorg.category}'`, IssueType.Required);
+      throw new ManagerError(`Missing required claim: '${SchemaOrgServiceClaim.Category}'`, IssueType.Required);
     }
 
     const tenantId = job.tenantId;
@@ -413,7 +413,7 @@ export class FamilyManager {
     const ownerPhones = splitIndexedPhones(claims['org.schema.Organization.owner.telephone'] as string | undefined);
     const ownerEmails = splitIndexedEmails(claims['org.schema.Organization.owner.email'] as string | undefined);
     readIndividualRegistrationReadiness(claims);
-    const apodo = String(claims[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
+    const apodo = String(claims[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
     if (ownerPhones.length === 0 && ownerEmails.length === 0) {
       throw new ManagerError(
         'Missing required claims: one of owner.telephone/owner.email',
@@ -421,14 +421,14 @@ export class FamilyManager {
       );
     }
 
-    const requestedDocumentId = normalizeUuid(claims[ClaimsOrganizationSchemaorg.identifierValue]);
+    const requestedDocumentId = normalizeUuid(claims[SchemaOrgOrganizationClaim.IdentifierValue]);
     const existingById = requestedDocumentId
       ? await this.vaultRepository.get<ConfidentialStorageDoc>(tenantCollectionName, requestedDocumentId, INDIVIDUAL_SECTION)
       : undefined;
     if (existingById) {
       const existingContent = await this.kmsService.unprotectConfidentialData<FamilyRegistrationContent>(existingById, tenantVaultId);
-      const storedPhones = splitIndexedPhones(existingContent.claims[ClaimsOrganizationSchemaorg.ownerTelephone] as string | undefined);
-      const storedEmails = splitIndexedEmails(existingContent.claims[ClaimsOrganizationSchemaorg.ownerEmail] as string | undefined);
+      const storedPhones = splitIndexedPhones(existingContent.claims[SchemaOrgOrganizationClaim.OwnerTelephone] as string | undefined);
+      const storedEmails = splitIndexedEmails(existingContent.claims[SchemaOrgOrganizationClaim.OwnerEmail] as string | undefined);
       const ownsDraft = ownerPhones.some(value => storedPhones.includes(value)) || ownerEmails.some(value => storedEmails.includes(value));
       if (!ownsDraft) throw new ManagerError('Only the verified owner/controller may resume this individual draft.', IssueType.Forbidden);
       if (existingContent.status === EntityLifecycleStatus.Active) {
@@ -478,7 +478,7 @@ export class FamilyManager {
           sectionId: INDIVIDUAL_SECTION,
           where: [
             { name: 'org.schema.Organization.owner.telephone', value: phone },
-            { name: ClaimsOrganizationSchemaorg.alternateName, value: apodo },
+            { name: SchemaOrgOrganizationClaim.AlternateName, value: apodo },
           ],
         });
         if (existing.length > 0) {
@@ -509,7 +509,7 @@ export class FamilyManager {
         sectionId: INDIVIDUAL_SECTION,
         where: [
           { name: 'org.schema.Organization.owner.email', value: email },
-          { name: ClaimsOrganizationSchemaorg.alternateName, value: apodo },
+          { name: SchemaOrgOrganizationClaim.AlternateName, value: apodo },
         ],
       });
       if (existing.length > 0) {
@@ -560,8 +560,8 @@ export class FamilyManager {
 
     const processedClaims: ClaimsRecord = {
       ...claims,
-      [ClaimsOrganizationSchemaorg.ownerIdentifierValue]: canonicalControllerUuidOrNew(
-        claims[ClaimsOrganizationSchemaorg.ownerIdentifierValue],
+      [SchemaOrgOrganizationClaim.OwnerIdentifierValue]: canonicalControllerUuidOrNew(
+        claims[SchemaOrgOrganizationClaim.OwnerIdentifierValue],
       ),
       ...(processedService?.meta.claims || {}),
       ...offerClaims,
@@ -573,16 +573,16 @@ export class FamilyManager {
     // and legacy business identifiers remain claims; they must never leak into
     // the subject-id slot used by controller licences.
     const familyDocId = normalizeUuid(
-      processedClaims[ClaimsOrganizationSchemaorg.identifierValue],
+      processedClaims[SchemaOrgOrganizationClaim.IdentifierValue],
     ) || uuidv4();
 
     const indexedPhones = ownerPhones.map(phone => ({ name: 'org.schema.Organization.owner.telephone', value: phone }));
     const indexedEmails = ownerEmails.map(email => ({ name: 'org.schema.Organization.owner.email', value: email }));
-    const indexedSubjectAliases = String(processedClaims[ClaimsOrganizationSchemaorg.sameAs] || '')
+    const indexedSubjectAliases = String(processedClaims[SchemaOrgOrganizationClaim.SameAs] || '')
       .split(',')
       .map(value => value.trim())
       .filter(Boolean)
-      .map(value => ({ name: ClaimsOrganizationSchemaorg.sameAs, value }));
+      .map(value => ({ name: SchemaOrgOrganizationClaim.SameAs, value }));
 
     // The public registration response and the persisted individual
     // organization must expose the same canonical identifier. Generating a
@@ -600,12 +600,12 @@ export class FamilyManager {
       indexed: {
         attributes: [
           { name: 'status', value: EntityLifecycleStatus.Pending },
-          { name: ClaimsOfferSchemaorg.identifier, value: processedClaims[ClaimsOfferSchemaorg.identifier] as string, unique: true },
+          { name: SchemaOrgOfferClaim.Identifier, value: processedClaims[SchemaOrgOfferClaim.Identifier] as string, unique: true },
           ...indexedPhones,
           ...indexedEmails,
           ...indexedSubjectAliases,
-          ...(requestedDocumentId ? [{ name: ClaimsOrganizationSchemaorg.identifierValue, value: requestedDocumentId, unique: true }] : []),
-          ...(apodo ? [{ name: ClaimsOrganizationSchemaorg.alternateName, value: apodo }] : []),
+          ...(requestedDocumentId ? [{ name: SchemaOrgOrganizationClaim.IdentifierValue, value: requestedDocumentId, unique: true }] : []),
+          ...(apodo ? [{ name: SchemaOrgOrganizationClaim.AlternateName, value: apodo }] : []),
           ...buildOfferOrderIndexedAttributes(processedClaims),
         ],
         hmac: { id: 'urn:unsupported', type: 'Sha256HmacKey2019' },
@@ -647,19 +647,19 @@ export class FamilyManager {
     requestedClaims: ClaimsRecord,
   ): Promise<FamilyRegistrationContent> {
     const existingClaims = content?.claims || {};
-    const existingSameAs = String(existingClaims[ClaimsOrganizationSchemaorg.sameAs] || '').trim();
-    const requestedSameAs = String(requestedClaims[ClaimsOrganizationSchemaorg.sameAs] || '').trim();
+    const existingSameAs = String(existingClaims[SchemaOrgOrganizationClaim.SameAs] || '').trim();
+    const requestedSameAs = String(requestedClaims[SchemaOrgOrganizationClaim.SameAs] || '').trim();
     const memberRoleClaim = 'org.schema.Organization.member.role';
     const existingRole = String(existingClaims[memberRoleClaim] || '').trim();
     const requestedRole = String(requestedClaims[memberRoleClaim] || '').trim();
     const recoveredClaims: ClaimsRecord = {
       ...existingClaims,
       ...(!existingSameAs && requestedSameAs
-        ? { [ClaimsOrganizationSchemaorg.sameAs]: requestedSameAs }
+        ? { [SchemaOrgOrganizationClaim.SameAs]: requestedSameAs }
         : {}),
       ...(!existingRole && requestedRole ? { [memberRoleClaim]: requestedRole } : {}),
     };
-    const changed = recoveredClaims[ClaimsOrganizationSchemaorg.sameAs] !== existingClaims[ClaimsOrganizationSchemaorg.sameAs]
+    const changed = recoveredClaims[SchemaOrgOrganizationClaim.SameAs] !== existingClaims[SchemaOrgOrganizationClaim.SameAs]
       || recoveredClaims[memberRoleClaim] !== existingClaims[memberRoleClaim];
     if (!changed) return content;
 
@@ -669,7 +669,7 @@ export class FamilyManager {
       .map(value => value.trim())
       .filter(Boolean)
       .filter(value => !existingAttributes.some(attribute =>
-        attribute.name === ClaimsOrganizationSchemaorg.sameAs && attribute.value === value));
+        attribute.name === SchemaOrgOrganizationClaim.SameAs && attribute.value === value));
     const recoveredContent: FamilyRegistrationContent = { ...content, claims: recoveredClaims };
     const recoveredDocument: ConfidentialStorageDoc & { meta?: Record<string, unknown> } = {
       ...secureDocument,
@@ -679,7 +679,7 @@ export class FamilyManager {
         ...(secureDocument.indexed || {}),
         attributes: [
           ...existingAttributes,
-          ...indexedAliases.map(value => ({ name: ClaimsOrganizationSchemaorg.sameAs, value })),
+          ...indexedAliases.map(value => ({ name: SchemaOrgOrganizationClaim.SameAs, value })),
         ],
       } as ConfidentialStorageDoc['indexed'],
       content: recoveredContent,
@@ -704,15 +704,15 @@ export class FamilyManager {
     const formFields = entryResourceMeta.formFields as any;
     const kyc = entryResourceMeta.kyc as any;
     const subjectDid = String(
-      entryClaims[ClaimsOrganizationSchemaorg.identifier]
-      || entryClaims[ClaimsPersonSchemaorg.identifier]
-      || entryClaims[ClaimsServiceSchemaorg.identifier]
+      entryClaims[SchemaOrgOrganizationClaim.IdentifierReference]
+      || entryClaims[SchemaOrgPersonClaim.Identifier]
+      || entryClaims[SchemaOrgServiceClaim.IdentifierReference]
       || '',
     ).trim();
 
     if (!subjectDid) {
       throw new ManagerError(
-        `Individual onboarding PDF draft requires one subject identifier claim such as '${ClaimsOrganizationSchemaorg.identifier}'.`,
+        `Individual onboarding PDF draft requires one subject identifier claim such as '${SchemaOrgOrganizationClaim.IdentifierReference}'.`,
         IssueType.Required,
       );
     }
@@ -787,14 +787,14 @@ export class FamilyManager {
     const fallbackClaims = attachmentClaims || normalizedRawClaims;
     const individualAlternateName =
       (typeof kycPayload.individualAlternateName === 'string' ? kycPayload.individualAlternateName : undefined) ||
-      (fallbackClaims?.[ClaimsOrganizationSchemaorg.alternateName] as string | undefined);
+      (fallbackClaims?.[SchemaOrgOrganizationClaim.AlternateName] as string | undefined);
     const individualBirthDate =
       (typeof kycPayload.individualBirthDate === 'string' ? kycPayload.individualBirthDate : undefined) ||
-      (fallbackClaims?.[ClaimsPersonSchemaorg.birthDate] as string | undefined);
+      (fallbackClaims?.[SchemaOrgPersonClaim.BirthDate] as string | undefined);
     const controllerEmail =
       (typeof kycPayload.controllerEmail === 'string' ? kycPayload.controllerEmail : undefined) ||
-      (fallbackClaims?.[ClaimsOrganizationSchemaorg.ownerEmail] as string | undefined) ||
-      (fallbackClaims?.[ClaimsPersonSchemaorg.email] as string | undefined);
+      (fallbackClaims?.[SchemaOrgOrganizationClaim.OwnerEmail] as string | undefined) ||
+      (fallbackClaims?.[SchemaOrgPersonClaim.Email] as string | undefined);
 
     return buildClaimsFromIndividualOrganizationKyc({
       profile,
@@ -812,12 +812,12 @@ export class FamilyManager {
       throw new ManagerError('Malformed order entry: missing meta.claims', IssueType.Required);
     }
 
-    const offerId = getClaimValue<string>(claims, ClaimsOrderSchemaorg.acceptedOfferIdentifier);
+    const offerId = getClaimValue<string>(claims, SchemaOrgOrderClaim.AcceptedOfferIdentifier);
     if (!offerId) {
       throw new ManagerError(
-        formatMissingRequiredClaimDiagnostic(ClaimsOrderSchemaorg.acceptedOfferIdentifier, {
+        formatMissingRequiredClaimDiagnostic(SchemaOrgOrderClaim.AcceptedOfferIdentifier, {
           context: 'in Order',
-          displayLabel: toExternalClaimLabel(ClaimsOrderSchemaorg.acceptedOfferIdentifier),
+          displayLabel: toExternalClaimLabel(SchemaOrgOrderClaim.AcceptedOfferIdentifier),
         }),
         IssueType.Required,
       );
@@ -837,7 +837,7 @@ export class FamilyManager {
 
     const results = await this.vaultRepository.query(tenantCollectionName, {
       sectionId: INDIVIDUAL_SECTION,
-      where: [{ name: ClaimsOfferSchemaorg.identifier, value: offerId }],
+      where: [{ name: SchemaOrgOfferClaim.Identifier, value: offerId }],
     });
 
     if (results.length === 0) {
@@ -879,8 +879,8 @@ export class FamilyManager {
 
     // Create individual (family member) license seats purchased via the family registration Offer and auto-issue one for the controller.
     let controllerAssignmentEntry: BundleEntry | undefined;
-    const familySeats = finalizedContent.claims[ClaimsOfferSchemaorg.eligibleQuantityValue] as number | undefined;
-    const familyOfferIdentifier = finalizedContent.claims[ClaimsOfferSchemaorg.identifier] as string | undefined;
+    const familySeats = finalizedContent.claims[SchemaOrgOfferClaim.EligibleQuantityValue] as number | undefined;
+    const familyOfferIdentifier = finalizedContent.claims[SchemaOrgOfferClaim.Identifier] as string | undefined;
     if (familySeats && familySeats > 0 && familyOfferIdentifier) {
       await materializeFreeIndividualLicenses({
         vaultRepository: this.vaultRepository,
@@ -894,11 +894,11 @@ export class FamilyManager {
       });
 
       const controllerEmail =
-        finalizedContent.claims[ClaimsOrganizationSchemaorg.ownerEmail] as string | undefined
-        || finalizedContent.claims[ClaimsPersonSchemaorg.email] as string | undefined;
+        finalizedContent.claims[SchemaOrgOrganizationClaim.OwnerEmail] as string | undefined
+        || finalizedContent.claims[SchemaOrgPersonClaim.Email] as string | undefined;
       const controllerPhoneForActivation =
-        finalizedContent.claims[ClaimsOrganizationSchemaorg.ownerTelephone] as string | undefined
-        || finalizedContent.claims[ClaimsPersonSchemaorg.telephone] as string | undefined;
+        finalizedContent.claims[SchemaOrgOrganizationClaim.OwnerTelephone] as string | undefined
+        || finalizedContent.claims[SchemaOrgPersonClaim.Telephone] as string | undefined;
       const controllerContact = controllerEmail || controllerPhoneForActivation;
       const controllerRole = `${HL7_CODING_SYSTEM_V3_ROLE_CODE}|${HealthcareActorRoleCodes.Controller}`;
       if (controllerContact) {
@@ -906,10 +906,10 @@ export class FamilyManager {
           const privateSubjectUuid = normalizeUuid(secureDoc.id);
           const authorizedSubjectDid = privateSubjectUuid
             ? buildCanonicalIndividualSubjectDid(
-              String(finalizedContent.claims[ClaimsOfferSchemaorg.offeredBy] || '').trim(),
+              String(finalizedContent.claims[SchemaOrgOfferClaim.OfferedBy] || '').trim(),
               secureDoc.id,
             )
-            : String(finalizedContent.claims[ClaimsOrganizationSchemaorg.sameAs] || '')
+            : String(finalizedContent.claims[SchemaOrgOrganizationClaim.SameAs] || '')
               .split(',')
               .map((value) => value.trim())
               .find((value) => value.startsWith('did:web:'));
@@ -920,9 +920,9 @@ export class FamilyManager {
             );
           }
           const controllerAssignmentIdentifier = canonicalControllerUuidOrNew(
-            finalizedContent.claims[ClaimsOrganizationSchemaorg.ownerIdentifierValue],
+            finalizedContent.claims[SchemaOrgOrganizationClaim.OwnerIdentifierValue],
           );
-          finalizedContent.claims[ClaimsOrganizationSchemaorg.ownerIdentifierValue] = controllerAssignmentIdentifier;
+          finalizedContent.claims[SchemaOrgOrganizationClaim.OwnerIdentifierValue] = controllerAssignmentIdentifier;
           const { activationCode } = await issueActivationCodeFromPool({
             vaultRepository: this.vaultRepository,
             kmsService: this.kmsService,
@@ -940,7 +940,7 @@ export class FamilyManager {
             subjectDid: authorizedSubjectDid,
             beforePersist: async (license) => {
               (license as DeviceLicense & Record<string, unknown>).authorizedSubjectAliases = [
-                String(finalizedContent.claims[ClaimsOrganizationSchemaorg.sameAs] || '').trim(),
+                String(finalizedContent.claims[SchemaOrgOrganizationClaim.SameAs] || '').trim(),
               ].filter(Boolean);
             },
           });
@@ -952,8 +952,8 @@ export class FamilyManager {
             controllerEmail,
             controllerTelephone: controllerEmail ? undefined : controllerPhoneForActivation,
           });
-          finalizedContent.claims[ClaimsIndividualProductSchemaorg.serialNumber] = activationCode;
-          finalizedContent.claims[ClaimsIndividualProductSchemaorg.category] = LICENSE_CATEGORY_INDIVIDUAL;
+          finalizedContent.claims[SchemaOrgIndividualProductClaim.SerialNumber] = activationCode;
+          finalizedContent.claims[SchemaOrgIndividualProductClaim.Category] = LICENSE_CATEGORY_INDIVIDUAL;
         } catch (e: any) {
           throw new ManagerError(
             `The family Order could not issue its controller activation code: ${String(e?.message || e)}`,
@@ -963,7 +963,7 @@ export class FamilyManager {
       }
     }
 
-    if (!String(finalizedContent.claims[ClaimsIndividualProductSchemaorg.serialNumber] || '').trim()) {
+    if (!String(finalizedContent.claims[SchemaOrgIndividualProductClaim.SerialNumber] || '').trim()) {
       throw new ManagerError(
         'The family Order cannot become active without its controller activation code.',
         IssueType.Conflict,
@@ -997,27 +997,27 @@ export class FamilyManager {
       tenantDid: recipientDid,
       senderDid: tenantDid,
       email:
-        finalizedContent.claims[ClaimsOrganizationSchemaorg.ownerEmail] as string | undefined
-        || finalizedContent.claims[ClaimsPersonSchemaorg.email] as string | undefined,
-      legalName: finalizedContent.claims[ClaimsOrganizationSchemaorg.legalName] as string | undefined,
-      addressCountry: finalizedContent.claims[ClaimsOrganizationSchemaorg.addressCountry] as string | undefined,
-      addressRegion: finalizedContent.claims[ClaimsOrganizationSchemaorg.addressRegion] as string | undefined,
-      addressLocality: finalizedContent.claims[ClaimsOrganizationSchemaorg.addressLocality] as string | undefined,
-      postalCode: finalizedContent.claims[ClaimsOrganizationSchemaorg.postalCode] as string | undefined,
-      streetAddress: finalizedContent.claims[ClaimsOrganizationSchemaorg.streetAddress] as string | undefined,
+        finalizedContent.claims[SchemaOrgOrganizationClaim.OwnerEmail] as string | undefined
+        || finalizedContent.claims[SchemaOrgPersonClaim.Email] as string | undefined,
+      legalName: finalizedContent.claims[SchemaOrgOrganizationClaim.LegalName] as string | undefined,
+      addressCountry: finalizedContent.claims[SchemaOrgOrganizationClaim.AddressCountry] as string | undefined,
+      addressRegion: finalizedContent.claims[SchemaOrgOrganizationClaim.AddressRegion] as string | undefined,
+      addressLocality: finalizedContent.claims[SchemaOrgOrganizationClaim.AddressLocality] as string | undefined,
+      postalCode: finalizedContent.claims[SchemaOrgOrganizationClaim.PostalCode] as string | undefined,
+      streetAddress: finalizedContent.claims[SchemaOrgOrganizationClaim.StreetAddress] as string | undefined,
       activationCode: (finalizedContent.claims as any)['org.schema.IndividualProduct.serialNumber'] as string | undefined,
       activationCategory: (finalizedContent.claims as any)['org.schema.IndividualProduct.category'] as string | undefined,
-      paymentMethod: claims[ClaimsOrderSchemaorg.paymentMethod] as string | undefined,
-      paymentUrl: claims[ClaimsOrderSchemaorg.paymentUrl] as string | undefined,
-      invoiceId: claims[ClaimsOrderSchemaorg.partOfInvoice] as string | undefined,
+      paymentMethod: claims[SchemaOrgOrderClaim.PaymentMethod] as string | undefined,
+      paymentUrl: claims[SchemaOrgOrderClaim.PaymentUrl] as string | undefined,
+      invoiceId: claims[SchemaOrgOrderClaim.PartOfInvoice] as string | undefined,
       paymentConfirmed: true,
       ...readOfferPaymentContext(finalizedContent.claims),
     };
     const paymentCommunication = await buildPaymentCommunication(paymentContext);
     const invoiceBundle = buildGatewayInvoiceBundle({
       invoiceId: String(
-        paymentCommunication.claims[ClaimsOrderSchemaorg.partOfInvoice]
-        || paymentCommunication.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier]
+        paymentCommunication.claims[SchemaOrgOrderClaim.PartOfInvoice]
+        || paymentCommunication.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier]
         || offerId,
       ),
       subjectReference: recipientDid,
@@ -1027,10 +1027,10 @@ export class FamilyManager {
         paymentCommunication.claims['org.schema.Order.invoiceIssuedAt']
         || new Date().toISOString(),
       ),
-      amount: String(finalizedContent.claims[ClaimsOfferSchemaorg.price] || ''),
-      currency: String(finalizedContent.claims[ClaimsOfferSchemaorg.priceCurrency] || ''),
-      paymentMethod: claims[ClaimsOrderSchemaorg.paymentMethod] as string | undefined,
-      paymentUrl: claims[ClaimsOrderSchemaorg.paymentUrl] as string | undefined,
+      amount: String(finalizedContent.claims[SchemaOrgOfferClaim.Price] || ''),
+      currency: String(finalizedContent.claims[SchemaOrgOfferClaim.PriceCurrency] || ''),
+      paymentMethod: claims[SchemaOrgOrderClaim.PaymentMethod] as string | undefined,
+      paymentUrl: claims[SchemaOrgOrderClaim.PaymentUrl] as string | undefined,
     });
 
     const communicationDoc: ConfidentialStorageDoc & { meta?: Record<string, unknown> } = {
@@ -1065,13 +1065,13 @@ export class FamilyManager {
     content: FamilyRegistrationContent;
   }>): Promise<(BundleEntry | ErrorEntry)[]> {
     const controllerEmail = String(
-      input.content.claims[ClaimsOrganizationSchemaorg.ownerEmail]
-      || input.content.claims[ClaimsPersonSchemaorg.email]
+      input.content.claims[SchemaOrgOrganizationClaim.OwnerEmail]
+      || input.content.claims[SchemaOrgPersonClaim.Email]
       || '',
     ).trim();
     const controllerTelephone = String(
-      input.content.claims[ClaimsOrganizationSchemaorg.ownerTelephone]
-      || input.content.claims[ClaimsPersonSchemaorg.telephone]
+      input.content.claims[SchemaOrgOrganizationClaim.OwnerTelephone]
+      || input.content.claims[SchemaOrgPersonClaim.Telephone]
       || '',
     ).trim();
     const authorizedIdentifiers = [
@@ -1093,7 +1093,7 @@ export class FamilyManager {
     }
 
     const persistedActivationCode = String(
-      input.content.claims[ClaimsIndividualProductSchemaorg.serialNumber] || '',
+      input.content.claims[SchemaOrgIndividualProductClaim.SerialNumber] || '',
     ).trim();
     const licenseDocuments = await this.vaultRepository.getContainersInSection<ConfidentialStorageDoc>(
       input.tenantVaultId,
@@ -1153,14 +1153,14 @@ export class FamilyManager {
       );
     }
     const assignmentIdentifier = canonicalControllerUuidOrNew(
-      normalizeUuid(input.content.claims[ClaimsOrganizationSchemaorg.ownerIdentifierValue])
+      normalizeUuid(input.content.claims[SchemaOrgOrganizationClaim.OwnerIdentifierValue])
       || normalizeUuid(controllerLicenseMatches[0]?.license.relatedPersonId),
     );
     // Historical multibase subjects are authoritative when already bound to
     // the issued seat. Only a missing value is reconstructed from the UUID.
     const subjectDid = String(controllerLicenseMatches[0]?.license.authorizedSubjectDid || '').trim()
       || buildCanonicalIndividualSubjectDid(
-        String(input.content.claims[ClaimsOfferSchemaorg.offeredBy] || '').trim(),
+        String(input.content.claims[SchemaOrgOfferClaim.OfferedBy] || '').trim(),
         input.secureDocument.id,
       );
     const controllerRole = String(controllerLicenseMatches[0]?.license.issuedToRole || '').trim()
@@ -1168,7 +1168,7 @@ export class FamilyManager {
     let controllerLicenseDocument: ConfidentialStorageDoc | undefined = controllerLicenseMatches[0]?.document;
     let controllerLicense: (DeviceLicense & Record<string, any>) | undefined = controllerLicenseMatches[0]?.license;
     if (!controllerLicenseDocument || !controllerLicense) {
-      const quantity = Number(input.content.claims[ClaimsOfferSchemaorg.eligibleQuantityValue] || 1);
+      const quantity = Number(input.content.claims[SchemaOrgOfferClaim.EligibleQuantityValue] || 1);
       await materializeFreeIndividualLicenses({
         vaultRepository: this.vaultRepository,
         tenantVaultId: input.tenantVaultId,
@@ -1194,7 +1194,7 @@ export class FamilyManager {
         subjectDid,
         beforePersist: async (license) => {
           (license as DeviceLicense & Record<string, unknown>).authorizedSubjectAliases = [
-            String(input.content.claims[ClaimsOrganizationSchemaorg.sameAs] || '').trim(),
+            String(input.content.claims[SchemaOrgOrganizationClaim.SameAs] || '').trim(),
           ].filter(Boolean);
         },
       });
@@ -1219,14 +1219,14 @@ export class FamilyManager {
       );
     }
     const activationCode = String(controllerLicense.activationCode || '').trim();
-    if (input.content.claims[ClaimsOrganizationSchemaorg.ownerIdentifierValue] !== assignmentIdentifier
-      || input.content.claims[ClaimsIndividualProductSchemaorg.serialNumber] !== activationCode
-      || input.content.claims[ClaimsIndividualProductSchemaorg.category] !== LICENSE_CATEGORY_INDIVIDUAL) {
+    if (input.content.claims[SchemaOrgOrganizationClaim.OwnerIdentifierValue] !== assignmentIdentifier
+      || input.content.claims[SchemaOrgIndividualProductClaim.SerialNumber] !== activationCode
+      || input.content.claims[SchemaOrgIndividualProductClaim.Category] !== LICENSE_CATEGORY_INDIVIDUAL) {
       const repairedClaims = {
         ...input.content.claims,
-        [ClaimsOrganizationSchemaorg.ownerIdentifierValue]: assignmentIdentifier,
-        [ClaimsIndividualProductSchemaorg.serialNumber]: activationCode,
-        [ClaimsIndividualProductSchemaorg.category]: LICENSE_CATEGORY_INDIVIDUAL,
+        [SchemaOrgOrganizationClaim.OwnerIdentifierValue]: assignmentIdentifier,
+        [SchemaOrgIndividualProductClaim.SerialNumber]: activationCode,
+        [SchemaOrgIndividualProductClaim.Category]: LICENSE_CATEGORY_INDIVIDUAL,
       };
       const repairedDocument: ConfidentialStorageDoc & { meta?: Record<string, unknown> } = {
         ...input.secureDocument,
@@ -1292,9 +1292,9 @@ export class FamilyManager {
         id: input.secureDocument.id,
         meta: { claims: {
           ...input.content.claims,
-          [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: input.offerId,
-          [ClaimsIndividualProductSchemaorg.serialNumber]: activationCode,
-          [ClaimsIndividualProductSchemaorg.category]: LICENSE_CATEGORY_INDIVIDUAL,
+          [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: input.offerId,
+          [SchemaOrgIndividualProductClaim.SerialNumber]: activationCode,
+          [SchemaOrgIndividualProductClaim.Category]: LICENSE_CATEGORY_INDIVIDUAL,
         } },
       },
       response: { status: '200' },
@@ -1371,14 +1371,14 @@ export class FamilyManager {
       tenantCollectionName,
       {
         sectionId: getEnvSectionId('communications'),
-        where: [{ name: ClaimsOfferSchemaorg.identifier, value: offerId }],
+        where: [{ name: SchemaOrgOfferClaim.Identifier, value: offerId }],
       },
       { hydrate: false },
     );
     let matchedOfferClaims: Record<string, unknown> | undefined;
     for (const secureDoc of records as ConfidentialStorageDoc[]) {
       const candidateClaims = readProjectedOfferOrderClaims(secureDoc);
-      if (String(candidateClaims[ClaimsOfferSchemaorg.identifier] || '').trim() === offerId) {
+      if (String(candidateClaims[SchemaOrgOfferClaim.Identifier] || '').trim() === offerId) {
         matchedOfferClaims = candidateClaims;
         break;
       }
@@ -1395,7 +1395,7 @@ export class FamilyManager {
       throw new ManagerError(`Payment confirmation failed for offerId '${offerId}'.`, IssueType.Conflict);
     }
 
-    const quantity = Number(matchedOfferClaims[ClaimsOfferSchemaorg.eligibleQuantityValue] || 1);
+    const quantity = Number(matchedOfferClaims[SchemaOrgOfferClaim.EligibleQuantityValue] || 1);
     const now = Date.now();
     const expiryDate = new Date(now);
     expiryDate.setFullYear(expiryDate.getFullYear() + 1);
@@ -1436,7 +1436,7 @@ export class FamilyManager {
     });
     const invoiceBundle = buildGatewayInvoiceBundle({
       invoiceId: String(
-        paymentCommunication.claims[ClaimsOrderSchemaorg.partOfInvoice]
+        paymentCommunication.claims[SchemaOrgOrderClaim.PartOfInvoice]
         || verification.invoiceId
         || offerId,
       ),
@@ -1447,8 +1447,8 @@ export class FamilyManager {
         paymentCommunication.claims['org.schema.Order.invoiceIssuedAt']
         || new Date().toISOString(),
       ),
-      amount: String(matchedOfferClaims[ClaimsOfferSchemaorg.price] || ''),
-      currency: String(matchedOfferClaims[ClaimsOfferSchemaorg.priceCurrency] || ''),
+      amount: String(matchedOfferClaims[SchemaOrgOfferClaim.Price] || ''),
+      currency: String(matchedOfferClaims[SchemaOrgOfferClaim.PriceCurrency] || ''),
       paymentMethod: verification.paymentMethod,
       paymentUrl: verification.paymentUrl,
     });
@@ -1508,7 +1508,7 @@ export class FamilyManager {
       throw new ManagerError('Malformed entry: missing meta.claims', IssueType.Required);
     }
 
-    const requestedSector = (job.sector || claims[ClaimsServiceSchemaorg.category]) as Sector | undefined;
+    const requestedSector = (job.sector || claims[SchemaOrgServiceClaim.Category]) as Sector | undefined;
     if (!requestedSector || !job.tenantId) {
       throw new ManagerError('Job is missing tenantId or sector.', IssueType.Required);
     }
@@ -1518,14 +1518,14 @@ export class FamilyManager {
       throw new ManagerError(`Tenant not found in cache: '${tenantVaultId}'`, IssueType.NotFound);
     }
 
-    const sameAs = String(claims[ClaimsOrganizationSchemaorg.sameAs] || '').trim();
+    const sameAs = String(claims[SchemaOrgOrganizationClaim.SameAs] || '').trim();
     const ownerPhones = splitIndexedPhones(claims['org.schema.Organization.owner.telephone'] as string | undefined);
     const ownerEmails = splitIndexedEmails(claims['org.schema.Organization.owner.email'] as string | undefined);
     this.assertOwnerDirectoryAuthorization(job, tenantVaultId, ownerPhones, ownerEmails);
     if (sameAs) {
       await this.assertRegisteredProfileSubjectAuthorization(job, tenantVaultId, sameAs);
     }
-    const nickname = claims[ClaimsOrganizationSchemaorg.alternateName] as string | undefined;
+    const nickname = claims[SchemaOrgOrganizationClaim.AlternateName] as string | undefined;
     if (!sameAs && !nickname && (ownerPhones.length > 0 || ownerEmails.length > 0)) {
       return this.buildOwnedFamilyDirectoryResult(
         tenantVaultId,
@@ -1536,7 +1536,7 @@ export class FamilyManager {
     }
     if (!sameAs && ((ownerPhones.length === 0 && ownerEmails.length === 0) || !nickname)) {
       throw new ManagerError(
-        `Missing required claims for search: exact '${ClaimsOrganizationSchemaorg.sameAs}', an owner email/telephone directory query, or '${ClaimsOrganizationSchemaorg.alternateName}' plus owner contact`,
+        `Missing required claims for search: exact '${SchemaOrgOrganizationClaim.SameAs}', an owner email/telephone directory query, or '${SchemaOrgOrganizationClaim.AlternateName}' plus owner contact`,
         IssueType.Required,
       );
     }
@@ -1544,7 +1544,7 @@ export class FamilyManager {
     const foundResult = sameAs
       ? (await this.vaultRepository.query(tenantCollectionName, {
           sectionId: INDIVIDUAL_SECTION,
-          where: [{ name: ClaimsOrganizationSchemaorg.sameAs, value: sameAs }],
+          where: [{ name: SchemaOrgOrganizationClaim.SameAs, value: sameAs }],
         }))[0] as ConfidentialStorageDoc | undefined
       : await this.findFamilyRegistrationDoc(tenantCollectionName, ownerPhones, ownerEmails, nickname!);
 
@@ -1555,8 +1555,8 @@ export class FamilyManager {
           claims: {
             [GatewayClaim.FamilyRegistrationStatus]: FamilyRegistrationStatus.NotFound,
             ...(sameAs
-              ? { [ClaimsOrganizationSchemaorg.sameAs]: sameAs }
-              : { [ClaimsOrganizationSchemaorg.alternateName]: nickname }),
+              ? { [SchemaOrgOrganizationClaim.SameAs]: sameAs }
+              : { [SchemaOrgOrganizationClaim.AlternateName]: nickname }),
           },
         } },
         response: { status: '200' },
@@ -1632,7 +1632,7 @@ export class FamilyManager {
       throw new ManagerError('Malformed entry: missing meta.claims', IssueType.Required);
     }
 
-    const requestedSector = (job.sector || claims[ClaimsServiceSchemaorg.category]) as Sector | undefined;
+    const requestedSector = (job.sector || claims[SchemaOrgServiceClaim.Category]) as Sector | undefined;
     if (!requestedSector || !job.tenantId) {
       throw new ManagerError('Job is missing tenantId or sector.', IssueType.Required);
     }
@@ -1645,11 +1645,11 @@ export class FamilyManager {
     const ownerPhones = splitIndexedPhones(claims['org.schema.Organization.owner.telephone'] as string | undefined);
     const ownerEmails = splitIndexedEmails(claims['org.schema.Organization.owner.email'] as string | undefined);
     this.assertOwnerDirectoryAuthorization(job, tenantVaultId, ownerPhones, ownerEmails);
-    const requestedDocumentId = normalizeUuid(claims[ClaimsOrganizationSchemaorg.identifierValue]);
-    const nickname = claims[ClaimsOrganizationSchemaorg.alternateName] as string | undefined;
+    const requestedDocumentId = normalizeUuid(claims[SchemaOrgOrganizationClaim.IdentifierValue]);
+    const nickname = claims[SchemaOrgOrganizationClaim.AlternateName] as string | undefined;
     if ((ownerPhones.length === 0 && ownerEmails.length === 0) || (!nickname && !requestedDocumentId)) {
       throw new ManagerError(
-        `Missing required claims for purge: one of '${ClaimsOrganizationSchemaorg.identifierValue}'/'${ClaimsOrganizationSchemaorg.alternateName}' and one of owner.telephone/owner.email`,
+        `Missing required claims for purge: one of '${SchemaOrgOrganizationClaim.IdentifierValue}'/'${SchemaOrgOrganizationClaim.AlternateName}' and one of owner.telephone/owner.email`,
         IssueType.Required,
       );
     }
@@ -1662,8 +1662,8 @@ export class FamilyManager {
     }
 
     const familyContent = await this.kmsService.unprotectConfidentialData<FamilyRegistrationContent>(foundResult, tenantVaultId);
-    const storedPhones = splitIndexedPhones(familyContent.claims[ClaimsOrganizationSchemaorg.ownerTelephone] as string | undefined);
-    const storedEmails = splitIndexedEmails(familyContent.claims[ClaimsOrganizationSchemaorg.ownerEmail] as string | undefined);
+    const storedPhones = splitIndexedPhones(familyContent.claims[SchemaOrgOrganizationClaim.OwnerTelephone] as string | undefined);
+    const storedEmails = splitIndexedEmails(familyContent.claims[SchemaOrgOrganizationClaim.OwnerEmail] as string | undefined);
     const ownsRecord = ownerPhones.some(value => storedPhones.includes(value)) || ownerEmails.some(value => storedEmails.includes(value));
     if (!ownsRecord) throw new ManagerError('Only the verified owner/controller may purge this individual.', IssueType.Forbidden);
     const storedReadiness = readIndividualRegistrationReadiness(familyContent.claims);
@@ -1678,7 +1678,7 @@ export class FamilyManager {
       return {
         type: 'Family-purge-response-v1.0',
         resource: { resourceType: ResourceTypesFhirR4.Organization, id: foundResult.id, meta: { claims: {
-          [ClaimsOrganizationSchemaorg.identifierValue]: foundResult.id,
+          [SchemaOrgOrganizationClaim.IdentifierValue]: foundResult.id,
           [GatewayClaim.FamilyRegistrationStatus]: FamilyRegistrationStatus.DraftDeleted,
         } } },
         response: { status: '200' },
@@ -1701,7 +1701,7 @@ export class FamilyManager {
       type: 'Family-purge-response-v1.0',
       resource: { resourceType: ResourceTypesFhirR4.Organization, id: foundResult.id, meta: {
         claims: {
-          ...(nickname ? { [ClaimsOrganizationSchemaorg.alternateName]: nickname } : {}),
+          ...(nickname ? { [SchemaOrgOrganizationClaim.AlternateName]: nickname } : {}),
           [GatewayClaim.FamilyRegistrationStatus]: FamilyRegistrationStatus.Purged,
         },
       } },
@@ -1745,9 +1745,9 @@ export class FamilyManager {
       ...(lifecycleClaims || {}),
     };
     const identifiers = [
-      claims[ClaimsOrganizationSchemaorg.identifier],
-      claims[ClaimsPersonSchemaorg.identifier],
-      claims[ClaimsServiceSchemaorg.identifier],
+      claims[SchemaOrgOrganizationClaim.IdentifierReference],
+      claims[SchemaOrgPersonClaim.Identifier],
+      claims[SchemaOrgServiceClaim.IdentifierReference],
     ]
       .map((value) => String(value || '').trim())
       .filter(Boolean);
@@ -1841,7 +1841,7 @@ export class FamilyManager {
       throw new ManagerError('Malformed entry: missing meta.claims', IssueType.Required);
     }
 
-    const requestedSector = (job.sector || claims[ClaimsServiceSchemaorg.category]) as Sector | undefined;
+    const requestedSector = (job.sector || claims[SchemaOrgServiceClaim.Category]) as Sector | undefined;
     if (!requestedSector || !job.tenantId) {
       throw new ManagerError('Job is missing tenantId or sector.', IssueType.Required);
     }
@@ -1854,10 +1854,10 @@ export class FamilyManager {
     const ownerPhones = splitIndexedPhones(claims['org.schema.Organization.owner.telephone'] as string | undefined);
     const ownerEmails = splitIndexedEmails(claims['org.schema.Organization.owner.email'] as string | undefined);
     this.assertOwnerDirectoryAuthorization(job, tenantVaultId, ownerPhones, ownerEmails);
-    const nickname = claims[ClaimsOrganizationSchemaorg.alternateName] as string | undefined;
+    const nickname = claims[SchemaOrgOrganizationClaim.AlternateName] as string | undefined;
     if ((ownerPhones.length === 0 && ownerEmails.length === 0) || !nickname) {
       throw new ManagerError(
-        `Missing required claims for disable: '${ClaimsOrganizationSchemaorg.alternateName}' and one of owner.telephone/owner.email`,
+        `Missing required claims for disable: '${SchemaOrgOrganizationClaim.AlternateName}' and one of owner.telephone/owner.email`,
         IssueType.Required,
       );
     }
@@ -1882,7 +1882,7 @@ export class FamilyManager {
       type: 'Family-disable-response-v1.0',
       resource: { resourceType: ResourceTypesFhirR4.Organization, id: foundResult.id, meta: {
         claims: {
-          [ClaimsOrganizationSchemaorg.alternateName]: nickname,
+          [SchemaOrgOrganizationClaim.AlternateName]: nickname,
           [GatewayClaim.FamilyRegistrationStatus]: FamilyRegistrationStatus.Disabled,
         },
       } },
@@ -1896,8 +1896,8 @@ export class FamilyManager {
   ): Promise<void> {
     const activationCode = String((familyContent.claims as any)['org.schema.IndividualProduct.serialNumber'] || '').trim();
     const email = normalizeIndexedEmail(String(
-      familyContent.claims[ClaimsPersonSchemaorg.email]
-      || familyContent.claims[ClaimsOrganizationSchemaorg.ownerEmail]
+      familyContent.claims[SchemaOrgPersonClaim.Email]
+      || familyContent.claims[SchemaOrgOrganizationClaim.OwnerEmail]
       || '',
     ));
 
@@ -1956,7 +1956,7 @@ export class FamilyManager {
         sectionId: INDIVIDUAL_SECTION,
         where: [
           { name: 'org.schema.Organization.owner.telephone', value: phone },
-          { name: ClaimsOrganizationSchemaorg.alternateName, value: nickname },
+          { name: SchemaOrgOrganizationClaim.AlternateName, value: nickname },
         ],
       });
       if (results.length > 0) {
@@ -1968,7 +1968,7 @@ export class FamilyManager {
         sectionId: INDIVIDUAL_SECTION,
         where: [
           { name: 'org.schema.Organization.owner.email', value: email },
-          { name: ClaimsOrganizationSchemaorg.alternateName, value: nickname },
+          { name: SchemaOrgOrganizationClaim.AlternateName, value: nickname },
         ],
       });
       if (results.length > 0) {
@@ -2063,7 +2063,7 @@ export class FamilyManager {
 
   private async handleServiceAttachment(service?: IncludedResource): Promise<IncludedResource | undefined> {
     if (!service) return undefined;
-    let termsOfService = service.meta.claims[ClaimsServiceSchemaorg.termsOfService] as string | undefined;
+    let termsOfService = service.meta.claims[SchemaOrgServiceClaim.TermsOfService] as string | undefined;
     if (termsOfService && !termsOfService.startsWith('http')) {
       try {
         if (termsOfService.startsWith('data:')) {
@@ -2075,8 +2075,8 @@ export class FamilyManager {
         const uploadResult = await this.storageAdapter.upload(pdfBytes, 'application/pdf');
         if (!uploadResult) throw new Error('Storage adapter returned undefined result.');
         const { publicUrl } = uploadResult;
-        service.meta.claims[ClaimsServiceSchemaorg.termsOfService] = publicUrl;
-        (service.meta.claims as any)[`${ClaimsServiceSchemaorg.termsOfService}#hash`] = createHash('sha256')
+        service.meta.claims[SchemaOrgServiceClaim.TermsOfService] = publicUrl;
+        (service.meta.claims as any)[`${SchemaOrgServiceClaim.TermsOfService}#hash`] = createHash('sha256')
           .update(pdfBytes)
           .digest('hex');
       } catch (e: any) {

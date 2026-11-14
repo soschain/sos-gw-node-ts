@@ -2,7 +2,7 @@
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 // Flow contract: 1. provision a real in-memory tenant; 2. persist one encrypted Animal identity and its encrypted exact-match pointer; 3. submit authenticated POST Patient/$match with the original ISO chip; 4. poll the asynchronous response; 5. prove a zero-or-one certain FHIR match exposes only the public card. Authorization invariant: a locally verified bearer is mandatory and identifier resolution grants no clinical/contact permission. Persistence invariant: chip and card stay inside encrypted tenant storage while neither is supplied to Fabric and no caller-derived hash crosses the API.
 import { buildSubjectIdentityBundleEntry } from 'gdc-common-utils-ts/utils/subject-identity';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { invokeExpress } from './helpers/invokeExpress';
 import { configureAuthenticatedTestActor } from './helpers/authenticated-test-actor';
@@ -37,13 +37,13 @@ describe('Patient $match API', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-        [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-        [ClaimsOrganizationSchemaorg.identifierValue]: 'A0011223344',
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+        [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+        [SchemaOrgOrganizationClaim.IdentifierValue]: 'A0011223344',
+        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
       };
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
       await kmsService.provisionKeys(tenantVaultId);
       const protectedTenant = await kmsService.protectConfidentialData({
         id: tenantVaultId,

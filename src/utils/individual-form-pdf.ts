@@ -1,4 +1,4 @@
-import { ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ClaimConsent } from 'fhir-data-utils-ts';
 
 /** Flat map of PDF form field names to raw values extracted from the individual onboarding PDF. */
@@ -170,33 +170,33 @@ export function buildClaimsFromIndividualFormPdf(
 
   return {
     '@context': 'org.schema',
-    [ClaimsOrganizationSchemaorg.alternateName]: organizationAlternateName,
-    ...(personAlternateName ? { [ClaimsOrganizationSchemaorg.ownerAlternateName]: personAlternateName } : {}),
+    [SchemaOrgOrganizationClaim.AlternateName]: organizationAlternateName,
+    ...(personAlternateName ? { [SchemaOrgOrganizationClaim.OwnerAlternateName]: personAlternateName } : {}),
     ...(personIdentifier ? {
-      [ClaimsOrganizationSchemaorg.ownerIdentifierValue]: personIdentifier,
+      [SchemaOrgOrganizationClaim.OwnerIdentifierValue]: personIdentifier,
     } : {}),
     ...(resolvedEmail ? {
-      [ClaimsOrganizationSchemaorg.ownerEmail]: resolvedEmail,
+      [SchemaOrgOrganizationClaim.OwnerEmail]: resolvedEmail,
     } : {}),
     ...(resolvedTelephone ? {
-      [ClaimsOrganizationSchemaorg.ownerTelephone]: resolvedTelephone,
+      [SchemaOrgOrganizationClaim.OwnerTelephone]: resolvedTelephone,
     } : {}),
-    ...(personName ? { [ClaimsPersonSchemaorg.name]: personName } : {}),
-    ...(givenName ? { [ClaimsPersonSchemaorg.givenName]: givenName } : {}),
-    ...(familyName ? { [ClaimsPersonSchemaorg.familyName]: familyName } : {}),
+    ...(personName ? { [SchemaOrgPersonClaim.Name]: personName } : {}),
+    ...(givenName ? { [SchemaOrgPersonClaim.GivenName]: givenName } : {}),
+    ...(familyName ? { [SchemaOrgPersonClaim.FamilyName]: familyName } : {}),
     ...(personIdentifier ? {
-      [ClaimsPersonSchemaorg.identifierValue]: personIdentifier,
-      [ClaimsPersonSchemaorg.identifier]: `urn:person:identifier:${personIdentifier}`,
+      [SchemaOrgPersonClaim.IdentifierValue]: personIdentifier,
+      [SchemaOrgPersonClaim.Identifier]: `urn:person:identifier:${personIdentifier}`,
     } : {}),
-    ...(memberGivenName ? { [ClaimsOrganizationSchemaorg.memberGivenName]: memberGivenName } : {}),
-    ...(memberFamilyName ? { [ClaimsOrganizationSchemaorg.memberFamilyName]: memberFamilyName } : {}),
-    [ClaimsOrganizationSchemaorg.memberRole]: 'ONESELF',
-    ...(country ? { [ClaimsOrganizationSchemaorg.addressCountry]: country } : {}),
-    ...(mainGender ? { [ClaimsPersonSchemaorg.gender]: mainGender } : {}),
-    ...(mainBirthDate ? { [ClaimsPersonSchemaorg.birthDate]: mainBirthDate } : {}),
-    ...(gender ? { [ClaimsOrganizationSchemaorg.memberGender]: gender } : {}),
-    ...(birthDate ? { [ClaimsOrganizationSchemaorg.memberBirthDate]: birthDate } : {}),
+    ...(memberGivenName ? { [SchemaOrgOrganizationClaim.MemberGivenName]: memberGivenName } : {}),
+    ...(memberFamilyName ? { [SchemaOrgOrganizationClaim.MemberFamilyName]: memberFamilyName } : {}),
+    [SchemaOrgOrganizationClaim.MemberRole]: 'ONESELF',
+    ...(country ? { [SchemaOrgOrganizationClaim.AddressCountry]: country } : {}),
+    ...(mainGender ? { [SchemaOrgPersonClaim.Gender]: mainGender } : {}),
+    ...(mainBirthDate ? { [SchemaOrgPersonClaim.BirthDate]: mainBirthDate } : {}),
+    ...(gender ? { [SchemaOrgOrganizationClaim.MemberGender]: gender } : {}),
+    ...(birthDate ? { [SchemaOrgOrganizationClaim.MemberBirthDate]: birthDate } : {}),
     ...(consentDate ? { [ClaimConsent.date]: consentDate } : {}),
-    ...(serviceProviderDomain ? { [ClaimsOrderSchemaorg.orderedItemServiceType]: serviceProviderDomain } : {}),
+    ...(serviceProviderDomain ? { [SchemaOrgOrderClaim.OrderedItemServiceType]: serviceProviderDomain } : {}),
   };
 }

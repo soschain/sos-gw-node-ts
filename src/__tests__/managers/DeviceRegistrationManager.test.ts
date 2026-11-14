@@ -19,7 +19,7 @@ import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-stor
 import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
 import type { EntityConfig } from '../../gdc-backend-utils-node/models/entity';
-import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ManageAssetCryptographicKey } from '../../blockchain/fabric/v3/manageAssetCryptographicKey';
 import { ManageAssetSubjectKeyBinding } from '../../blockchain/fabric/v3/manageAssetSubjectKeyBinding';
 import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';
@@ -227,8 +227,8 @@ describe('DeviceRegistrationManager', () => {
           type: EntityType.Person,
           status: EntityLifecycleStatus.Active,
           claims: {
-            [ClaimsPersonSchemaorg.email]: EXAMPLE_EMAIL_PROFESSIONAL,
-            [ClaimsPersonSchemaorg.hasOccupation]: HealthcareActorRoles.Veterinarian,
+            [SchemaOrgPersonClaim.Email]: EXAMPLE_EMAIL_PROFESSIONAL,
+            [SchemaOrgPersonClaim.HasOccupation]: HealthcareActorRoles.Veterinarian,
           },
           didDocument: {
             '@context': 'https://www.w3.org/ns/did/v1',
@@ -603,8 +603,8 @@ describe('DeviceRegistrationManager', () => {
         type: EntityType.Person,
         status: EntityLifecycleStatus.Active,
         claims: {
-          [ClaimsPersonSchemaorg.email]: EXAMPLE_EMAIL_PROFESSIONAL,
-          [ClaimsPersonSchemaorg.hasOccupation]: HealthcareActorRoles.Veterinarian,
+          [SchemaOrgPersonClaim.Email]: EXAMPLE_EMAIL_PROFESSIONAL,
+          [SchemaOrgPersonClaim.HasOccupation]: HealthcareActorRoles.Veterinarian,
         } as any,
         didDocument: {
           '@context': 'https://www.w3.org/ns/did/v1',

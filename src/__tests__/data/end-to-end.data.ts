@@ -2,7 +2,7 @@
 // File: src/__test__/data/end-to-end.data.ts
 
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   testHostAdmin1,
   testTenant1Admin1,
@@ -57,10 +57,10 @@ export const testTenant1Data = {
 export const testClaimsHostInitialization: ClaimsRecord = {
   ...(testConfigDataHost.claims as ClaimsRecord),
   ...testClaimsHostAdmin1,
-  [ClaimsServiceSchemaorg.category]: 'system',
-  [ClaimsServiceSchemaorg.identifier]: (testConfigDataHost.provider as any).service.identifier,
-  [ClaimsServiceSchemaorg.serviceType]: (testConfigDataHost.provider as any).service.serviceType,
-  [ClaimsServiceSchemaorg.termsOfService]: (testConfigDataHost.provider as any).service.termsOfService,
+  [SchemaOrgServiceClaim.Category]: 'system',
+  [SchemaOrgServiceClaim.IdentifierReference]: (testConfigDataHost.provider as any).service.identifier,
+  [SchemaOrgServiceClaim.ServiceType]: (testConfigDataHost.provider as any).service.serviceType,
+  [SchemaOrgServiceClaim.TermsOfService]: (testConfigDataHost.provider as any).service.termsOfService,
 };
 
 /**
@@ -70,23 +70,23 @@ export const testClaimsHostInitialization: ClaimsRecord = {
  */
 export const testClaimsTenant1Registration: ClaimsRecord = {
   // --- Organization Claims ---
-  [ClaimsOrganizationSchemaorg.legalName]: testTenant1LegalName,
-  [ClaimsOrganizationSchemaorg.addressCountry]: testTenant1AddressCountry,
-  [ClaimsOrganizationSchemaorg.identifier]: testTenant1IdentifierUrn,
-  [ClaimsOrganizationSchemaorg.identifierType]: testTenant1IdType,
-  [ClaimsOrganizationSchemaorg.identifierValue]: testTenant1IdValue,
-  [ClaimsOrganizationSchemaorg.url]: testTenant1Domain,
-  [ClaimsOrganizationSchemaorg.alternateName]: testTenant1AlternateName,
-  [ClaimsOrganizationSchemaorg.numberOfEmployees]: 2, // Add employee count for offer generation
+  [SchemaOrgOrganizationClaim.LegalName]: testTenant1LegalName,
+  [SchemaOrgOrganizationClaim.AddressCountry]: testTenant1AddressCountry,
+  [SchemaOrgOrganizationClaim.IdentifierReference]: testTenant1IdentifierUrn,
+  [SchemaOrgOrganizationClaim.IdentifierType]: testTenant1IdType,
+  [SchemaOrgOrganizationClaim.IdentifierValue]: testTenant1IdValue,
+  [SchemaOrgOrganizationClaim.Url]: testTenant1Domain,
+  [SchemaOrgOrganizationClaim.AlternateName]: testTenant1AlternateName,
+  [SchemaOrgOrganizationClaim.NumberOfEmployees]: 2, // Add employee count for offer generation
 
   // --- Person (Admin) Claims ---
   ...testClaimsEmployeeAdminTenant1,
 
   // --- Service Claims ---
-  [ClaimsServiceSchemaorg.category]: testTenant1ServiceProviderCategory,
-  [ClaimsServiceSchemaorg.identifier]: (testConfigTenant1.provider as any).service.identifier,
-  [ClaimsServiceSchemaorg.termsOfService]: (testConfigTenant1.provider as any).service.termsOfService,
-  [ClaimsServiceSchemaorg.serviceType]: (testConfigTenant1.provider as any).service.serviceType,
+  [SchemaOrgServiceClaim.Category]: testTenant1ServiceProviderCategory,
+  [SchemaOrgServiceClaim.IdentifierReference]: (testConfigTenant1.provider as any).service.identifier,
+  [SchemaOrgServiceClaim.TermsOfService]: (testConfigTenant1.provider as any).service.termsOfService,
+  [SchemaOrgServiceClaim.ServiceType]: (testConfigTenant1.provider as any).service.serviceType,
 };
 
 /**
@@ -119,5 +119,5 @@ export const testPayloadCreateTenant1 = {
  */
 export const testClaimsTenant1AlternateNameInvalidPrefix = {
   ...testClaimsTenant1Registration,
-  [ClaimsOrganizationSchemaorg.alternateName]: 'hosting-tenant-1',
+  [SchemaOrgOrganizationClaim.AlternateName]: 'hosting-tenant-1',
 };

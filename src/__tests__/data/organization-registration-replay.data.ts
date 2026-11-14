@@ -1,5 +1,5 @@
 import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { testClaimsRegisterTenantExpanded } from './organization.data';
@@ -26,11 +26,11 @@ export const testAnimalResearchSector = DataspaceSectors.AnimalResearch as Secto
 
 export const testAnimalResearchRegistrationClaims = {
   ...testClaimsRegisterTenantExpanded,
-  [ClaimsOrganizationSchemaorg.addressCountry]: 'CA',
-  [ClaimsOrganizationSchemaorg.addressRegion]: 'CA-BC',
-  [ClaimsOrganizationSchemaorg.identifierType]: 'BN',
-  [ClaimsOrganizationSchemaorg.identifierValue]: '7654321',
-  [ClaimsOrganizationSchemaorg.alternateName]: '7654321',
-  [ClaimsOrganizationSchemaorg.legalName]: 'Animal Research Organization',
-  [ClaimsServiceSchemaorg.category]: testAnimalResearchSector,
+  [SchemaOrgOrganizationClaim.AddressCountry]: 'CA',
+  [SchemaOrgOrganizationClaim.AddressRegion]: 'CA-BC',
+  [SchemaOrgOrganizationClaim.IdentifierType]: 'BN',
+  [SchemaOrgOrganizationClaim.IdentifierValue]: '7654321',
+  [SchemaOrgOrganizationClaim.AlternateName]: '7654321',
+  [SchemaOrgOrganizationClaim.LegalName]: 'Animal Research Organization',
+  [SchemaOrgServiceClaim.Category]: testAnimalResearchSector,
 };

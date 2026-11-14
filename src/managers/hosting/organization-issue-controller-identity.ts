@@ -1,6 +1,6 @@
 import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { normalizeIndexedEmail } from '../../utils/indexed-contact';
@@ -49,7 +49,7 @@ export async function findStoredControllerRoleByEmail(
         claims = claims || undefined;
       }
     }
-    const storedEmail = normalizeIndexedEmail(claims?.[ClaimsPersonSchemaorg.email]) as string | undefined;
+    const storedEmail = normalizeIndexedEmail(claims?.[SchemaOrgPersonClaim.Email]) as string | undefined;
     if (!storedEmail || storedEmail !== normalizedEmail) {
       continue;
     }
@@ -70,7 +70,7 @@ export async function findStoredControllerRoleByEmail(
 export async function resolveOrganizationIssueControllerIdentity(
   deps: ResolveOrganizationIssueControllerIdentityDeps,
 ): Promise<{ email?: string; role?: string; }> {
-  const emailFromPayload = normalizeIndexedEmail(deps.claims[ClaimsPersonSchemaorg.email]) as string | undefined;
+  const emailFromPayload = normalizeIndexedEmail(deps.claims[SchemaOrgPersonClaim.Email]) as string | undefined;
   const emailFromBearer = normalizeIndexedEmail(
     (deps.bearerPayload?.email as string | undefined)
     || (deps.bearerPayload?.upn as string | undefined)

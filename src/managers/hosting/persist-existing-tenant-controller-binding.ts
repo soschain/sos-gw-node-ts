@@ -1,4 +1,4 @@
-import { ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
@@ -97,8 +97,8 @@ export async function persistExistingTenantControllerBinding(
     throw new ManagerError('Controller JWK does not match the ICA-issued controller credential binding.', IssueType.Conflict);
   }
 
-  const alternateName = String(deps.claims[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
-  const sector = String(deps.claims[ClaimsServiceSchemaorg.category] || '').trim() as Sector;
+  const alternateName = String(deps.claims[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
+  const sector = String(deps.claims[SchemaOrgServiceClaim.Category] || '').trim() as Sector;
   if (!alternateName || !sector) {
     throw new ManagerError('Controller binding requires tenant alternateName and Service.category.', IssueType.Required);
   }
@@ -186,7 +186,7 @@ export async function persistExistingTenantControllerBinding(
     content: updatedConfig,
   };
   await deps.registerControllerKeysOnLedger?.({
-    jurisdiction: String(deps.claims[ClaimsOrganizationSchemaorg.addressCountry] || '').trim() || undefined,
+    jurisdiction: String(deps.claims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim() || undefined,
     organizationClaims: deps.claims,
     controllerDid,
     actorIdentifier,
@@ -199,28 +199,28 @@ export async function persistExistingTenantControllerBinding(
     type: EntityType.Person,
     status: EntityLifecycleStatus.Active,
     claims: {
-      [ClaimsPersonSchemaorg.identifier]: controllerDid,
+      [SchemaOrgPersonClaim.Identifier]: controllerDid,
       [PERSON_SAME_AS_CLAIM]: actorIdentifier,
-      [ClaimsPersonSchemaorg.additionalType]: controllerRole,
-      [ClaimsPersonSchemaorg.hasOccupationalCategory]: controllerOccupations,
-      [ClaimsPersonSchemaorg.hasCredentialMaterial]: credentialMaterials[0],
+      [SchemaOrgPersonClaim.AdditionalType]: controllerRole,
+      [SchemaOrgPersonClaim.OccupationalCategory]: controllerOccupations,
+      [SchemaOrgPersonClaim.HasCredentialMaterial]: credentialMaterials[0],
     },
     didDocument: controllerDidDocument,
     didConfig: { service: [] },
     meta: { lastUpdated: now },
   };
   const employeeAttributes = await deps.kmsService.protectAttributesNameAndValue([
-    { name: ClaimsPersonSchemaorg.identifier, value: controllerDid, unique: true, type: 'uri' },
+    { name: SchemaOrgPersonClaim.Identifier, value: controllerDid, unique: true, type: 'uri' },
     { name: PERSON_SAME_AS_CLAIM, value: actorIdentifier, unique: false, type: 'uri' },
-    { name: ClaimsPersonSchemaorg.additionalType, value: controllerRole, unique: false, type: 'string' },
+    { name: SchemaOrgPersonClaim.AdditionalType, value: controllerRole, unique: false, type: 'string' },
     ...controllerOccupations.map((occupation) => ({
-      name: ClaimsPersonSchemaorg.hasOccupationalCategory,
+      name: SchemaOrgPersonClaim.OccupationalCategory,
       value: occupation,
       unique: false,
       type: 'string',
     })),
     ...credentialMaterials.flatMap((material) => [
-      { name: ClaimsPersonSchemaorg.hasCredentialMaterial, value: material, unique: false, type: 'string' },
+      { name: SchemaOrgPersonClaim.HasCredentialMaterial, value: material, unique: false, type: 'string' },
       // Transitional lookup compatibility for signed-request resolution.
       { name: 'kid', value: material, unique: false, type: 'string' },
     ]),

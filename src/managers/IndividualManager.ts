@@ -13,7 +13,7 @@ import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
-import { ClaimsOfferSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import { initializeCustomerServices } from '../utils/services'; 
 import { createOperationOutcome } from '../utils/outcome';
@@ -180,11 +180,11 @@ export class IndividualManager {
     const aggregatedClaims = this._aggregateBatchClaims(entries);
     const { person, service } = this._extractResources(aggregatedClaims, environment);
     const internalId = person.id;
-    const publicUuidUrn = person.meta.claims[ClaimsPersonSchemaorg.identifier] as string;
+    const publicUuidUrn = person.meta.claims[SchemaOrgPersonClaim.Identifier] as string;
 
     const licenseOffer = await this.tryConsumeIndividualSeatOrOffer({
       tenantVaultId,
-      tenantId: String((aggregatedClaims as any)[ClaimsOrganizationSchemaorg.alternateName] || this.extractTenantIdFromVaultId(tenantVaultId)),
+      tenantId: String((aggregatedClaims as any)[SchemaOrgOrganizationClaim.AlternateName] || this.extractTenantIdFromVaultId(tenantVaultId)),
       individualId: internalId,
       sector,
       jurisdiction,
@@ -226,7 +226,7 @@ export class IndividualManager {
     const protectedDoc = await this.kmsService.protectConfidentialData(docToStore, tenantVaultId);
     await this.vaultRepository.put(tenantVaultId, [protectedDoc], INDIVIDUAL_SECTION);
     
-    person.meta.claims[ClaimsPersonSchemaorg.identifier] = publicUuidUrn;
+    person.meta.claims[SchemaOrgPersonClaim.Identifier] = publicUuidUrn;
 
     return {
       type: SchemaOrgTypes.Customer,
@@ -398,9 +398,9 @@ export class IndividualManager {
     let urn: string | undefined;
     let jurisdictionGroup: 'eu' | 'global' = 'global';
 
-    const identifierType = claims[ClaimsPersonSchemaorg.identifierType] as string;
-    const identifierValue = claims[ClaimsPersonSchemaorg.identifierValue] as string;
-    const telephone = claims[ClaimsPersonSchemaorg.telephone] as string;
+    const identifierType = claims[SchemaOrgPersonClaim.IdentifierType] as string;
+    const identifierValue = claims[SchemaOrgPersonClaim.IdentifierValue] as string;
+    const telephone = claims[SchemaOrgPersonClaim.Telephone] as string;
 
     if (identifierType && identifierValue) {
       const parsedId = parseIdentifierType(identifierType);
@@ -426,7 +426,7 @@ export class IndividualManager {
     for (const entry of entries) {
       const claims = entry.resource?.meta?.claims;
       if (!claims) continue;
-      const currentIdentifier = claims[ClaimsPersonSchemaorg.identifier] as string | undefined;
+      const currentIdentifier = claims[SchemaOrgPersonClaim.Identifier] as string | undefined;
       if (currentIdentifier) {
         if (!anchorIdentifier) {
           anchorIdentifier = currentIdentifier;
@@ -437,7 +437,7 @@ export class IndividualManager {
       Object.assign(aggregatedClaims, claims);
     }
     if (!anchorIdentifier) {
-      aggregatedClaims[ClaimsPersonSchemaorg.identifier] = `urn:uuid:${uuidv4()}`;
+      aggregatedClaims[SchemaOrgPersonClaim.Identifier] = `urn:uuid:${uuidv4()}`;
     }
     return aggregatedClaims;
   }
@@ -445,7 +445,7 @@ export class IndividualManager {
   private _buildIndexParameters(claims: ClaimsRecord): ParameterData[] {
     const parameters: ParameterData[] = [];
     for (const [key, value] of Object.entries(claims)) {
-      if (key !== ClaimsPersonSchemaorg.birthDate) {
+      if (key !== SchemaOrgPersonClaim.BirthDate) {
         if (typeof value === 'object' && value !== null && 'additionalType' in value && 'value' in value) {
           const val = value as any;
           parameters.push({ name: val.additionalType, value: val.value, unique: true, type: 'token' });
@@ -537,7 +537,7 @@ export class IndividualManager {
         allowedPaymentMethods,
         LICENSE_CATEGORY_INDIVIDUAL,
       );
-      offerClaims[ClaimsOrganizationSchemaorg.alternateName] = params.tenantId;
+      offerClaims[SchemaOrgOrganizationClaim.AlternateName] = params.tenantId;
       await this.persistCommercialIndividualOffer(params.tenantVaultId, offerClaims);
       return {
         type: GatewayResponseEntryTypes.IndividualLicenseOffer,
@@ -571,7 +571,7 @@ export class IndividualManager {
     claims: Record<string, unknown>,
   ): Promise<void> {
     const tenantCollectionName = await this.tenantsManager.getCollectionName(tenantVaultId);
-    const offerId = String(claims[ClaimsOfferSchemaorg.identifier] || '').trim();
+    const offerId = String(claims[SchemaOrgOfferClaim.Identifier] || '').trim();
     if (!tenantCollectionName || !offerId) return;
 
     const communicationDoc: ConfidentialStorageDoc = {

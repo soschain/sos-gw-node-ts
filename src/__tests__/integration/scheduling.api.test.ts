@@ -2,7 +2,7 @@
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 // Flow contract: an authenticated clinic actor writes and searches claims-first scheduling and public directory resources through the real asynchronous GW VET HTTP boundary.
 import { afterEach, expect, it, jest } from '@jest/globals';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   buildCohortCommunicationRequestFlatEntry,
   buildEncounterCareJourneyFlatGraph,
@@ -41,18 +41,18 @@ it('persists Location and Slot as encrypted flat claims and returns indexed sear
   const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
   try {
     const hostClaims = {
-      [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-      [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-      [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-      [ClaimsServiceSchemaorg.category]: 'system',
+      [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+      [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+      [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+      [SchemaOrgServiceClaim.Category]: 'system',
     };
     const hostCollection = resolveHostPhysicalCollectionName();
     const tenantClaims = {
       ...(testPayloadCreateTenant1.body.data[0].resource.meta.claims as any),
-      [ClaimsOrganizationSchemaorg.alternateName]: tenantId,
-      [ClaimsOrganizationSchemaorg.addressCountry]: 'CA',
-      [ClaimsOrganizationSchemaorg.addressRegion]: jurisdiction,
-      [ClaimsServiceSchemaorg.category]: sector,
+      [SchemaOrgOrganizationClaim.AlternateName]: tenantId,
+      [SchemaOrgOrganizationClaim.AddressCountry]: 'CA',
+      [SchemaOrgOrganizationClaim.AddressRegion]: jurisdiction,
+      [SchemaOrgServiceClaim.Category]: sector,
     };
     const tenantVaultId = getTenantVaultId(sector, tenantId);
     await kmsService.provisionKeys(tenantVaultId);
@@ -345,9 +345,9 @@ function configureEnvironment() {
 }
 
 async function provisionTenant({ authenticatedActor, tenantManager, vaultRepository, kmsService }: any) {
-  const hostClaims = { [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION, [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE, [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE, [ClaimsServiceSchemaorg.category]: 'system' };
+  const hostClaims = { [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION, [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE, [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE, [SchemaOrgServiceClaim.Category]: 'system' };
   const hostCollection = resolveHostPhysicalCollectionName();
-  const tenantClaims = { ...(testPayloadCreateTenant1.body.data[0].resource.meta.claims as any), [ClaimsOrganizationSchemaorg.alternateName]: tenantId, [ClaimsOrganizationSchemaorg.addressCountry]: 'CA', [ClaimsOrganizationSchemaorg.addressRegion]: jurisdiction, [ClaimsServiceSchemaorg.category]: sector };
+  const tenantClaims = { ...(testPayloadCreateTenant1.body.data[0].resource.meta.claims as any), [SchemaOrgOrganizationClaim.AlternateName]: tenantId, [SchemaOrgOrganizationClaim.AddressCountry]: 'CA', [SchemaOrgOrganizationClaim.AddressRegion]: jurisdiction, [SchemaOrgServiceClaim.Category]: sector };
   const tenantVaultId = getTenantVaultId(sector, tenantId); await kmsService.provisionKeys(tenantVaultId);
   const secureTenant = await kmsService.protectConfidentialData({ id: tenantVaultId, status: 'active', sequence: 0, content: { claims: tenantClaims, didConfig: { service: initializeTenantServicesConfig(sector as Sector) }, didDocument: { '@context': 'https://www.w3.org/ns/did/v1', id: 'did:web:veterinary-clinic.example', controller: [authenticatedActor.actorDid] } } } as any, 'host');
   await vaultRepository.put(hostCollection, [secureTenant as any], getEnvSectionId('tenants')); await tenantManager.getTenant(tenantVaultId);

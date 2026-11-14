@@ -1,3 +1,4 @@
+// Flow contract: independent identity and commerce claim catalogs preserve exact stored keys and authorization boundaries.
 // src/__tests__/unit/utils/firestore.utils.test.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
@@ -7,7 +8,7 @@ import {
 } from '@firebase/rules-unit-testing';
 import { generateCollectionName } from '../../../utils/firestore';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
-import { ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 
 let testEnv: RulesTestEnvironment;
 
@@ -55,10 +56,10 @@ describe('firestore.utils', () => {
     it('should generate a deterministic collection name from claims and section', () => {
       // Arrange
       const claims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-        [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-        [ClaimsOrganizationSchemaorg.identifierValue]: 'B00112233',
-        [ClaimsServiceSchemaorg.category]: Sector.HEALTH_CARE,
+        [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+        [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+        [SchemaOrgOrganizationClaim.IdentifierValue]: 'B00112233',
+        [SchemaOrgServiceClaim.Category]: Sector.HEALTH_CARE,
       };
       const section = 'customers';
 
@@ -74,10 +75,10 @@ describe('firestore.utils', () => {
     it('should handle the "host" sector correctly', () => {
         // Arrange
         const claims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-        [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-        [ClaimsOrganizationSchemaorg.identifierValue]: 'A00112233',
-        [ClaimsServiceSchemaorg.category]: 'host',
+        [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+        [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+        [SchemaOrgOrganizationClaim.IdentifierValue]: 'A00112233',
+        [SchemaOrgServiceClaim.Category]: 'host',
         };
         const section = 'registry';
   

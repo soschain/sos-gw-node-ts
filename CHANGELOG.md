@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Use neutral Antifraud person, organization, service, action and commerce claim
+  catalogs across onboarding, identity, indexed search and order flows. Preserve
+  each stored wire key, including identifier references versus identifier values,
+  and keep product licensing policy in its existing owning services.
 - Use SOS Data's service-capability parsing and compatibility tokens in discovery,
   hosting and claim validation, preserving extension filtering at the gateway.
 - Use the explicit SOS DID routing profile and neutral Antifraud verification

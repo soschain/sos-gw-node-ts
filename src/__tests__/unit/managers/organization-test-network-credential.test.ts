@@ -10,11 +10,7 @@ import { verifyOrganizationTestNetworkCredential } from '../../../managers/hosti
 import { processOrganizationVerificationTransaction } from '../../../managers/hosting/process-organization-verification';
 import { buildOrganizationTestNetworkCredential } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
 import { buildTestNetworkOrganizationCredentialSet } from 'gdc-common-utils-ts/utils/test-network-organization-credentials';
-import {
-  ClaimsOfferSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
 import { readFileSync } from 'node:fs';
 
@@ -107,7 +103,7 @@ describe('organization Test Network credential verifier', () => {
 
     const result = await verifyOrganizationTestNetworkCredential({
       credential: credential(),
-      claims: { [ClaimsOrganizationSchemaorg.identifierValue]: 'VATES-B00112233' },
+      claims: { [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B00112233' },
       controller: { publicKeyJwk: controllerJwk },
       organization: { did: organizationDid },
       controllerEmail: 'developer@dsrc.example',
@@ -138,7 +134,7 @@ describe('organization Test Network credential verifier', () => {
     })) as unknown as typeof fetch;
     await expect(verifyOrganizationTestNetworkCredential({
       credential: credential(),
-      claims: { [ClaimsOrganizationSchemaorg.identifierValue]: 'VATES-B00112233' },
+      claims: { [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B00112233' },
       controller: { publicKeyJwk: controllerJwk },
       organization: { did: organizationDid },
       controllerEmail: 'developer@dsrc.example',
@@ -154,7 +150,7 @@ describe('organization Test Network credential verifier', () => {
     const verifyDetachedJws = jest.fn().mockResolvedValue(true);
     const result = await verifyOrganizationTestNetworkCredential({
       credential: credential(),
-      claims: { [ClaimsOrganizationSchemaorg.identifierValue]: 'VATES-B00112233' },
+      claims: { [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B00112233' },
       controller: { publicKeyJwk: controllerJwk },
       organization: { did: organizationDid },
       controllerEmail: 'developer@dsrc.example',
@@ -181,7 +177,7 @@ describe('organization Test Network credential verifier', () => {
   it('fails closed when the MVP signer registry revokes the employee', async () => {
     await expect(verifyOrganizationTestNetworkCredential({
       credential: credential(),
-      claims: { [ClaimsOrganizationSchemaorg.identifierValue]: 'VATES-B00112233' },
+      claims: { [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B00112233' },
       controller: { publicKeyJwk: controllerJwk },
       organization: { did: organizationDid },
       controllerEmail: 'developer@dsrc.example',
@@ -206,7 +202,7 @@ describe('Test Network transaction routing', () => {
     const forwardToIca = jest.fn();
     const createPendingTenantRegistrationFromClaims = jest.fn(async () => ({
       ...claims,
-      [ClaimsOfferSchemaorg.identifier]: 'urn:example:Offer:dsrc',
+      [SchemaOrgOfferClaim.Identifier]: 'urn:example:Offer:dsrc',
     }));
     const verifyTestNetworkAdmissionCredential = jest.fn().mockResolvedValue({
       mode: 'organization-test-network-vc',
@@ -217,8 +213,8 @@ describe('Test Network transaction routing', () => {
       credentials: issuedCredentials,
     });
     const claims = {
-      [ClaimsOrganizationSchemaorg.identifierValue]: 'VATES-B00112233',
-      [ClaimsServiceSchemaorg.category]: 'health-care',
+      [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B00112233',
+      [SchemaOrgServiceClaim.Category]: 'health-care',
     };
     const response = await processOrganizationVerificationTransaction({
       job: {
@@ -273,8 +269,8 @@ describe('Test Network transaction routing', () => {
       credentials: issuedCredentials,
     });
     const claims = {
-      [ClaimsOrganizationSchemaorg.identifierValue]: 'VATES-B00112233',
-      [ClaimsServiceSchemaorg.category]: 'health-care',
+      [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B00112233',
+      [SchemaOrgServiceClaim.Category]: 'health-care',
     };
 
     await expect(processOrganizationVerificationTransaction({
@@ -297,7 +293,7 @@ describe('Test Network transaction routing', () => {
       normalizeClaims: value => value,
       createPendingTenantRegistrationFromClaims: jest.fn(async () => ({
         ...claims,
-        [ClaimsOfferSchemaorg.identifier]: 'urn:example:Offer:local-demo',
+        [SchemaOrgOfferClaim.Identifier]: 'urn:example:Offer:local-demo',
       })),
       createOrganizationIssueClaimsFromClaims: jest.fn(),
       forwardOrganizationVerificationTransactionToIca: forwardToIca,
@@ -319,7 +315,7 @@ describe('Test Network transaction routing', () => {
         action: 'Organization/_transaction', tenantId: 'host', sector,
         content: { thid: 'transaction-dsrc', body: { data: [{
           resource: {
-            meta: { claims: { [ClaimsServiceSchemaorg.category]: 'health-care' } },
+            meta: { claims: { [SchemaOrgServiceClaim.Category]: 'health-care' } },
             organizationTestNetworkCredential,
             verification: { resourceType: 'contract' },
           },

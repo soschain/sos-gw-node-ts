@@ -1,7 +1,7 @@
 // src/__tests__/data/customer-onboarding.data.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
-import { ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { JobAction, Resource, Format, Section, Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
@@ -20,14 +20,14 @@ export const testCustomer1ServiceProviderAcceptedPurposeType = "http://terminolo
 
 // Terms of service accepted by the tenant's registrant (the `admin` or tenant's `controller`)
 export const testCustomer1ServiceTermsClaims = {
-    [ClaimsServiceSchemaorg.category]: testCustomer1ServiceProviderCategory, // sector type
-    [ClaimsServiceSchemaorg.termsOfService]: testCustomer1ServiceProviderAcceptedTerms,
-    [ClaimsServiceSchemaorg.serviceType]: testCustomer1ServiceProviderAcceptedPurposeType
+    [SchemaOrgServiceClaim.Category]: testCustomer1ServiceProviderCategory, // sector type
+    [SchemaOrgServiceClaim.TermsOfService]: testCustomer1ServiceProviderAcceptedTerms,
+    [SchemaOrgServiceClaim.ServiceType]: testCustomer1ServiceProviderAcceptedPurposeType
 }
 export const testCustomer1OnboardingClaimsWithTerms = {
-    [ClaimsPersonSchemaorg.alternateName]: testCustomer1Data.alternateName,
-    [ClaimsPersonSchemaorg.identifier]: testCustomer1Data.uuidIdentifier,
-    [ClaimsPersonSchemaorg.email]: testCustomer1Data.email,
+    [SchemaOrgPersonClaim.AlternateName]: testCustomer1Data.alternateName,
+    [SchemaOrgPersonClaim.Identifier]: testCustomer1Data.uuidIdentifier,
+    [SchemaOrgPersonClaim.Email]: testCustomer1Data.email,
     ...testCustomer1ServiceTermsClaims,
 }
 
@@ -92,9 +92,9 @@ export const testIndividualOnboardingBatchEntries = [
             resourceType: Resource.Person,
             meta: {
                 claims: {
-                    [ClaimsPersonSchemaorg.identifier]: testCustomer1Data.uuidIdentifier,
-                    [ClaimsPersonSchemaorg.identifierType]: testCustomer1Data.officialIdType,
-                    [ClaimsPersonSchemaorg.identifierValue]: testCustomer1Data.officialIdValue,
+                    [SchemaOrgPersonClaim.Identifier]: testCustomer1Data.uuidIdentifier,
+                    [SchemaOrgPersonClaim.IdentifierType]: testCustomer1Data.officialIdType,
+                    [SchemaOrgPersonClaim.IdentifierValue]: testCustomer1Data.officialIdValue,
                 }
             }
         },

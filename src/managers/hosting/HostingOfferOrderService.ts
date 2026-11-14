@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { EntityLifecycleStatus } from '../../gdc-backend-utils-node/models/enums';
 import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
@@ -108,7 +108,7 @@ export class HostingOfferOrderService {
     ) || '').trim();
     const quantity = Number(getClaimValue<unknown>(
       requestedClaims,
-      ClaimsOfferSchemaorg.eligibleQuantityValue,
+      SchemaOrgOfferClaim.EligibleQuantityValue,
     ));
     if (category !== LICENSE_CATEGORY_PROFESSIONAL) {
       throw new ManagerError('Professional-seat Offer requires the professional category.', IssueType.Invalid);
@@ -125,11 +125,11 @@ export class HostingOfferOrderService {
         sector,
         this.config.allowedPaymentMethods,
       ),
-      [ClaimsOrganizationSchemaorg.alternateName]: tenantId,
-      [ClaimsServiceSchemaorg.category]: sector,
+      [SchemaOrgOrganizationClaim.AlternateName]: tenantId,
+      [SchemaOrgServiceClaim.Category]: sector,
     };
-    delete claims[ClaimsOfferSchemaorg.serialNumber];
-    const offerId = String(claims[ClaimsOfferSchemaorg.identifier]);
+    delete claims[SchemaOrgOfferClaim.SerialNumber];
+    const offerId = String(claims[SchemaOrgOfferClaim.Identifier]);
     const document: ConfidentialStorageDoc & { meta?: Record<string, unknown> } = {
       id: uuidv4(),
       status: EntityLifecycleStatus.Pending,
@@ -163,7 +163,7 @@ export class HostingOfferOrderService {
       .filter(([key, value]) => !key.startsWith('@') && value !== undefined && value !== null && String(value).trim() !== '')
       .map(([name, value]) => ({ name, value: String(value).trim() }));
     const tenantWhere = tenantIdFilter
-      ? [...where, { name: ClaimsOrganizationSchemaorg.alternateName, value: tenantIdFilter }]
+      ? [...where, { name: SchemaOrgOrganizationClaim.AlternateName, value: tenantIdFilter }]
       : where;
     const tenantRecords = await this.findSearchCandidates(getEnvSectionId('tenants'), tenantWhere);
     const communicationRecords = await this.findSearchCandidates(getEnvSectionId('communications'), tenantWhere);
@@ -172,14 +172,14 @@ export class HostingOfferOrderService {
     const seenIds = new Set<string>();
     for (const secureDoc of [...tenantRecords, ...communicationRecords] as ConfidentialStorageDoc[]) {
       const claims = { ...await this.readClaims(secureDoc) };
-      if (!claims[ClaimsOfferSchemaorg.identifier] && claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier]) {
-        claims[ClaimsOfferSchemaorg.identifier] = claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier];
+      if (!claims[SchemaOrgOfferClaim.Identifier] && claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier]) {
+        claims[SchemaOrgOfferClaim.Identifier] = claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier];
       }
-      const alternateName = String(claims[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
+      const alternateName = String(claims[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
       if (tenantIdFilter && alternateName && alternateName !== tenantIdFilter) continue;
-      if (!claims[ClaimsOfferSchemaorg.identifier]) continue;
+      if (!claims[SchemaOrgOfferClaim.Identifier]) continue;
       if (!matchOfferOrderSearchClaims(claims, filters)) continue;
-      const row = buildOfferOrderSearchRow(secureDoc, claims, ClaimsOfferSchemaorg.identifier);
+      const row = buildOfferOrderSearchRow(secureDoc, claims, SchemaOrgOfferClaim.Identifier);
       const rowId = String(row.id || '').trim();
       if (rowId && seenIds.has(rowId)) continue;
       if (rowId) seenIds.add(rowId);
@@ -197,7 +197,7 @@ export class HostingOfferOrderService {
       .filter(([key, value]) => !key.startsWith('@') && value !== undefined && value !== null && String(value).trim() !== '')
       .map(([name, value]) => ({ name, value: String(value).trim() }));
     const tenantWhere = tenantIdFilter
-      ? [...where, { name: ClaimsOrganizationSchemaorg.alternateName, value: tenantIdFilter }]
+      ? [...where, { name: SchemaOrgOrganizationClaim.AlternateName, value: tenantIdFilter }]
       : where;
     const tenantRecords = await this.findSearchCandidates(getEnvSectionId('tenants'), tenantWhere);
     const orderRecords = await this.findSearchCandidates(getEnvSectionId('communications'), tenantWhere);
@@ -205,21 +205,21 @@ export class HostingOfferOrderService {
     const allowedOfferIds = new Set<string>();
     for (const secureDoc of tenantRecords as ConfidentialStorageDoc[]) {
       const claims = await this.readClaims(secureDoc);
-      const alternateName = String(claims[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
+      const alternateName = String(claims[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
       if (tenantIdFilter && alternateName && alternateName !== tenantIdFilter) continue;
-      const offerId = String(claims[ClaimsOfferSchemaorg.identifier] || '').trim();
+      const offerId = String(claims[SchemaOrgOfferClaim.Identifier] || '').trim();
       if (offerId) allowedOfferIds.add(offerId);
     }
 
     const matches: Record<string, unknown>[] = [];
     for (const secureDoc of orderRecords as ConfidentialStorageDoc[]) {
       const claims = await this.readClaims(secureDoc);
-      const acceptedOfferId = String(claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier] || '').trim();
-      const alternateName = String(claims[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
+      const acceptedOfferId = String(claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] || '').trim();
+      const alternateName = String(claims[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
       if (!acceptedOfferId) continue;
       if (allowedOfferIds.size > 0 && !allowedOfferIds.has(acceptedOfferId) && (!tenantIdFilter || alternateName !== tenantIdFilter)) continue;
       if (!matchOfferOrderSearchClaims(claims, filters)) continue;
-      matches.push(buildOfferOrderSearchRow(secureDoc, claims, ClaimsOrderSchemaorg.acceptedOfferIdentifier));
+      matches.push(buildOfferOrderSearchRow(secureDoc, claims, SchemaOrgOrderClaim.AcceptedOfferIdentifier));
     }
 
     return buildSearchResponseEntries(GatewayResponseEntryTypes.OrderSearch, matches);
@@ -230,14 +230,14 @@ export class HostingOfferOrderService {
 
     const communicationRecords = await this.vaultRepository.query(
       hostCollectionName,
-      { sectionId: getEnvSectionId('communications'), where: [{ name: ClaimsOfferSchemaorg.identifier, value: offerId }] },
+      { sectionId: getEnvSectionId('communications'), where: [{ name: SchemaOrgOfferClaim.Identifier, value: offerId }] },
       { hydrate: false },
     );
 
     let matchedOfferClaims: Record<string, unknown> | undefined;
     for (const secureDoc of communicationRecords as ConfidentialStorageDoc[]) {
       const candidateClaims = await this.readClaims(secureDoc);
-      if (String(candidateClaims[ClaimsOfferSchemaorg.identifier] || '').trim() === offerId) {
+      if (String(candidateClaims[SchemaOrgOfferClaim.Identifier] || '').trim() === offerId) {
         matchedOfferClaims = candidateClaims;
         break;
       }
@@ -251,14 +251,14 @@ export class HostingOfferOrderService {
       throw new ManagerError(`Payment confirmation failed for offerId '${offerId}'.`, IssueType.Conflict);
     }
 
-    const tenantId = String(matchedOfferClaims[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
-    const sector = String(matchedOfferClaims[ClaimsOfferSchemaorg.category] || matchedOfferClaims[ClaimsServiceSchemaorg.category] || '').trim();
+    const tenantId = String(matchedOfferClaims[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
+    const sector = String(matchedOfferClaims[SchemaOrgOfferClaim.Category] || matchedOfferClaims[SchemaOrgServiceClaim.Category] || '').trim();
     if (!tenantId || !sector) {
       throw new ManagerError('Commercial license offer is missing tenant alternateName or sector.', IssueType.Required);
     }
 
     const tenantVaultId = getTenantVaultId(sector as Sector, tenantId);
-    const quantity = Number(matchedOfferClaims[ClaimsOfferSchemaorg.eligibleQuantityValue] || 1);
+    const quantity = Number(matchedOfferClaims[SchemaOrgOfferClaim.EligibleQuantityValue] || 1);
     const expiryDate = new Date(Date.now());
     expiryDate.setFullYear(expiryDate.getFullYear() + 1);
     const exp = Math.floor(expiryDate.getTime() / 1000);
@@ -294,15 +294,15 @@ export class HostingOfferOrderService {
       paymentConfirmed: true,
       ...readOfferPaymentContext(matchedOfferClaims),
     });
-    paymentCommunication.claims[ClaimsOrganizationSchemaorg.alternateName] = tenantId;
+    paymentCommunication.claims[SchemaOrgOrganizationClaim.AlternateName] = tenantId;
     const invoiceBundle = buildGatewayInvoiceBundle({
-      invoiceId: String(paymentCommunication.claims[ClaimsOrderSchemaorg.partOfInvoice] || verification.invoiceId || offerId),
+      invoiceId: String(paymentCommunication.claims[SchemaOrgOrderClaim.PartOfInvoice] || verification.invoiceId || offerId),
       subjectReference: `urn:tenant:${tenantId}`,
       issuerReference: hostDid,
       recipientReference: `urn:tenant:${tenantId}`,
       issuedAt: String(paymentCommunication.claims['org.schema.Order.invoiceIssuedAt'] || new Date().toISOString()),
-      amount: String(matchedOfferClaims[ClaimsOfferSchemaorg.price] || ''),
-      currency: String(matchedOfferClaims[ClaimsOfferSchemaorg.priceCurrency] || ''),
+      amount: String(matchedOfferClaims[SchemaOrgOfferClaim.Price] || ''),
+      currency: String(matchedOfferClaims[SchemaOrgOfferClaim.PriceCurrency] || ''),
       paymentMethod: verification.paymentMethod,
       paymentUrl: verification.paymentUrl,
     });

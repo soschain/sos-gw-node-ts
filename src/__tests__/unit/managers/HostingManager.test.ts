@@ -15,7 +15,7 @@ import {
   testClaimsTenant1AlternateNameInvalidPrefix,
 } from '../../data/end-to-end.data';
 import * as tenantUtils from '../../../utils/tenant';
-import { ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
 import {
   buildLegalSectorOrganizationAssetId,
@@ -113,8 +113,8 @@ const testBaseJobForClaims = (claims: ClaimsRecord): JobRequest => ({
   status: JobStatus.DRAFT,
   sequence: 0,
   createdAtTimestamp: Date.now(),
-  tenantId: (claims as any)[ClaimsOrganizationSchemaorg.alternateName] || 'host',
-  jurisdiction: (claims as any)[ClaimsOrganizationSchemaorg.addressCountry],
+  tenantId: (claims as any)[SchemaOrgOrganizationClaim.AlternateName] || 'host',
+  jurisdiction: (claims as any)[SchemaOrgOrganizationClaim.AddressCountry],
   resourceType: 'Organization',
   section: 'registry',
   format: 'org.schema',
@@ -350,12 +350,12 @@ describe('HostingManager', () => {
     const tenantVaultId = tenantUtils.getTenantVaultId(sector, tenantId);
     const hostCollectionName = await mockTenantsCacheManager.getCollectionName('host') as string;
     const claims: ClaimsRecord = {
-      [ClaimsOrganizationSchemaorg.alternateName]: tenantId,
-      [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-      [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-      [ClaimsOrganizationSchemaorg.identifierValue]: tenantId,
-      [ClaimsOrganizationSchemaorg.url]: 'https://tenant.example',
-      [ClaimsServiceSchemaorg.category]: sector,
+      [SchemaOrgOrganizationClaim.AlternateName]: tenantId,
+      [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+      [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+      [SchemaOrgOrganizationClaim.IdentifierValue]: tenantId,
+      [SchemaOrgOrganizationClaim.Url]: 'https://tenant.example',
+      [SchemaOrgServiceClaim.Category]: sector,
     };
     const did = `did:web:tenant.example:${tenantId}`;
     const customService = {
@@ -405,12 +405,12 @@ describe('HostingManager', () => {
     const tenantVaultId = tenantUtils.getTenantVaultId(sector, tenantId);
     const hostCollectionName = await mockTenantsCacheManager.getCollectionName('host') as string;
     const claims: ClaimsRecord = {
-      [ClaimsOrganizationSchemaorg.alternateName]: tenantId,
-      [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-      [ClaimsOrganizationSchemaorg.identifierType]: 'VAT',
-      [ClaimsOrganizationSchemaorg.identifierValue]: tenantId,
-      [ClaimsOrganizationSchemaorg.url]: 'https://sos-gw.unid.online',
-      [ClaimsServiceSchemaorg.category]: sector,
+      [SchemaOrgOrganizationClaim.AlternateName]: tenantId,
+      [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+      [SchemaOrgOrganizationClaim.IdentifierType]: 'VAT',
+      [SchemaOrgOrganizationClaim.IdentifierValue]: tenantId,
+      [SchemaOrgOrganizationClaim.Url]: 'https://sos-gw.unid.online',
+      [SchemaOrgServiceClaim.Category]: sector,
     };
     const did = `did:web:sos-gw.unid.online:${tenantId}`;
     const canonicalConfig = initializeTenantServicesConfig(sector, []);
@@ -474,8 +474,8 @@ describe('HostingManager', () => {
 
     // Verify the provisional document was created in the host's vault
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      testClaimsTenant1Registration[ClaimsServiceSchemaorg.category] as Sector,
-      testClaimsTenant1Registration[ClaimsOrganizationSchemaorg.alternateName]
+      testClaimsTenant1Registration[SchemaOrgServiceClaim.Category] as Sector,
+      testClaimsTenant1Registration[SchemaOrgOrganizationClaim.AlternateName]
     );
     const provisionalDoc = await vaultRepository.get(
       await mockTenantsCacheManager.getCollectionName('host') as string,
@@ -485,7 +485,7 @@ describe('HostingManager', () => {
     expect(provisionalDoc).toBeDefined();
     expect(provisionalDoc.content).toBeDefined();
     expect(provisionalDoc.content!.status).toBe('pending');
-    expect(provisionalDoc.content!.claims[ClaimsOrganizationSchemaorg.legalName]).toBe(testTenant1LegalName);
+    expect(provisionalDoc.content!.claims[SchemaOrgOrganizationClaim.LegalName]).toBe(testTenant1LegalName);
 
     // In the initial registration, no vault is created for the tenant yet.
     expect(createVaultSpy).not.toHaveBeenCalled();
@@ -541,10 +541,10 @@ describe('HostingManager', () => {
         type: 'Organization',
         meta: {
           claims: {
-            [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-            [ClaimsOrganizationSchemaorg.identifierValue]: 'acme-id',
-            [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-            [ClaimsOrganizationSchemaorg.alternateName]: 'acme-id',
+            [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+            [SchemaOrgOrganizationClaim.IdentifierValue]: 'acme-id',
+            [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+            [SchemaOrgOrganizationClaim.AlternateName]: 'acme-id',
           },
         },
       } as any,
@@ -696,10 +696,10 @@ describe('HostingManager', () => {
         type: 'Organization',
         meta: {
           claims: {
-            [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-            [ClaimsOrganizationSchemaorg.identifierValue]: 'fallback-org',
-            [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-            [ClaimsOrganizationSchemaorg.alternateName]: 'fallback-org',
+            [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+            [SchemaOrgOrganizationClaim.IdentifierValue]: 'fallback-org',
+            [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+            [SchemaOrgOrganizationClaim.AlternateName]: 'fallback-org',
           },
         },
       } as any,
@@ -799,8 +799,8 @@ describe('HostingManager', () => {
         type: 'Organization',
         meta: {
           claims: {
-            [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-            [ClaimsOrganizationSchemaorg.identifierValue]: 'VATES-B42215152',
+            [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+            [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B42215152',
           },
         },
       } as any,
@@ -879,8 +879,8 @@ describe('HostingManager', () => {
         type: 'Organization',
         meta: {
           claims: {
-            [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-            [ClaimsOrganizationSchemaorg.identifierValue]: 'VATES-B42215152',
+            [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+            [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B42215152',
           },
         },
       } as any,
@@ -921,8 +921,8 @@ describe('HostingManager', () => {
         type: 'Organization',
         meta: {
           claims: {
-            [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-            [ClaimsOrganizationSchemaorg.identifierValue]: 'VATES-B42215152',
+            [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+            [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B42215152',
           },
         },
       } as any,
@@ -942,18 +942,18 @@ describe('HostingManager', () => {
     await hostingManager.bootstrapHost(testClaimsHostInitialization);
     await mockTenantsCacheManager.loadHost();
 
-    const { [ClaimsOrganizationSchemaorg.alternateName]: _ignored, ...claimsWithoutAlternateName } = testClaimsTenant1Registration;
+    const { [SchemaOrgOrganizationClaim.AlternateName]: _ignored, ...claimsWithoutAlternateName } = testClaimsTenant1Registration;
     const job = testBaseJobForClaims(claimsWithoutAlternateName as ClaimsRecord);
 
     const responsePayload = await hostingManager.process(job);
     const entry = responsePayload.body.data[0];
     expect(entry.response.status).toBe('201');
 
-    const expectedAlternateName = String(claimsWithoutAlternateName[ClaimsOrganizationSchemaorg.identifierValue]);
-    expect(entry.resource?.meta?.claims?.[ClaimsOrganizationSchemaorg.alternateName]).toBe(expectedAlternateName);
+    const expectedAlternateName = String(claimsWithoutAlternateName[SchemaOrgOrganizationClaim.IdentifierValue]);
+    expect(entry.resource?.meta?.claims?.[SchemaOrgOrganizationClaim.AlternateName]).toBe(expectedAlternateName);
 
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      claimsWithoutAlternateName[ClaimsServiceSchemaorg.category] as Sector,
+      claimsWithoutAlternateName[SchemaOrgServiceClaim.Category] as Sector,
       expectedAlternateName,
     );
     const provisionalDoc = await vaultRepository.get(
@@ -963,13 +963,13 @@ describe('HostingManager', () => {
     ) as ConfidentialStorageDoc;
 
     expect(provisionalDoc).toBeDefined();
-    expect(provisionalDoc.content?.claims?.[ClaimsOrganizationSchemaorg.alternateName]).toBe(expectedAlternateName);
+    expect(provisionalDoc.content?.claims?.[SchemaOrgOrganizationClaim.AlternateName]).toBe(expectedAlternateName);
   });
 
   it("[3 DEMO: should use a non-UUID identifier directly in 'demo' mode", async () => {
     await hostingManager.bootstrapHost(testClaimsHostInitialization);
     await mockTenantsCacheManager.loadHost();
-    const demoClaims = { ...testClaimsTenant1Registration, [ClaimsPersonSchemaorg.identifier]: testTenant1Data.member.admin1.mockedUuid };
+    const demoClaims = { ...testClaimsTenant1Registration, [SchemaOrgPersonClaim.Identifier]: testTenant1Data.member.admin1.mockedUuid };
     const job = testBaseJobForClaims(demoClaims);
     (uuidValidate as jest.Mock).mockReturnValue(false);
 
@@ -982,7 +982,7 @@ describe('HostingManager', () => {
   it("[2] TENANT: should generate a new UUID for an invalid identifier", async () => {
     await hostingManager.bootstrapHost(testClaimsHostInitialization);
     await mockTenantsCacheManager.loadHost();
-    const invalidClaims = { ...testClaimsTenant1Registration, [ClaimsPersonSchemaorg.identifier]: 'invalid-uuid-format' };
+    const invalidClaims = { ...testClaimsTenant1Registration, [SchemaOrgPersonClaim.Identifier]: 'invalid-uuid-format' };
     const job = testBaseJobForClaims(invalidClaims);
     (uuidValidate as jest.Mock).mockReturnValue(false);
 
@@ -995,7 +995,7 @@ describe('HostingManager', () => {
   it("[4] TENANT: should generate a new UUID if identifier claim is missing", async () => {
     await hostingManager.bootstrapHost(testClaimsHostInitialization);
     await mockTenantsCacheManager.loadHost();
-    const { [ClaimsPersonSchemaorg.identifier]: _, ...noIdClaims } = testClaimsTenant1Registration;
+    const { [SchemaOrgPersonClaim.Identifier]: _, ...noIdClaims } = testClaimsTenant1Registration;
     const job = testBaseJobForClaims(noIdClaims as ClaimsRecord);
     (uuidv4 as jest.Mock).mockReturnValue('new-mocked-uuid-v4');
 
@@ -1020,8 +1020,8 @@ describe('HostingManager', () => {
 
     const responsePayload = await hostingManager.process(job);
 
-    const sector = testClaimsTenant1Registration[ClaimsServiceSchemaorg.category] as Sector;
-    const alternateName = testClaimsTenant1Registration[ClaimsOrganizationSchemaorg.alternateName];
+    const sector = testClaimsTenant1Registration[SchemaOrgServiceClaim.Category] as Sector;
+    const alternateName = testClaimsTenant1Registration[SchemaOrgOrganizationClaim.AlternateName];
     const expectedVaultId = tenantUtils.getTenantVaultId(sector, alternateName);
 
     expect(vaultExistsSpy).toHaveBeenCalledWith(expectedVaultId);
@@ -1052,7 +1052,7 @@ describe('HostingManager', () => {
   it('[9] TENANT: should produce an error entry if sector claim contains multiple values', async () => {
     const claimsWithMultipleSectors = {
       ...testClaimsTenant1Registration,
-      [ClaimsServiceSchemaorg.category]: 'health-care,insurance',
+      [SchemaOrgServiceClaim.Category]: 'health-care,insurance',
     };
     const job = testBaseJobForClaims(claimsWithMultipleSectors);
     
@@ -1086,13 +1086,13 @@ describe('HostingManager', () => {
     const claims = provisionalConfig.claims as ClaimsRecord;
 
     // Check that all original claims are preserved in the provisional record.
-    expect(claims[ClaimsOrganizationSchemaorg.legalName]).toBe(
-      testClaimsTenant1Registration[ClaimsOrganizationSchemaorg.legalName],
+    expect(claims[SchemaOrgOrganizationClaim.LegalName]).toBe(
+      testClaimsTenant1Registration[SchemaOrgOrganizationClaim.LegalName],
     );
-    expect(claims[ClaimsServiceSchemaorg.category]).toBe(
-      testClaimsTenant1Registration[ClaimsServiceSchemaorg.category],
+    expect(claims[SchemaOrgServiceClaim.Category]).toBe(
+      testClaimsTenant1Registration[SchemaOrgServiceClaim.Category],
     );
-    expect(claims[ClaimsPersonSchemaorg.email]).toBe(testClaimsTenant1Registration[ClaimsPersonSchemaorg.email]);
+    expect(claims[SchemaOrgPersonClaim.Email]).toBe(testClaimsTenant1Registration[SchemaOrgPersonClaim.Email]);
   });
 
   it('[ledger] updates the current provider under one stable sector organization asset', async () => {
@@ -1100,9 +1100,9 @@ describe('HostingManager', () => {
     // sector/legal key and the GW replaces only its current provider binding.
     const upsertArtifactSpy = jest.spyOn(ManageAssetArtifact.prototype, 'upsertArtifact').mockResolvedValue({} as any);
     const claims = {
-      [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-      [ClaimsOrganizationSchemaorg.identifierValue]: 'acme-id',
-      [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
+      [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+      [SchemaOrgOrganizationClaim.IdentifierValue]: 'acme-id',
+      [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
     };
     const sectorUrn = buildLegalSectorOrganizationUrn({
       sector: Sector.HEALTH_CARE,

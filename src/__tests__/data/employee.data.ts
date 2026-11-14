@@ -2,7 +2,7 @@
 // File: src/__tests__/data/employee.data.ts
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { testTenant1DidWebExternal, testTenant1Domain, testTenant1IdentifierUrn } from './organization.data';
 
 /**
@@ -63,33 +63,33 @@ export const testTenant1Nurse1 = {
 // ===================================================================================
 
 export const testClaimsHostAdmin1 = {
-    [ClaimsPersonSchemaorg.identifier]: testHostAdmin1.identifier,
-    [ClaimsPersonSchemaorg.hasOccupation]: testHostAdmin1.hasOccupation,
-    [ClaimsPersonSchemaorg.email]: testHostAdmin1.email,
+    [SchemaOrgPersonClaim.Identifier]: testHostAdmin1.identifier,
+    [SchemaOrgPersonClaim.HasOccupation]: testHostAdmin1.hasOccupation,
+    [SchemaOrgPersonClaim.Email]: testHostAdmin1.email,
 };
 
 export const testClaimsEmployeeAdminTenant1 = {
-    [ClaimsPersonSchemaorg.identifier]: testTenant1Admin1.identifier,
-    [ClaimsPersonSchemaorg.hasOccupation]: testTenant1Admin1.hasOccupation,
-    [ClaimsPersonSchemaorg.email]: testTenant1Admin1.email,
+    [SchemaOrgPersonClaim.Identifier]: testTenant1Admin1.identifier,
+    [SchemaOrgPersonClaim.HasOccupation]: testTenant1Admin1.hasOccupation,
+    [SchemaOrgPersonClaim.Email]: testTenant1Admin1.email,
 };
 
 export const testClaimsTenant1Receptionist1 = {
-    [ClaimsPersonSchemaorg.identifier]: testTenant1Receptionist1Urn,
-    [ClaimsPersonSchemaorg.hasOccupation]: testTenant1Receptionist1HasOccupation,
-    [ClaimsPersonSchemaorg.email]: testTenant1Receptionist1Email,
+    [SchemaOrgPersonClaim.Identifier]: testTenant1Receptionist1Urn,
+    [SchemaOrgPersonClaim.HasOccupation]: testTenant1Receptionist1HasOccupation,
+    [SchemaOrgPersonClaim.Email]: testTenant1Receptionist1Email,
 };
 
 export const testClaimsTenant1Firefighter1 = {
-    [ClaimsPersonSchemaorg.identifier]: testTenant1Firefighter1.identifier,
-    [ClaimsPersonSchemaorg.hasOccupation]: testTenant1Firefighter1.hasOccupation,
-    [ClaimsPersonSchemaorg.email]: testTenant1Firefighter1.email,
+    [SchemaOrgPersonClaim.Identifier]: testTenant1Firefighter1.identifier,
+    [SchemaOrgPersonClaim.HasOccupation]: testTenant1Firefighter1.hasOccupation,
+    [SchemaOrgPersonClaim.Email]: testTenant1Firefighter1.email,
 };
 
 export const testClaimsTenant1Nurse1 = {
-    [ClaimsPersonSchemaorg.identifier]: testTenant1Nurse1.identifier,
-    [ClaimsPersonSchemaorg.hasOccupation]: testTenant1Nurse1.hasOccupation,
-    [ClaimsPersonSchemaorg.email]: testTenant1Nurse1.email,
+    [SchemaOrgPersonClaim.Identifier]: testTenant1Nurse1.identifier,
+    [SchemaOrgPersonClaim.HasOccupation]: testTenant1Nurse1.hasOccupation,
+    [SchemaOrgPersonClaim.Email]: testTenant1Nurse1.email,
 };
 
 

@@ -8,10 +8,7 @@ import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
 import type { EntityConfig, OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
 import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
-import {
-  ClaimsOrganizationSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { getBundleResponseTypeForAction } from '../../utils/bundle';
@@ -218,7 +215,7 @@ async function processActivationEntry(
   );
   deps.logActivationIdentityDiagnostics('normalized-claims', normalizedClaims, deps.routeJurisdiction);
   validateNewOrganizationClaims(normalizedClaims);
-  const alternateName = normalizedClaims[ClaimsOrganizationSchemaorg.alternateName] as string;
+  const alternateName = normalizedClaims[SchemaOrgOrganizationClaim.AlternateName] as string;
   if (!alternateName) {
     throw new ManagerError(`Missing required claim: '${HOST_ACTIVATE_REQUIRED_INPUT_CLAIMS[0]}'`, IssueType.Required);
   }
@@ -226,7 +223,7 @@ async function processActivationEntry(
     throw new ManagerError(`Invalid alternateName format: '${alternateName}'`, IssueType.Value);
   }
 
-  const requestedSector = normalizedClaims[ClaimsServiceSchemaorg.category] as Sector;
+  const requestedSector = normalizedClaims[SchemaOrgServiceClaim.Category] as Sector;
   if (!requestedSector) {
     throw new ManagerError(`Missing required claim for activation: '${HOST_ACTIVATE_REQUIRED_INPUT_CLAIMS[1]}'`, IssueType.Required);
   }
@@ -237,7 +234,7 @@ async function processActivationEntry(
     throw new ManagerError(`The requested sector '${requestedSector}' is not supported by this gateway.`, IssueType.Value);
   }
 
-  const requestedServiceTypes = parseServiceCapabilityTokens(normalizedClaims[ClaimsServiceSchemaorg.serviceType]);
+  const requestedServiceTypes = parseServiceCapabilityTokens(normalizedClaims[SchemaOrgServiceClaim.ServiceType]);
   const serviceAuthorizationErrors = validateActivationServiceAuthorizationPolicy({
     organizationCredential: activation.organizationCredential,
     requiredCategory: requestedSector,
@@ -281,18 +278,18 @@ async function processActivationEntry(
   );
   deps.logActivationIdentityDiagnostics('processed-claims', processedClaims, deps.routeJurisdiction);
   const normalizedPublicUrl = deps.normalizeTenantPublicUrl(
-    activation.publicTenantUrl || (processedClaims[ClaimsOrganizationSchemaorg.url] as string | undefined),
+    activation.publicTenantUrl || (processedClaims[SchemaOrgOrganizationClaim.Url] as string | undefined),
   );
-  if (normalizedPublicUrl) (processedClaims as any)[ClaimsOrganizationSchemaorg.url] = normalizedPublicUrl;
-  if (!String(processedClaims[ClaimsOrganizationSchemaorg.addressCountry] || '').trim()) {
+  if (normalizedPublicUrl) (processedClaims as any)[SchemaOrgOrganizationClaim.Url] = normalizedPublicUrl;
+  if (!String(processedClaims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim()) {
     const fallbackCountry = String(deps.config.host.jurisdiction || '').trim();
-    if (fallbackCountry) (processedClaims as any)[ClaimsOrganizationSchemaorg.addressCountry] = fallbackCountry;
+    if (fallbackCountry) (processedClaims as any)[SchemaOrgOrganizationClaim.AddressCountry] = fallbackCountry;
   }
-  if (!String(processedClaims[ClaimsOrganizationSchemaorg.addressCountry] || '').trim()) {
+  if (!String(processedClaims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim()) {
     throw new ManagerError(`Missing required claim for activation: '${HOST_ACTIVATE_REQUIRED_INPUT_CLAIMS[2]}'`, IssueType.Required);
   }
-  if (!(processedClaims as any)[ClaimsOrganizationSchemaorg.identifier]) {
-    (processedClaims as any)[ClaimsOrganizationSchemaorg.identifier] = deps.createOrganizationUrnSafely(processedClaims, requestedSector);
+  if (!(processedClaims as any)[SchemaOrgOrganizationClaim.IdentifierReference]) {
+    (processedClaims as any)[SchemaOrgOrganizationClaim.IdentifierReference] = deps.createOrganizationUrnSafely(processedClaims, requestedSector);
   }
   Object.assign(
     processedClaims,
@@ -315,16 +312,16 @@ async function processActivationEntry(
   const tenantUrn = createOrganizationUrn({
     namespace: deps.config.namespace,
     network: deps.getCurrentUrnNetwork(),
-    jurisdiction: processedClaims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+    jurisdiction: processedClaims[SchemaOrgOrganizationClaim.AddressCountry] as string,
     sector: requestedSector,
-    idType: processedClaims[ClaimsOrganizationSchemaorg.identifierType] as string,
-    idValue: processedClaims[ClaimsOrganizationSchemaorg.identifierValue] as string,
+    idType: processedClaims[SchemaOrgOrganizationClaim.IdentifierType] as string,
+    idValue: processedClaims[SchemaOrgOrganizationClaim.IdentifierValue] as string,
   });
   const hostedTenantDid = createHostedDidWeb(
     composeHostDidWebId(deps.config.apiBaseUrl, deps.config.hostExternalDomain),
     alternateName,
     {
-      jurisdiction: processedClaims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+      jurisdiction: processedClaims[SchemaOrgOrganizationClaim.AddressCountry] as string,
       version: 'v1',
       sector: requestedSector,
     },
@@ -396,7 +393,7 @@ async function processActivationEntry(
   const icaDidRegistration = await deps.registerDidDocumentWithIca({
     vpToken: activation.vpToken,
     presentationSubmission: activation.presentationSubmission,
-    jurisdiction: processedClaims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+    jurisdiction: processedClaims[SchemaOrgOrganizationClaim.AddressCountry] as string,
     sector: requestedSector,
     organizationCredential: activation.organizationCredential,
     representativeCredential: activation.representativeCredential,
@@ -439,13 +436,13 @@ async function processActivationEntry(
       namespace: deps.config.namespace,
       hostExternalDomain: deps.config.hostExternalDomain,
       logger: deps.logger,
-      orgId: (processedClaims as any)[ClaimsOrganizationSchemaorg.identifier] || tenantUrn,
+      orgId: (processedClaims as any)[SchemaOrgOrganizationClaim.IdentifierReference] || tenantUrn,
       organization,
       config: finalTenantConfig,
       evidence: serviceEvidence,
       role: 'tenant',
       sector: requestedSector,
-      jurisdiction: processedClaims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+      jurisdiction: processedClaims[SchemaOrgOrganizationClaim.AddressCountry] as string,
     });
   }
 

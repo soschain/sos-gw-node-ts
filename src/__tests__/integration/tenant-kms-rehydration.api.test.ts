@@ -27,11 +27,11 @@ import { Worker } from '../../worker';
 import type { IServerConfig } from '../../config';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { generateTenantCollectionNameFromClaims } from '../../utils/tenant';
-import { ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { invokeExpress } from './helpers/invokeExpress';
 import { buildActivationPayload, pollJsonBody } from './helpers/story-flow';
 import { ORGANIZATION_ORDER_REQUEST, EMPLOYEE_REGISTRATION_REQUEST } from '../data/example-payloads';
-import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { IHostRuntime } from '../../managers/IHostRuntime';
 import { testClaimsHostInitialization } from '../data/end-to-end.data';
 import { buildLicensePurchaseEntry } from 'gdc-common-utils-ts';
@@ -123,8 +123,8 @@ describe('Tenant KMS rehydration after activate route story', () => {
       meta: {
         claims: {
           ...(createPayload.body.data[0].resource?.meta?.claims || {}),
-          [ClaimsPersonSchemaorg.identifier]: replayEmployeeIdentifier,
-          [ClaimsPersonSchemaorg.email]: replayEmployeeEmail,
+          [SchemaOrgPersonClaim.Identifier]: replayEmployeeIdentifier,
+          [SchemaOrgPersonClaim.Email]: replayEmployeeEmail,
         },
       },
     };
@@ -176,7 +176,7 @@ async function purchaseEmployeeSeat(
   expect(offerSubmit.status).toBe(202);
   await queueAdapter.waitForEmptyQueue();
   const offerPoll = await pollJsonBody(app, offerSubmit.headers.location, offerPayload.thid);
-  const offerId = String(offerPoll.body.data[0].resource?.meta?.claims?.[ClaimsOfferSchemaorg.identifier] || '');
+  const offerId = String(offerPoll.body.data[0].resource?.meta?.claims?.[SchemaOrgOfferClaim.Identifier] || '');
   expect(offerPoll.body.data[0].response.status).toBe('201');
   expect(offerId).toBeTruthy();
 
@@ -185,9 +185,9 @@ async function purchaseEmployeeSeat(
   orderPayload.jti = 'employee-kms-seat-order-jti';
   orderPayload.body.data[0].meta = {};
   orderPayload.body.data[0].resource = { meta: { claims: {
-    [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
-    [ClaimsOrderSchemaorg.paymentMethod]: 'Stripe',
-    [ClaimsOrderSchemaorg.partOfInvoice]: 'employee-kms-seat-invoice',
+    [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
+    [SchemaOrgOrderClaim.PaymentMethod]: 'Stripe',
+    [SchemaOrgOrderClaim.PartOfInvoice]: 'employee-kms-seat-invoice',
   } } };
   const orderSubmit = await invokeExpress(app, {
     method: 'POST',
@@ -294,7 +294,7 @@ async function onboardViaActivateAndOrder(app: express.Express, queueAdapter: Qu
   expect(activationPoll.status).toBe(200);
 
   const activationEntry = activationPoll.body.data[0];
-  const offerId = String(activationEntry.resource?.meta?.claims?.[ClaimsOfferSchemaorg.identifier] || '');
+  const offerId = String(activationEntry.resource?.meta?.claims?.[SchemaOrgOfferClaim.Identifier] || '');
   expect(offerId).toBeTruthy();
 
   const orderPayload = structuredClone(ORGANIZATION_ORDER_REQUEST) as any;
@@ -304,9 +304,9 @@ async function onboardViaActivateAndOrder(app: express.Express, queueAdapter: Qu
   orderPayload.body.data[0].resource = {
     meta: {
       claims: {
-        [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
-        [ClaimsOrderSchemaorg.paymentMethod]: 'Stripe',
-        [ClaimsOrderSchemaorg.partOfInvoice]: 'tenant-kms-order-invoice',
+        [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
+        [SchemaOrgOrderClaim.PaymentMethod]: 'Stripe',
+        [SchemaOrgOrderClaim.PartOfInvoice]: 'tenant-kms-order-invoice',
       },
     },
   };
@@ -323,5 +323,5 @@ async function onboardViaActivateAndOrder(app: express.Express, queueAdapter: Qu
   const orderPoll = await pollJsonBody(app, orderSubmit.headers.location, orderPayload.thid);
   expect(orderPoll.status).toBe(200);
 
-  return String(activationEntry.resource?.meta?.claims?.[ClaimsOrganizationSchemaorg.alternateName] || '');
+  return String(activationEntry.resource?.meta?.claims?.[SchemaOrgOrganizationClaim.AlternateName] || '');
 }

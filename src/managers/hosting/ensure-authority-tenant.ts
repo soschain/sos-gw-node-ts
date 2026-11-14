@@ -1,6 +1,6 @@
 import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
@@ -89,24 +89,24 @@ export async function ensureAuthorityTenant(
   const idValue = idValueRaw.replace(/[^a-zA-Z0-9]/g, '');
 
   const claims: ClaimsRecord = {
-    [ClaimsOrganizationSchemaorg.legalName]: deps.config.host.legalName || 'GW CORE Host',
-    [ClaimsOrganizationSchemaorg.alternateName]: deps.alternateName,
-    [ClaimsOrganizationSchemaorg.addressCountry]: hostJurisdiction,
-    [ClaimsOrganizationSchemaorg.identifierType]: idType,
-    [ClaimsOrganizationSchemaorg.identifierValue]: idValue,
-    [ClaimsServiceSchemaorg.category]: sector,
-    ...(deps.externalDomain ? { [ClaimsOrganizationSchemaorg.url]: `https://${deps.externalDomain}` } : {}),
+    [SchemaOrgOrganizationClaim.LegalName]: deps.config.host.legalName || 'GW CORE Host',
+    [SchemaOrgOrganizationClaim.AlternateName]: deps.alternateName,
+    [SchemaOrgOrganizationClaim.AddressCountry]: hostJurisdiction,
+    [SchemaOrgOrganizationClaim.IdentifierType]: idType,
+    [SchemaOrgOrganizationClaim.IdentifierValue]: idValue,
+    [SchemaOrgServiceClaim.Category]: sector,
+    ...(deps.externalDomain ? { [SchemaOrgOrganizationClaim.Url]: `https://${deps.externalDomain}` } : {}),
   };
 
   const orgUrn = createOrganizationUrn({
     namespace: deps.config.namespace,
     network: deps.getCurrentUrnNetwork(),
-    jurisdiction: claims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+    jurisdiction: claims[SchemaOrgOrganizationClaim.AddressCountry] as string,
     sector,
     idType,
     idValue,
   });
-  (claims as any)[ClaimsOrganizationSchemaorg.identifier] = orgUrn;
+  (claims as any)[SchemaOrgOrganizationClaim.IdentifierReference] = orgUrn;
 
   const authorityConfig: OrganizationConfig = {
     id: determineResourceId(orgUrn, deps.config.nodeEnv),

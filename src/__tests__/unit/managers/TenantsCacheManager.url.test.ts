@@ -7,7 +7,7 @@ import { KmsService } from '../../../services/KmsService';
 import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { AdapterCryptoSdkNode } from '../../../gdc-backend-utils-node/adapters/node/crypto';
 import { testConfigTenant1, testTenant1IdentifierUrn, testHostDidWeb } from '../../data/organization.data';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { EntityConfig } from '../../../gdc-backend-utils-node/models/entity';
 import { getEnvSectionId } from '../../../utils/section-env';
 
@@ -19,7 +19,7 @@ describe('TenantsCacheManager - tenant urls', () => {
   const hostConfig: EntityConfig = {
     id: 'host-id',
     status: 'active',
-    claims: { [ClaimsOrganizationSchemaorg.alternateName]: 'host' },
+    claims: { [SchemaOrgOrganizationClaim.AlternateName]: 'host' },
     didDocument: { '@context': 'https://www.w3.org/ns/did/v1', id: testHostDidWeb },
   } as any;
 
@@ -28,8 +28,8 @@ describe('TenantsCacheManager - tenant urls', () => {
     didDocument: { ...testConfigTenant1.didDocument, id: testTenant1IdentifierUrn },
     claims: {
       ...testConfigTenant1.claims,
-      [ClaimsOrganizationSchemaorg.url]: 'acme.example.com',
-      [ClaimsServiceSchemaorg.category]: 'health-care',
+      [SchemaOrgOrganizationClaim.Url]: 'acme.example.com',
+      [SchemaOrgServiceClaim.Category]: 'health-care',
     }
   } as any;
 
@@ -38,10 +38,10 @@ describe('TenantsCacheManager - tenant urls', () => {
     didDocument: { ...testConfigTenant1.didDocument, id: testTenant1IdentifierUrn },
     claims: {
       ...testConfigTenant1.claims,
-      [ClaimsServiceSchemaorg.category]: 'health-care',
+      [SchemaOrgServiceClaim.Category]: 'health-care',
     },
   } as any;
-  delete (tenantConfigWithoutUrl.claims as any)[ClaimsOrganizationSchemaorg.url];
+  delete (tenantConfigWithoutUrl.claims as any)[SchemaOrgOrganizationClaim.Url];
 
   const tenantConfigWithOperationalUrl: EntityConfig = {
     ...tenantConfigWithUrl,
@@ -101,7 +101,7 @@ describe('TenantsCacheManager - tenant urls', () => {
     // ASSERT
     const hostDomain = testHostDidWeb.replace('did:web:', '');
     const urnParts = testTenant1IdentifierUrn.split(':');
-    const tenantPath = String((testConfigTenant1.claims as any)[ClaimsOrganizationSchemaorg.alternateName]);
+    const tenantPath = String((testConfigTenant1.claims as any)[SchemaOrgOrganizationClaim.AlternateName]);
     // The jurisdiction (urnParts[3]) must be lower-cased to match the canonical URL format.
     const expectedUrl = `https://${hostDomain}/${tenantPath}/cds-${urnParts[3].toLowerCase()}/${urnParts[4]}/${urnParts[5]}`;
     expect(url).toBe(expectedUrl);
@@ -131,7 +131,7 @@ describe('TenantsCacheManager - tenant urls', () => {
     const url = await tenantsCacheManager.getTenantOperationalUrl('health-care_acme_no_url');
     const hostDomain = testHostDidWeb.replace('did:web:', '');
     const urnParts = testTenant1IdentifierUrn.split(':');
-    const tenantPath = String((testConfigTenant1.claims as any)[ClaimsOrganizationSchemaorg.alternateName]);
+    const tenantPath = String((testConfigTenant1.claims as any)[SchemaOrgOrganizationClaim.AlternateName]);
     const expectedUrl = `https://${hostDomain}/${tenantPath}/cds-${urnParts[3].toLowerCase()}/${urnParts[4]}/${urnParts[5]}`;
     expect(url).toBe(expectedUrl);
   });

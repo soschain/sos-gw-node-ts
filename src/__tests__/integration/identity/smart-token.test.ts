@@ -5,7 +5,7 @@ import { resolveHostPhysicalCollectionName } from '../../../config/storage-layou
 
 import { invokeExpress } from '../helpers/invokeExpress';
 import { getTenantVaultId } from '../../../utils/tenant';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { testPayloadCreateTenant1 } from '../../data/end-to-end.data';
 import { testConsentRulePermitOrgDid } from '../../data/consent-rules.data';
 import { generateTenantCollectionNameFromClaims } from '../../../utils/tenant';
@@ -112,14 +112,14 @@ describe('SMART token issuance (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
       };
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
       const tenantVaultId = getTenantVaultId(
-        tenantClaims[ClaimsServiceSchemaorg.category],
+        tenantClaims[SchemaOrgServiceClaim.Category],
         tenantClaims['org.schema.Organization.alternateName'],
       );
       await kmsService.provisionKeys(tenantVaultId);
@@ -195,16 +195,16 @@ describe('SMART token issuance (integration)', () => {
     try {
       // Create tenant "acme" directly in the host registry (avoid full crypto onboarding here).
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
 
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
       const tenantVaultId = getTenantVaultId(
-        tenantClaims[ClaimsServiceSchemaorg.category],
+        tenantClaims[SchemaOrgServiceClaim.Category],
         tenantClaims['org.schema.Organization.alternateName'],
       );
 
@@ -327,16 +327,16 @@ describe('SMART token issuance (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
 
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
       const tenantVaultId = getTenantVaultId(
-        tenantClaims[ClaimsServiceSchemaorg.category],
+        tenantClaims[SchemaOrgServiceClaim.Category],
         tenantClaims['org.schema.Organization.alternateName'],
       );
 
@@ -449,16 +449,16 @@ describe('SMART token issuance (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
 
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
       const tenantVaultId = getTenantVaultId(
-        tenantClaims[ClaimsServiceSchemaorg.category],
+        tenantClaims[SchemaOrgServiceClaim.Category],
         tenantClaims['org.schema.Organization.alternateName'],
       );
 
@@ -576,16 +576,16 @@ describe('SMART token issuance (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
 
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
       const tenantVaultId = getTenantVaultId(
-        tenantClaims[ClaimsServiceSchemaorg.category],
+        tenantClaims[SchemaOrgServiceClaim.Category],
         tenantClaims['org.schema.Organization.alternateName'],
       );
 
@@ -701,8 +701,8 @@ describe('SMART token issuance (integration)', () => {
     try {
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
       const tenantVaultId = getTenantVaultId(
-        tenantClaims[ClaimsServiceSchemaorg.category],
-        tenantClaims[ClaimsOrganizationSchemaorg.alternateName],
+        tenantClaims[SchemaOrgServiceClaim.Category],
+        tenantClaims[SchemaOrgOrganizationClaim.AlternateName],
       );
       await kmsService.provisionKeys(tenantVaultId);
       const protectedTenant = await kmsService.protectConfidentialData({
@@ -781,7 +781,7 @@ describe('SMART token issuance (integration)', () => {
         sequence: 0,
         content: {
           claims: {
-            [ClaimsOrganizationSchemaorg.sameAs]: EXAMPLE_PORTAL_INDIVIDUAL_DID,
+            [SchemaOrgOrganizationClaim.SameAs]: EXAMPLE_PORTAL_INDIVIDUAL_DID,
           },
         },
       } as any, tenantVaultId);

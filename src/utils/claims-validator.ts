@@ -4,7 +4,7 @@
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
-import { ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { parseServiceCapabilityTokens } from 'sos-data-utils-ts/service-capabilities';
 
 /**
@@ -17,7 +17,7 @@ import { parseServiceCapabilityTokens } from 'sos-data-utils-ts/service-capabili
  */
 export function validateNewOrganizationClaims(claims: ClaimsRecord): void {
   // console.log('--- DEBUG: Validating claims ---', JSON.stringify(claims, null, 2));
-  const requestedSector = claims[ClaimsServiceSchemaorg.category];
+  const requestedSector = claims[SchemaOrgServiceClaim.Category];
 
   // Rule: A single registration entry must correspond to a single business sector.
   // To register an entity in multiple sectors, separate registration requests must be sent.
@@ -29,11 +29,11 @@ export function validateNewOrganizationClaims(claims: ClaimsRecord): void {
   }
 
   const requestedServiceTypes = parseServiceCapabilityTokens(
-    claims[ClaimsServiceSchemaorg.serviceType],
+    claims[SchemaOrgServiceClaim.ServiceType],
   );
   if (requestedServiceTypes.length === 0) {
     throw new ManagerError(
-      `Missing required claim for activation: '${ClaimsServiceSchemaorg.serviceType}'`,
+      `Missing required claim for activation: '${SchemaOrgServiceClaim.ServiceType}'`,
       IssueType.Required,
     );
   }

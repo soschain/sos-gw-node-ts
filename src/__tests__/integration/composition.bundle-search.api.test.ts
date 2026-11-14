@@ -12,7 +12,7 @@ import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { getTenantVaultId, generateTenantCollectionNameFromClaims } from '../../utils/tenant';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { testPayloadCreateTenant1 } from '../data/end-to-end.data';
 import { initializeTenantServicesConfig } from '../../utils/services';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
@@ -228,14 +228,14 @@ describe('Composition Bundle _search API (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
 
       const tenantConfig = {
         claims: tenantClaims,
@@ -398,14 +398,14 @@ describe('Composition Bundle _search API (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
 
       const tenantConfig = {
         claims: tenantClaims,
@@ -558,14 +558,14 @@ describe('Composition Bundle _search API (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
 
       const tenantConfig = {
         claims: tenantClaims,
@@ -668,14 +668,14 @@ describe('Composition Bundle _search API (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
 
       const tenantConfig = {
         claims: tenantClaims,
@@ -807,14 +807,14 @@ describe('Composition Bundle _search API (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
 
       const tenantConfig = {
         claims: tenantClaims,
@@ -1673,14 +1673,14 @@ describe('Composition Bundle _search API (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
 
       const tenantConfig = {
         claims: tenantClaims,
@@ -1849,14 +1849,14 @@ describe('Composition Bundle _search API (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
 
       const tenantConfig = {
         claims: tenantClaims,

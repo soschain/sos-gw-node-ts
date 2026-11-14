@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { buildGaiaXLegalPersonCredentialDraft } from 'gdc-common-utils-ts/convert/schemaorg-to-gaia-x';
 
@@ -29,10 +29,10 @@ export function createGaiaXLegalParticipantCredential(options: GaiaXLegalPartici
   } = options;
 
   const claims: ClaimsRecord = {
-    [ClaimsOrganizationSchemaorg.legalName]: officialName,
-    [ClaimsOrganizationSchemaorg.identifierValue]: vatId,
-    [ClaimsOrganizationSchemaorg.addressCountry]: countryCode,
-    [ClaimsOrganizationSchemaorg.url]: webDomain,
+    [SchemaOrgOrganizationClaim.LegalName]: officialName,
+    [SchemaOrgOrganizationClaim.IdentifierValue]: vatId,
+    [SchemaOrgOrganizationClaim.AddressCountry]: countryCode,
+    [SchemaOrgOrganizationClaim.Url]: webDomain,
   };
   return buildGaiaXLegalPersonCredentialDraft({
     claims,
@@ -52,9 +52,9 @@ export function buildGaiaXLegalParticipantOptionsFromClaims(params: {
   issuerDid: string;
 }): GaiaXLegalParticipantCredentialOptions {
   const { claims, webDomain, did, issuerDid } = params;
-  const officialName = claims[ClaimsOrganizationSchemaorg.legalName] as string | undefined;
-  const vatId = claims[ClaimsOrganizationSchemaorg.identifierValue] as string | undefined;
-  const countryCode = claims[ClaimsOrganizationSchemaorg.addressCountry] as string | undefined;
+  const officialName = claims[SchemaOrgOrganizationClaim.LegalName] as string | undefined;
+  const vatId = claims[SchemaOrgOrganizationClaim.IdentifierValue] as string | undefined;
+  const countryCode = claims[SchemaOrgOrganizationClaim.AddressCountry] as string | undefined;
 
   if (!officialName || !vatId || !countryCode) {
     throw new Error('Missing required claims to build Gaia-X Legal Participant credential.');

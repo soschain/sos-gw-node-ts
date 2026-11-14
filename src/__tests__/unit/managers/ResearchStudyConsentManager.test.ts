@@ -2,7 +2,7 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
-import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { OrganizationWorkflowCapabilities } from 'sos-data-utils-ts/organization-workflow-access';
 import {
   ResearchStudyConsentManager,
@@ -550,8 +550,8 @@ function createHarness(options: {
     if (record.content?.employee) return {
         status: options.activeEmployee === false ? 'inactive' : 'active',
         claims: {
-          [ClaimsPersonSchemaorg.email]: RESEARCH_STUDY_REVIEWER_EMAIL,
-          [ClaimsPersonSchemaorg.hasOccupation]: professionalRole,
+          [SchemaOrgPersonClaim.Email]: RESEARCH_STUDY_REVIEWER_EMAIL,
+          [SchemaOrgPersonClaim.HasOccupation]: professionalRole,
         },
       };
     if (record.jwe?.ciphertext === 'protected-license') return {

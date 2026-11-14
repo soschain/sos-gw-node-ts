@@ -1,6 +1,6 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { describe, expect, it, jest } from '@jest/globals';
-import { ClaimsOfferSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { EntityLifecycleStatus } from '../../../gdc-backend-utils-node/models/enums';
 import { createPendingTenantRegistration } from '../../../managers/hosting/create-pending-tenant-registration';
@@ -38,7 +38,7 @@ describe('createPendingTenantRegistration restart continuation', () => {
       handleServiceAttachment: async (service: any) => service,
       withHostedOrganizationOfferClaims: (claims: any) => ({
         ...claims,
-        [ClaimsOfferSchemaorg.identifier]: offerIdentifier,
+        [SchemaOrgOfferClaim.Identifier]: offerIdentifier,
       }),
       getCurrentUrnNetwork: () => 'test-network',
     } as const;
@@ -58,8 +58,8 @@ describe('createPendingTenantRegistration restart continuation', () => {
       }),
     } as any);
 
-    expect(firstClaims[ClaimsOfferSchemaorg.identifier]).toBe(offerIdentifier);
-    expect(resumedClaims[ClaimsOfferSchemaorg.identifier]).toBe(offerIdentifier);
+    expect(firstClaims[SchemaOrgOfferClaim.Identifier]).toBe(offerIdentifier);
+    expect(resumedClaims[SchemaOrgOfferClaim.Identifier]).toBe(offerIdentifier);
     expect(stored?.id).toBe(testTenant1VaultId);
     expect(stored?.status).toBe(EntityLifecycleStatus.Pending);
     expect(stored?.sequence).toBe(Number(firstStored?.sequence || 0) + 1);

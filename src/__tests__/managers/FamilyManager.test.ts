@@ -19,13 +19,7 @@ import {
 } from 'gdc-common-utils-ts';
 import { PDFDocument } from 'pdf-lib';
 import { DocumentReferenceClaim } from 'gdc-common-utils-ts/models/interoperable-claims/document-reference-claims';
-import {
-  ClaimsOfferSchemaorg,
-  ClaimsOrderSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsPersonSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
 import {
   EXAMPLE_CONTROLLER_IDENTIFIER_TYPE,
@@ -97,12 +91,12 @@ const INDIVIDUAL_SELF_ROLE = 'ONESELF';
  * `termsOfService` is an https URL so handleServiceAttachment skips file upload.
  */
 const BASE_CLAIMS: Record<string, unknown> = buildExampleFamilyRegistrationClaims({
-  [ClaimsServiceSchemaorg.category]: SECTOR,
-  [ClaimsOrganizationSchemaorg.identifierType]: 'UUID',
-  [ClaimsOrganizationSchemaorg.identifierValue]: randomUUID(),
-  [ClaimsPersonSchemaorg.identifierType]: 'UUID',
-  [ClaimsPersonSchemaorg.identifierValue]: randomUUID(),
-  [ClaimsServiceSchemaorg.serviceType]: testDefaultTenantServiceTypeClaim,
+  [SchemaOrgServiceClaim.Category]: SECTOR,
+  [SchemaOrgOrganizationClaim.IdentifierType]: 'UUID',
+  [SchemaOrgOrganizationClaim.IdentifierValue]: randomUUID(),
+  [SchemaOrgPersonClaim.IdentifierType]: 'UUID',
+  [SchemaOrgPersonClaim.IdentifierValue]: randomUUID(),
+  [SchemaOrgServiceClaim.ServiceType]: testDefaultTenantServiceTypeClaim,
 });
 
 const TEST_KYC_PROFILE = Object.freeze({
@@ -197,8 +191,8 @@ function makeTransactionJob(
 }
 
 function makeSearchJob(overrideClaims: Record<string, unknown> = {}, bearerPayload?: Record<string, unknown>): JobRequest {
-  const ownerEmail = String(overrideClaims[ClaimsOrganizationSchemaorg.ownerEmail] ?? BASE_CLAIMS[ClaimsOrganizationSchemaorg.ownerEmail] ?? '').trim();
-  const ownerPhone = String(overrideClaims[ClaimsOrganizationSchemaorg.ownerTelephone] ?? EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE).trim();
+  const ownerEmail = String(overrideClaims[SchemaOrgOrganizationClaim.OwnerEmail] ?? BASE_CLAIMS[SchemaOrgOrganizationClaim.OwnerEmail] ?? '').trim();
+  const ownerPhone = String(overrideClaims[SchemaOrgOrganizationClaim.OwnerTelephone] ?? EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE).trim();
   return {
     id: randomUUID(),
     status: JobStatus.DRAFT,
@@ -227,10 +221,10 @@ function makeSearchJob(overrideClaims: Record<string, unknown> = {}, bearerPaylo
           resource: {
             resourceType: 'Organization',
             meta: { claims: {
-              [ClaimsOrganizationSchemaorg.ownerTelephone]: EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE,
-              [ClaimsOrganizationSchemaorg.ownerEmail]: String(BASE_CLAIMS[ClaimsOrganizationSchemaorg.ownerEmail]),
-              [ClaimsOrganizationSchemaorg.alternateName]: String(BASE_CLAIMS[ClaimsOrganizationSchemaorg.alternateName]),
-              [ClaimsServiceSchemaorg.category]: SECTOR,
+              [SchemaOrgOrganizationClaim.OwnerTelephone]: EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE,
+              [SchemaOrgOrganizationClaim.OwnerEmail]: String(BASE_CLAIMS[SchemaOrgOrganizationClaim.OwnerEmail]),
+              [SchemaOrgOrganizationClaim.AlternateName]: String(BASE_CLAIMS[SchemaOrgOrganizationClaim.AlternateName]),
+              [SchemaOrgServiceClaim.Category]: SECTOR,
               ...overrideClaims,
             } },
           },
@@ -253,7 +247,7 @@ function makeOrderJob(offerId: string): JobRequest {
         type: 'Family-order-request-v1.0',
         resource: {
           resourceType: 'Order',
-          meta: { claims: { [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId } },
+          meta: { claims: { [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId } },
         },
       }] },
     },
@@ -309,8 +303,8 @@ function makePdfDraftJob(input: {
             resourceType: 'DocumentReference',
             meta: {
               claims: {
-                [ClaimsOrganizationSchemaorg.identifier]: EXAMPLE_SUBJECT_DID,
-                [ClaimsServiceSchemaorg.category]: SECTOR,
+                [SchemaOrgOrganizationClaim.IdentifierReference]: EXAMPLE_SUBJECT_DID,
+                [SchemaOrgServiceClaim.Category]: SECTOR,
                 ...(input.claims || {}),
               },
               template: {
@@ -339,8 +333,8 @@ function makePdfDraftJob(input: {
 }
 
 function makePurgeJob(overrideClaims: Record<string, unknown> = {}, bearerPayload?: Record<string, unknown>): JobRequest {
-  const ownerEmail = String(overrideClaims[ClaimsOrganizationSchemaorg.ownerEmail] ?? BASE_CLAIMS[ClaimsOrganizationSchemaorg.ownerEmail] ?? '').trim();
-  const ownerPhone = String(overrideClaims[ClaimsOrganizationSchemaorg.ownerTelephone] ?? EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE).trim();
+  const ownerEmail = String(overrideClaims[SchemaOrgOrganizationClaim.OwnerEmail] ?? BASE_CLAIMS[SchemaOrgOrganizationClaim.OwnerEmail] ?? '').trim();
+  const ownerPhone = String(overrideClaims[SchemaOrgOrganizationClaim.OwnerTelephone] ?? EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE).trim();
   return {
     id: randomUUID(),
     status: JobStatus.DRAFT,
@@ -369,10 +363,10 @@ function makePurgeJob(overrideClaims: Record<string, unknown> = {}, bearerPayloa
           resource: {
             resourceType: 'Organization',
             meta: { claims: {
-              [ClaimsOrganizationSchemaorg.ownerTelephone]: EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE,
-              [ClaimsOrganizationSchemaorg.ownerEmail]: String(BASE_CLAIMS[ClaimsOrganizationSchemaorg.ownerEmail]),
-              [ClaimsOrganizationSchemaorg.alternateName]: String(BASE_CLAIMS[ClaimsOrganizationSchemaorg.alternateName]),
-              [ClaimsServiceSchemaorg.category]: SECTOR,
+              [SchemaOrgOrganizationClaim.OwnerTelephone]: EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE,
+              [SchemaOrgOrganizationClaim.OwnerEmail]: String(BASE_CLAIMS[SchemaOrgOrganizationClaim.OwnerEmail]),
+              [SchemaOrgOrganizationClaim.AlternateName]: String(BASE_CLAIMS[SchemaOrgOrganizationClaim.AlternateName]),
+              [SchemaOrgServiceClaim.Category]: SECTOR,
               ...overrideClaims,
             } },
           },
@@ -383,8 +377,8 @@ function makePurgeJob(overrideClaims: Record<string, unknown> = {}, bearerPayloa
 }
 
 function makeDisableJob(overrideClaims: Record<string, unknown> = {}, bearerPayload?: Record<string, unknown>): JobRequest {
-  const ownerEmail = String(overrideClaims[ClaimsOrganizationSchemaorg.ownerEmail] ?? BASE_CLAIMS[ClaimsOrganizationSchemaorg.ownerEmail] ?? '').trim();
-  const ownerPhone = String(overrideClaims[ClaimsOrganizationSchemaorg.ownerTelephone] ?? EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE).trim();
+  const ownerEmail = String(overrideClaims[SchemaOrgOrganizationClaim.OwnerEmail] ?? BASE_CLAIMS[SchemaOrgOrganizationClaim.OwnerEmail] ?? '').trim();
+  const ownerPhone = String(overrideClaims[SchemaOrgOrganizationClaim.OwnerTelephone] ?? EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE).trim();
   return {
     id: randomUUID(),
     status: JobStatus.DRAFT,
@@ -413,10 +407,10 @@ function makeDisableJob(overrideClaims: Record<string, unknown> = {}, bearerPayl
           resource: {
             resourceType: 'Organization',
             meta: { claims: {
-              [ClaimsOrganizationSchemaorg.ownerTelephone]: EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE,
-              [ClaimsOrganizationSchemaorg.ownerEmail]: String(BASE_CLAIMS[ClaimsOrganizationSchemaorg.ownerEmail]),
-              [ClaimsOrganizationSchemaorg.alternateName]: String(BASE_CLAIMS[ClaimsOrganizationSchemaorg.alternateName]),
-              [ClaimsServiceSchemaorg.category]: SECTOR,
+              [SchemaOrgOrganizationClaim.OwnerTelephone]: EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE,
+              [SchemaOrgOrganizationClaim.OwnerEmail]: String(BASE_CLAIMS[SchemaOrgOrganizationClaim.OwnerEmail]),
+              [SchemaOrgOrganizationClaim.AlternateName]: String(BASE_CLAIMS[SchemaOrgOrganizationClaim.AlternateName]),
+              [SchemaOrgServiceClaim.Category]: SECTOR,
               ...overrideClaims,
             } },
           },
@@ -537,20 +531,20 @@ describe('FamilyManager', () => {
       mockVaultRepository.put.mockResolvedValue(true);
 
       const response = await manager.process(makeBatchJob({
-        [ClaimsOrganizationSchemaorg.alternateName]: '',
-        [ClaimsOrganizationSchemaorg.sameAs]: '',
-        [ClaimsPersonSchemaorg.birthDate]: HUMAN_DRAFT_BIRTH_YEAR,
-        [ClaimsOrganizationSchemaorg.memberRole]: '',
+        [SchemaOrgOrganizationClaim.AlternateName]: '',
+        [SchemaOrgOrganizationClaim.SameAs]: '',
+        [SchemaOrgPersonClaim.BirthDate]: HUMAN_DRAFT_BIRTH_YEAR,
+        [SchemaOrgOrganizationClaim.MemberRole]: '',
       }));
       const entry = (response.body as BundleJsonApi).data[0] as BundleEntry;
 
       expect(entry.response?.status).toBe('201');
       expect(entry.resource?.meta?.claims).toEqual(expect.objectContaining({
-        [ClaimsPersonSchemaorg.birthDate]: HUMAN_DRAFT_BIRTH_YEAR,
-        [ClaimsOrganizationSchemaorg.memberRole]: INDIVIDUAL_SELF_ROLE,
+        [SchemaOrgPersonClaim.BirthDate]: HUMAN_DRAFT_BIRTH_YEAR,
+        [SchemaOrgOrganizationClaim.MemberRole]: INDIVIDUAL_SELF_ROLE,
         [GatewayClaim.FamilyRegistrationStatus]: FamilyRegistrationStatus.DraftSaved,
       }));
-      expect(entry.resource?.meta?.claims?.[ClaimsOrganizationSchemaorg.sameAs]).toBe('');
+      expect(entry.resource?.meta?.claims?.[SchemaOrgOrganizationClaim.SameAs]).toBe('');
       expect(mockVaultRepository.put).toHaveBeenCalledWith(
         COLLECTION_NAME,
         [expect.objectContaining({ status: EntityLifecycleStatus.Pending })],
@@ -560,14 +554,14 @@ describe('FamilyManager', () => {
 
     it('rejects a nameless human draft without a valid birth year or date', async () => {
       const response = await manager.process(makeBatchJob({
-        [ClaimsOrganizationSchemaorg.alternateName]: '',
-        [ClaimsOrganizationSchemaorg.sameAs]: '',
-        [ClaimsPersonSchemaorg.birthDate]: '',
+        [SchemaOrgOrganizationClaim.AlternateName]: '',
+        [SchemaOrgOrganizationClaim.SameAs]: '',
+        [SchemaOrgPersonClaim.BirthDate]: '',
       }));
       const entry = (response.body as BundleJsonApi).data[0] as BundleEntry;
 
       expect(entry.response?.status).toBe('400');
-      expect(entry.response?.outcome?.issue?.[0]?.diagnostics).toContain(ClaimsPersonSchemaorg.birthDate);
+      expect(entry.response?.outcome?.issue?.[0]?.diagnostics).toContain(SchemaOrgPersonClaim.BirthDate);
       expect(mockVaultRepository.put).not.toHaveBeenCalled();
     });
 
@@ -584,28 +578,28 @@ describe('FamilyManager', () => {
         status: EntityLifecycleStatus.Pending,
         claims: {
           ...BASE_CLAIMS,
-          [ClaimsOrganizationSchemaorg.identifierValue]: HUMAN_DRAFT_IDENTIFIER,
-          [ClaimsOrganizationSchemaorg.alternateName]: '',
-          [ClaimsOrganizationSchemaorg.sameAs]: '',
-          [ClaimsPersonSchemaorg.birthDate]: HUMAN_DRAFT_BIRTH_YEAR,
-          [ClaimsOrganizationSchemaorg.memberRole]: INDIVIDUAL_SELF_ROLE,
+          [SchemaOrgOrganizationClaim.IdentifierValue]: HUMAN_DRAFT_IDENTIFIER,
+          [SchemaOrgOrganizationClaim.AlternateName]: '',
+          [SchemaOrgOrganizationClaim.SameAs]: '',
+          [SchemaOrgPersonClaim.BirthDate]: HUMAN_DRAFT_BIRTH_YEAR,
+          [SchemaOrgOrganizationClaim.MemberRole]: INDIVIDUAL_SELF_ROLE,
         },
       }) as any);
       mockKmsService.protectConfidentialData.mockImplementation(async (document: any) => document);
 
       const response = await manager.process(makeBatchJob({
-        [ClaimsOrganizationSchemaorg.identifierValue]: HUMAN_DRAFT_IDENTIFIER,
-        [ClaimsOrganizationSchemaorg.alternateName]: HUMAN_COMPLETED_NAME,
-        [ClaimsOrganizationSchemaorg.sameAs]: EXAMPLE_SUBJECT_DID,
-        [ClaimsPersonSchemaorg.birthDate]: HUMAN_DRAFT_BIRTH_YEAR,
-        [ClaimsOrganizationSchemaorg.memberRole]: INDIVIDUAL_SELF_ROLE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: HUMAN_DRAFT_IDENTIFIER,
+        [SchemaOrgOrganizationClaim.AlternateName]: HUMAN_COMPLETED_NAME,
+        [SchemaOrgOrganizationClaim.SameAs]: EXAMPLE_SUBJECT_DID,
+        [SchemaOrgPersonClaim.BirthDate]: HUMAN_DRAFT_BIRTH_YEAR,
+        [SchemaOrgOrganizationClaim.MemberRole]: INDIVIDUAL_SELF_ROLE,
       }));
       const entry = (response.body as BundleJsonApi).data[0] as BundleEntry;
 
       expect(entry.response?.status).toBe('200');
       expect(entry.resource?.id).toBe(HUMAN_DRAFT_IDENTIFIER);
       expect(entry.resource?.meta?.claims).toEqual(expect.objectContaining({
-        [ClaimsOrganizationSchemaorg.alternateName]: HUMAN_COMPLETED_NAME,
+        [SchemaOrgOrganizationClaim.AlternateName]: HUMAN_COMPLETED_NAME,
         [GatewayClaim.FamilyRegistrationStatus]: FamilyRegistrationStatus.ResumeRequired,
       }));
       expect(mockVaultRepository.put).toHaveBeenCalledWith(
@@ -620,21 +614,21 @@ describe('FamilyManager', () => {
       mockVaultRepository.put.mockResolvedValue(true);
 
       const response = await manager.process(makeBatchJob({
-        [ClaimsServiceSchemaorg.category]: 'animal-care' as Sector,
-        [ClaimsOrganizationSchemaorg.additionalType]: 'animal',
-        [ClaimsOrganizationSchemaorg.alternateName]: '',
-        [ClaimsOrganizationSchemaorg.sameAs]: '',
-        [ClaimsOrganizationSchemaorg.memberAdditionalType]: '',
-        [ClaimsOrganizationSchemaorg.memberRole]: 'ONESELF',
+        [SchemaOrgServiceClaim.Category]: 'animal-care' as Sector,
+        [SchemaOrgOrganizationClaim.AdditionalType]: 'animal',
+        [SchemaOrgOrganizationClaim.AlternateName]: '',
+        [SchemaOrgOrganizationClaim.SameAs]: '',
+        [SchemaOrgOrganizationClaim.MemberAdditionalType]: '',
+        [SchemaOrgOrganizationClaim.MemberRole]: 'ONESELF',
       }));
       const entry = (response.body as BundleJsonApi).data[0] as BundleEntry;
 
       expect(entry.response?.status).toBe('201');
       expect(entry.resource?.meta?.claims).toEqual(expect.objectContaining({
-        [ClaimsOrganizationSchemaorg.memberRole]: 'ONESELF',
+        [SchemaOrgOrganizationClaim.MemberRole]: 'ONESELF',
         [GatewayClaim.FamilyRegistrationStatus]: FamilyRegistrationStatus.DraftSaved,
       }));
-      expect(entry.resource?.meta?.claims?.[ClaimsOrganizationSchemaorg.sameAs]).toBeFalsy();
+      expect(entry.resource?.meta?.claims?.[SchemaOrgOrganizationClaim.SameAs]).toBeFalsy();
       expect(mockVaultRepository.put).toHaveBeenCalledWith(
         COLLECTION_NAME,
         [expect.objectContaining({ status: EntityLifecycleStatus.Pending })],
@@ -644,9 +638,9 @@ describe('FamilyManager', () => {
 
     it('rejects an animal envelope that assigns the controller RESPRSN role to its SELF member', async () => {
       const response = await manager.process(makeBatchJob({
-        [ClaimsServiceSchemaorg.category]: 'animal-care' as Sector,
-        [ClaimsOrganizationSchemaorg.additionalType]: 'animal',
-        [ClaimsOrganizationSchemaorg.memberRole]: 'RESPRSN',
+        [SchemaOrgServiceClaim.Category]: 'animal-care' as Sector,
+        [SchemaOrgOrganizationClaim.AdditionalType]: 'animal',
+        [SchemaOrgOrganizationClaim.MemberRole]: 'RESPRSN',
       }));
       const entry = (response.body as BundleJsonApi).data[0] as BundleEntry;
 
@@ -674,8 +668,8 @@ describe('FamilyManager', () => {
       mockVaultRepository.query.mockResolvedValue([]);
       mockVaultRepository.put.mockResolvedValue(true);
       const job = makeBatchJob({
-        [ClaimsOrganizationSchemaorg.ownerEmail]: 'controller@example.org',
-        [ClaimsOrganizationSchemaorg.ownerTelephone]: '',
+        [SchemaOrgOrganizationClaim.OwnerEmail]: 'controller@example.org',
+        [SchemaOrgOrganizationClaim.OwnerTelephone]: '',
         'org.schema.Organization.member.role': 'RESPRSN',
       });
       const claims = (job.content as any).body.data[0].resource.meta.claims as Record<string, unknown>;
@@ -688,7 +682,7 @@ describe('FamilyManager', () => {
 
       expect(entry.response?.status).toBe('201');
       expect(entry.resource?.meta?.claims).toEqual(expect.objectContaining({
-        [ClaimsOrganizationSchemaorg.ownerEmail]: 'controller@example.org',
+        [SchemaOrgOrganizationClaim.OwnerEmail]: 'controller@example.org',
         'org.schema.Organization.member.role': 'RESPRSN',
         'org.schema.FamilyRegistration.status': 'new_created',
       }));
@@ -729,7 +723,7 @@ describe('FamilyManager', () => {
     it('repairs a legacy idempotent record that has no card sameAs or member role', async () => {
       const cardDid = 'did:web:unid.online:card:uhc:personal:recovered';
       const existingClaims = { ...BASE_CLAIMS };
-      delete existingClaims[ClaimsOrganizationSchemaorg.sameAs];
+      delete existingClaims[SchemaOrgOrganizationClaim.SameAs];
       delete existingClaims['org.schema.Organization.member.role'];
       const existingContent = buildExampleFamilyRegistrationContent({
         status: EntityLifecycleStatus.Active,
@@ -747,7 +741,7 @@ describe('FamilyManager', () => {
       mockKmsService.protectConfidentialData.mockImplementation(async (document: any) => document);
 
       const response = await manager.process(makeBatchJob({
-        [ClaimsOrganizationSchemaorg.sameAs]: cardDid,
+        [SchemaOrgOrganizationClaim.SameAs]: cardDid,
         'org.schema.Organization.member.role': 'ONESELF',
       }));
       const body = response.body as BundleJsonApi;
@@ -755,7 +749,7 @@ describe('FamilyManager', () => {
 
       expect(entry.resource?.id).toBe(existingDocument.id);
       expect(entry.resource?.meta?.claims).toEqual(expect.objectContaining({
-        [ClaimsOrganizationSchemaorg.sameAs]: cardDid,
+        [SchemaOrgOrganizationClaim.SameAs]: cardDid,
         'org.schema.Organization.member.role': 'ONESELF',
         'org.schema.FamilyRegistration.status': 'already_exists',
       }));
@@ -766,13 +760,13 @@ describe('FamilyManager', () => {
           sequence: 5,
           content: expect.objectContaining({
             claims: expect.objectContaining({
-              [ClaimsOrganizationSchemaorg.sameAs]: cardDid,
+              [SchemaOrgOrganizationClaim.SameAs]: cardDid,
               'org.schema.Organization.member.role': 'ONESELF',
             }),
           }),
           indexed: expect.objectContaining({
             attributes: expect.arrayContaining([
-              { name: ClaimsOrganizationSchemaorg.sameAs, value: cardDid },
+              { name: SchemaOrgOrganizationClaim.SameAs, value: cardDid },
             ]),
           }),
         })],
@@ -786,7 +780,7 @@ describe('FamilyManager', () => {
         status: EntityLifecycleStatus.Active,
         claims: {
           ...BASE_CLAIMS,
-          [ClaimsOrganizationSchemaorg.sameAs]: existingDid,
+          [SchemaOrgOrganizationClaim.SameAs]: existingDid,
           'org.schema.Organization.member.role': 'ONESELF',
         },
       });
@@ -794,12 +788,12 @@ describe('FamilyManager', () => {
       mockKmsService.unprotectConfidentialData.mockResolvedValueOnce(existingContent as any);
 
       const response = await manager.process(makeBatchJob({
-        [ClaimsOrganizationSchemaorg.sameAs]: 'did:web:unid.online:card:uhc:personal:retry',
+        [SchemaOrgOrganizationClaim.SameAs]: 'did:web:unid.online:card:uhc:personal:retry',
       }));
       const body = response.body as BundleJsonApi;
       const entry = body.data[0] as BundleEntry;
 
-      expect(entry.resource?.meta?.claims?.[ClaimsOrganizationSchemaorg.sameAs]).toBe(existingDid);
+      expect(entry.resource?.meta?.claims?.[SchemaOrgOrganizationClaim.SameAs]).toBe(existingDid);
       expect(mockVaultRepository.put).not.toHaveBeenCalled();
     });
 
@@ -813,8 +807,8 @@ describe('FamilyManager', () => {
         COLLECTION_NAME,
         expect.objectContaining({
           where: expect.arrayContaining([
-            expect.objectContaining({ name: ClaimsOrganizationSchemaorg.ownerTelephone, value: `tel:${EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE}` }),
-            expect.objectContaining({ name: ClaimsOrganizationSchemaorg.alternateName, value: String(BASE_CLAIMS[ClaimsOrganizationSchemaorg.alternateName]) }),
+            expect.objectContaining({ name: SchemaOrgOrganizationClaim.OwnerTelephone, value: `tel:${EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE}` }),
+            expect.objectContaining({ name: SchemaOrgOrganizationClaim.AlternateName, value: String(BASE_CLAIMS[SchemaOrgOrganizationClaim.AlternateName]) }),
           ]),
         }),
       );
@@ -827,13 +821,13 @@ describe('FamilyManager', () => {
       mockVaultRepository.put.mockResolvedValue(true);
 
       await manager.process(makeBatchJob({
-        [ClaimsOrganizationSchemaorg.sameAs]: `${subjectDid}, ${documentCid}`,
+        [SchemaOrgOrganizationClaim.SameAs]: `${subjectDid}, ${documentCid}`,
       }));
 
       const protectedDoc = mockKmsService.protectConfidentialData.mock.calls[0]?.[0] as ConfidentialStorageDoc;
       expect(protectedDoc.indexed?.attributes).toEqual(expect.arrayContaining([
-        { name: ClaimsOrganizationSchemaorg.sameAs, value: subjectDid },
-        { name: ClaimsOrganizationSchemaorg.sameAs, value: documentCid },
+        { name: SchemaOrgOrganizationClaim.SameAs, value: subjectDid },
+        { name: SchemaOrgOrganizationClaim.SameAs, value: documentCid },
       ]));
     });
 
@@ -842,12 +836,12 @@ describe('FamilyManager', () => {
       mockVaultRepository.put.mockResolvedValue(true);
 
       const job = makeBatchJob({
-        [ClaimsOrganizationSchemaorg.alternateName]: 'request-only-alias',
-        [ClaimsOrganizationSchemaorg.ownerAlternateName]: '',
-        [ClaimsOrganizationSchemaorg.ownerEmail]: '',
-        [ClaimsOrganizationSchemaorg.ownerTelephone]: '',
-        [ClaimsOrganizationSchemaorg.ownerIdentifierValue]: '',
-        [ClaimsPersonSchemaorg.birthDate]: '',
+        [SchemaOrgOrganizationClaim.AlternateName]: 'request-only-alias',
+        [SchemaOrgOrganizationClaim.OwnerAlternateName]: '',
+        [SchemaOrgOrganizationClaim.OwnerEmail]: '',
+        [SchemaOrgOrganizationClaim.OwnerTelephone]: '',
+        [SchemaOrgOrganizationClaim.OwnerIdentifierValue]: '',
+        [SchemaOrgPersonClaim.BirthDate]: '',
       });
       const firstEntry = (job.content?.body?.data?.[0] || {}) as BundleEntry;
       firstEntry.meta = {
@@ -867,24 +861,24 @@ describe('FamilyManager', () => {
       const persistedClaims = (protectedDoc.content as any).claims as Record<string, unknown>;
 
       expect(entry.resource?.meta?.claims).toEqual(expect.objectContaining({
-        [ClaimsOrganizationSchemaorg.alternateName]: EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME,
-        [ClaimsOrganizationSchemaorg.ownerAlternateName]: EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME,
-        [ClaimsOrganizationSchemaorg.ownerEmail]: EXAMPLE_SELF_REGISTERED_INDIVIDUAL_EMAIL_NORMALIZED,
-        [ClaimsOrganizationSchemaorg.ownerTelephone]: EXAMPLE_KYC_CONTROLLER_TELEPHONE,
-        [ClaimsOrganizationSchemaorg.ownerIdentifierValue]: expect.stringMatching(UUID_V4_PATTERN),
-        [ClaimsOrganizationSchemaorg.addressCountry]: EXAMPLE_KYC_CONTROLLER_COUNTRY,
-        [ClaimsPersonSchemaorg.givenName]: EXAMPLE_KYC_CONTROLLER_GIVEN_NAME.toUpperCase(),
-        [ClaimsPersonSchemaorg.familyName]: EXAMPLE_KYC_CONTROLLER_FAMILY_NAME.toUpperCase(),
-        [ClaimsPersonSchemaorg.birthDate]: EXAMPLE_KYC_CONTROLLER_BIRTHDATE.slice(0, 4),
+        [SchemaOrgOrganizationClaim.AlternateName]: EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME,
+        [SchemaOrgOrganizationClaim.OwnerAlternateName]: EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME,
+        [SchemaOrgOrganizationClaim.OwnerEmail]: EXAMPLE_SELF_REGISTERED_INDIVIDUAL_EMAIL_NORMALIZED,
+        [SchemaOrgOrganizationClaim.OwnerTelephone]: EXAMPLE_KYC_CONTROLLER_TELEPHONE,
+        [SchemaOrgOrganizationClaim.OwnerIdentifierValue]: expect.stringMatching(UUID_V4_PATTERN),
+        [SchemaOrgOrganizationClaim.AddressCountry]: EXAMPLE_KYC_CONTROLLER_COUNTRY,
+        [SchemaOrgPersonClaim.GivenName]: EXAMPLE_KYC_CONTROLLER_GIVEN_NAME.toUpperCase(),
+        [SchemaOrgPersonClaim.FamilyName]: EXAMPLE_KYC_CONTROLLER_FAMILY_NAME.toUpperCase(),
+        [SchemaOrgPersonClaim.BirthDate]: EXAMPLE_KYC_CONTROLLER_BIRTHDATE.slice(0, 4),
       }));
       expect(persistedClaims).toEqual(expect.objectContaining({
-        [ClaimsOrganizationSchemaorg.ownerAlternateName]: EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME,
-        [ClaimsOrganizationSchemaorg.ownerEmail]: EXAMPLE_SELF_REGISTERED_INDIVIDUAL_EMAIL_NORMALIZED,
-        [ClaimsOrganizationSchemaorg.ownerTelephone]: EXAMPLE_KYC_CONTROLLER_TELEPHONE,
-        [ClaimsOrganizationSchemaorg.ownerIdentifierValue]: entry.resource?.meta?.claims?.[
-          ClaimsOrganizationSchemaorg.ownerIdentifierValue
+        [SchemaOrgOrganizationClaim.OwnerAlternateName]: EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME,
+        [SchemaOrgOrganizationClaim.OwnerEmail]: EXAMPLE_SELF_REGISTERED_INDIVIDUAL_EMAIL_NORMALIZED,
+        [SchemaOrgOrganizationClaim.OwnerTelephone]: EXAMPLE_KYC_CONTROLLER_TELEPHONE,
+        [SchemaOrgOrganizationClaim.OwnerIdentifierValue]: entry.resource?.meta?.claims?.[
+          SchemaOrgOrganizationClaim.OwnerIdentifierValue
         ],
-        [ClaimsPersonSchemaorg.birthDate]: EXAMPLE_KYC_CONTROLLER_BIRTHDATE.slice(0, 4),
+        [SchemaOrgPersonClaim.BirthDate]: EXAMPLE_KYC_CONTROLLER_BIRTHDATE.slice(0, 4),
       }));
     });
 
@@ -940,10 +934,10 @@ describe('FamilyManager', () => {
       expect(claims[DocumentReferenceClaim.ContentType]).toBe(EXAMPLE_DOCUMENT_REFERENCE_CONTENT_TYPE_PDF);
       expect(typeof claims[DocumentReferenceClaim.ContentData]).toBe('string');
       expect(String(claims[DocumentReferenceClaim.ContentData]).length).toBeGreaterThan(100);
-      expect(claims[ClaimsOrganizationSchemaorg.alternateName]).toBe(EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME);
-      expect(claims[ClaimsOrganizationSchemaorg.ownerEmail]).toBe(EXAMPLE_SELF_REGISTERED_INDIVIDUAL_EMAIL_NORMALIZED);
+      expect(claims[SchemaOrgOrganizationClaim.AlternateName]).toBe(EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME);
+      expect(claims[SchemaOrgOrganizationClaim.OwnerEmail]).toBe(EXAMPLE_SELF_REGISTERED_INDIVIDUAL_EMAIL_NORMALIZED);
       expect(claims[ClaimConsent.date]).toBe(EXAMPLE_PDF_CONSENT_DATE);
-      expect(claims[ClaimsOrderSchemaorg.orderedItemServiceType]).toBe(EXAMPLE_SERVICE_PROVIDER_DOMAIN);
+      expect(claims[SchemaOrgOrderClaim.OrderedItemServiceType]).toBe(EXAMPLE_SERVICE_PROVIDER_DOMAIN);
 
       const renderedPdf = await PDFDocument.load(
         Buffer.from(String(claims[DocumentReferenceClaim.ContentData]), 'base64'),
@@ -1003,12 +997,12 @@ describe('FamilyManager', () => {
 
       expect(entry.type).toBe('DocumentReference');
       expect(entry.response?.status).toBe('200');
-      expect(claims[ClaimsOrganizationSchemaorg.ownerEmail]).toBe(EXAMPLE_SELF_REGISTERED_INDIVIDUAL_EMAIL_NORMALIZED);
-      expect(claims[ClaimsOrganizationSchemaorg.ownerTelephone]).toBe(EXAMPLE_FORM_CONTROLLER_PHONE);
-      expect(claims[ClaimsOrganizationSchemaorg.alternateName]).toBe(EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME);
-      expect(claims[ClaimsOrganizationSchemaorg.ownerAlternateName]).toBe(EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME);
-      expect(claims[ClaimsOrganizationSchemaorg.memberIdentifierValue]).toBe(EXAMPLE_FORM_SUBJECT_IDENTIFIER_VALUE);
-      expect(claims[ClaimsOrderSchemaorg.orderedItemServiceType]).toBe(EXAMPLE_SERVICE_PROVIDER_DOMAIN);
+      expect(claims[SchemaOrgOrganizationClaim.OwnerEmail]).toBe(EXAMPLE_SELF_REGISTERED_INDIVIDUAL_EMAIL_NORMALIZED);
+      expect(claims[SchemaOrgOrganizationClaim.OwnerTelephone]).toBe(EXAMPLE_FORM_CONTROLLER_PHONE);
+      expect(claims[SchemaOrgOrganizationClaim.AlternateName]).toBe(EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME);
+      expect(claims[SchemaOrgOrganizationClaim.OwnerAlternateName]).toBe(EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME);
+      expect(claims[SchemaOrgOrganizationClaim.MemberIdentifierValue]).toBe(EXAMPLE_FORM_SUBJECT_IDENTIFIER_VALUE);
+      expect(claims[SchemaOrgOrderClaim.OrderedItemServiceType]).toBe(EXAMPLE_SERVICE_PROVIDER_DOMAIN);
 
       const renderedPdf = await PDFDocument.load(
         Buffer.from(String(claims[DocumentReferenceClaim.ContentData]), 'base64'),
@@ -1033,7 +1027,7 @@ describe('FamilyManager', () => {
         const mapped = buildClaimsFromIndividualFormPdf(pdfFields, signerSubjectDn);
 
         const response = await manager.process(makeBatchJob({
-          [ClaimsOrganizationSchemaorg.ownerTelephone]: '',
+          [SchemaOrgOrganizationClaim.OwnerTelephone]: '',
           ...mapped,
         }));
         const body = response.body as BundleJsonApi;
@@ -1046,26 +1040,26 @@ describe('FamilyManager', () => {
 
         expect(mapped).toEqual(expect.objectContaining({
           '@context': 'org.schema',
-          [ClaimsOrganizationSchemaorg.alternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
-          [ClaimsOrganizationSchemaorg.ownerAlternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
-          [ClaimsOrganizationSchemaorg.ownerEmail]: SIGNED_INDIVIDUAL_PDF_EXPECTED.controllerEmail,
-          [ClaimsOrganizationSchemaorg.ownerIdentifierValue]: SIGNED_INDIVIDUAL_PDF_EXPECTED.signerSerialNumber,
-          [ClaimsPersonSchemaorg.identifierValue]: SIGNED_INDIVIDUAL_PDF_EXPECTED.signerSerialNumber,
-          [ClaimsOrganizationSchemaorg.addressCountry]: SIGNED_INDIVIDUAL_PDF_EXPECTED.signerCountry,
+          [SchemaOrgOrganizationClaim.AlternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
+          [SchemaOrgOrganizationClaim.OwnerAlternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
+          [SchemaOrgOrganizationClaim.OwnerEmail]: SIGNED_INDIVIDUAL_PDF_EXPECTED.controllerEmail,
+          [SchemaOrgOrganizationClaim.OwnerIdentifierValue]: SIGNED_INDIVIDUAL_PDF_EXPECTED.signerSerialNumber,
+          [SchemaOrgPersonClaim.IdentifierValue]: SIGNED_INDIVIDUAL_PDF_EXPECTED.signerSerialNumber,
+          [SchemaOrgOrganizationClaim.AddressCountry]: SIGNED_INDIVIDUAL_PDF_EXPECTED.signerCountry,
         }));
-        expect(mapped[ClaimsPersonSchemaorg.givenName]).toBe(SIGNED_INDIVIDUAL_PDF_EXPECTED.signerGivenName);
-        expect(mapped[ClaimsPersonSchemaorg.familyName]).toBe(SIGNED_INDIVIDUAL_PDF_EXPECTED.signerSurname);
-        expect(mapped[ClaimsPersonSchemaorg.name]).toBe(
+        expect(mapped[SchemaOrgPersonClaim.GivenName]).toBe(SIGNED_INDIVIDUAL_PDF_EXPECTED.signerGivenName);
+        expect(mapped[SchemaOrgPersonClaim.FamilyName]).toBe(SIGNED_INDIVIDUAL_PDF_EXPECTED.signerSurname);
+        expect(mapped[SchemaOrgPersonClaim.Name]).toBe(
           `${SIGNED_INDIVIDUAL_PDF_EXPECTED.signerGivenName} ${SIGNED_INDIVIDUAL_PDF_EXPECTED.signerSurname}`,
         );
 
         expect(entry.resource?.meta?.claims).toEqual(expect.objectContaining({
           'org.schema.FamilyRegistration.status': 'new_created',
-          [ClaimsOrganizationSchemaorg.alternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
-          [ClaimsOrganizationSchemaorg.ownerAlternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
-          [ClaimsOrganizationSchemaorg.ownerEmail]: SIGNED_INDIVIDUAL_PDF_EXPECTED.controllerEmail,
-          [ClaimsOrganizationSchemaorg.ownerIdentifierValue]: expect.stringMatching(UUID_V4_PATTERN),
-          [ClaimsPersonSchemaorg.identifierValue]: SIGNED_INDIVIDUAL_PDF_EXPECTED.signerSerialNumber,
+          [SchemaOrgOrganizationClaim.AlternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
+          [SchemaOrgOrganizationClaim.OwnerAlternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
+          [SchemaOrgOrganizationClaim.OwnerEmail]: SIGNED_INDIVIDUAL_PDF_EXPECTED.controllerEmail,
+          [SchemaOrgOrganizationClaim.OwnerIdentifierValue]: expect.stringMatching(UUID_V4_PATTERN),
+          [SchemaOrgPersonClaim.IdentifierValue]: SIGNED_INDIVIDUAL_PDF_EXPECTED.signerSerialNumber,
         }));
       });
 
@@ -1078,11 +1072,11 @@ describe('FamilyManager', () => {
         const pdfBase64 = pdfBytes.toString('base64');
         const response = await manager.process(makeTransactionJob(
           {
-            [ClaimsOrganizationSchemaorg.ownerTelephone]: '',
-            [ClaimsServiceSchemaorg.category]: SECTOR,
-            [ClaimsServiceSchemaorg.identifier]: 'did:web:provider.example.com',
-            [ClaimsServiceSchemaorg.serviceType]: testDefaultTenantServiceTypeClaim,
-            [ClaimsServiceSchemaorg.termsOfService]: 'https://example.com/terms',
+            [SchemaOrgOrganizationClaim.OwnerTelephone]: '',
+            [SchemaOrgServiceClaim.Category]: SECTOR,
+            [SchemaOrgServiceClaim.IdentifierReference]: 'did:web:provider.example.com',
+            [SchemaOrgServiceClaim.ServiceType]: testDefaultTenantServiceTypeClaim,
+            [SchemaOrgServiceClaim.TermsOfService]: 'https://example.com/terms',
           },
           [{
             id: 'signed-individual-form',
@@ -1098,11 +1092,11 @@ describe('FamilyManager', () => {
         expect(entry.response).toEqual(expect.objectContaining({ status: '201' }));
         expect(entry.resource?.meta?.claims).toEqual(expect.objectContaining({
           'org.schema.FamilyRegistration.status': 'new_created',
-          [ClaimsOrganizationSchemaorg.alternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
-          [ClaimsOrganizationSchemaorg.ownerAlternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
-          [ClaimsOrganizationSchemaorg.ownerEmail]: SIGNED_INDIVIDUAL_PDF_EXPECTED.controllerEmail,
-          [ClaimsOrganizationSchemaorg.ownerIdentifierValue]: expect.stringMatching(UUID_V4_PATTERN),
-          [ClaimsPersonSchemaorg.identifierValue]: SIGNED_INDIVIDUAL_PDF_EXPECTED.signerSerialNumber,
+          [SchemaOrgOrganizationClaim.AlternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
+          [SchemaOrgOrganizationClaim.OwnerAlternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
+          [SchemaOrgOrganizationClaim.OwnerEmail]: SIGNED_INDIVIDUAL_PDF_EXPECTED.controllerEmail,
+          [SchemaOrgOrganizationClaim.OwnerIdentifierValue]: expect.stringMatching(UUID_V4_PATTERN),
+          [SchemaOrgPersonClaim.IdentifierValue]: SIGNED_INDIVIDUAL_PDF_EXPECTED.signerSerialNumber,
         }));
       });
 
@@ -1121,11 +1115,11 @@ describe('FamilyManager', () => {
         try {
           const response = await manager.process(makeTransactionJob(
             {
-              [ClaimsOrganizationSchemaorg.ownerTelephone]: '',
-              [ClaimsServiceSchemaorg.category]: SECTOR,
-              [ClaimsServiceSchemaorg.identifier]: 'did:web:provider.example.com',
-              [ClaimsServiceSchemaorg.serviceType]: testDefaultTenantServiceTypeClaim,
-              [ClaimsServiceSchemaorg.termsOfService]: 'https://example.com/terms',
+              [SchemaOrgOrganizationClaim.OwnerTelephone]: '',
+              [SchemaOrgServiceClaim.Category]: SECTOR,
+              [SchemaOrgServiceClaim.IdentifierReference]: 'did:web:provider.example.com',
+              [SchemaOrgServiceClaim.ServiceType]: testDefaultTenantServiceTypeClaim,
+              [SchemaOrgServiceClaim.TermsOfService]: 'https://example.com/terms',
             },
             [{
               id: 'signed-individual-form',
@@ -1143,11 +1137,11 @@ describe('FamilyManager', () => {
           expect(entry.response?.status).toBe('201');
           expect(entry.resource?.meta?.claims).toEqual(expect.objectContaining({
             'org.schema.FamilyRegistration.status': 'new_created',
-            [ClaimsOrganizationSchemaorg.alternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
-            [ClaimsOrganizationSchemaorg.ownerAlternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
-            [ClaimsOrganizationSchemaorg.ownerEmail]: SIGNED_INDIVIDUAL_PDF_EXPECTED.controllerEmail,
-            [ClaimsOrganizationSchemaorg.ownerIdentifierValue]: expect.stringMatching(UUID_V4_PATTERN),
-            [ClaimsPersonSchemaorg.identifierValue]: SIGNED_INDIVIDUAL_PDF_EXPECTED.signerSerialNumber,
+            [SchemaOrgOrganizationClaim.AlternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
+            [SchemaOrgOrganizationClaim.OwnerAlternateName]: SIGNED_INDIVIDUAL_PDF_EXPECTED.organizationAlternateName,
+            [SchemaOrgOrganizationClaim.OwnerEmail]: SIGNED_INDIVIDUAL_PDF_EXPECTED.controllerEmail,
+            [SchemaOrgOrganizationClaim.OwnerIdentifierValue]: expect.stringMatching(UUID_V4_PATTERN),
+            [SchemaOrgPersonClaim.IdentifierValue]: SIGNED_INDIVIDUAL_PDF_EXPECTED.signerSerialNumber,
           }));
         } finally {
           fetchSpy.mockRestore();
@@ -1162,12 +1156,12 @@ describe('FamilyManager', () => {
         status: EntityLifecycleStatus.Pending,
         claims: {
           ...BASE_CLAIMS,
-          [ClaimsOfferSchemaorg.identifier]: offerId,
-          [ClaimsOrganizationSchemaorg.additionalType]: 'animal',
-          [ClaimsOrganizationSchemaorg.alternateName]: '',
-          [ClaimsOrganizationSchemaorg.memberAdditionalType]: '',
-          [ClaimsOrganizationSchemaorg.memberRole]: 'ONESELF',
-          [ClaimsOrganizationSchemaorg.sameAs]: '',
+          [SchemaOrgOfferClaim.Identifier]: offerId,
+          [SchemaOrgOrganizationClaim.AdditionalType]: 'animal',
+          [SchemaOrgOrganizationClaim.AlternateName]: '',
+          [SchemaOrgOrganizationClaim.MemberAdditionalType]: '',
+          [SchemaOrgOrganizationClaim.MemberRole]: 'ONESELF',
+          [SchemaOrgOrganizationClaim.SameAs]: '',
         },
       });
       mockVaultRepository.query.mockResolvedValue([{ id: 'pending-animal-draft', status: 'pending', sequence: 0 } as any]);
@@ -1191,13 +1185,13 @@ describe('FamilyManager', () => {
         status: EntityLifecycleStatus.Pending,
         claims: {
           ...BASE_CLAIMS,
-          [ClaimsOfferSchemaorg.identifier]: offerId,
-          [ClaimsOfferSchemaorg.eligibleQuantityValue]: 1,
-          [ClaimsOrganizationSchemaorg.ownerEmail]: '',
-          [ClaimsOrganizationSchemaorg.ownerTelephone]: controllerPhone,
-          [ClaimsPersonSchemaorg.email]: '',
-          [ClaimsPersonSchemaorg.telephone]: '',
-          [ClaimsOrganizationSchemaorg.sameAs]: subjectDid,
+          [SchemaOrgOfferClaim.Identifier]: offerId,
+          [SchemaOrgOfferClaim.EligibleQuantityValue]: 1,
+          [SchemaOrgOrganizationClaim.OwnerEmail]: '',
+          [SchemaOrgOrganizationClaim.OwnerTelephone]: controllerPhone,
+          [SchemaOrgPersonClaim.Email]: '',
+          [SchemaOrgPersonClaim.Telephone]: '',
+          [SchemaOrgOrganizationClaim.SameAs]: subjectDid,
         },
       });
       const availableSeat: ConfidentialStorageDoc = {
@@ -1234,9 +1228,9 @@ describe('FamilyManager', () => {
   describe('_search / processFamilySearchEntry', () => {
     it('rejects an authenticated individual that requests another owner directory', async () => {
       const response = await manager.process(makeSearchJob({
-        [ClaimsOrganizationSchemaorg.ownerTelephone]: '',
-        [ClaimsOrganizationSchemaorg.ownerEmail]: 'victim@example.org',
-        [ClaimsOrganizationSchemaorg.alternateName]: '',
+        [SchemaOrgOrganizationClaim.OwnerTelephone]: '',
+        [SchemaOrgOrganizationClaim.OwnerEmail]: 'victim@example.org',
+        [SchemaOrgOrganizationClaim.AlternateName]: '',
       }, { sub: 'attacker-account', email: 'attacker@example.org', email_verified: true }));
       const entry = (response.body as BundleJsonApi).data[0] as BundleEntry;
 
@@ -1247,9 +1241,9 @@ describe('FamilyManager', () => {
     it('allows the authenticated target-tenant RESPRSN controller to review an owner directory', async () => {
       const controllerDid = 'did:web:gateway.example:acme:cds-es:v1:health-care:employee:zController:RESPRSN';
       const job = makeSearchJob({
-        [ClaimsOrganizationSchemaorg.ownerTelephone]: '',
-        [ClaimsOrganizationSchemaorg.ownerEmail]: 'reviewed-owner@example.org',
-        [ClaimsOrganizationSchemaorg.alternateName]: '',
+        [SchemaOrgOrganizationClaim.OwnerTelephone]: '',
+        [SchemaOrgOrganizationClaim.OwnerEmail]: 'reviewed-owner@example.org',
+        [SchemaOrgOrganizationClaim.AlternateName]: '',
       }, { sub: controllerDid });
       job.content!.iss = controllerDid;
       mockVaultRepository.query.mockResolvedValue([]);
@@ -1272,51 +1266,51 @@ describe('FamilyManager', () => {
         .mockResolvedValueOnce(buildExampleFamilyRegistrationContent({
           status: EntityLifecycleStatus.Active,
           claims: {
-            [ClaimsOrganizationSchemaorg.ownerEmail]: ownerEmail,
-            [ClaimsOrganizationSchemaorg.alternateName]: 'My card',
-            [ClaimsOrganizationSchemaorg.sameAs]: 'did:web:unid.online:card:uhc:personal:own',
+            [SchemaOrgOrganizationClaim.OwnerEmail]: ownerEmail,
+            [SchemaOrgOrganizationClaim.AlternateName]: 'My card',
+            [SchemaOrgOrganizationClaim.SameAs]: 'did:web:unid.online:card:uhc:personal:own',
             'org.schema.Organization.member.role': 'ONESELF',
           },
         }) as any)
         .mockResolvedValueOnce(buildExampleFamilyRegistrationContent({
           status: EntityLifecycleStatus.Active,
           claims: {
-            [ClaimsOrganizationSchemaorg.ownerEmail]: ownerEmail,
-            [ClaimsOrganizationSchemaorg.alternateName]: 'Relative',
-            [ClaimsOrganizationSchemaorg.sameAs]: 'did:web:unid.online:card:uhc:personal:relative',
+            [SchemaOrgOrganizationClaim.OwnerEmail]: ownerEmail,
+            [SchemaOrgOrganizationClaim.AlternateName]: 'Relative',
+            [SchemaOrgOrganizationClaim.SameAs]: 'did:web:unid.online:card:uhc:personal:relative',
             'org.schema.Organization.member.role': 'RESPRSN',
           },
         }) as any)
         .mockResolvedValueOnce(buildExampleFamilyRegistrationContent({
           status: EntityLifecycleStatus.Pending,
           claims: {
-            [ClaimsOrganizationSchemaorg.ownerEmail]: ownerEmail,
-            [ClaimsOrganizationSchemaorg.additionalType]: AnimalIndividualRegistration.SubjectKind,
-            [ClaimsOrganizationSchemaorg.alternateName]: '',
-            [ClaimsOrganizationSchemaorg.memberAdditionalType]: '',
-            [ClaimsOrganizationSchemaorg.sameAs]: '',
-            [ClaimsOrganizationSchemaorg.memberRole]: AnimalIndividualRegistration.SelfRole,
+            [SchemaOrgOrganizationClaim.OwnerEmail]: ownerEmail,
+            [SchemaOrgOrganizationClaim.AdditionalType]: AnimalIndividualRegistration.SubjectKind,
+            [SchemaOrgOrganizationClaim.AlternateName]: '',
+            [SchemaOrgOrganizationClaim.MemberAdditionalType]: '',
+            [SchemaOrgOrganizationClaim.SameAs]: '',
+            [SchemaOrgOrganizationClaim.MemberRole]: AnimalIndividualRegistration.SelfRole,
           },
         }) as any);
 
       const response = await manager.process(makeSearchJob({
-        [ClaimsOrganizationSchemaorg.ownerTelephone]: '',
-        [ClaimsOrganizationSchemaorg.ownerEmail]: ownerEmail,
-        [ClaimsOrganizationSchemaorg.alternateName]: '',
+        [SchemaOrgOrganizationClaim.OwnerTelephone]: '',
+        [SchemaOrgOrganizationClaim.OwnerEmail]: ownerEmail,
+        [SchemaOrgOrganizationClaim.AlternateName]: '',
       }));
       const result = ((response.body as BundleJsonApi).data[0] as BundleEntry).resource as any;
 
       expect(mockVaultRepository.query).toHaveBeenCalledWith(COLLECTION_NAME, {
         sectionId: getEnvSectionId(SUBJECT_SECTION_INDIVIDUAL),
-        where: [{ name: ClaimsOrganizationSchemaorg.ownerEmail, value: ownerEmail }],
+        where: [{ name: SchemaOrgOrganizationClaim.OwnerEmail, value: ownerEmail }],
       });
       expect(result).toMatchObject({ resourceType: 'Bundle', type: 'searchset' });
       expect(result.entry.map((item: any) => item.resource.id)).toEqual(['own-org', 'represented-org', 'animal-draft-org']);
       expect(result.entry[0].resource.meta.claims).toMatchObject({
-        [ClaimsOrganizationSchemaorg.sameAs]: 'did:web:unid.online:card:uhc:personal:own',
+        [SchemaOrgOrganizationClaim.SameAs]: 'did:web:unid.online:card:uhc:personal:own',
       });
       expect(result.entry[2].resource.meta.claims).toMatchObject({
-        [ClaimsOrganizationSchemaorg.additionalType]: AnimalIndividualRegistration.SubjectKind,
+        [SchemaOrgOrganizationClaim.AdditionalType]: AnimalIndividualRegistration.SubjectKind,
         [GatewayClaim.FamilyRegistrationStatus]: FamilyRegistrationStatus.DraftSaved,
         [GatewayClaim.FamilyRegistrationMissingFields]: ['alternateName', 'species', 'card'],
       });
@@ -1327,29 +1321,29 @@ describe('FamilyManager', () => {
       const existingContent = buildExampleFamilyRegistrationContent({
         status: EntityLifecycleStatus.Active,
         claims: {
-          [ClaimsOrganizationSchemaorg.sameAs]: subjectDid,
-          [ClaimsOrganizationSchemaorg.alternateName]: 'Subject example',
+          [SchemaOrgOrganizationClaim.SameAs]: subjectDid,
+          [SchemaOrgOrganizationClaim.AlternateName]: 'Subject example',
         },
       });
       mockVaultRepository.query.mockResolvedValue([{ id: 'subject-example-org', jwe: { ciphertext: '' } } as any]);
       mockKmsService.unprotectConfidentialData.mockResolvedValueOnce(existingContent as any);
 
       const response = await manager.process(makeSearchJob({
-        [ClaimsOrganizationSchemaorg.ownerTelephone]: '',
-        [ClaimsOrganizationSchemaorg.ownerEmail]: '',
-        [ClaimsOrganizationSchemaorg.alternateName]: '',
-        [ClaimsOrganizationSchemaorg.sameAs]: subjectDid,
+        [SchemaOrgOrganizationClaim.OwnerTelephone]: '',
+        [SchemaOrgOrganizationClaim.OwnerEmail]: '',
+        [SchemaOrgOrganizationClaim.AlternateName]: '',
+        [SchemaOrgOrganizationClaim.SameAs]: subjectDid,
       }));
       const entry = (response.body as BundleJsonApi).data[0] as BundleEntry;
 
       expect(mockVaultRepository.query).toHaveBeenCalledWith(COLLECTION_NAME, {
         sectionId: getEnvSectionId(SUBJECT_SECTION_INDIVIDUAL),
-        where: [{ name: ClaimsOrganizationSchemaorg.sameAs, value: subjectDid }],
+        where: [{ name: SchemaOrgOrganizationClaim.SameAs, value: subjectDid }],
       });
       expect(entry.resource).toMatchObject({ resourceType: 'Organization', id: 'subject-example-org' });
       expect(entry.resource?.meta?.claims).toMatchObject({
-        [ClaimsOrganizationSchemaorg.sameAs]: subjectDid,
-        [ClaimsOrganizationSchemaorg.alternateName]: 'Subject example',
+        [SchemaOrgOrganizationClaim.SameAs]: subjectDid,
+        [SchemaOrgOrganizationClaim.AlternateName]: 'Subject example',
       });
     });
 
@@ -1357,10 +1351,10 @@ describe('FamilyManager', () => {
       const subjectDid = 'did:web:unid.online:card:uhc:personal:licensed';
       const ownerEmail = 'controller@example.org';
       const job = makeSearchJob({
-        [ClaimsOrganizationSchemaorg.ownerTelephone]: '',
-        [ClaimsOrganizationSchemaorg.ownerEmail]: '',
-        [ClaimsOrganizationSchemaorg.alternateName]: '',
-        [ClaimsOrganizationSchemaorg.sameAs]: subjectDid,
+        [SchemaOrgOrganizationClaim.OwnerTelephone]: '',
+        [SchemaOrgOrganizationClaim.OwnerEmail]: '',
+        [SchemaOrgOrganizationClaim.AlternateName]: '',
+        [SchemaOrgOrganizationClaim.SameAs]: subjectDid,
       }, { sub: 'verified-owner-account', email: ownerEmail, email_verified: true });
       (job.content as any).meta[REGISTERED_PROFILE_ACCOUNT_DIRECTORY_META] = {
         clientId: 'personal-client-1',
@@ -1384,8 +1378,8 @@ describe('FamilyManager', () => {
       mockKmsService.unprotectConfidentialData.mockResolvedValueOnce(buildExampleFamilyRegistrationContent({
         status: EntityLifecycleStatus.Active,
         claims: {
-          [ClaimsOrganizationSchemaorg.sameAs]: subjectDid,
-          [ClaimsOrganizationSchemaorg.alternateName]: 'Licensed subject',
+          [SchemaOrgOrganizationClaim.SameAs]: subjectDid,
+          [SchemaOrgOrganizationClaim.AlternateName]: 'Licensed subject',
         },
       }) as any);
 
@@ -1400,10 +1394,10 @@ describe('FamilyManager', () => {
       const subjectDid = 'did:web:unid.online:card:uhc:personal:not-licensed';
       const ownerEmail = 'controller@example.org';
       const job = makeSearchJob({
-        [ClaimsOrganizationSchemaorg.ownerTelephone]: '',
-        [ClaimsOrganizationSchemaorg.ownerEmail]: '',
-        [ClaimsOrganizationSchemaorg.alternateName]: '',
-        [ClaimsOrganizationSchemaorg.sameAs]: subjectDid,
+        [SchemaOrgOrganizationClaim.OwnerTelephone]: '',
+        [SchemaOrgOrganizationClaim.OwnerEmail]: '',
+        [SchemaOrgOrganizationClaim.AlternateName]: '',
+        [SchemaOrgOrganizationClaim.SameAs]: subjectDid,
       }, { sub: 'verified-owner-account', email: ownerEmail, email_verified: true });
       (job.content as any).meta[REGISTERED_PROFILE_ACCOUNT_DIRECTORY_META] = {
         clientId: 'personal-client-1',
@@ -1435,8 +1429,8 @@ describe('FamilyManager', () => {
       const existingContent = buildExampleFamilyRegistrationContent({
         status: EntityLifecycleStatus.Active,
         claims: {
-          [ClaimsOrganizationSchemaorg.ownerTelephone]: EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE,
-          [ClaimsOrganizationSchemaorg.alternateName]: String(BASE_CLAIMS[ClaimsOrganizationSchemaorg.alternateName]),
+          [SchemaOrgOrganizationClaim.OwnerTelephone]: EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE,
+          [SchemaOrgOrganizationClaim.AlternateName]: String(BASE_CLAIMS[SchemaOrgOrganizationClaim.AlternateName]),
         },
       });
       mockVaultRepository.query.mockResolvedValue([{ id: 'active-search-id', jwe: { ciphertext: '' } } as any]);
@@ -1453,8 +1447,8 @@ describe('FamilyManager', () => {
       const existingContent = buildExampleFamilyRegistrationContent({
         status: EntityLifecycleStatus.Pending,
         claims: {
-          [ClaimsOrganizationSchemaorg.ownerTelephone]: EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE,
-          [ClaimsOrganizationSchemaorg.alternateName]: String(BASE_CLAIMS[ClaimsOrganizationSchemaorg.alternateName]),
+          [SchemaOrgOrganizationClaim.OwnerTelephone]: EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE,
+          [SchemaOrgOrganizationClaim.AlternateName]: String(BASE_CLAIMS[SchemaOrgOrganizationClaim.AlternateName]),
         },
       });
       mockVaultRepository.query.mockResolvedValue([{ id: 'pending-search-id', jwe: { ciphertext: '' } } as any]);
@@ -1474,11 +1468,11 @@ describe('FamilyManager', () => {
         status: EntityLifecycleStatus.Pending,
         claims: {
           ...BASE_CLAIMS,
-          [ClaimsOrganizationSchemaorg.identifierValue]: HUMAN_DRAFT_IDENTIFIER,
-          [ClaimsOrganizationSchemaorg.alternateName]: '',
-          [ClaimsOrganizationSchemaorg.memberRole]: INDIVIDUAL_SELF_ROLE,
-          [ClaimsOrganizationSchemaorg.sameAs]: '',
-          [ClaimsPersonSchemaorg.birthDate]: HUMAN_DRAFT_BIRTH_YEAR,
+          [SchemaOrgOrganizationClaim.IdentifierValue]: HUMAN_DRAFT_IDENTIFIER,
+          [SchemaOrgOrganizationClaim.AlternateName]: '',
+          [SchemaOrgOrganizationClaim.MemberRole]: INDIVIDUAL_SELF_ROLE,
+          [SchemaOrgOrganizationClaim.SameAs]: '',
+          [SchemaOrgPersonClaim.BirthDate]: HUMAN_DRAFT_BIRTH_YEAR,
         },
       });
       mockVaultRepository.get.mockResolvedValue({
@@ -1491,8 +1485,8 @@ describe('FamilyManager', () => {
       mockVaultRepository.delete.mockResolvedValue(true);
 
       const response = await manager.process(makePurgeJob({
-        [ClaimsOrganizationSchemaorg.identifierValue]: HUMAN_DRAFT_IDENTIFIER,
-        [ClaimsOrganizationSchemaorg.alternateName]: '',
+        [SchemaOrgOrganizationClaim.IdentifierValue]: HUMAN_DRAFT_IDENTIFIER,
+        [SchemaOrgOrganizationClaim.AlternateName]: '',
       }));
       const entry = (response.body as BundleJsonApi).data[0] as BundleEntry;
 
@@ -1511,11 +1505,11 @@ describe('FamilyManager', () => {
         status: EntityLifecycleStatus.Pending,
         claims: {
           ...BASE_CLAIMS,
-          [ClaimsOrganizationSchemaorg.identifierValue]: draftId,
-          [ClaimsOrganizationSchemaorg.additionalType]: 'animal',
-          [ClaimsOrganizationSchemaorg.alternateName]: '',
-          [ClaimsOrganizationSchemaorg.memberRole]: 'ONESELF',
-          [ClaimsOrganizationSchemaorg.sameAs]: '',
+          [SchemaOrgOrganizationClaim.IdentifierValue]: draftId,
+          [SchemaOrgOrganizationClaim.AdditionalType]: 'animal',
+          [SchemaOrgOrganizationClaim.AlternateName]: '',
+          [SchemaOrgOrganizationClaim.MemberRole]: 'ONESELF',
+          [SchemaOrgOrganizationClaim.SameAs]: '',
         },
       });
       mockVaultRepository.get.mockResolvedValue({ id: draftId, status: 'pending', sequence: 0 } as any);
@@ -1524,9 +1518,9 @@ describe('FamilyManager', () => {
       mockVaultRepository.delete.mockResolvedValue(true);
 
       const response = await manager.process(makePurgeJob({
-        [ClaimsOrganizationSchemaorg.identifierValue]: draftId,
-        [ClaimsOrganizationSchemaorg.additionalType]: 'animal',
-        [ClaimsOrganizationSchemaorg.alternateName]: '',
+        [SchemaOrgOrganizationClaim.IdentifierValue]: draftId,
+        [SchemaOrgOrganizationClaim.AdditionalType]: 'animal',
+        [SchemaOrgOrganizationClaim.AlternateName]: '',
       }));
       const entry = (response.body as BundleJsonApi).data[0] as BundleEntry;
 
@@ -1544,8 +1538,8 @@ describe('FamilyManager', () => {
       ['_purge', makePurgeJob],
     ])('rejects an authenticated individual that attempts %s for another owner', async (_action, makeJob) => {
       const response = await manager.process(makeJob({
-        [ClaimsOrganizationSchemaorg.ownerTelephone]: '',
-        [ClaimsOrganizationSchemaorg.ownerEmail]: 'victim@example.org',
+        [SchemaOrgOrganizationClaim.OwnerTelephone]: '',
+        [SchemaOrgOrganizationClaim.OwnerEmail]: 'victim@example.org',
       }, { sub: 'attacker-account', email: 'attacker@example.org', email_verified: true }));
       const entry = (response.body as BundleJsonApi).data[0] as BundleEntry;
 
@@ -1585,7 +1579,7 @@ describe('FamilyManager', () => {
         claims: {
           ...BASE_CLAIMS,
           'org.schema.IndividualProduct.serialNumber': 'lic-123',
-          [ClaimsOrganizationSchemaorg.identifier]: EXAMPLE_SUBJECT_DID,
+          [SchemaOrgOrganizationClaim.IdentifierReference]: EXAMPLE_SUBJECT_DID,
           'DocumentReference.attachment#hash': 'zExampleIndividualPdfHash',
         },
       });
@@ -1598,7 +1592,7 @@ describe('FamilyManager', () => {
           userClass: 'individual',
           status: 'issued',
           activationCode: 'lic-123',
-          issuedToEmail: String(BASE_CLAIMS[ClaimsPersonSchemaorg.email]),
+          issuedToEmail: String(BASE_CLAIMS[SchemaOrgPersonClaim.Email]),
         } as any,
       };
 
@@ -1649,7 +1643,7 @@ describe('FamilyManager', () => {
         status: EntityLifecycleStatus.Inactive,
         claims: {
           ...BASE_CLAIMS,
-          [ClaimsOrganizationSchemaorg.identifier]: 'did:web:stored-family-subject.example',
+          [SchemaOrgOrganizationClaim.IdentifierReference]: 'did:web:stored-family-subject.example',
         },
       });
 
@@ -1666,7 +1660,7 @@ describe('FamilyManager', () => {
       mockVaultRepository.delete.mockResolvedValue(true);
 
       const response = await manager.process(makePurgeJob({
-        [ClaimsOrganizationSchemaorg.identifier]: requestSubjectDid,
+        [SchemaOrgOrganizationClaim.IdentifierReference]: requestSubjectDid,
       }));
       const body = response.body as BundleJsonApi;
       const entry = body.data[0] as BundleEntry;

@@ -1,7 +1,7 @@
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { OrganizationConfig } from '../gdc-backend-utils-node/models/entity';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
@@ -207,18 +207,18 @@ export async function upsertOrganizationSectorHostingBindingOnLedger(params: {
   status: 'validated' | 'revoked';
 }): Promise<void> {
   const identifierType = String(
-    params.organizationClaims[ClaimsOrganizationSchemaorg.identifierType] || '',
+    params.organizationClaims[SchemaOrgOrganizationClaim.IdentifierType] || '',
   ).trim();
   const identifierValue = String(
-    params.organizationClaims[ClaimsOrganizationSchemaorg.identifierValue] || '',
+    params.organizationClaims[SchemaOrgOrganizationClaim.IdentifierValue] || '',
   ).trim();
   const country = String(
-    params.organizationClaims[ClaimsOrganizationSchemaorg.addressCountry]
+    params.organizationClaims[SchemaOrgOrganizationClaim.AddressCountry]
       || params.jurisdiction
       || '',
   ).trim();
   const administrativeSublevel1 = String(
-    params.organizationClaims[ClaimsOrganizationSchemaorg.addressRegion] || '',
+    params.organizationClaims[SchemaOrgOrganizationClaim.AddressRegion] || '',
   ).trim() || undefined;
   const tenantDid = String(params.tenantDid || '').trim();
   if (!identifierType || !identifierValue || !country || !tenantDid) {

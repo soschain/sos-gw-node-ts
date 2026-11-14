@@ -7,7 +7,7 @@ import {
   buildSubjectIdentifierAssetId,
   readSubjectIdentityBundleEntry,
 } from 'gdc-common-utils-ts/utils/subject-identity';
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
@@ -451,14 +451,14 @@ export class SubjectIdentityManager implements IJobProcessor {
     const email = normalizeIndexedEmail(bearer.email);
     const phone = normalizeIndexedPhone(bearer.phone_number || bearer.phone);
     const contacts = [
-      ...(email ? [{ name: ClaimsOrganizationSchemaorg.ownerEmail, value: email }] : []),
-      ...(phone ? [{ name: ClaimsOrganizationSchemaorg.ownerTelephone, value: phone }] : []),
+      ...(email ? [{ name: SchemaOrgOrganizationClaim.OwnerEmail, value: email }] : []),
+      ...(phone ? [{ name: SchemaOrgOrganizationClaim.OwnerTelephone, value: phone }] : []),
     ];
     for (const contact of contacts) {
       const matches = await this.vaultRepository.query(collectionName, {
         sectionId: INDIVIDUAL_DIRECTORY_SECTION,
         where: [
-          { name: ClaimsOrganizationSchemaorg.sameAs, value: cardId },
+          { name: SchemaOrgOrganizationClaim.SameAs, value: cardId },
           contact,
         ],
       }, { hydrate: false });

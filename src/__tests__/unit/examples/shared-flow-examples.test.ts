@@ -1,8 +1,6 @@
-import {
-  ClaimConsent,
-  ClaimsPersonSchemaorg,
-  getClaimsInFirstDataEntry,
-} from 'gdc-common-utils-ts';
+// Flow contract: independent identity and commerce claim catalogs preserve exact stored keys and authorization boundaries.
+import { ClaimConsent, getClaimsInFirstDataEntry } from 'gdc-common-utils-ts';
+import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 
 import {
   EXAMPLE_INDIVIDUAL_ORGANIZATION_START_INPUT,
@@ -86,10 +84,10 @@ describe('shared flow examples conformance', () => {
     const claims = getClaimsInFirstDataEntry(EMPLOYEE_REGISTRATION_REQUEST.body) as Record<string, unknown>;
     expect(claims).toEqual(
       expect.objectContaining({
-        [ClaimsPersonSchemaorg.email]: EXAMPLE_ORGANIZATION_EMPLOYEE_INPUT.employeeClaims[ClaimsPersonSchemaorg.email],
+        [SchemaOrgPersonClaim.Email]: EXAMPLE_ORGANIZATION_EMPLOYEE_INPUT.employeeClaims[SchemaOrgPersonClaim.Email],
       }),
     );
-    expect(Object.prototype.hasOwnProperty.call(claims, ClaimsPersonSchemaorg.hasOccupationalRoleValue)).toBe(true);
-    expect(Object.prototype.hasOwnProperty.call(claims, ClaimsPersonSchemaorg.hasOccupation)).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(claims, SchemaOrgPersonClaim.OccupationIdentifierValue)).toBe(true);
+    expect(Object.prototype.hasOwnProperty.call(claims, SchemaOrgPersonClaim.HasOccupation)).toBe(false);
   });
 });

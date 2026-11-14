@@ -1,7 +1,7 @@
 import { scryptSync, timingSafeEqual } from 'node:crypto';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import { ClaimsOrderSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { POSTAL_ACTIVATION_CODE_BINDING_ALGORITHM, type PostalActivationCodeBinding } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
 
 /**
@@ -14,7 +14,7 @@ export function verifyBoundPostalActivationCode(
   binding: PostalActivationCodeBinding,
   pepper: string | undefined,
 ): string {
-  const code = String(orderClaims[ClaimsOrderSchemaorg.confirmationNumber] || '').trim().toUpperCase();
+  const code = String(orderClaims[SchemaOrgOrderClaim.ConfirmationNumber] || '').trim().toUpperCase();
   const { algorithm, salt, digest } = binding;
   const normalizedPepper = String(pepper || '').trim();
   if (!code || algorithm !== POSTAL_ACTIVATION_CODE_BINDING_ALGORITHM || !salt || !digest || !normalizedPepper) {

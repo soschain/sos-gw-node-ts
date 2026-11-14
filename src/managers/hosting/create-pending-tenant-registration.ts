@@ -1,10 +1,6 @@
 import type { DidCommDecodedMetadata } from 'sos-data-utils-ts/confidential-job';
 import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import {
-  ClaimsOfferSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
@@ -66,13 +62,13 @@ export async function createPendingTenantRegistration(
 ): Promise<ClaimsRecord> {
   const normalizedClaims = deps.applyLegalOrganizationIdentityCompatibility(deps.claims);
   const alternateName = String(
-    normalizedClaims[ClaimsOrganizationSchemaorg.alternateName]
+    normalizedClaims[SchemaOrgOrganizationClaim.AlternateName]
     || deps.fallbackAlternateName
     || '',
   ).trim();
   const enrichedClaims: ClaimsRecord = {
     ...normalizedClaims,
-    ...(alternateName ? { [ClaimsOrganizationSchemaorg.alternateName]: alternateName } : {}),
+    ...(alternateName ? { [SchemaOrgOrganizationClaim.AlternateName]: alternateName } : {}),
   };
 
   if (!alternateName) {
@@ -82,7 +78,7 @@ export async function createPendingTenantRegistration(
     throw new ManagerError(`Invalid alternateName format: '${alternateName}'`, IssueType.Value);
   }
 
-  const requestedSector = enrichedClaims[ClaimsServiceSchemaorg.category] as Sector;
+  const requestedSector = enrichedClaims[SchemaOrgServiceClaim.Category] as Sector;
   if (!requestedSector) {
     throw new ManagerError(`Missing required claim for new tenant: '${HOST_TRANSACTION_REQUIRED_INPUT_CLAIMS[1]}'`, IssueType.Required);
   }
@@ -110,13 +106,13 @@ export async function createPendingTenantRegistration(
 
     const existingClaims = existingContent.claims as ClaimsRecord | undefined;
     const stableClaimNames = [
-      ClaimsOrganizationSchemaorg.alternateName,
-      ClaimsOrganizationSchemaorg.identifierType,
-      ClaimsOrganizationSchemaorg.identifierValue,
-      ClaimsOrganizationSchemaorg.addressCountry,
-      ClaimsOrganizationSchemaorg.addressRegion,
-      ClaimsOrganizationSchemaorg.legalName,
-      ClaimsServiceSchemaorg.category,
+      SchemaOrgOrganizationClaim.AlternateName,
+      SchemaOrgOrganizationClaim.IdentifierType,
+      SchemaOrgOrganizationClaim.IdentifierValue,
+      SchemaOrgOrganizationClaim.AddressCountry,
+      SchemaOrgOrganizationClaim.AddressRegion,
+      SchemaOrgOrganizationClaim.LegalName,
+      SchemaOrgServiceClaim.Category,
     ];
     const identityMatches = existingClaims && stableClaimNames.every((claimName) => (
       isDeepStrictEqual(existingClaims[claimName], enrichedClaims[claimName])
@@ -169,16 +165,16 @@ export async function createPendingTenantRegistration(
     || processedClaims['org.schema.Organization.owner.email']
   );
   if (!isIndividualOrg) {
-    (processedClaims as any)[ClaimsOrganizationSchemaorg.identifier] = createOrganizationUrn({
+    (processedClaims as any)[SchemaOrgOrganizationClaim.IdentifierReference] = createOrganizationUrn({
       namespace: deps.config.namespace,
       network: deps.getCurrentUrnNetwork(),
       jurisdiction,
       sector: requestedSector,
-      idType: processedClaims[ClaimsOrganizationSchemaorg.identifierType] as string,
-      idValue: processedClaims[ClaimsOrganizationSchemaorg.identifierValue] as string,
+      idType: processedClaims[SchemaOrgOrganizationClaim.IdentifierType] as string,
+      idValue: processedClaims[SchemaOrgOrganizationClaim.IdentifierValue] as string,
     });
   } else {
-    (processedClaims as any)[ClaimsOrganizationSchemaorg.identifier] = alternateName || organization.id;
+    (processedClaims as any)[SchemaOrgOrganizationClaim.IdentifierReference] = alternateName || organization.id;
   }
 
   processedClaims = deps.withHostedOrganizationOfferClaims(
@@ -199,7 +195,7 @@ export async function createPendingTenantRegistration(
     indexed: {
       attributes: [
         { name: 'status', value: EntityLifecycleStatus.Pending },
-        { name: ClaimsOfferSchemaorg.identifier, value: processedClaims[ClaimsOfferSchemaorg.identifier] as string, unique: true },
+        { name: SchemaOrgOfferClaim.Identifier, value: processedClaims[SchemaOrgOfferClaim.Identifier] as string, unique: true },
       ],
       hmac: { id: 'urn:unsupported', type: 'Sha256HmacKey2019' },
     },

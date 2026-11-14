@@ -32,11 +32,7 @@ import { Content } from 'gdc-common-utils-ts/utils/content';
 import { QueueAdapterMem } from '../../adapters/queue-mem';
 import { testPayloadCreateTenant1, testTenant1Data } from '../data/end-to-end.data';
 import { testTenant1AlternateName, testTenant1VaultId } from '../data/organization.data';
-import {
-  ClaimsIndividualProductSchemaorg,
-  ClaimsOfferSchemaorg,
-  ClaimsOrderSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { createHash } from 'crypto';
 import { invokeExpress } from './helpers/invokeExpress';
 import { getEnvSectionId } from '../../utils/section-env';
@@ -223,13 +219,13 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
     const claims = responseEntry.resource.meta.claims;
 
     expect(responseEntry.type).toBe('Organization-registration-offer-v1.0');
-    expect(claims[ClaimsOfferSchemaorg.eligibleQuantityValue]).toBe(2);
-    expect(claims[ClaimsOfferSchemaorg.identifier]).toBeDefined();
-    expect(claims[ClaimsOfferSchemaorg.price]).toBe('0.00'); // Or the calculated price
-    expect(claims[ClaimsOfferSchemaorg.offeredBy]).toBe('did:web:provider.com');
+    expect(claims[SchemaOrgOfferClaim.EligibleQuantityValue]).toBe(2);
+    expect(claims[SchemaOrgOfferClaim.Identifier]).toBeDefined();
+    expect(claims[SchemaOrgOfferClaim.Price]).toBe('0.00'); // Or the calculated price
+    expect(claims[SchemaOrgOfferClaim.OfferedBy]).toBe('did:web:provider.com');
 
     // --- ACT (Phase 4): Accept the Offer by submitting an Order ---
-    const offerId = claims[ClaimsOfferSchemaorg.identifier] as string;
+    const offerId = claims[SchemaOrgOfferClaim.Identifier] as string;
     const orderThid = `${thid}-order`;
     const orderPayload = {
       thid: orderThid,
@@ -241,7 +237,7 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
         data: [
           {
             type: GatewayRequestEntryTypes.OrganizationOrder,
-            resource: { meta: { claims: { [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId } } },
+            resource: { meta: { claims: { [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId } } },
           },
         ],
       },
@@ -318,7 +314,7 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
     expect(orderFinalResponse.thid).toBe(orderThid);
     expect(orderFinalResponse.body?.data?.[0]).toMatchObject({ response: { status: String(HttpStatusCodes.Created) } });
     controllerActivationCode = String(orderFinalResponse.body.data[0]?.resource?.meta?.claims?.[
-      ClaimsIndividualProductSchemaorg.serialNumber
+      SchemaOrgIndividualProductClaim.SerialNumber
     ] || '');
     expect(controllerActivationCode).toMatch(/^lic-[A-Za-z0-9_-]+$/);
 

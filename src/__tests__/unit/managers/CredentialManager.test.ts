@@ -14,7 +14,7 @@ import { MldsaPublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { ProofEBSIv2, VerifiableCredentialV2 } from '../../../gdc-backend-utils-node/models/verifiable-credential';
 import { JwsMultiSign } from 'antifraud-data-utils-ts/cryptography';
 import { testHostDidWeb, testHostDomain, testTenant1IdentifierUrn, testTenant1VaultId } from '../../data/organization.data';
-import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 
 const uuidMock = {
@@ -138,7 +138,7 @@ describe('CredentialManager', () => {
       expect(vc.issuer).toBe(testTenant1IdentifierUrn); // Issued by the Tenant
       const subject = vc.credentialSubject as any;
       expect(subject.identifier).toBe(testTenant1Receptionist1Urn);
-      expect(subject[ClaimsPersonSchemaorg.email]).toBe(testTenant1Receptionist1Email);
+      expect(subject[SchemaOrgPersonClaim.Email]).toBe(testTenant1Receptionist1Email);
       expect(vc.evidence?.[0]).toEqual(evidence);
       
       expect(vc.proof).toBeDefined();

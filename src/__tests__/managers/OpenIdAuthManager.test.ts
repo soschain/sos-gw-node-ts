@@ -71,7 +71,7 @@ import {
   GatewayRouteSections,
 } from 'gdc-common-utils-ts/constants/gateway-response';
 import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { EXAMPLE_DEVICE_BOUND_SMART_DIDCOMM_MESSAGE } from 'gdc-common-utils-ts/examples/didcomm-identity';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { decodeJwt } from 'jose';
@@ -3140,7 +3140,7 @@ describe('OpenIdAuthManager', () => {
             id,
             status: DeviceBindingStatuses.Active,
             content: {
-              claims: { [ClaimsOrganizationSchemaorg.sameAs]: publicCardDid },
+              claims: { [SchemaOrgOrganizationClaim.SameAs]: publicCardDid },
             },
           };
         }
@@ -3353,7 +3353,7 @@ describe('OpenIdAuthManager', () => {
             id,
             status: DeviceBindingStatuses.Active,
             content: {
-              claims: { [ClaimsOrganizationSchemaorg.sameAs]: requestedSubjectDid },
+              claims: { [SchemaOrgOrganizationClaim.SameAs]: requestedSubjectDid },
             },
           };
         }
@@ -3542,7 +3542,7 @@ describe('OpenIdAuthManager', () => {
             id,
             status: DeviceBindingStatuses.Active,
             content: {
-              claims: { [ClaimsOrganizationSchemaorg.sameAs]: `${EXAMPLE_SUBJECT_DID}:owned-card` },
+              claims: { [SchemaOrgOrganizationClaim.SameAs]: `${EXAMPLE_SUBJECT_DID}:owned-card` },
             },
           };
         }

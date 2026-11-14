@@ -3,7 +3,7 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 // Flow contract: 1. provision a real in-memory veterinary tenant; 2. persist one encrypted Animal identity and its controller link; 3. submit authenticated Parameters whose UUID id equals the DIDComm thid; 4. poll the encrypted asynchronous response; 5. reconstruct the RFC 9901 disclosure locally from the signed seed, retained thid and original value. Authorization invariant: only the existing subject/controller boundary may request the pilot credential. Privacy invariant: attribute values and final salts never appear in the issued SD-JWT.
 import { randomUUID } from 'node:crypto';
 import { buildSubjectIdentityBundleEntry } from 'gdc-common-utils-ts/utils/subject-identity';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { EXAMPLE_EMAIL_CONTROLLER_ORG } from 'gdc-common-utils-ts/examples/shared';
 import { startServer, resetServerConfig } from '../../server';
@@ -33,17 +33,17 @@ describe('Antifraud request-bound SD-JWT API', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: 'CA',
-        [ClaimsOrganizationSchemaorg.identifierType]: 'BN',
-        [ClaimsOrganizationSchemaorg.identifierValue]: '700000001',
-        [ClaimsServiceSchemaorg.category]: 'system',
+        [SchemaOrgOrganizationClaim.AddressCountry]: 'CA',
+        [SchemaOrgOrganizationClaim.IdentifierType]: 'BN',
+        [SchemaOrgOrganizationClaim.IdentifierValue]: '700000001',
+        [SchemaOrgServiceClaim.Category]: 'system',
       };
       const tenantClaims = {
         ...(testPayloadCreateTenant1.body.data[0].resource.meta.claims as any),
-        [ClaimsOrganizationSchemaorg.alternateName]: tenantId,
-        [ClaimsOrganizationSchemaorg.addressCountry]: 'CA',
-        [ClaimsOrganizationSchemaorg.addressRegion]: jurisdiction,
-        [ClaimsServiceSchemaorg.category]: sector,
+        [SchemaOrgOrganizationClaim.AlternateName]: tenantId,
+        [SchemaOrgOrganizationClaim.AddressCountry]: 'CA',
+        [SchemaOrgOrganizationClaim.AddressRegion]: jurisdiction,
+        [SchemaOrgServiceClaim.Category]: sector,
       };
       const tenantVaultId = getTenantVaultId(sector, tenantId);
       await kmsService.provisionKeys(tenantVaultId);
@@ -95,8 +95,8 @@ describe('Antifraud request-bound SD-JWT API', () => {
       await vaultRepository.put(collectionName, [{
         id: 'animal-controller-directory-link', status: 'active', sequence: 0,
         indexed: { attributes: [
-          { name: ClaimsOrganizationSchemaorg.sameAs, value: cardId },
-          { name: ClaimsOrganizationSchemaorg.ownerEmail, value: EXAMPLE_EMAIL_CONTROLLER_ORG.toLowerCase() },
+          { name: SchemaOrgOrganizationClaim.SameAs, value: cardId },
+          { name: SchemaOrgOrganizationClaim.OwnerEmail, value: EXAMPLE_EMAIL_CONTROLLER_ORG.toLowerCase() },
         ] },
       } as any], getEnvSectionId('individual'));
 

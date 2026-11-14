@@ -55,7 +55,7 @@ import { IServerConfig } from '../../config';
 import { IAuthorizationManager } from '../../managers/auth/IAuthorizationManager';
 import { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
 import { IAccessTokenClaims } from 'gdc-common-utils-ts/models/auth';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { getTenantVaultId, generateTenantCollectionNameFromClaims } from '../../utils/tenant';
 import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
 import { getClaimsInFirstDataEntry } from 'gdc-common-utils-ts/utils/bundle-reader';
@@ -213,13 +213,13 @@ describe('End-to-End API Flow (Legacy / Unencrypted)', () => {
     const pdfBase64 = Buffer.from('dummy-pdf-content').toString('base64');
     const orgCreationPayloadWithPdf = JSON.parse(JSON.stringify(testPayloadCreateTenant1));
     const claims = getClaimsInFirstDataEntry(orgCreationPayloadWithPdf.body);
-    claims[ClaimsServiceSchemaorg.termsOfService] = pdfBase64;
+    claims[SchemaOrgServiceClaim.TermsOfService] = pdfBase64;
     // Ensure the Service resource can be materialized into a stored document.
-    claims[ClaimsServiceSchemaorg.identifier] = 'urn:uuid:service-001';
-    claims[ClaimsOrganizationSchemaorg.alternateName] = 'acme-with-pdf';
+    claims[SchemaOrgServiceClaim.IdentifierReference] = 'urn:uuid:service-001';
+    claims[SchemaOrgOrganizationClaim.AlternateName] = 'acme-with-pdf';
     // Tenant identity is keyed by the legal identifier value, not by the display
     // alias. Reusing `acme-id` would exercise idempotency and never process this PDF.
-    claims[ClaimsOrganizationSchemaorg.identifierValue] = 'acme-with-pdf';
+    claims[SchemaOrgOrganizationClaim.IdentifierValue] = 'acme-with-pdf';
     const registrationUrl = `/host/cds-ES/v1/test/registry/org.schema/Organization/_batch`;
 
     const response = await invokeExpress(app, {
@@ -248,16 +248,16 @@ describe('End-to-End API Flow (Legacy / Unencrypted)', () => {
 
     // Registration step creates a provisional tenant record stored in the HOST vault.
     const vaultId = getTenantVaultId(
-      String(claims[ClaimsServiceSchemaorg.category]),
-      String(claims[ClaimsOrganizationSchemaorg.identifierValue]),
+      String(claims[SchemaOrgServiceClaim.Category]),
+      String(claims[SchemaOrgOrganizationClaim.IdentifierValue]),
     );
     const hostCollectionName = resolveHostPhysicalCollectionName();
     const secureTenantRecord = await vaultRepository.get<any>(hostCollectionName, vaultId, getEnvSectionId('tenants'));
     expect(secureTenantRecord).toBeDefined();
 
     const decryptedProvisional = await kmsService.unprotectConfidentialData<any>(secureTenantRecord, 'host');
-    const termsUrl = decryptedProvisional.claims[ClaimsServiceSchemaorg.termsOfService];
-    const termsHash = decryptedProvisional.claims[`${ClaimsServiceSchemaorg.termsOfService}#hash`];
+    const termsUrl = decryptedProvisional.claims[SchemaOrgServiceClaim.TermsOfService];
+    const termsHash = decryptedProvisional.claims[`${SchemaOrgServiceClaim.TermsOfService}#hash`];
     
     expect(termsUrl).not.toBe(pdfBase64);
     expect(termsUrl).toContain('/local-storage/');
@@ -283,8 +283,8 @@ describe('End-to-End API Flow (Legacy / Unencrypted)', () => {
         // so that subsequent API calls in other tests can find it.
         const claims = getClaimsInFirstDataEntry(testPayloadCreateTenant1.body);
         const vaultId = getTenantVaultId(
-          String(claims[ClaimsServiceSchemaorg.category]),
-          String(claims[ClaimsOrganizationSchemaorg.alternateName]),
+          String(claims[SchemaOrgServiceClaim.Category]),
+          String(claims[SchemaOrgOrganizationClaim.AlternateName]),
         );
         await tenantManager.getTenant(vaultId);
     });

@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
 import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
@@ -86,8 +86,8 @@ export function isConfiguredHostLegalPersonTenant(
   claims: Record<string, unknown>,
   host: Readonly<{ idType?: unknown; idValue?: unknown }>,
 ): boolean {
-  const tenantType = String(claims[ClaimsOrganizationSchemaorg.identifierType] || '').trim().toUpperCase();
-  const tenantValue = String(claims[ClaimsOrganizationSchemaorg.identifierValue] || '').trim();
+  const tenantType = String(claims[SchemaOrgOrganizationClaim.IdentifierType] || '').trim().toUpperCase();
+  const tenantValue = String(claims[SchemaOrgOrganizationClaim.IdentifierValue] || '').trim();
   const hostType = String(host.idType || '').trim().toUpperCase();
   const hostValue = String(host.idValue || '').trim();
   return Boolean(tenantType && tenantValue && tenantType === hostType && tenantValue === hostValue);
@@ -114,7 +114,7 @@ export async function processHostOrderEntry(deps: ProcessHostOrderEntryDeps): Pr
   const hostCollectionName = deps.hostRuntime.hostCollectionName;
   const results = await deps.vaultRepository.query(hostCollectionName!, {
     sectionId: getEnvSectionId('tenants'),
-    where: [{ name: ClaimsOfferSchemaorg.identifier, value: offerId }],
+    where: [{ name: SchemaOrgOfferClaim.Identifier, value: offerId }],
   });
 
   if (results.length === 0) {
@@ -135,11 +135,11 @@ export async function processHostOrderEntry(deps: ProcessHostOrderEntryDeps): Pr
     const projectedClaims = readProjectedOfferOrderClaims(secureDoc);
     if (
       decryptedContent?.status === EntityLifecycleStatus.Active
-      && String(projectedClaims[ClaimsOfferSchemaorg.identifier] || '').trim() === offerId
+      && String(projectedClaims[SchemaOrgOfferClaim.Identifier] || '').trim() === offerId
     ) {
       const replayClaims: Record<string, unknown> = {
         ...projectedClaims,
-        [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
+        [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
       };
       const replayTenantDid = String((decryptedContent as any)?.didDocument?.id || '').trim();
       if (replayTenantDid) {
@@ -161,18 +161,18 @@ export async function processHostOrderEntry(deps: ProcessHostOrderEntryDeps): Pr
   const postalActivationCode = postalActivationCodeBinding
     ? verifyBoundPostalActivationCode(claims, postalActivationCodeBinding, process.env.HOST_POSTAL_ACTIVATION_PEPPER)
     : undefined;
-  const alternateName = processedClaims[ClaimsOrganizationSchemaorg.alternateName] as string;
-  const sector = processedClaims[ClaimsServiceSchemaorg.category] as Sector;
+  const alternateName = processedClaims[SchemaOrgOrganizationClaim.AlternateName] as string;
+  const sector = processedClaims[SchemaOrgServiceClaim.Category] as Sector;
   const routeJurisdiction = resolveOrganizationRouteJurisdiction(processedClaims);
   const tenantUrn = createOrganizationUrn({
     namespace: deps.config.namespace,
     network: deps.getCurrentUrnNetwork(),
     jurisdiction: routeJurisdiction,
     sector,
-    idType: processedClaims[ClaimsOrganizationSchemaorg.identifierType] as string,
-    idValue: processedClaims[ClaimsOrganizationSchemaorg.identifierValue] as string,
+    idType: processedClaims[SchemaOrgOrganizationClaim.IdentifierType] as string,
+    idValue: processedClaims[SchemaOrgOrganizationClaim.IdentifierValue] as string,
   });
-  (processedClaims as any)[ClaimsOrganizationSchemaorg.identifier] = tenantUrn;
+  (processedClaims as any)[SchemaOrgOrganizationClaim.IdentifierReference] = tenantUrn;
 
   const { organization, person, service } = deps.extractResources(processedClaims, deps.environment);
   const containedService = deps.extractContainedService(contained);
@@ -220,11 +220,11 @@ export async function processHostOrderEntry(deps: ProcessHostOrderEntryDeps): Pr
     .map((claimKey: string) => ({
       name: claimKey,
       value: String(processedClaims[claimKey]),
-      ...(claimKey === ClaimsOrganizationSchemaorg.alternateName && { unique: true }),
+      ...(claimKey === SchemaOrgOrganizationClaim.AlternateName && { unique: true }),
     }))
     .filter((attr: { value: string }) => attr.value !== 'undefined' && attr.value !== 'null');
   attributes.push({
-    name: ClaimsOfferSchemaorg.identifier,
+    name: SchemaOrgOfferClaim.Identifier,
     value: offerId,
   });
 
@@ -280,8 +280,8 @@ export async function processHostOrderEntry(deps: ProcessHostOrderEntryDeps): Pr
     await deps.vaultRepository.put(tenantCollectionName, [secureServiceDoc], getEnvSectionId('services'));
   }
 
-  const initialEmployeeSeats = processedClaims[ClaimsOfferSchemaorg.eligibleQuantityValue] as number | undefined;
-  const offerIdentifier = processedClaims[ClaimsOfferSchemaorg.identifier] as string | undefined;
+  const initialEmployeeSeats = processedClaims[SchemaOrgOfferClaim.EligibleQuantityValue] as number | undefined;
+  const offerIdentifier = processedClaims[SchemaOrgOfferClaim.Identifier] as string | undefined;
   if (initialEmployeeSeats && initialEmployeeSeats > 0 && offerIdentifier) {
     const now = Date.now();
     const expiryDate = new Date(now);
@@ -308,7 +308,7 @@ export async function processHostOrderEntry(deps: ProcessHostOrderEntryDeps): Pr
     }
     await deps.vaultRepository.put(vaultId, licenseDocs, getEnvSectionId('device-licenses'));
 
-    const legalRepEmail = processedClaims[ClaimsPersonSchemaorg.email] as string | undefined;
+    const legalRepEmail = processedClaims[SchemaOrgPersonClaim.Email] as string | undefined;
     const legalRepRole = getPersonOccupationClaim(processedClaims as Record<string, any> | undefined);
     if (legalRepEmail && legalRepRole) {
       try {
@@ -335,7 +335,7 @@ export async function processHostOrderEntry(deps: ProcessHostOrderEntryDeps): Pr
           stableActorIdentifier,
           beforePersist: async () => ensureIssuedRoleLicenseOnLedger({
             identity: ledgerIdentity,
-            sector: String(processedClaims[ClaimsServiceSchemaorg.category] || '').trim(),
+            sector: String(processedClaims[SchemaOrgServiceClaim.Category] || '').trim(),
           }).then(() => undefined),
         });
         (processedClaims as any)['org.schema.IndividualProduct.serialNumber'] = activationCode;
@@ -361,26 +361,26 @@ export async function processHostOrderEntry(deps: ProcessHostOrderEntryDeps): Pr
     tenantId: alternateName,
     tenantDid,
     senderDid: hostDid,
-    email: processedClaims[ClaimsPersonSchemaorg.email] as string | undefined,
-    legalName: processedClaims[ClaimsOrganizationSchemaorg.legalName] as string | undefined,
-    addressCountry: processedClaims[ClaimsOrganizationSchemaorg.addressCountry] as string | undefined,
-    addressRegion: processedClaims[ClaimsOrganizationSchemaorg.addressRegion] as string | undefined,
-    addressLocality: processedClaims[ClaimsOrganizationSchemaorg.addressLocality] as string | undefined,
-    postalCode: processedClaims[ClaimsOrganizationSchemaorg.postalCode] as string | undefined,
-    streetAddress: processedClaims[ClaimsOrganizationSchemaorg.streetAddress] as string | undefined,
+    email: processedClaims[SchemaOrgPersonClaim.Email] as string | undefined,
+    legalName: processedClaims[SchemaOrgOrganizationClaim.LegalName] as string | undefined,
+    addressCountry: processedClaims[SchemaOrgOrganizationClaim.AddressCountry] as string | undefined,
+    addressRegion: processedClaims[SchemaOrgOrganizationClaim.AddressRegion] as string | undefined,
+    addressLocality: processedClaims[SchemaOrgOrganizationClaim.AddressLocality] as string | undefined,
+    postalCode: processedClaims[SchemaOrgOrganizationClaim.PostalCode] as string | undefined,
+    streetAddress: processedClaims[SchemaOrgOrganizationClaim.StreetAddress] as string | undefined,
     activationCode: (processedClaims as any)['org.schema.IndividualProduct.serialNumber'] as string | undefined,
     activationCategory: (processedClaims as any)['org.schema.IndividualProduct.category'] as string | undefined,
-    paymentMethod: claims[ClaimsOrderSchemaorg.paymentMethod] as string | undefined,
-    paymentUrl: claims[ClaimsOrderSchemaorg.paymentUrl] as string | undefined,
-    invoiceId: claims[ClaimsOrderSchemaorg.partOfInvoice] as string | undefined,
+    paymentMethod: claims[SchemaOrgOrderClaim.PaymentMethod] as string | undefined,
+    paymentUrl: claims[SchemaOrgOrderClaim.PaymentUrl] as string | undefined,
+    invoiceId: claims[SchemaOrgOrderClaim.PartOfInvoice] as string | undefined,
     paymentConfirmed: true,
     ...readOfferPaymentContext(processedClaims),
   });
   paymentCommunication.claims[GatewayClaim.OrganizationDid] = tenantDid;
   const invoiceBundle = buildGatewayInvoiceBundle({
     invoiceId: String(
-      paymentCommunication.claims[ClaimsOrderSchemaorg.partOfInvoice]
-      || paymentCommunication.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier]
+      paymentCommunication.claims[SchemaOrgOrderClaim.PartOfInvoice]
+      || paymentCommunication.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier]
       || offerId,
     ),
     subjectReference: tenantDid || tenantUrn,
@@ -390,10 +390,10 @@ export async function processHostOrderEntry(deps: ProcessHostOrderEntryDeps): Pr
       paymentCommunication.claims['org.schema.Order.invoiceIssuedAt']
       || new Date().toISOString(),
     ),
-    amount: String(processedClaims[ClaimsOfferSchemaorg.price] || ''),
-    currency: String(processedClaims[ClaimsOfferSchemaorg.priceCurrency] || ''),
-    paymentMethod: claims[ClaimsOrderSchemaorg.paymentMethod] as string | undefined,
-    paymentUrl: claims[ClaimsOrderSchemaorg.paymentUrl] as string | undefined,
+    amount: String(processedClaims[SchemaOrgOfferClaim.Price] || ''),
+    currency: String(processedClaims[SchemaOrgOfferClaim.PriceCurrency] || ''),
+    paymentMethod: claims[SchemaOrgOrderClaim.PaymentMethod] as string | undefined,
+    paymentUrl: claims[SchemaOrgOrderClaim.PaymentUrl] as string | undefined,
   });
 
   const communicationDoc: ConfidentialStorageDoc & { meta?: Record<string, unknown> } = {
@@ -439,10 +439,10 @@ export async function processActivatedTenantOrderEntry(
     throw new ManagerError(`Payment confirmation failed for offerId '${deps.offerId}'.`, IssueType.Conflict);
   }
 
-  const tenantId = String(deps.matchedOfferClaims[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
+  const tenantId = String(deps.matchedOfferClaims[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
   const sector = String(
-    deps.matchedOfferClaims[ClaimsOfferSchemaorg.category]
-    || deps.matchedOfferClaims[ClaimsServiceSchemaorg.category]
+    deps.matchedOfferClaims[SchemaOrgOfferClaim.Category]
+    || deps.matchedOfferClaims[SchemaOrgServiceClaim.Category]
     || '',
   ).trim();
   if (!tenantId || !sector) {
@@ -450,7 +450,7 @@ export async function processActivatedTenantOrderEntry(
   }
 
   const tenantVaultId = getTenantVaultId(sector as Sector, tenantId);
-  const quantity = Number(deps.matchedOfferClaims[ClaimsOfferSchemaorg.eligibleQuantityValue] || 1);
+  const quantity = Number(deps.matchedOfferClaims[SchemaOrgOfferClaim.EligibleQuantityValue] || 1);
   const expiryDate = new Date(Date.now());
   expiryDate.setFullYear(expiryDate.getFullYear() + 1);
   const exp = Math.floor(expiryDate.getTime() / 1000);
@@ -476,7 +476,7 @@ export async function processActivatedTenantOrderEntry(
 
   let activationCode: string | undefined;
   let representativeLicenseId: string | undefined;
-  const legalRepEmail = deps.matchedOfferClaims[ClaimsPersonSchemaorg.email] as string | undefined;
+  const legalRepEmail = deps.matchedOfferClaims[SchemaOrgPersonClaim.Email] as string | undefined;
   const legalRepRole = getPersonOccupationClaim(deps.matchedOfferClaims as Record<string, any> | undefined);
   if (legalRepEmail && legalRepRole) {
     try {
@@ -502,7 +502,7 @@ export async function processActivatedTenantOrderEntry(
         stableActorIdentifier,
         beforePersist: async () => ensureIssuedRoleLicenseOnLedger({
           identity: ledgerIdentity,
-          sector: String(deps.matchedOfferClaims[ClaimsServiceSchemaorg.category] || '').trim(),
+          sector: String(deps.matchedOfferClaims[SchemaOrgServiceClaim.Category] || '').trim(),
         }).then(() => undefined),
       }));
       await reserveTechnicalControllerSeat({
@@ -519,19 +519,19 @@ export async function processActivatedTenantOrderEntry(
   }
 
   const hostDid = composeHostDidWebId(deps.config.apiBaseUrl, deps.config.hostExternalDomain);
-  const tenantDid = String(deps.matchedOfferClaims[ClaimsOrganizationSchemaorg.identifier] || '').trim() || `urn:tenant:${tenantId}`;
+  const tenantDid = String(deps.matchedOfferClaims[SchemaOrgOrganizationClaim.IdentifierReference] || '').trim() || `urn:tenant:${tenantId}`;
   const paymentCommunication = await buildPaymentCommunication({
     offerId: deps.offerId,
     tenantId,
     tenantDid,
     senderDid: hostDid,
-    email: deps.matchedOfferClaims[ClaimsPersonSchemaorg.email] as string | undefined,
-    legalName: deps.matchedOfferClaims[ClaimsOrganizationSchemaorg.legalName] as string | undefined,
-    addressCountry: deps.matchedOfferClaims[ClaimsOrganizationSchemaorg.addressCountry] as string | undefined,
-    addressRegion: deps.matchedOfferClaims[ClaimsOrganizationSchemaorg.addressRegion] as string | undefined,
-    addressLocality: deps.matchedOfferClaims[ClaimsOrganizationSchemaorg.addressLocality] as string | undefined,
-    postalCode: deps.matchedOfferClaims[ClaimsOrganizationSchemaorg.postalCode] as string | undefined,
-    streetAddress: deps.matchedOfferClaims[ClaimsOrganizationSchemaorg.streetAddress] as string | undefined,
+    email: deps.matchedOfferClaims[SchemaOrgPersonClaim.Email] as string | undefined,
+    legalName: deps.matchedOfferClaims[SchemaOrgOrganizationClaim.LegalName] as string | undefined,
+    addressCountry: deps.matchedOfferClaims[SchemaOrgOrganizationClaim.AddressCountry] as string | undefined,
+    addressRegion: deps.matchedOfferClaims[SchemaOrgOrganizationClaim.AddressRegion] as string | undefined,
+    addressLocality: deps.matchedOfferClaims[SchemaOrgOrganizationClaim.AddressLocality] as string | undefined,
+    postalCode: deps.matchedOfferClaims[SchemaOrgOrganizationClaim.PostalCode] as string | undefined,
+    streetAddress: deps.matchedOfferClaims[SchemaOrgOrganizationClaim.StreetAddress] as string | undefined,
     activationCode,
     activationCategory: activationCode ? 'professional' : undefined,
     paymentMethod: verification.paymentMethod,
@@ -540,11 +540,11 @@ export async function processActivatedTenantOrderEntry(
     paymentConfirmed: true,
     ...readOfferPaymentContext(deps.matchedOfferClaims),
   });
-  paymentCommunication.claims[ClaimsOrganizationSchemaorg.alternateName] = tenantId;
+  paymentCommunication.claims[SchemaOrgOrganizationClaim.AlternateName] = tenantId;
 
   const invoiceBundle = buildGatewayInvoiceBundle({
     invoiceId: String(
-      paymentCommunication.claims[ClaimsOrderSchemaorg.partOfInvoice]
+      paymentCommunication.claims[SchemaOrgOrderClaim.PartOfInvoice]
       || verification.invoiceId
       || deps.offerId,
     ),
@@ -555,8 +555,8 @@ export async function processActivatedTenantOrderEntry(
       paymentCommunication.claims['org.schema.Order.invoiceIssuedAt']
       || new Date().toISOString(),
     ),
-    amount: String(deps.matchedOfferClaims[ClaimsOfferSchemaorg.price] || ''),
-    currency: String(deps.matchedOfferClaims[ClaimsOfferSchemaorg.priceCurrency] || ''),
+    amount: String(deps.matchedOfferClaims[SchemaOrgOfferClaim.Price] || ''),
+    currency: String(deps.matchedOfferClaims[SchemaOrgOfferClaim.PriceCurrency] || ''),
     paymentMethod: verification.paymentMethod,
     paymentUrl: verification.paymentUrl,
   });

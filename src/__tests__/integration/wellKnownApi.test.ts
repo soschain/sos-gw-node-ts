@@ -17,7 +17,7 @@ import { parseTenantUrn } from '../../utils/urn';
 import { ILogger } from '../../loggers/ILogger';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { invokeExpress } from './helpers/invokeExpress';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { HostNetworkTypes } from 'gdc-common-utils-ts/constants/network';
 import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
@@ -518,22 +518,22 @@ describe('Well-Known Tenant Artifacts API', () => {
     mockTenantsCacheManager.getTenant.mockResolvedValue({
       didDocument: { id: testTenant1IdentifierUrn },
       claims: {
-        [ClaimsOrganizationSchemaorg.legalName]: EXAMPLE_PROVIDER_LEGAL_NAME,
-        [ClaimsOrganizationSchemaorg.alternateName]: tenantId,
-        [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-        [ClaimsServiceSchemaorg.category]: urnParts.sector,
-        [ClaimsServiceSchemaorg.url]: buildExampleHostedTenantBaseUrl({
+        [SchemaOrgOrganizationClaim.LegalName]: EXAMPLE_PROVIDER_LEGAL_NAME,
+        [SchemaOrgOrganizationClaim.AlternateName]: tenantId,
+        [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+        [SchemaOrgServiceClaim.Category]: urnParts.sector,
+        [SchemaOrgServiceClaim.Url]: buildExampleHostedTenantBaseUrl({
           alternateName: tenantId,
           jurisdiction: urnParts.jurisdiction,
           version: urnParts.version,
           sector: urnParts.sector,
         }),
-        [ClaimsServiceSchemaorg.serviceType]: serializeServiceCapabilityTokens([
+        [SchemaOrgServiceClaim.ServiceType]: serializeServiceCapabilityTokens([
           ServiceCapability.IndexProvider,
           ServiceCapability.IndexReader,
         ]),
-        [ClaimsServiceSchemaorg.termsOfService]: EXAMPLE_SIGNED_TERMS_PDF_URL,
-        [`${ClaimsServiceSchemaorg.termsOfService}#hash`]: EXAMPLE_SIGNED_TERMS_PDF_HASH,
+        [SchemaOrgServiceClaim.TermsOfService]: EXAMPLE_SIGNED_TERMS_PDF_URL,
+        [`${SchemaOrgServiceClaim.TermsOfService}#hash`]: EXAMPLE_SIGNED_TERMS_PDF_HASH,
       },
     } as any);
 
@@ -571,17 +571,17 @@ describe('Well-Known Tenant Artifacts API', () => {
     mockTenantsCacheManager.getTenant.mockResolvedValue({
       didDocument: { id: testTenant1IdentifierUrn },
       claims: {
-        [ClaimsOrganizationSchemaorg.legalName]: EXAMPLE_PROVIDER_LEGAL_NAME,
-        [ClaimsOrganizationSchemaorg.alternateName]: tenantId,
-        [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-        [ClaimsServiceSchemaorg.category]: urnParts.sector,
-        [ClaimsServiceSchemaorg.url]: buildExampleHostedTenantBaseUrl({
+        [SchemaOrgOrganizationClaim.LegalName]: EXAMPLE_PROVIDER_LEGAL_NAME,
+        [SchemaOrgOrganizationClaim.AlternateName]: tenantId,
+        [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+        [SchemaOrgServiceClaim.Category]: urnParts.sector,
+        [SchemaOrgServiceClaim.Url]: buildExampleHostedTenantBaseUrl({
           alternateName: tenantId,
           jurisdiction: urnParts.jurisdiction,
           version: urnParts.version,
           sector: urnParts.sector,
         }),
-        [ClaimsServiceSchemaorg.serviceType]: serializeServiceCapabilityTokens([
+        [SchemaOrgServiceClaim.ServiceType]: serializeServiceCapabilityTokens([
           ServiceCapability.IndexProvider,
           ServiceCapability.IndexReader,
         ]),
@@ -604,19 +604,19 @@ describe('Well-Known Tenant Artifacts API', () => {
     mockTenantsCacheManager.getTenant.mockResolvedValue({
       didDocument: { id: testTenant1IdentifierUrn },
       claims: {
-        [ClaimsOrganizationSchemaorg.legalName]: EXAMPLE_PROVIDER_LEGAL_NAME,
-        [ClaimsOrganizationSchemaorg.alternateName]: tenantId,
-        [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-        [ClaimsServiceSchemaorg.category]: urnParts.sector,
-        [ClaimsServiceSchemaorg.url]: buildExampleHostedTenantBaseUrl({
+        [SchemaOrgOrganizationClaim.LegalName]: EXAMPLE_PROVIDER_LEGAL_NAME,
+        [SchemaOrgOrganizationClaim.AlternateName]: tenantId,
+        [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+        [SchemaOrgServiceClaim.Category]: urnParts.sector,
+        [SchemaOrgServiceClaim.Url]: buildExampleHostedTenantBaseUrl({
           alternateName: tenantId,
           jurisdiction: urnParts.jurisdiction,
           version: urnParts.version,
           sector: urnParts.sector,
         }),
-        [ClaimsServiceSchemaorg.serviceType]: ContinuityServiceCapability.DocumentBackupProvider,
-        [ClaimsServiceSchemaorg.termsOfService]: EXAMPLE_SIGNED_TERMS_PDF_URL,
-        [`${ClaimsServiceSchemaorg.termsOfService}#hash`]: EXAMPLE_SIGNED_TERMS_PDF_HASH,
+        [SchemaOrgServiceClaim.ServiceType]: ContinuityServiceCapability.DocumentBackupProvider,
+        [SchemaOrgServiceClaim.TermsOfService]: EXAMPLE_SIGNED_TERMS_PDF_URL,
+        [`${SchemaOrgServiceClaim.TermsOfService}#hash`]: EXAMPLE_SIGNED_TERMS_PDF_HASH,
       },
     } as any);
 
@@ -734,17 +734,17 @@ describe('DSP Discovery API', () => {
       {
         didDocument: { id: testTenant1DidWebHosted },
         claims: {
-          [ClaimsOrganizationSchemaorg.alternateName]: testTenant1AlternateName,
-          [ClaimsOrganizationSchemaorg.legalName]: EXAMPLE_PROVIDER_LEGAL_NAME,
-          [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-          [ClaimsServiceSchemaorg.category]: DataspaceSectors.HealthResearch,
-          [ClaimsServiceSchemaorg.url]: buildExampleHostedTenantBaseUrl({
+          [SchemaOrgOrganizationClaim.AlternateName]: testTenant1AlternateName,
+          [SchemaOrgOrganizationClaim.LegalName]: EXAMPLE_PROVIDER_LEGAL_NAME,
+          [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+          [SchemaOrgServiceClaim.Category]: DataspaceSectors.HealthResearch,
+          [SchemaOrgServiceClaim.Url]: buildExampleHostedTenantBaseUrl({
             alternateName: testTenant1AlternateName,
             jurisdiction: 'ES',
             version: 'v1',
             sector: DataspaceSectors.HealthResearch,
           }),
-          [ClaimsServiceSchemaorg.serviceType]: serializeServiceCapabilityTokens([
+          [SchemaOrgServiceClaim.ServiceType]: serializeServiceCapabilityTokens([
             ServiceCapability.IndexProvider,
             ServiceCapability.DigitalTwinProvider,
             ContinuityServiceCapability.DocumentBackupProvider,
@@ -756,17 +756,17 @@ describe('DSP Discovery API', () => {
       {
         didDocument: { id: EXAMPLE_SECONDARY_TENANT_SERVICE_DID },
         claims: {
-          [ClaimsOrganizationSchemaorg.alternateName]: EXAMPLE_SECONDARY_PROVIDER_ALTERNATE_NAME,
-          [ClaimsOrganizationSchemaorg.legalName]: EXAMPLE_SECONDARY_PROVIDER_LEGAL_NAME,
-          [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-          [ClaimsServiceSchemaorg.category]: DataspaceSectors.HealthResearch,
-          [ClaimsServiceSchemaorg.url]: buildExampleHostedTenantBaseUrl({
+          [SchemaOrgOrganizationClaim.AlternateName]: EXAMPLE_SECONDARY_PROVIDER_ALTERNATE_NAME,
+          [SchemaOrgOrganizationClaim.LegalName]: EXAMPLE_SECONDARY_PROVIDER_LEGAL_NAME,
+          [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+          [SchemaOrgServiceClaim.Category]: DataspaceSectors.HealthResearch,
+          [SchemaOrgServiceClaim.Url]: buildExampleHostedTenantBaseUrl({
             alternateName: EXAMPLE_SECONDARY_PROVIDER_ALTERNATE_NAME,
             jurisdiction: 'ES',
             version: 'v1',
             sector: DataspaceSectors.HealthResearch,
           }),
-          [ClaimsServiceSchemaorg.serviceType]: serializeServiceCapabilityTokens([
+          [SchemaOrgServiceClaim.ServiceType]: serializeServiceCapabilityTokens([
             ServiceCapability.IndexReader,
             ServiceCapability.DigitalTwinReader,
           ]),
@@ -830,20 +830,20 @@ describe('DSP Discovery API', () => {
       {
         didDocument: { id: testTenant1DidWebHosted },
         claims: {
-          [ClaimsOrganizationSchemaorg.alternateName]: testTenant1AlternateName,
-          [ClaimsOrganizationSchemaorg.legalName]: EXAMPLE_PROVIDER_LEGAL_NAME,
-          [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
+          [SchemaOrgOrganizationClaim.AlternateName]: testTenant1AlternateName,
+          [SchemaOrgOrganizationClaim.LegalName]: EXAMPLE_PROVIDER_LEGAL_NAME,
+          [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
         },
         provider: {
           service: {
-            [ClaimsServiceSchemaorg.category]: DataspaceSectors.HealthResearch,
-            [ClaimsServiceSchemaorg.url]: buildExampleHostedTenantBaseUrl({
+            [SchemaOrgServiceClaim.Category]: DataspaceSectors.HealthResearch,
+            [SchemaOrgServiceClaim.Url]: buildExampleHostedTenantBaseUrl({
               alternateName: testTenant1AlternateName,
               jurisdiction: 'ES',
               version: 'v1',
               sector: DataspaceSectors.HealthResearch,
             }),
-            [ClaimsServiceSchemaorg.serviceType]: serializeServiceCapabilityTokens([
+            [SchemaOrgServiceClaim.ServiceType]: serializeServiceCapabilityTokens([
               ServiceCapability.IndexProvider,
             ]),
           },
@@ -880,27 +880,27 @@ describe('DSP Discovery API', () => {
     mockTenantsCacheManager.getTenant.mockResolvedValue({
       didDocument: { id: EXAMPLE_HOSTING_OPERATOR_DID },
       claims: {
-        [ClaimsOrganizationSchemaorg.legalName]: 'Host Operator Example',
-        [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-        [ClaimsServiceSchemaorg.category]: DataspaceSectors.HealthResearch,
-        [ClaimsServiceSchemaorg.areaServed]: `ES,${EXAMPLE_COVERAGE_SCOPE_EU}`,
+        [SchemaOrgOrganizationClaim.LegalName]: 'Host Operator Example',
+        [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+        [SchemaOrgServiceClaim.Category]: DataspaceSectors.HealthResearch,
+        [SchemaOrgServiceClaim.AreaServed]: `ES,${EXAMPLE_COVERAGE_SCOPE_EU}`,
       },
     } as any);
     mockTenantsCacheManager.listAutodiscoverableTenants.mockResolvedValue([
       {
         didDocument: { id: testTenant1DidWebHosted },
         claims: {
-          [ClaimsOrganizationSchemaorg.alternateName]: testTenant1AlternateName,
-          [ClaimsOrganizationSchemaorg.legalName]: EXAMPLE_PROVIDER_LEGAL_NAME,
-          [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-          [ClaimsServiceSchemaorg.category]: DataspaceSectors.HealthResearch,
-          [ClaimsServiceSchemaorg.url]: buildExampleHostedTenantBaseUrl({
+          [SchemaOrgOrganizationClaim.AlternateName]: testTenant1AlternateName,
+          [SchemaOrgOrganizationClaim.LegalName]: EXAMPLE_PROVIDER_LEGAL_NAME,
+          [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+          [SchemaOrgServiceClaim.Category]: DataspaceSectors.HealthResearch,
+          [SchemaOrgServiceClaim.Url]: buildExampleHostedTenantBaseUrl({
             alternateName: testTenant1AlternateName,
             jurisdiction: 'ES',
             version: 'v1',
             sector: DataspaceSectors.HealthResearch,
           }),
-          [ClaimsServiceSchemaorg.serviceType]: serializeServiceCapabilityTokens([
+          [SchemaOrgServiceClaim.ServiceType]: serializeServiceCapabilityTokens([
             ServiceCapability.IndexProvider,
             ServiceCapability.DigitalTwinProvider,
           ]),
@@ -909,17 +909,17 @@ describe('DSP Discovery API', () => {
       {
         didDocument: { id: EXAMPLE_SECONDARY_TENANT_SERVICE_DID },
         claims: {
-          [ClaimsOrganizationSchemaorg.alternateName]: EXAMPLE_SECONDARY_PROVIDER_ALTERNATE_NAME,
-          [ClaimsOrganizationSchemaorg.legalName]: EXAMPLE_SECONDARY_PROVIDER_LEGAL_NAME,
-          [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-          [ClaimsServiceSchemaorg.category]: DataspaceSectors.HealthResearch,
-          [ClaimsServiceSchemaorg.url]: buildExampleHostedTenantBaseUrl({
+          [SchemaOrgOrganizationClaim.AlternateName]: EXAMPLE_SECONDARY_PROVIDER_ALTERNATE_NAME,
+          [SchemaOrgOrganizationClaim.LegalName]: EXAMPLE_SECONDARY_PROVIDER_LEGAL_NAME,
+          [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+          [SchemaOrgServiceClaim.Category]: DataspaceSectors.HealthResearch,
+          [SchemaOrgServiceClaim.Url]: buildExampleHostedTenantBaseUrl({
             alternateName: EXAMPLE_SECONDARY_PROVIDER_ALTERNATE_NAME,
             jurisdiction: 'ES',
             version: 'v1',
             sector: DataspaceSectors.HealthResearch,
           }),
-          [ClaimsServiceSchemaorg.serviceType]: serializeServiceCapabilityTokens([
+          [SchemaOrgServiceClaim.ServiceType]: serializeServiceCapabilityTokens([
             ServiceCapability.IndexReader,
             ServiceCapability.DigitalTwinReader,
           ]),
@@ -979,10 +979,10 @@ describe('DSP Discovery API', () => {
       didDocument: { id: 'did:web:clinic.example' },
       collectionName: 'clinic-collection',
       claims: {
-        [ClaimsOrganizationSchemaorg.alternateName]: 'clinic',
-        [ClaimsOrganizationSchemaorg.name]: 'Example clinic',
-        [ClaimsOrganizationSchemaorg.addressCountry]: 'CA-BC',
-        [ClaimsServiceSchemaorg.category]: 'animal-care',
+        [SchemaOrgOrganizationClaim.AlternateName]: 'clinic',
+        [SchemaOrgOrganizationClaim.Name]: 'Example clinic',
+        [SchemaOrgOrganizationClaim.AddressCountry]: 'CA-BC',
+        [SchemaOrgServiceClaim.Category]: 'animal-care',
       },
     }] as any);
     mockVaultRepository.listContainersInSection.mockImplementation(async (_collection: string, section: string) => section === 'care-communication-requests'

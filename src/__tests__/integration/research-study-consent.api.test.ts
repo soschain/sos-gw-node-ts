@@ -19,11 +19,7 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
  * Persistence invariant: only the explicit active Consent is stored in the isolated tenant collection.
  */
 import { afterEach, expect, it } from '@jest/globals';
-import {
-  ClaimsOrganizationSchemaorg,
-  ClaimsPersonSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
@@ -60,17 +56,17 @@ it('activates one study-scoped Consent through the real HTTP queue and worker bo
   const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
   try {
     const hostClaims = {
-      [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-      [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-      [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-      [ClaimsServiceSchemaorg.category]: 'system',
+      [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+      [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+      [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+      [SchemaOrgServiceClaim.Category]: 'system',
     };
     const tenantClaims = {
       ...(testPayloadCreateTenant1.body.data[0].resource.meta.claims as any),
-      [ClaimsOrganizationSchemaorg.alternateName]: fixture.tenantId,
-      [ClaimsOrganizationSchemaorg.addressCountry]: 'CA',
-      [ClaimsOrganizationSchemaorg.addressRegion]: fixture.jurisdiction,
-      [ClaimsServiceSchemaorg.category]: fixture.sector,
+      [SchemaOrgOrganizationClaim.AlternateName]: fixture.tenantId,
+      [SchemaOrgOrganizationClaim.AddressCountry]: 'CA',
+      [SchemaOrgOrganizationClaim.AddressRegion]: fixture.jurisdiction,
+      [SchemaOrgServiceClaim.Category]: fixture.sector,
     };
     const vaultId = getTenantVaultId(fixture.sector, fixture.tenantId);
     await kmsService.provisionKeys(vaultId);
@@ -139,8 +135,8 @@ it('activates one study-scoped Consent through the real HTTP queue and worker bo
       content: {
         status: 'active',
         claims: {
-          [ClaimsPersonSchemaorg.email]: RESEARCH_STUDY_REVIEWER_EMAIL,
-          [ClaimsPersonSchemaorg.hasOccupation]: 'ISCO-08|2250',
+          [SchemaOrgPersonClaim.Email]: RESEARCH_STUDY_REVIEWER_EMAIL,
+          [SchemaOrgPersonClaim.HasOccupation]: 'ISCO-08|2250',
         },
       },
     } as any, vaultId);
