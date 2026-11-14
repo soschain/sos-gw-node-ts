@@ -2,6 +2,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/__tests__/unit/managers/HostingManager.test.ts
 
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { jest } from '@jest/globals';
 import {
   ORGANIZATION_ORDER_JOB,
@@ -354,7 +355,7 @@ describe('HostingManager', () => {
       [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
       [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
       [SchemaOrgOrganizationClaim.IdentifierValue]: tenantId,
-      [SchemaOrgOrganizationClaim.Url]: 'https://tenant.example',
+      [SchemaOrgOrganizationClaim.Url]: SAFE.httpsBaseUrl,
       [SchemaOrgServiceClaim.Category]: sector,
     };
     const did = `did:web:tenant.example:${tenantId}`;
@@ -409,18 +410,18 @@ describe('HostingManager', () => {
       [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
       [SchemaOrgOrganizationClaim.IdentifierType]: 'VAT',
       [SchemaOrgOrganizationClaim.IdentifierValue]: tenantId,
-      [SchemaOrgOrganizationClaim.Url]: 'https://sos-gw.unid.online',
+      [SchemaOrgOrganizationClaim.Url]: SAFE.httpsBaseUrl,
       [SchemaOrgServiceClaim.Category]: sector,
     };
     const did = `did:web:sos-gw.unid.online:${tenantId}`;
     const canonicalConfig = initializeTenantServicesConfig(sector, []);
     const canonicalPublicServices = populateDidDocumentServices(
       did,
-      'https://sos-gw.unid.online',
+      SAFE.httpsBaseUrl,
       canonicalConfig,
       true,
       { alternateName: tenantId, jurisdiction: 'ES', version: 'v1', sector },
-      'https://sos-gw.unid.online',
+      SAFE.httpsBaseUrl,
     );
     const stored = await mockKmsService.protectConfidentialData({
       id: tenantVaultId,

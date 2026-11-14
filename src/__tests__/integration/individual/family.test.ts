@@ -1,4 +1,5 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { resolveHostPhysicalCollectionName } from '../../../config/storage-layout';
 // TDD contract: family route fixtures either carry a complete valid signature or make no signature claim.
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
@@ -338,7 +339,7 @@ describe('[/individual/org.schema/Organization/_batch] Integration Tests (sandbo
           data: [{
             type: 'Family-purge-request-v1.0',
             resource: { meta: { claims: {
-                [SchemaOrgOrganizationClaim.OwnerTelephone]: '+34600000001',
+                [SchemaOrgOrganizationClaim.OwnerTelephone]: SAFE.phoneE164,
                 [SchemaOrgOrganizationClaim.OwnerEmail]: 'parent@example.com',
                 [SchemaOrgOrganizationClaim.AlternateName]: 'Ana',
                 [SchemaOrgServiceClaim.Category]: Sector.HEALTH_CARE,

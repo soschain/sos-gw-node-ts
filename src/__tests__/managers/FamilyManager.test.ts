@@ -2,6 +2,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
 
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { randomUUID } from 'crypto';
 import { execFileSync } from 'child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
@@ -1076,7 +1077,7 @@ describe('FamilyManager', () => {
             [SchemaOrgServiceClaim.Category]: SECTOR,
             [SchemaOrgServiceClaim.IdentifierReference]: 'did:web:provider.example.com',
             [SchemaOrgServiceClaim.ServiceType]: testDefaultTenantServiceTypeClaim,
-            [SchemaOrgServiceClaim.TermsOfService]: 'https://example.com/terms',
+            [SchemaOrgServiceClaim.TermsOfService]: `${SAFE.httpsBaseUrl}/terms`,
           },
           [{
             id: 'signed-individual-form',
@@ -1119,7 +1120,7 @@ describe('FamilyManager', () => {
               [SchemaOrgServiceClaim.Category]: SECTOR,
               [SchemaOrgServiceClaim.IdentifierReference]: 'did:web:provider.example.com',
               [SchemaOrgServiceClaim.ServiceType]: testDefaultTenantServiceTypeClaim,
-              [SchemaOrgServiceClaim.TermsOfService]: 'https://example.com/terms',
+              [SchemaOrgServiceClaim.TermsOfService]: `${SAFE.httpsBaseUrl}/terms`,
             },
             [{
               id: 'signed-individual-form',

@@ -2,6 +2,7 @@
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
 // File: src/__tests__/data/example-payloads.ts
 
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { testClaimsOfferEntityExpanded, testClaimsOfferFamilyExpanded } from './offer.data';
 import { testClaimsRegisterTenantExpanded } from './organization.data';
 import { testFamilyRegisterExpanded } from './family.data';
@@ -192,7 +193,7 @@ const organizationVerificationTransactionBody = {
         [SchemaOrgPersonClaim.OccupationIdentifierValue]: 'RESPRSN',
         [SchemaOrgServiceClaim.Category]: 'health-care',
         [SchemaOrgServiceClaim.IdentifierReference]: 'did:web:tenant.example.org',
-        [SchemaOrgServiceClaim.Url]: 'https://operator.example.net/acme/cds-es/v1/health-care',
+        [SchemaOrgServiceClaim.Url]: `${SAFE.httpsBaseUrl}/acme/cds-es/v1/health-care`,
         [SchemaOrgServiceClaim.ServiceType]:
           testClaimsRegisterTenantExpanded[SchemaOrgServiceClaim.ServiceType],
         },

@@ -1,4 +1,5 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 /**
  * TEST SECTOR USAGE: This integration test covers both network (infra) and business (functional) sectors.
@@ -533,7 +534,7 @@ describe('Organization Registration API', () => {
       );
       const tenantCollectionName = generateTenantCollectionNameFromClaims({
         ...testClaimsTenant1Registration,
-        [SchemaOrgOrganizationClaim.Url]: 'https://api.acme.org',
+        [SchemaOrgOrganizationClaim.Url]: SAFE.httpsBaseUrl,
       } as any);
       const proofDoc = await vaultRepository.get(
         tenantCollectionName,

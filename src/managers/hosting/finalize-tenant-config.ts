@@ -1,3 +1,4 @@
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import type { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
 import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
@@ -254,7 +255,7 @@ export function buildGaiaXLegalParticipantOptionsForTenant(input: {
       enrichedClaims[SchemaOrgOrganizationClaim.IdentifierValue] = fallbackVat;
     }
     if (!String(enrichedClaims[SchemaOrgServiceClaim.TermsOfService] || '').trim()) {
-      enrichedClaims[SchemaOrgServiceClaim.TermsOfService] = 'https://example.org/terms';
+      enrichedClaims[SchemaOrgServiceClaim.TermsOfService] = `${SAFE.httpsBaseUrl}/terms`;
     }
     input.logger?.warn?.('[HostingManager] demo Gaia-X fallback', {
       alternateName,

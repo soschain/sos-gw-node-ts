@@ -1,4 +1,5 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { resolveHostPhysicalCollectionName } from '../../../config/storage-layout';
 // Authorization invariant: a tenant controller cannot disable a tenant while an active individual organization remains hosted by it.
 // Persistence invariant: rejected lifecycle transitions leave tenant and descendant records active and unchanged.
@@ -478,7 +479,7 @@ describe('HostingManager activation flow', () => {
 
     const tenantCollectionName = tenantUtils.generateTenantCollectionNameFromClaims({
       ...claims,
-      [SchemaOrgOrganizationClaim.Url]: 'https://api.acme.org',
+      [SchemaOrgOrganizationClaim.Url]: SAFE.httpsBaseUrl,
     } as any);
     const legalParticipantDoc = await vaultRepository.get(
       tenantCollectionName,
@@ -753,7 +754,7 @@ describe('HostingManager activation flow', () => {
 
       const tenantCollectionName = tenantUtils.generateTenantCollectionNameFromClaims({
         ...claims,
-        [SchemaOrgOrganizationClaim.Url]: 'https://api.acme.org',
+        [SchemaOrgOrganizationClaim.Url]: SAFE.httpsBaseUrl,
       } as any);
       const beforeRotation = await vaultRepository.getContainersInSection(
         tenantCollectionName,
@@ -814,7 +815,7 @@ describe('HostingManager activation flow', () => {
     const claims = job.content!.body!.data[0]!.resource!.meta!.claims;
     const tenantCollectionName = tenantUtils.generateTenantCollectionNameFromClaims({
       ...claims,
-      [SchemaOrgOrganizationClaim.Url]: 'https://api.acme.org',
+      [SchemaOrgOrganizationClaim.Url]: SAFE.httpsBaseUrl,
     } as any);
     const proofDoc = await vaultRepository.get(
       tenantCollectionName,
@@ -844,7 +845,7 @@ describe('HostingManager activation flow', () => {
     const claims = entry.resource.meta.claims;
     const tenantCollectionName = tenantUtils.generateTenantCollectionNameFromClaims({
       ...claims,
-      [SchemaOrgOrganizationClaim.Url]: 'https://api.acme.org',
+      [SchemaOrgOrganizationClaim.Url]: SAFE.httpsBaseUrl,
     } as any);
     const tenantDoc = await vaultRepository.get(
       hostCollectionName,
@@ -1128,7 +1129,7 @@ describe('HostingManager activation flow', () => {
     });
     const tenantCollectionName = tenantUtils.generateTenantCollectionNameFromClaims({
       ...claims,
-      [SchemaOrgOrganizationClaim.Url]: 'https://api.acme.org',
+      [SchemaOrgOrganizationClaim.Url]: SAFE.httpsBaseUrl,
     } as any);
     const employeeDocs = await vaultRepository.getContainersInSection(
       tenantCollectionName,
@@ -1202,7 +1203,7 @@ describe('HostingManager activation flow', () => {
     const claims = job.content!.body!.data[0]!.resource!.meta!.claims;
     const tenantCollectionName = tenantUtils.generateTenantCollectionNameFromClaims({
       ...claims,
-      [SchemaOrgOrganizationClaim.Url]: 'https://api.acme.org',
+      [SchemaOrgOrganizationClaim.Url]: SAFE.httpsBaseUrl,
     } as any);
     const proofDoc = await vaultRepository.get(
       tenantCollectionName,

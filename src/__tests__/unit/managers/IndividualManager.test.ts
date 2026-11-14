@@ -2,6 +2,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/__tests__/unit/managers/IndividualManager.test.ts
 
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { jest } from '@jest/globals';
 import { mock, MockProxy } from 'jest-mock-extended';
 import type { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
@@ -258,7 +259,7 @@ describe('IndividualManager', () => {
               // Global identifier
               {
                 type: 'Person-discover-v1.0',
-                resource: { resourceType: 'Person', meta: { claims: { [SchemaOrgPersonClaim.Telephone]: '+15551234567' } } }
+                resource: { resourceType: 'Person', meta: { claims: { [SchemaOrgPersonClaim.Telephone]: SAFE.phoneE164 } } }
               },
               // Another EU-based identifier to test grouping
               {
