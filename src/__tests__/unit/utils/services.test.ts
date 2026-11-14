@@ -11,7 +11,7 @@ import { GatewayDidService as DidService } from 'sos-data-utils-ts/gateway-did-p
 import { DidServiceIds, DidServiceTypes } from 'gdc-common-utils-ts/constants/did-services';
 import { buildGwCatalogRequestPath } from 'gdc-common-utils-ts/utils/dataspace-protocol';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
-import { serializeServiceCapabilityTokens } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { serializeServiceCapabilityTokens } from 'sos-data-utils-ts/service-capabilities';
 import { EntityLifecycleStatus, EntityType } from '../../../gdc-backend-utils-node/models/enums';
 import { SERVICE_ADDITIONAL_TYPE_CLAIM } from '../../../utils/service-capability-claims';
 import { ContinuityServiceCapability } from 'sos-data-utils-ts/continuity-service-capabilities';

@@ -173,7 +173,7 @@ import { ClearingHouseService, IClearingHouseService } from '../services/Clearin
 import { JwkSet } from 'antifraud-data-utils-ts/cryptography';
 import {
   parseServiceCapabilityTokens,
-} from 'gdc-common-utils-ts/constants/service-capabilities';
+} from 'sos-data-utils-ts/service-capabilities';
 import {
   validateActivationServiceAuthorizationPolicy,
 } from 'gdc-common-utils-ts/utils/activation-policy';

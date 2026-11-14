@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Use SOS Data's service-capability parsing and compatibility tokens in discovery,
+  hosting and claim validation, preserving extension filtering at the gateway.
 - Use the explicit SOS DID routing profile and neutral Antifraud verification
   methods in tenant discovery, onboarding and identity utilities. Keep selectors
   and action lists typed without widening the generic DID extension model.

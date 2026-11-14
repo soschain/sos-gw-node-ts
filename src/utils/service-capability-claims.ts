@@ -1,5 +1,5 @@
 import { ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { parseServiceCapabilityTokens, ServiceCapabilityToken } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { parseServiceCapabilityTokens, ServiceCapabilityToken } from 'sos-data-utils-ts/service-capabilities';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { ContinuityServiceCapability } from 'sos-data-utils-ts/continuity-service-capabilities';
 

@@ -95,3 +95,12 @@ neutral Antifraud DID model. Original repository:
 The profile declares selectors and action lists while verification methods remain
 neutral. The type check, scoped ownership guard and 14 affected discovery,
 onboarding and identity suites pass 159 tests without pending cases.
+
+Service-capability parsing disposition: `adopted` from independent SOS Data.
+Original repository: <https://github.com/Global-DataCare/gdc-common-utils-ts>;
+reviewed [capability source](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/constants/service-capabilities.ts).
+Legacy tokens and extension ordering remain compatible. Gateway allowlists still
+filter advertised capabilities before policy evaluation; family recognition alone
+does not grant access. The type check, scoped ownership guard and six affected
+hosting/discovery suites pass 105 tests with no pending cases. This slice does not
+resolve the remaining project-wide GDC dependencies or registry lockfile gate.

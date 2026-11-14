@@ -21,7 +21,7 @@ import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-
 import { HostNetworkTypes } from 'gdc-common-utils-ts/constants/network';
 import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
-import { serializeServiceCapabilityTokens } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { serializeServiceCapabilityTokens } from 'sos-data-utils-ts/service-capabilities';
 import {
   buildExampleHostedTenantBaseUrl,
   EXAMPLE_COVERAGE_SCOPE_EU,

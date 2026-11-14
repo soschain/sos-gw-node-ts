@@ -22,7 +22,7 @@ import { getEnvSectionId } from '../../utils/section-env';
 import { buildOfferOrderIndexedAttributes } from '../../utils/offer-order-read-model';
 import { createOrganizationUrn } from '../../utils/urn';
 import { registerOrganizationOnLedger } from '../../utils/ledger-organization-registration';
-import { parseServiceCapabilityTokens } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { parseServiceCapabilityTokens } from 'sos-data-utils-ts/service-capabilities';
 import { validateActivationServiceAuthorizationPolicy } from 'gdc-common-utils-ts/utils/activation-policy';
 import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import type { NetworkName } from '../../gdc-backend-utils-node/models/enums';

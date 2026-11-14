@@ -19,7 +19,7 @@ import {
   ServiceCapabilityKind,
   hasServiceCapabilityKind,
   parseServiceCapabilityTokens,
-} from 'gdc-common-utils-ts/constants/service-capabilities';
+} from 'sos-data-utils-ts/service-capabilities';
 import {
   ContinuityServiceCapability,
   isContinuityProviderCapability,

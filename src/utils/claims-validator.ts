@@ -5,7 +5,7 @@ import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { parseServiceCapabilityTokens } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { parseServiceCapabilityTokens } from 'sos-data-utils-ts/service-capabilities';
 
 /**
  * Validates the claims provided for a new organization registration request.
