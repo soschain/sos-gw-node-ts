@@ -11,7 +11,7 @@ import { IVaultRepository } from '../database/repositories/vault/vault.repositor
 import { IStorageAdapter } from '../database/storage/IStorageAdapter';
 import { BundleJsonApi, BundleEntry, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import { DidDocument, DidService } from 'gdc-common-utils-ts/models/did';
+import { GatewayDidDocument as DidDocument, GatewayDidService as DidService } from 'sos-data-utils-ts/gateway-did-profile';
 import { OrganizationConfig } from '../gdc-backend-utils-node/models/entity';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
@@ -42,7 +42,7 @@ import { EntityLifecycleStatus, EntityType, NetworkAccessStatus, NetworkName, Bu
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import { ParameterData } from 'gdc-common-utils-ts/models/params';
 import { normalizeCodeSystemAndValue } from '../utils/normalize-codeAndSystem';
-import { VerificationMethod } from 'gdc-common-utils-ts/models/did';
+import { VerificationMethod } from 'antifraud-data-utils-ts/did-document';
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { issueActivationCodeFromPool, reserveTechnicalControllerSeat } from '../utils/license-issuance';

@@ -1,7 +1,7 @@
 import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import { DidDocument } from 'gdc-common-utils-ts/models/did';
+import { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
 import {
   DIDCOMM_DEFAULT_ACCEPT_HEADER,
   DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE,

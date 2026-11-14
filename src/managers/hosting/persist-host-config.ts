@@ -6,7 +6,7 @@ import { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-cr
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
 import { OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import { DidDocument } from 'gdc-common-utils-ts/models/did';
+import { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { initializeHostServicesConfig } from '../../utils/services';
 import { composeHostDidWebId, populateDidDocumentFromJwks, applyLegacyX509Metadata } from '../../utils/did-backend';

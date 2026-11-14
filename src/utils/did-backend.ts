@@ -2,7 +2,8 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
-import { DidDocument, VerificationMethod } from 'gdc-common-utils-ts/models/did';
+import { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
+import { VerificationMethod } from 'antifraud-data-utils-ts/did-document';
 import { JwkSet } from 'antifraud-data-utils-ts/cryptography';
 
 /**

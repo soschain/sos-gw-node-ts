@@ -1,6 +1,7 @@
 import type { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
-import type { DidDocument, VerificationMethod } from 'gdc-common-utils-ts/models/did';
+import type { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
+import type { VerificationMethod } from 'antifraud-data-utils-ts/did-document';
 import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
 import {
   ActivationCredentialTypes,

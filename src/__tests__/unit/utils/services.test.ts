@@ -7,7 +7,7 @@ import { hasProviderServiceCapabilityClaim, initializeHostServicesConfig, initia
 import { OrganizationConfig } from '../../../gdc-backend-utils-node/models/entity';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { IServerConfig } from '../../../config';
-import { DidService } from 'gdc-common-utils-ts/models/did';
+import { GatewayDidService as DidService } from 'sos-data-utils-ts/gateway-did-profile';
 import { DidServiceIds, DidServiceTypes } from 'gdc-common-utils-ts/constants/did-services';
 import { buildGwCatalogRequestPath } from 'gdc-common-utils-ts/utils/dataspace-protocol';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';

@@ -87,3 +87,11 @@ Gateway adapters retain their inline-size policy and share the portable record
 and blob contracts. The type check, ownership guard and six affected repository,
 worker and hydration suites pass 41 tests. SDK Core's registry guard remains
 unresolved until corrected shared dependencies are published and pinned.
+
+DID profile disposition: `adopted` with explicit SOS routing fields over the
+neutral Antifraud DID model. Original repository:
+<https://github.com/Global-DataCare/gdc-common-utils-ts>; reviewed
+[DID contract source](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/models/did.ts).
+The profile declares selectors and action lists while verification methods remain
+neutral. The type check, scoped ownership guard and 14 affected discovery,
+onboarding and identity suites pass 159 tests without pending cases.

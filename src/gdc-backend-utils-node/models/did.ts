@@ -1,8 +1,9 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: gdc-backend-utils-node/models/did.ts
 
-// Back-end code historically imported DID models from `gdc-backend-utils-node/models/did`.
-// The canonical definitions live in the shared SDK package under `crypto-ts/models/did`.
-export type { DidDocument, DidService, VerificationMethod } from 'gdc-common-utils-ts/models/did';
+// Compatibility path for the SOS routing profile and neutral DID key relationships.
+// The shared packages below own the definitions.
+export type { GatewayDidDocument as DidDocument, GatewayDidService as DidService } from 'sos-data-utils-ts/gateway-did-profile';
+export type { VerificationMethod } from 'antifraud-data-utils-ts/did-document';
 export type { ServiceEndpointSelector, SecureServiceEndpointSelector } from 'sos-data-utils-ts/confidential-job';
 

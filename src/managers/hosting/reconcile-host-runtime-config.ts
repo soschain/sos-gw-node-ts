@@ -1,5 +1,5 @@
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import type { DidDocument } from 'gdc-common-utils-ts/models/did';
+import type { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';

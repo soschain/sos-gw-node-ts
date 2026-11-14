@@ -1,7 +1,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/models/entity.ts
 
-import { DidDocument, DidService } from 'gdc-common-utils-ts/models/did';
+import { GatewayDidDocument as DidDocument, GatewayDidService as DidService } from 'sos-data-utils-ts/gateway-did-profile';
 import { RecordBase, ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
 import { EntityLifecycleStatus, NetworkAccessStatus, EntityType } from './enums';

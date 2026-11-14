@@ -4,7 +4,7 @@
 
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
-import { DidService } from 'gdc-common-utils-ts/models/did';
+import { GatewayDidService as DidService } from 'sos-data-utils-ts/gateway-did-profile';
 import { ServiceEndpointSelector } from 'sos-data-utils-ts/confidential-job';
 import {
   DidServiceIds,

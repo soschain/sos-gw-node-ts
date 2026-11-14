@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Use the explicit SOS DID routing profile and neutral Antifraud verification
+  methods in tenant discovery, onboarding and identity utilities. Keep selectors
+  and action lists typed without widening the generic DID extension model.
 - Use SOS Data's JSON projection/media type and SDK Core's encrypted-blob
   hydration port in repository adapters. Reuse the shared blob-store contract
   while retaining gateway-specific inline-size thresholds.
