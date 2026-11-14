@@ -25,6 +25,8 @@ import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-p
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { computeJwkThumbprint, toBaseJwk } from '../../gdc-backend-utils-node/jwk-thumbprint';
+import {createHash,randomBytes,randomUUID} from 'node:crypto';
+import {CryptographyService} from 'antifraud-data-utils-ts/cryptography';
 
 function buildTestApp(options?: { appAuthManager?: any; tenantsCacheManager?: any; kmsService?: any }) {
   const app = express();
@@ -79,6 +81,31 @@ function buildTestApp(options?: { appAuthManager?: any; tenantsCacheManager?: an
 }
 
 describe('SECURITY_MODE content-type gates', () => {
+  it.each([true,false])('checks real fresh-wallet DCR signature without promoting it to registered authority: valid=%s', async valid => {
+    process.env={...previousEnv,SECURITY_MODE:'strict',DEMO_ALLOW_INSECURE_BEARER:'false',JSON_LEGACY:'false',FHIR_LEGACY:'false',DIDCOMM_PLAIN:'false'};
+    const crypto=new CryptographyService({getRandomBytes:async count=>randomBytes(count),
+      digestString:async(value,algorithm)=>createHash(algorithm.replaceAll('-','').toLowerCase()).update(value).digest('hex'),randomUUID});
+    const pair=await crypto.generateKeyPairMlDsa(randomBytes(32),'ML-DSA-44');
+    const jwk={...pair.publicJWKey,kid:'synthetic-new-recipient-signing-key'};
+    const body={code:'synthetic-activation-code',actor_did:`${SAFE.didWeb}:employee:synthetic-recipient`,profile_did:`${SAFE.didWeb}:employee:synthetic-recipient`,redirect_uris:['https://example.invalid/auth'],jwks:{keys:[jwk]},ext_device_info:{device_id:'synthetic-installation'}};
+    const signed={iss:body.actor_did,aud:SAFE.didWeb,thid:SAFE.resourceUuid,type:'openid-dcr-request',body};
+    const header={alg:'ML-DSA-44',kid:jwk.kid,jwk};
+    const jws=await crypto.signDataJws(signed,header,pair.secretKeyBytes);
+    const decoded={...signed,...(valid?{}:{body:{...body,code:'synthetic-substituted-code'}}),meta:{jws:{protected:header,signature:jws.signature},jwe:{header:{skid:'synthetic-new-encryption-key'}}}};
+    const appAuthManager={verifyInitialAccessToken:jest.fn(async()=>({sub:'verified-recipient',act_code:body.code,scope:'dcr:register'}))};
+    const kmsService={decodeRequest:jest.fn(async()=>({content:decoded})),getHmacBase64Url:jest.fn(),unprotectConfidentialData:jest.fn()};
+    const tenantsCacheManager={tenantExists:jest.fn(async()=>true),getCollectionName:jest.fn(async()=> 'isolated-tenant'),getTenant:jest.fn(async()=>({authorizationStatus:'active'})),
+      getDidServiceConfig:jest.fn(async()=>[{id:'#identity:openid',selector:{section:'identity',format:'openid'},serviceEndpoint:'Device',actions:['_dcr']}])};
+    const harness=buildTestApp({appAuthManager,kmsService,tenantsCacheManager});
+    harness.cryptographyService.verifyDetachedJws.mockImplementation((...args:Parameters<CryptographyService['verifyDetachedJws']>)=>crypto.verifyDetachedJws(...args));
+    const response=await request(harness.app).post(`/${SAFE.tenantId}/cds-es-md/v1/health-care/identity/openid/Device/_dcr`)
+      .set('Authorization','Bearer synthetic-host-initial-token').type('form').send({request:'synthetic-kms-encrypted-envelope'});
+    expect(response.status).toBe(valid?202:401);
+    expect(appAuthManager.verifyInitialAccessToken).toHaveBeenCalledWith('synthetic-host-initial-token');
+    expect(harness.vaultRepository.query).not.toHaveBeenCalled();
+    if(valid){expect(harness.queueAdapter.addJob).toHaveBeenCalledTimes(1);expect(harness.queueAdapter.addJob.mock.calls[0][1].authenticatedTransport).toBeUndefined();}
+    else expect(harness.queueAdapter.addJob).not.toHaveBeenCalled();
+  });
   const targetPath = '/host/cds-es/v1/health-care/ping/org.schema/Organization/_batch';
   const credentialPath = '/host/cds-es/v1/health-care/identity/oidc/credential';
   const previousEnv = process.env;

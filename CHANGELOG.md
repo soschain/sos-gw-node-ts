@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Link the existing professional clinical assignment during device enrollment
+  using normalized valid Employee UUIDs, preserving role/ambiguity checks and
+  preventing successful DCR from leaving the assignment's device channels empty.
+- Address Employee mutation replies to the original caller so verified
+  encrypted clients can enforce response audience binding.
 - Restrict Employee create, disable and purge writes to the current tenant
   controller bound to the verified bearer. A professional licence or forged
   controller issuer cannot administer staff. Registered employee-key transport

@@ -86,6 +86,7 @@ describe('EmployeeManager controller-only staff mutations', () => {
     const state = createHarness(scenario);
     const response = await state.manager.process(state.job);
     expect((response.body as any).data[0].response.status).toBe('201');
+    expect(response.aud).toBe(state.job.content!.iss);
     expect(state.repository.put).toHaveBeenCalled();
   });
 

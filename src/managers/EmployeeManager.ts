@@ -172,7 +172,7 @@ export class EmployeeManager {
       jti: uuidv4(),
       thid: job.content.thid as string,
       iss: issuerUrn, // Use the tenant's URN as the issuer
-      aud: job.content.aud as string,
+      aud: job.content.iss as string,
       exp: Math.floor(Date.now() / 1000) + 300,
       type: 'batch-response',
       body: responseBundle,
