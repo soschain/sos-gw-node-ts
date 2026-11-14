@@ -1,7 +1,7 @@
 // Flow contract: secondary-use consent rebuilds only finalized, professionally attested clinical records and never promotes personal records into the research repository.
 import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
-import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
 import {
   applyDigitalTwinSecondaryUseDecision,

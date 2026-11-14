@@ -1,8 +1,8 @@
 // Copyright 2026 Connecting Solution & Applications Ltd under the Apache License, Version 2.0.
 // Flow contract: reuse governed research and organization fixtures; never duplicate authorization literals in suites.
-import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 
 export const RESEARCH_STUDY_REVIEWER_EMAIL = 'reviewer@example.test';
 const reviewerStableDidPart = buildStableActorIdentifier({

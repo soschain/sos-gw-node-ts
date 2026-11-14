@@ -19,11 +19,8 @@ import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { startServer, resetServerConfig } from '../../server';
 import { getEnvSectionId } from '../../utils/section-env';
 import { getSubjectScopedSectionId } from '../../utils/individual-sections';
-import {
-  HealthcareBasicSections,
-  HealthcareConsentPurposes,
-  ResourceTypesFhirR4,
-} from 'gdc-common-utils-ts/constants/index';
+import { HealthcareBasicSections, ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { CompositionAttesterModes } from 'gdc-common-utils-ts';
 import { testTenant1TenantId } from '../data/organization.data';
 import {
@@ -47,7 +44,7 @@ import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organiza
 import { ExampleEmployeeEmails, ExampleEmployeeRoles } from 'gdc-common-utils-ts/examples/employee';
 import { ClaimConsent, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
 import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-claims/communication-claims';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_PROVIDER_ORGANIZATION_URN } from 'gdc-common-utils-ts/examples/inter-tenant-access-contract';
 import {
   DEMO_SMART_ACCESS_LOCAL_IDS,

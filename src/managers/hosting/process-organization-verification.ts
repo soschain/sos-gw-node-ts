@@ -32,7 +32,7 @@ import {
 import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
 import type { TestNetworkAdmissionVerificationResult } from './organization-test-network-credential';
 import type { PostalActivationCodeBinding } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { resolveLedgerOrganizationId } from '../../utils/ledger-organization-registration-helpers';
 import {
   buildIssuedRoleLicenseLedgerIdentity,

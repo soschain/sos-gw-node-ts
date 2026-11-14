@@ -52,3 +52,12 @@ codes without modifying persisted claims; Consent preserves its existing wire
 normalization. Six affected suites pass 93 tests, including the real in-memory
 API, worker and polling flow with native `valueCoding.system` filters. A wrong
 code or unknown system produces no employee match.
+
+Identity/routing foundation disposition: `already-equivalent` for previous public
+values and compatible contact/organization identifier outputs, using frozen Common
+Utilities 2.9.30 as read-only evidence. Imports and re-exports now use Antifraud
+for contact identity, SOS Data for routing taxonomy and legal identity URNs, and
+FHIR utilities for clinical purpose/category vocabulary. A negative architecture
+test protects those owners. The fresh default Jest matrix passes 261 suites and
+1,544 tests without pending tests. Configured network E2E, browser journeys and
+full registry-dependency independence remain separate promotion gates.

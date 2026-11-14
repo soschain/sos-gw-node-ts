@@ -9,7 +9,7 @@ import {
 } from 'gdc-common-utils-ts/utils/license';
 import { LicenseManager } from '../../managers/LicenseManager';
 import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 
 /**
  * Flow contract: individual-organization member licenses

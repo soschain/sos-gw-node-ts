@@ -4,7 +4,7 @@ import path from 'path';
 import { HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
 import { CompositionAttesterModes } from 'gdc-common-utils-ts';
 import { EXAMPLE_KYC_CONTROLLER_UUID } from 'gdc-common-utils-ts/examples/shared';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';

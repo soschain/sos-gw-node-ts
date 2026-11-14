@@ -1,3 +1,4 @@
+// Flow contract: independent identity, routing and vocabulary contracts preserve runtime authorization and persisted values.
 // Copyright 2026 Connecting Solution & Applications Ltd under the Apache License, Version 2.0.
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
@@ -23,8 +24,8 @@ import {
   ClaimsPersonSchemaorg,
   ClaimsServiceSchemaorg,
 } from 'gdc-common-utils-ts/constants/schemaorg';
-import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
 import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { projectResearchStudyR5SearchClaims } from 'vet-data-utils-ts';

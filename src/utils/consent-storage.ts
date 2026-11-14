@@ -9,9 +9,9 @@ import { getIndividualSectionId, getSubjectScopedSectionId } from './individual-
 import { applyDigitalTwinSecondaryUseDecision } from './digital-twin-secondary-use';
 import type { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
 import type { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
-import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
-import { DataspaceSectors } from 'gdc-common-utils-ts/constants/sectors';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import {
   ClaimsFirstAnimalInsuranceConsent,
   validateAnimalInsuranceConsentOdrlParity,

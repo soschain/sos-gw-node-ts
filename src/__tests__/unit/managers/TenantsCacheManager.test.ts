@@ -19,7 +19,7 @@ import { testConfigDataHost, testConfigTenant1 } from '../../data/organization.d
 import { testClaimsHostInitialization, testClaimsTenant1Registration } from '../../data/end-to-end.data';
 import { EntityLifecycleStatus, EntityType } from '../../../gdc-backend-utils-node/models/enums';
 import { applyTenantAuthorizationStatus } from '../../../utils/tenant-lifecycle';
-import { DataspaceSectors } from 'gdc-common-utils-ts/constants/sectors';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 
 describe('TenantsCacheManager', () => {
   let tenantsCacheManager: InstanceType<typeof TenantsCacheManager>;

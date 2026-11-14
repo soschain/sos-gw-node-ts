@@ -1,6 +1,6 @@
 import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { DataspaceSectors } from 'gdc-common-utils-ts/constants/sectors';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { testClaimsRegisterTenantExpanded } from './organization.data';
 

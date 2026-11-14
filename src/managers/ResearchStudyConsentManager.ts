@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
-import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
 import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
 import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';

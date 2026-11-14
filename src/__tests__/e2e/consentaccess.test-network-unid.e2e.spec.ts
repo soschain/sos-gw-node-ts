@@ -1,48 +1,23 @@
-// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+// Flow contract: configured Test Network Consent ingestion retains tenant/subject scope and reaches the terminal batch response.
 /**
- * Online smoke for ConsentAccess on the shared Fabric-backed `test-network`.
- *
- * What this test proves:
- * - a deployed GW CORE instance in `NODE_ENV=demo` can still operate with
- *   `NETWORK_MODE=test-network`
- * - the `Communication/_batch` consent ingestion API accepts a realistic bundle
- * - the job completes successfully for tenant `acme-id` by default
- * - the runtime is configured to forward consent-access writes to
- *   `consentaccess-sc` on channel `health-care-eu`
- *
- * What this test does not prove by itself:
- * - it does not read the Fabric ledger directly
- * - it does not verify the peer tx id independently
- * - it assumes the deployed runtime already has `UNIDMSP` material loaded and
- *   can reach the UNID peer from its Kubernetes environment
- *
- * Required env to run:
- * - `TEST_NETWORK_API_BASE_URL`
- *   Example: `https://uhc-gw.unid.online`
- *
- * Optional env:
- * - `TEST_NETWORK_AUTH_BEARER`
- *   Default: `demo-token`
- * - `TEST_NETWORK_TENANT_ID`
- *   Default: `acme-id`
- * - `TEST_NETWORK_JURISDICTION`
- *   Default: `ES`
- * - `TEST_NETWORK_SECTOR`
- *   Default: `health-care`
- * - `TEST_NETWORK_SUBJECT_DID`
- *   Default: example subject DID from shared fixtures
- * - `TEST_NETWORK_MAX_POLLS`
- *   Default: `40`
- * - `TEST_NETWORK_POLL_MS`
- *   Default: `1500`
+ * 1. Select the configured Test Network gateway, bearer, tenant and jurisdiction.
+ * 2. Submit professional, organization and jurisdiction Consent attachments for
+ *    one explicit subject through Communication/_batch.
+ * 3. Poll the same thread until the gateway returns the terminal successful Bundle.
+ * Authorization invariant: requests retain the configured bearer and tenant route;
+ * every Consent retains the selected subject and its explicit actor selectors.
+ * Persistence invariant: queued acceptance is insufficient; the final batch entry
+ * must report success. Independent ledger inspection belongs to its ledger gate.
+ * Required configuration: TEST_NETWORK_API_BASE_URL. Override the synthetic
+ * defaults with TEST_NETWORK_AUTH_BEARER, TEST_NETWORK_TENANT_ID,
+ * TEST_NETWORK_JURISDICTION, TEST_NETWORK_SECTOR and TEST_NETWORK_SUBJECT_DID.
+ * TEST_NETWORK_MAX_POLLS and TEST_NETWORK_POLL_MS bound the polling window.
  */
 import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
 import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
 
-import {
-  HealthcareConsentActions,
-  HealthcareConsentPurposes,
-} from 'gdc-common-utils-ts/constants/index';
+import { HealthcareConsentActions } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { Sector, knownDomainsReversedEnum } from 'gdc-common-utils-ts/models/urlPath';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
 import {

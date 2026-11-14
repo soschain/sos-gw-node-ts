@@ -1,7 +1,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/utils/sector.ts
 
-import { DataspaceSectors } from 'gdc-common-utils-ts/constants/sectors';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 
 const LEGACY_FHIR_SECTORS = new Set([
   'health-care',

@@ -20,8 +20,8 @@ import {
   deriveConsentRuleBlockchainStatus,
 } from '../../utils/consent-access-blockchain';
 import { getJurisdictionGroup } from '../../utils/jurisdiction';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
-import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 
 /**
  * @fileoverview This test suite verifies the functionality of the ConsentManager.

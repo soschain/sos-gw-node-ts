@@ -10,10 +10,8 @@ import { IServerConfig } from '../../../config';
 import { DidService } from 'gdc-common-utils-ts/models/did';
 import { DidServiceIds, DidServiceTypes } from 'gdc-common-utils-ts/constants/did-services';
 import { buildGwCatalogRequestPath } from 'gdc-common-utils-ts/utils/dataspace-protocol';
-import {
-  ServiceCapability,
-  serializeServiceCapabilityTokens,
-} from 'gdc-common-utils-ts/constants/service-capabilities';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
+import { serializeServiceCapabilityTokens } from 'gdc-common-utils-ts/constants/service-capabilities';
 import { EntityLifecycleStatus, EntityType } from '../../../gdc-backend-utils-node/models/enums';
 import { SERVICE_ADDITIONAL_TYPE_CLAIM } from '../../../utils/service-capability-claims';
 import { ContinuityServiceCapability } from 'sos-data-utils-ts/continuity-service-capabilities';

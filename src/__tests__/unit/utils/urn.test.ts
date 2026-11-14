@@ -9,7 +9,7 @@ import {
 } from "../../../utils/urn";
 import { URN_NAMESPACE, URN_VERSION } from "../../data/urn.data";
 import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 
 describe('createEmployeeUrn', () => {

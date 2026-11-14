@@ -6,8 +6,9 @@
  * aliases must never return to the research search surface.
  */
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
-import { HealthcareBasicSections, HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { HealthcareBasicSections } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import {
   EXAMPLE_CONSENT_ATTACHMENT_CONTENT_TYPE,
   EXAMPLE_CONSENT_ATTACHMENT_DATA_BASE64,

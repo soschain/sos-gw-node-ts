@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Consume shared contact identity, jurisdiction-bound organization identifiers,
+  routing taxonomy and clinical purpose/category vocabulary from their independent
+  Antifraud, SOS Data and FHIR owners. Preserve existing wire values and hashes.
 - Accept WHO/HL7 ISCO identifiers and compact/reverse-DNS equivalents in
   employee occupation search and Consent matching. Search compares exact codes
   without rewriting stored claims or granting a different occupation access.

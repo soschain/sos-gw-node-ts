@@ -8,12 +8,8 @@ import { readIsco08Code } from 'antifraud-data-utils-ts/isco-08';
 
 import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  buildOrganizationAuthorizationUrnCds,
-  buildOrganizationEmployeeAuthorizationUrnCds,
-  FhirIpsCreatorKinds,
-  OrganizationEmployeeSearchResponseEntryTypes,
-} from 'gdc-common-utils-ts';
+import { buildOrganizationAuthorizationUrnCds, buildOrganizationEmployeeAuthorizationUrnCds } from 'sos-data-utils-ts/organization-authorization-urn';
+import { FhirIpsCreatorKinds, OrganizationEmployeeSearchResponseEntryTypes } from 'gdc-common-utils-ts';
 import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
@@ -48,7 +44,7 @@ import type { ITenantDidRegistryMutator } from './ITenantDidRegistryMutator';
 import type { IHostRuntime } from './IHostRuntime';
 import { buildOfferOrderIndexedAttributes } from '../utils/offer-order-read-model';
 import { buildSearchResponseEntries } from '../utils/didcomm-response';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { normalizePublicAliasList } from 'gdc-common-utils-ts/utils/same-as';
 import type { ClinicalCreatorBinding } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
 import { getClinicalCreatorBindingsSectionId } from '../utils/clinical-creator-binding';

@@ -1,9 +1,6 @@
 import { ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import {
-  parseServiceCapabilityTokens,
-  ServiceCapability,
-  ServiceCapabilityToken,
-} from 'gdc-common-utils-ts/constants/service-capabilities';
+import { parseServiceCapabilityTokens, ServiceCapabilityToken } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { ContinuityServiceCapability } from 'sos-data-utils-ts/continuity-service-capabilities';
 
 export const SERVICE_ADDITIONAL_TYPE_CLAIM = 'org.schema.Service.additionalType' as const;

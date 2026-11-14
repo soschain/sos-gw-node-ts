@@ -29,9 +29,9 @@ import { ClaimInterTenantAccessContract } from 'gdc-common-utils-ts/models/inter
 import { buildInterTenantAccessContractCredential } from 'gdc-common-utils-ts/utils/inter-tenant-access-contract';
 import { buildClientAssertionFixture, buildClientAssertionJwt } from 'gdc-common-utils-ts/utils/client-assertion';
 import { addVC, createVP } from 'gdc-common-utils-ts/utils/vp-token';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
-import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
 import {
   EXAMPLE_ALTERNATE_PORTAL_INDIVIDUAL_DID,
@@ -53,7 +53,7 @@ import {
 import { OpenIdAuthManager } from '../../../managers/OpenIdAuthManager';
 import { buildResearchStudyControllerImportScope } from '../../../managers/ResearchStudyConsentManager';
 import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { LICENSE_USER_CLASS_INDIVIDUAL } from '../../../constants/domain';
 
 const EXAMPLE_INTER_TENANT_DIGITAL_TWIN_SCOPE =

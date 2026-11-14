@@ -54,7 +54,7 @@ import {
   LICENSE_USER_CLASS_EMPLOYEE,
 } from '../constants/domain';
 import { shouldUseFabricLedger } from '../adapters/credential-ledger-resolver';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { resolveLedgerOrganizationId } from '../utils/ledger-organization-registration-helpers';
 import {
   buildIssuedRoleLicenseLedgerIdentity,

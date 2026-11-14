@@ -1,8 +1,9 @@
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { createHash } from 'crypto';
-import { FhirResourceTypeDataCollections, HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/index';
+import { FhirResourceTypeDataCollections } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { ClaimConsent } from 'fhir-data-utils-ts';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import type { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { SUBJECT_SECTION_DIGITAL_TWIN, SUBJECT_SECTION_INDIVIDUAL } from '../constants/domain';

@@ -13,7 +13,7 @@ import {
 import {
   canonicalizeTestNetworkOrganizationCredential,
 } from 'gdc-common-utils-ts/utils/test-network-organization-credentials';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
 import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';

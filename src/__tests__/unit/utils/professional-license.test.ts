@@ -2,7 +2,7 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { LICENSE_STATUS_ACTIVE } from '../../../constants/domain';
 import { hasActiveProfessionalIdentityAndLicense } from '../../../utils/professional-license';
 import {

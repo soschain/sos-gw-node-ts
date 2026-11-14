@@ -4,8 +4,9 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
-import { HealthcareBasicSections, HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { HealthcareBasicSections } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import {
   EXAMPLE_API_ORGANIZATION_DID,

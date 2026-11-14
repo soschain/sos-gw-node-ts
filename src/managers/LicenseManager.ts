@@ -53,7 +53,7 @@ import {
 import type { ITenantsManager } from './ITenantsManager';
 import { ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { normalizePublicAliasList } from 'gdc-common-utils-ts/utils/same-as';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import type { OrganizationRoleLicenseSectorPolicy } from 'gdc-common-utils-ts/models/organization-role-license';
 import {
   buildIssuedRoleLicenseLedgerIdentity,

@@ -5,7 +5,8 @@
 import { OrganizationConfig } from "../../gdc-backend-utils-node/models/entity";
 import { URN_NAMESPACE, URN_NETWORK, URN_VERSION } from "./urn.data";
 import { ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from "gdc-common-utils-ts/constants/schemaorg";
-import { serializeServiceCapabilityTokens, ServiceCapability } from "gdc-common-utils-ts/constants/service-capabilities";
+import { serializeServiceCapabilityTokens } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { Sector } from "gdc-common-utils-ts/models/urlPath";
 import { EntityLifecycleStatus, EntityType } from "../../gdc-backend-utils-node/models/enums";
 import { testTenant1Vc } from "./credential.data";

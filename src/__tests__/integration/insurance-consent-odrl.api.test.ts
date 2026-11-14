@@ -14,7 +14,7 @@ import {
   ClaimsOrganizationSchemaorg,
   ClaimsServiceSchemaorg,
 } from 'gdc-common-utils-ts/constants/schemaorg';
-import { DataspaceSectors } from 'gdc-common-utils-ts/constants/sectors';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
 import { knownDomainsReversedEnum, type Sector } from 'gdc-common-utils-ts/models/urlPath';
 import {

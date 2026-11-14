@@ -1,6 +1,6 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/utils/urn.ts
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 export const EMPLOYEE_URN_SEGMENT = ':employee:';
 export const EMPLOYEE_ROLE_URN_SEGMENT = ':role:';
 

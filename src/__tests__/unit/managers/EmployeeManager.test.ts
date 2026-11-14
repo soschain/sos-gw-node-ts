@@ -13,12 +13,8 @@ import { jest } from '@jest/globals';
 import { mock, MockProxy } from 'jest-mock-extended';
 import type { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
-import {
-  buildOrganizationAuthorizationUrnCds,
-  buildOrganizationEmployeeAuthorizationUrnCds,
-  FhirIpsCreatorKinds,
-  OrganizationEmployeeSearchResponseEntryTypes,
-} from 'gdc-common-utils-ts';
+import { buildOrganizationAuthorizationUrnCds, buildOrganizationEmployeeAuthorizationUrnCds } from 'sos-data-utils-ts/organization-authorization-urn';
+import { FhirIpsCreatorKinds, OrganizationEmployeeSearchResponseEntryTypes } from 'gdc-common-utils-ts';
 import { ClaimsOfferSchemaorg, ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { RecordBase, ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
 import { JwkSet } from '../../../gdc-backend-utils-node/models/jwk';
@@ -41,7 +37,7 @@ import {
   SearchResponseProfileEnvironment,
   SearchResponseProfiles,
 } from '../../../utils/didcomm-response';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { getClinicalCreatorBindingsSectionId } from '../../../utils/clinical-creator-binding';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';

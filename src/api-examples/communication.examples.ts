@@ -4,7 +4,8 @@ import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway
 import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
-import { CommunicationCategoryCodes, HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
+import { CommunicationCategoryCodes } from 'fhir-data-utils-ts';
+import { HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
 import { Format } from 'gdc-common-utils-ts/constants/Schemas';
 
 const IPS_BUNDLE_LIGHT_EXAMPLE = {

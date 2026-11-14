@@ -32,9 +32,10 @@ import { ClaimInterTenantAccessContract } from 'gdc-common-utils-ts/models/inter
 import { buildInterTenantAccessContractCredential } from 'gdc-common-utils-ts/utils/inter-tenant-access-contract';
 import { buildClientAssertionFixture, buildClientAssertionJwt } from 'gdc-common-utils-ts/utils/client-assertion';
 import { addVC, createVP } from 'gdc-common-utils-ts/utils/vp-token';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { HealthcareActorRoles, getHealthcareRoleByClaim } from 'sos-data-utils-ts/healthcare-roles';
-import { HealthcareBasicSections, HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareBasicSections } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { buildSmartCompositionReadScope } from 'gdc-common-utils-ts/utils/smart-scope';
 import {
   buildUnsignedIndividualControllerIdentityVpJwt,
@@ -72,7 +73,7 @@ import {
 import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
 import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { EXAMPLE_DEVICE_BOUND_SMART_DIDCOMM_MESSAGE } from 'gdc-common-utils-ts/examples/didcomm-identity';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { decodeJwt } from 'jose';
 import {
   RESEARCH_STUDY_ACCESS_FIXTURE,
@@ -83,6 +84,7 @@ import {
   RESEARCH_STUDY_SECTION,
 } from '../../managers/ResearchStudyConsentManager';
 import { getIndividualSectionId } from '../../utils/individual-sections';
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { parseProfessionalDidIdentity } from '../../utils/professional-did-identity';
 import { LICENSE_USER_CLASS_INDIVIDUAL } from '../../constants/domain';
 import {
@@ -3427,7 +3429,7 @@ describe('OpenIdAuthManager', () => {
     });
     const differentActorIdentifier = buildStableActorIdentifier({
       contactKind: 'email',
-      contact: EXAMPLE_ACCOUNT_OWNER_ID,
+      contact: SAFE.individualEmail,
     });
     const fixture = await buildClientAssertionFixture({ clientId, audience: issuerDid });
     const deviceProfile = {

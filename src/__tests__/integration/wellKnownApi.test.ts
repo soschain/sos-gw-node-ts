@@ -19,8 +19,9 @@ import type { IVaultRepository } from '../../database/repositories/vault/vault.r
 import { invokeExpress } from './helpers/invokeExpress';
 import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { HostNetworkTypes } from 'gdc-common-utils-ts/constants/network';
-import { DataspaceSectors } from 'gdc-common-utils-ts/constants/sectors';
-import { ServiceCapability, serializeServiceCapabilityTokens } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
+import { serializeServiceCapabilityTokens } from 'gdc-common-utils-ts/constants/service-capabilities';
 import {
   buildExampleHostedTenantBaseUrl,
   EXAMPLE_COVERAGE_SCOPE_EU,

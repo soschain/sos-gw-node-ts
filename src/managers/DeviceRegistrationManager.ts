@@ -56,7 +56,7 @@ import {
 import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import { getHealthcareRoleByClaim } from 'sos-data-utils-ts/healthcare-roles';
 import { getClinicalCreatorBindingsSectionId } from '../utils/clinical-creator-binding';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 
 /**
  * Manages the business logic for a single device registration (DCR) request,

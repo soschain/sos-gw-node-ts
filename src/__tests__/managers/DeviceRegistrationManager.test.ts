@@ -27,7 +27,7 @@ import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
 import { IdentityAuthActions, IdentityAuthRequestFields, IdentityDcrMetadataFields } from 'gdc-common-utils-ts/constants/identity-auth';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
-import { DataspaceSectors } from 'gdc-common-utils-ts/constants/sectors';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import { createEmployeeUrn, createOrganizationUrn } from '../../utils/urn';
 import { URN_NAMESPACE, URN_NETWORK, URN_VERSION } from '../data/urn.data';
 import {
@@ -49,7 +49,7 @@ import {
 import { FhirIpsCreatorKinds } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
 import { getClinicalCreatorBindingsSectionId } from '../../utils/clinical-creator-binding';
 import { testIndividualControllerDcrIdentity } from '../data/identity.data';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 
 const TEST_API_BASE_URL = 'http://localhost:3001';
 const TEST_ORGANIZATION_URN = createOrganizationUrn({

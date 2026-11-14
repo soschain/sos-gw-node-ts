@@ -5,10 +5,8 @@ import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organiza
 import { invokeExpress } from './helpers/invokeExpress';
 import { getTenantVaultId, generateTenantCollectionNameFromClaims } from '../../utils/tenant';
 import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import {
-  HealthcareConsentActions,
-  HealthcareConsentPurposes,
-} from 'gdc-common-utils-ts/constants/index';
+import { HealthcareConsentActions } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { getHealthcareRoleByClaim, HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { testPayloadCreateTenant1 } from '../data/end-to-end.data';
 import { initializeTenantServicesConfig } from '../../utils/services';

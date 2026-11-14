@@ -23,9 +23,9 @@ import { getMatchingInterTenantAccessContractFromVpToken } from 'gdc-common-util
 import { getMatchingSubjectIdentityBindingFromVpToken } from 'gdc-common-utils-ts/utils/subject-identity-binding';
 import { calculateJwkThumbprint, compactVerify, decodeProtectedHeader, importJWK, type JWK } from 'jose';
 import { getEnvSectionId } from '../utils/section-env';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { HealthcareActorRoleCodes } from 'sos-data-utils-ts/healthcare-roles';
-import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { deriveGrantedSmartScopes } from 'sos-data-utils-ts/consent-smart-scopes';
 import { type ConsentRule } from 'gdc-common-utils-ts/models/consent-rule';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'fhir-data-utils-ts';
@@ -64,7 +64,7 @@ import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schem
 import { normalizePublicAliasList } from 'gdc-common-utils-ts/utils/same-as';
 import { getAuthenticatedJobActorIdentifiers } from '../utils/authenticated-job-actor';
 import { normalizeIndexedEmail, normalizeIndexedPhone } from '../utils/indexed-contact';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 
 type TokenRequestBody = {
   client_id?: string;

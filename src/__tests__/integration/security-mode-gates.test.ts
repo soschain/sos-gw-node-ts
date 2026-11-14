@@ -19,7 +19,7 @@ import {
   EXAMPLE_TENANT_IDENTIFIER,
 } from 'gdc-common-utils-ts/examples/shared';
 import { buildUnsignedJwt } from 'gdc-common-utils-ts/utils/jwt';
-import { DataspaceSectors } from 'gdc-common-utils-ts/constants/sectors';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import { IdentityAuthRequestFields } from 'gdc-common-utils-ts/constants/identity-auth';
 
 function buildTestApp(options?: { appAuthManager?: any; tenantsCacheManager?: any; kmsService?: any }) {

@@ -3,7 +3,7 @@
 import { createHash } from 'crypto';
 import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
 import { HealthcareActorRoleCodes } from 'sos-data-utils-ts/healthcare-roles';
-import { HL7_CODING_SYSTEM_V3_ROLE_CODE } from 'gdc-common-utils-ts/constants/hl7-roles';
+import { HL7_CODING_SYSTEM_V3_ROLE_CODE } from 'fhir-data-utils-ts';
 import { SecureIdTypesIndividual } from 'gdc-common-utils-ts/constants/identity-identifiers';
 import {
   buildSecureIdValueIndividual,
@@ -23,7 +23,7 @@ import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
 import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
 import { ClaimsIndividualProductSchemaorg, ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { buildStableActorIdentifier, StableActorContactKinds } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier, StableActorContactKinds } from 'antifraud-data-utils-ts/organization-identity';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { getBundleResponseTypeForAction } from '../utils/bundle';
 import { getClaimValue, normalizeContextualizedClaims } from '../utils/claims';
