@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Link compatibility notes to the original GitHub repositories and reviewed
+  source files instead of using package-version or change-control labels as attribution.
 - Use SOS-owned confidential record/job/batch contracts and HTTP descriptors,
   and Antifraud's encoded JWS types, across Gateway runtime and consuming tests.
   Keep existing serialized job states, headers and adapter behavior.

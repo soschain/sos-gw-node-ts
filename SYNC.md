@@ -1,6 +1,7 @@
 # GDC Core to SOSChain GW synchronization
 
-SOSChain GW is derived from GDC Core. Synchronization is selective and
+SOSChain GW originates from <https://github.com/Global-DataCare/gwtemplate-node-ts>.
+Synchronization is selective and
 one-way: downstream products and deprecated gateways do not define this
 repository's architecture.
 
@@ -28,9 +29,10 @@ consumers.
 
 ## Independent healthcare roles and Consent scope projection
 
-Disposition: `adopted` through the independent SOS Data owner. The frozen
-Common Utilities 2.9.30 contract was read-only compatibility evidence; no
-upstream branch was merged and no frozen source was changed.
+Disposition: `adopted` through the independent SOS Data owner.
+Original repository: <https://github.com/Global-DataCare/gdc-common-utils-ts>.
+Reviewed source: [healthcare role contracts](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/constants/healthcare.ts)
+and [Consent scope projection](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/utils/smart-scope.ts).
 
 Healthcare occupation definitions come from Antifraud, relationship vocabulary
 from FHIR utilities, and healthcare selection/family policy from SOS Data.
@@ -54,8 +56,11 @@ API, worker and polling flow with native `valueCoding.system` filters. A wrong
 code or unknown system produces no employee match.
 
 Identity/routing foundation disposition: `already-equivalent` for previous public
-values and compatible contact/organization identifier outputs, using frozen Common
-Utilities 2.9.30 as read-only evidence. Imports and re-exports now use Antifraud
+values and compatible contact/organization identifier outputs. Original repository:
+<https://github.com/Global-DataCare/gdc-common-utils-ts>. Reviewed source:
+[contact identifiers](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/utils/actor-identifier.ts)
+and [organization authorization identifiers](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/utils/organization-authorization-urn.ts).
+Imports and re-exports now use Antifraud
 for contact identity, SOS Data for routing taxonomy and legal identity URNs, and
 FHIR utilities for clinical purpose/category vocabulary. A negative architecture
 test protects those owners. The fresh default Jest matrix passes 261 suites and
@@ -64,8 +69,11 @@ full registry-dependency independence remain separate promotion gates.
 
 Record/job protocol disposition: `adopted` as independent data contracts. SOS
 Data owns records, routing, lifecycle values and batch entry views; Antifraud
-owns neutral signature header/serialization shapes. This is neither a package
-alias nor a wrapper around the frozen implementation. The scoped ownership guard
+owns neutral signature header/serialization shapes. Original repository:
+<https://github.com/Global-DataCare/gdc-common-utils-ts>. Reviewed source:
+[record contracts](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/models/confidential-storage.ts)
+and [job contracts](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/models/confidential-job.ts).
+The scoped ownership guard
 and type check pass. All 48 changed default suites plus three additional crypto,
 queue and storage suites pass 597 tests without pending cases. The full default
 261-suite result above belongs to the preceding foundation checkpoint; configured
