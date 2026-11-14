@@ -11,6 +11,8 @@ import { IAsyncResponseStore } from '../adapters/async-response-store.mem';
 import { createJobName } from '../utils/naming';
 import { isRequestValid } from '../utils/request-validator';
 import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { RegisteredDidcommTransportEvidence } from '../utils/individual-registration-admission';
+import { computeJwkThumbprint, toBaseJwk } from '../gdc-backend-utils-node/jwk-thumbprint';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { Content } from 'antifraud-data-utils-ts/cryptography';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
@@ -4681,6 +4683,7 @@ export function createApiRouter(
     const parsedContentType = parseIncomingContentType(contentType);
     let jobRequest: JobRequest;
     let verifiedBearerPayload: Record<string, any> = {};
+    let authenticatedTransport: RegisteredDidcommTransportEvidence | undefined;
 
     try {
       if (
@@ -4980,6 +4983,14 @@ export function createApiRouter(
             senderSigningKey,
             cryptographyService,
           );
+          if (!reviewedBootstrapKeys) {
+            authenticatedTransport = {
+              kind: 'registered-didcomm', actorDid: String(senderDid),
+              signingKeyId: String(senderSigningKeyId),
+              signedClientId: String((decodedJob.content as any)?.client_id || '').trim(),
+              signingKeyThumbprint: await computeJwkThumbprint(toBaseJwk(senderSigningKey)),
+            };
+          }
 
           // 7. Enrich the internal job metadata with only the keys that this
           // middleware resolved and cryptographically verified. The worker
@@ -5123,6 +5134,10 @@ export function createApiRouter(
     }
 
     // --- 2. Transaction ID Validation ---
+    // A decoded envelope can contain hostile top-level fields. Overwrite this
+    // server-only fact for every transport, including unsigned bootstrap input.
+    (jobRequest as JobRequest & { authenticatedTransport?: RegisteredDidcommTransportEvidence }).authenticatedTransport = authenticatedTransport;
+
     // Ensure contentType is always present for downstream handling (e.g. worker response encryption paths).
     (jobRequest as any).contentType = (jobRequest as any).contentType || contentType;
 

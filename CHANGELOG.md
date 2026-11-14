@@ -1,5 +1,21 @@
 ## Unreleased
 
+- Require verified controller contact or a DCR-bound, currently licensed
+  professional with the routed organization's registration Group and active
+  Subject registration Consent before retrieving onboarding documents or writing
+  an individual. Keep the creating professional separate from proposed controller
+  contacts, and recheck controller binding after document claims are merged.
+  Professional authority also requires server-authored queued provenance from
+  registered-key signature verification; bootstrap JSON and decrypted payload
+  flags cannot supply that proof.
+- Derive hosted Individual Organization DIDs from the configured provider and
+  persisted UUID on new registration and replay, preserving public card aliases.
+  Reject non-UUID historical rows that need identity migration. Focused manager
+  and API provenance tests pass; cumulative backend and network gates remain pending.
+- Require the verified proposed controller to confirm an individual Offer before
+  initial activation or controller-seat issuance, including active Order replay.
+  A professional's registration capability does not accept responsibility for
+  the proposed controller.
 - Use independent SOS response/routing catalogs and included-resource contracts
   without changing entry discriminators or terminal response correlation.
 - Consume clinical creator profile data from SOS Data and portable binding,

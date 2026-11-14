@@ -75,6 +75,7 @@ import { RelatedPersonClaim } from 'fhir-data-utils-ts';
 import { getSubjectScopedSectionId } from '../utils/individual-sections';
 import { validateFhirPayloadByVersion } from '../utils/fhir-ingestion';
 import { REGISTERED_PROFILE_ACCOUNT_DIRECTORY_META } from '../utils/secure-route-bearer-binding';
+import { admitIndividualRegistration, assertAdmittedIndividualRegistrationClaims } from '../utils/individual-registration-admission';
 
 type FamilyRegistrationContent = {
   status: EntityLifecycleStatus;
@@ -375,6 +376,17 @@ export class FamilyManager {
     const normalizedRawClaims: ClaimsRecord | undefined = Object.keys(rawClaimsObject).length > 0
       ? (normalizeContextualizedClaims(rawClaimsObject) as ClaimsRecord)
       : undefined;
+    const preflightClaims: ClaimsRecord = { ...(normalizedRawClaims || {}) };
+    const proposedKyc = this.resolveIndividualRegistrationKycPayload(entry);
+    // Existing metadata can declare the proposed contact, but only the verified
+    // principal can authenticate it. Actual KYC/PDF claims are still checked again.
+    if (!preflightClaims[SchemaOrgOrganizationClaim.OwnerEmail] && typeof proposedKyc?.controllerEmail === 'string') {
+      preflightClaims[SchemaOrgOrganizationClaim.OwnerEmail] = proposedKyc.controllerEmail;
+    }
+    const admission = await admitIndividualRegistration({
+      job, claims: preflightClaims, vaultRepository: this.vaultRepository,
+      kmsService: this.kmsService, tenantManager: this.tenantsCacheManager,
+    });
     const attachmentClaims = await this.resolveIndividualRegistrationAttachmentClaims(job);
     const kycClaims = this.resolveIndividualRegistrationKycClaims(entry, normalizedRawClaims, attachmentClaims);
     const mergedClaims = {
@@ -388,6 +400,7 @@ export class FamilyManager {
     if (!claims) {
       throw new ManagerError('Malformed entry: missing meta.claims', IssueType.Required);
     }
+    assertAdmittedIndividualRegistrationClaims(admission, claims);
 
     const requestedSector = claims[SchemaOrgServiceClaim.Category] as Sector | undefined;
     if (!requestedSector) {
@@ -427,6 +440,10 @@ export class FamilyManager {
       : undefined;
     if (existingById) {
       const existingContent = await this.kmsService.unprotectConfidentialData<FamilyRegistrationContent>(existingById, tenantVaultId);
+      const canonicalExistingClaims: ClaimsRecord = {
+        ...existingContent.claims,
+        [GatewayClaim.OrganizationDid]: await this.canonicalStoredIndividualSubjectDid(tenantVaultId, existingById.id),
+      };
       const storedPhones = splitIndexedPhones(existingContent.claims[SchemaOrgOrganizationClaim.OwnerTelephone] as string | undefined);
       const storedEmails = splitIndexedEmails(existingContent.claims[SchemaOrgOrganizationClaim.OwnerEmail] as string | undefined);
       const ownsDraft = ownerPhones.some(value => storedPhones.includes(value)) || ownerEmails.some(value => storedEmails.includes(value));
@@ -435,7 +452,7 @@ export class FamilyManager {
         return {
           type: 'Family-registration-offer-v1.0',
           resource: { resourceType: ResourceTypesFhirR4.Organization, id: existingById.id, meta: { claims: {
-            ...existingContent.claims,
+            ...canonicalExistingClaims,
             [GatewayClaim.FamilyRegistrationStatus]: FamilyRegistrationStatus.Existing,
           } } },
           response: { status: '200' },
@@ -445,7 +462,10 @@ export class FamilyManager {
         throw new ManagerError('Only a pending individual registration may be resumed by identifier.', IssueType.Conflict);
       }
       const nonEmptyRequestedClaims = Object.fromEntries(Object.entries(claims).filter(([, value]) => String(value ?? '').trim() !== ''));
-      const resumedClaims = { ...existingContent.claims, ...nonEmptyRequestedClaims } as ClaimsRecord;
+      const resumedClaims = {
+        ...canonicalExistingClaims, ...nonEmptyRequestedClaims,
+        [GatewayClaim.OrganizationDid]: canonicalExistingClaims[GatewayClaim.OrganizationDid],
+      } as ClaimsRecord;
       ensureNamedHumanSubjectCardAlias(resumedClaims, existingById.id);
       const resumedReadiness = readIndividualRegistrationReadiness(resumedClaims);
       const resumedContent: FamilyRegistrationContent = { ...existingContent, claims: resumedClaims };
@@ -589,6 +609,7 @@ export class FamilyManager {
     // second fallback UUID here made the member-seat owner impossible for the
     // SDK/portal to address when no official identifier was supplied.
     const individualDocId = familyDocId;
+    processedClaims[GatewayClaim.OrganizationDid] = buildCanonicalIndividualSubjectDid(offeredBy, individualDocId);
     ensureNamedHumanSubjectCardAlias(processedClaims, individualDocId);
     const finalReadiness = readIndividualRegistrationReadiness(processedClaims);
 
@@ -631,13 +652,23 @@ export class FamilyManager {
     };
   }
 
+  /** Legacy non-UUID rows require migration, never a fabricated public subject identity. */
+  private async canonicalStoredIndividualSubjectDid(tenantVaultId: string, storedId: string): Promise<string> {
+    if (!normalizeUuid(storedId)) {
+      throw new ManagerError('The stored individual requires a canonical UUID migration before registration can resume.', IssueType.Invalid);
+    }
+    const providerDid = await this.tenantsCacheManager.getTenantDid(tenantVaultId);
+    if (!providerDid) throw new ManagerError('The routed tenant provider DID is unavailable.', IssueType.NotFound);
+    return buildCanonicalIndividualSubjectDid(providerDid, storedId);
+  }
+
   /**
    * Completes only identity fields absent from an idempotent legacy record.
    *
    * Early portal/telephone registrations could persist the owner and nickname
-   * without the public card alias or ONESELF relationship. A retry must recover
-   * that authoritative Organization instead of creating a browser-local card or
-   * silently returning an unusable record. Existing values are never replaced.
+   * without the public card alias or ONESELF relationship. A retry recovers
+   * those missing fields and derives the canonical DID from the routed provider
+   * and stored UUID. Existing public aliases and relationships are preserved.
    */
   private async repairLegacyFamilyCardIdentity(
     tenantCollectionName: string,
@@ -654,13 +685,15 @@ export class FamilyManager {
     const requestedRole = String(requestedClaims[memberRoleClaim] || '').trim();
     const recoveredClaims: ClaimsRecord = {
       ...existingClaims,
+      [GatewayClaim.OrganizationDid]: await this.canonicalStoredIndividualSubjectDid(tenantVaultId, secureDocument.id),
       ...(!existingSameAs && requestedSameAs
         ? { [SchemaOrgOrganizationClaim.SameAs]: requestedSameAs }
         : {}),
       ...(!existingRole && requestedRole ? { [memberRoleClaim]: requestedRole } : {}),
     };
     const changed = recoveredClaims[SchemaOrgOrganizationClaim.SameAs] !== existingClaims[SchemaOrgOrganizationClaim.SameAs]
-      || recoveredClaims[memberRoleClaim] !== existingClaims[memberRoleClaim];
+      || recoveredClaims[memberRoleClaim] !== existingClaims[memberRoleClaim]
+      || recoveredClaims[GatewayClaim.OrganizationDid] !== existingClaims[GatewayClaim.OrganizationDid];
     if (!changed) return content;
 
     const existingAttributes = secureDocument.indexed?.attributes || [];
@@ -757,11 +790,7 @@ export class FamilyManager {
     };
   }
 
-  private resolveIndividualRegistrationKycClaims(
-    entry: BundleEntry,
-    normalizedRawClaims?: ClaimsRecord,
-    attachmentClaims?: ClaimsRecord,
-  ): ClaimsRecord | undefined {
+  private resolveIndividualRegistrationKycPayload(entry: BundleEntry): Record<string, unknown> | undefined {
     const meta = this.resolveIndividualRegistrationEntryMeta(entry);
     if (!meta) return undefined;
 
@@ -770,8 +799,16 @@ export class FamilyManager {
       : undefined;
     const rawKyc = meta.kyc ?? extensions?.kyc;
     if (!rawKyc || typeof rawKyc !== 'object') return undefined;
+    return rawKyc as Record<string, unknown>;
+  }
 
-    const kycPayload = rawKyc as Record<string, unknown>;
+  private resolveIndividualRegistrationKycClaims(
+    entry: BundleEntry,
+    normalizedRawClaims?: ClaimsRecord,
+    attachmentClaims?: ClaimsRecord,
+  ): ClaimsRecord | undefined {
+    const kycPayload = this.resolveIndividualRegistrationKycPayload(entry);
+    if (!kycPayload) return undefined;
     const profile = (kycPayload.profile && typeof kycPayload.profile === 'object')
       ? kycPayload.profile as Record<string, unknown>
       : kycPayload;
@@ -802,6 +839,20 @@ export class FamilyManager {
       individualBirthDate,
       controllerEmail,
     }).claims as ClaimsRecord;
+  }
+
+  /** Responsibility confirmation belongs to the verified stored controller, never the proposing professional. */
+  private assertVerifiedIndividualController(job: JobRequest, claims: ClaimsRecord): void {
+    const authenticated = new Set(getAuthenticatedJobActorIdentifiers(job));
+    const emailValues = splitIndexedEmails(claims[SchemaOrgOrganizationClaim.OwnerEmail] || claims[SchemaOrgPersonClaim.Email]);
+    const phoneValues = splitIndexedPhones(claims[SchemaOrgOrganizationClaim.OwnerTelephone] || claims[SchemaOrgPersonClaim.Telephone]);
+    const expected = [
+      ...emailValues.map(contact => buildStableActorIdentifier({ contactKind: StableActorContactKinds.Email, contact })),
+      ...phoneValues.map(contact => buildStableActorIdentifier({ contactKind: StableActorContactKinds.Phone, contact })),
+    ];
+    if (!expected.some(identifier => authenticated.has(identifier))) {
+      throw new ManagerError('Only the verified proposed controller may confirm this individual Offer.', IssueType.Forbidden);
+    }
   }
 
   private async processFamilyOrderEntry(job: JobRequest, entry: BundleEntry, environment?: string): Promise<(BundleEntry | ErrorEntry)[]> {
@@ -850,6 +901,7 @@ export class FamilyManager {
 
     const secureDoc = results[0] as ConfidentialStorageDoc;
     const decryptedContent = await this.kmsService.unprotectConfidentialData<FamilyRegistrationContent>(secureDoc, tenantVaultId);
+    this.assertVerifiedIndividualController(job, decryptedContent.claims);
     if (decryptedContent?.status !== EntityLifecycleStatus.Pending) {
       if (decryptedContent?.status === EntityLifecycleStatus.Active) {
         return this.repairActiveFamilyOrderController({
@@ -1074,24 +1126,6 @@ export class FamilyManager {
       || input.content.claims[SchemaOrgPersonClaim.Telephone]
       || '',
     ).trim();
-    const authorizedIdentifiers = [
-      controllerEmail ? buildStableActorIdentifier({
-        contactKind: StableActorContactKinds.Email,
-        contact: controllerEmail,
-      }) : '',
-      controllerTelephone ? buildStableActorIdentifier({
-        contactKind: StableActorContactKinds.Phone,
-        contact: controllerTelephone,
-      }) : '',
-    ].filter(Boolean);
-    const authenticatedIdentifiers = new Set(getAuthenticatedJobActorIdentifiers(input.job));
-    if (!authorizedIdentifiers.some((identifier) => authenticatedIdentifiers.has(identifier))) {
-      throw new ManagerError(
-        'Only the verified individual controller may replay an active family Order.',
-        IssueType.Security,
-      );
-    }
-
     const persistedActivationCode = String(
       input.content.claims[SchemaOrgIndividualProductClaim.SerialNumber] || '',
     ).trim();

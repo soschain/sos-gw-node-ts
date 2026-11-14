@@ -3,9 +3,10 @@
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
 
 import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
+import { encodeMultibaseSha3 } from 'antifraud-data-utils-ts/encoding';
 import { randomUUID } from 'crypto';
 import { execFileSync } from 'child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { tmpdir } from 'os';
 import path from 'path';
@@ -79,11 +80,26 @@ const TENANT_ID = 'acme';
 const SECTOR = Sector.HEALTH_CARE;
 const COLLECTION_NAME = `${SECTOR}_${TENANT_ID}`;
 const TENANT_DID = 'did:web:host.example.com';
+const EXISTING_INDIVIDUAL_UUID = SAFE.resourceUuid;
+const EXISTING_INDIVIDUAL_DID = `${TENANT_DID}:individual:multibase:${encodeMultibaseSha3(Buffer.from(EXISTING_INDIVIDUAL_UUID.replaceAll('-', ''), 'hex'), 384)}`;
 const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const HUMAN_DRAFT_BIRTH_YEAR = '2022';
 const HUMAN_DRAFT_IDENTIFIER = '00000000-0000-4000-8000-000000000088';
 const HUMAN_COMPLETED_NAME = 'Patricia Doe';
 const INDIVIDUAL_SELF_ROLE = 'ONESELF';
+const defaultProtectConfidentialData = mockKmsService.protectConfidentialData.getMockImplementation()!;
+const defaultUnprotectConfidentialData = mockKmsService.unprotectConfidentialData.getMockImplementation()!;
+
+/** This unit fixture enters after API verification as the explicitly proposed synthetic controller. */
+function verifiedControllerMeta(claims: Record<string, unknown>) {
+  const email = String(claims[SchemaOrgOrganizationClaim.OwnerEmail] || '').trim();
+  const phone = String(claims[SchemaOrgOrganizationClaim.OwnerTelephone] || '').trim();
+  return { bearer: { jwt: { payload: {
+    sub: 'verified-fixture-controller',
+    ...(email ? { email, email_verified: true } : {}),
+    ...(phone ? { phone_number: phone, phone_number_verified: true } : {}),
+  } } } };
+}
 
 /**
  * Base set of already-normalized claims (org.schema.<Resource>.<field>) that satisfy
@@ -124,6 +140,7 @@ const TEST_KYC_PROFILE = Object.freeze({
 } as const);
 
 function makeBatchJob(overrideClaims: Record<string, unknown> = {}): JobRequest {
+  const claims = { ...BASE_CLAIMS, ...overrideClaims };
   return {
     id: randomUUID(),
     status: JobStatus.DRAFT,
@@ -131,7 +148,7 @@ function makeBatchJob(overrideClaims: Record<string, unknown> = {}): JobRequest 
     createdAtTimestamp: Date.now(),
     tenantId: TENANT_ID,
     jurisdiction: 'ES',
-    sector: SECTOR,
+    sector: String(claims[SchemaOrgServiceClaim.Category] || SECTOR),
     section: 'individual',
     format: 'org.schema',
     action: '_batch',
@@ -142,6 +159,7 @@ function makeBatchJob(overrideClaims: Record<string, unknown> = {}): JobRequest 
       iss: 'did:web:client.example.com',
       aud: `did:web:${TENANT_ID}.example.com`,
       type: 'application/api+json',
+      meta: verifiedControllerMeta(claims),
       body: {
         data: [{
           type: 'Family-registration-form-v1.0',
@@ -159,6 +177,7 @@ function makeTransactionJob(
   overrideClaims: Record<string, unknown> = {},
   attachments?: Array<Record<string, unknown>>,
 ): JobRequest {
+  const claims = { ...BASE_CLAIMS, ...overrideClaims };
   return {
     id: randomUUID(),
     status: JobStatus.DRAFT,
@@ -166,7 +185,7 @@ function makeTransactionJob(
     createdAtTimestamp: Date.now(),
     tenantId: TENANT_ID,
     jurisdiction: 'ES',
-    sector: SECTOR,
+    sector: String(claims[SchemaOrgServiceClaim.Category] || SECTOR),
     section: 'individual',
     format: 'org.schema',
     action: '_transaction',
@@ -177,6 +196,7 @@ function makeTransactionJob(
       iss: 'did:web:client.example.com',
       aud: `did:web:${TENANT_ID}.example.com`,
       type: 'application/api+json',
+      meta: verifiedControllerMeta(claims),
       body: {
         data: [{
           type: 'Family-registration-form-v1.0',
@@ -236,7 +256,10 @@ function makeSearchJob(overrideClaims: Record<string, unknown> = {}, bearerPaylo
 }
 
 /** Confirms one exact pending family Offer. */
-function makeOrderJob(offerId: string): JobRequest {
+function makeOrderJob(offerId: string, controller: { email?: string; phone?: string } = {
+  email: String(BASE_CLAIMS[SchemaOrgOrganizationClaim.OwnerEmail] || ''),
+  phone: EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE,
+}): JobRequest {
   return {
     id: randomUUID(), status: JobStatus.DRAFT, sequence: 0, createdAtTimestamp: Date.now(),
     tenantId: TENANT_ID, jurisdiction: 'CA-BC', sector: SECTOR,
@@ -244,6 +267,10 @@ function makeOrderJob(offerId: string): JobRequest {
     content: {
       jti: randomUUID(), thid: randomUUID(), iss: 'did:web:client.example.com', aud: TENANT_DID,
       type: 'application/api+json',
+      meta: verifiedControllerMeta({
+        [SchemaOrgOrganizationClaim.OwnerEmail]: controller.email,
+        [SchemaOrgOrganizationClaim.OwnerTelephone]: controller.phone,
+      }),
       body: { data: [{
         type: 'Family-order-request-v1.0',
         resource: {
@@ -443,6 +470,12 @@ async function extractPdfFormFieldsFromFixture(pdfBytes: Buffer): Promise<Record
 }
 
 function extractNaturalPersonSignerSubjectFromPdf(pdfBytes: Buffer): string {
+  // Git for Windows ships the real tool even when its directory is absent from PATH.
+  const gitOpenSsl = process.env.ProgramFiles
+    ? path.join(process.env.ProgramFiles, 'Git', 'usr', 'bin', 'openssl.exe') : undefined;
+  const hasPathOpenSsl = process.platform === 'win32' && (process.env.PATH || '').split(path.delimiter)
+    .some(directory => existsSync(path.join(directory, 'openssl.exe')));
+  const opensslExecutable = process.platform === 'win32' && !hasPathOpenSsl && gitOpenSsl && existsSync(gitOpenSsl) ? gitOpenSsl : 'openssl';
   const pdfAsLatin1 = pdfBytes.toString('latin1');
   const byteRangeRegex = /\/ByteRange\s*\[\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*\]/g;
   const match = byteRangeRegex.exec(pdfAsLatin1);
@@ -464,14 +497,14 @@ function extractNaturalPersonSignerSubjectFromPdf(pdfBytes: Buffer): string {
     const signatureDerPath = path.join(tempDir, 'signature.der');
     const certsPath = path.join(tempDir, 'certs.pem');
     writeFileSync(signatureDerPath, Buffer.from(hex, 'hex'));
-    execFileSync('openssl', ['pkcs7', '-inform', 'DER', '-in', signatureDerPath, '-print_certs', '-out', certsPath]);
+    execFileSync(opensslExecutable, ['pkcs7', '-inform', 'DER', '-in', signatureDerPath, '-print_certs', '-out', certsPath]);
 
     const certs = (readFileSync(certsPath, 'utf8').match(/-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/g) || []);
     for (const [index, certPem] of certs.entries()) {
       const certPath = path.join(tempDir, `cert-${index}.pem`);
       writeFileSync(certPath, `${certPem}\n`);
       const subject = execFileSync(
-        'openssl',
+        opensslExecutable,
         ['x509', '-in', certPath, '-noout', '-subject', '-nameopt', 'RFC2253'],
         { encoding: 'utf8' },
       ).trim();
@@ -501,6 +534,9 @@ describe('FamilyManager', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Clear queued one-time results and custom implementations, not only call history.
+    mockKmsService.protectConfidentialData.mockReset().mockImplementation(defaultProtectConfidentialData);
+    mockKmsService.unprotectConfidentialData.mockReset().mockImplementation(defaultUnprotectConfidentialData);
 
     mockVaultRepository = mock<IVaultRepository>();
     mockStorageAdapter = mock<IStorageAdapter>();
@@ -694,7 +730,8 @@ describe('FamilyManager', () => {
         status: EntityLifecycleStatus.Active,
         claims: { ...BASE_CLAIMS },
       });
-      mockVaultRepository.query.mockResolvedValue([{ id: 'existing-active-id', jwe: { ciphertext: '' } } as any]);
+      existingContent.claims[GatewayClaim.OrganizationDid] = EXISTING_INDIVIDUAL_DID;
+      mockVaultRepository.query.mockResolvedValue([{ id: EXISTING_INDIVIDUAL_UUID, jwe: { ciphertext: '' } } as any]);
       mockKmsService.unprotectConfidentialData.mockResolvedValueOnce(existingContent as any);
 
       const response = await manager.process(makeBatchJob());
@@ -710,7 +747,8 @@ describe('FamilyManager', () => {
         status: EntityLifecycleStatus.Pending,
         claims: { ...BASE_CLAIMS },
       });
-      mockVaultRepository.query.mockResolvedValue([{ id: 'existing-pending-id', jwe: { ciphertext: '' } } as any]);
+      existingContent.claims[GatewayClaim.OrganizationDid] = EXISTING_INDIVIDUAL_DID;
+      mockVaultRepository.query.mockResolvedValue([{ id: EXISTING_INDIVIDUAL_UUID, jwe: { ciphertext: '' } } as any]);
       mockKmsService.unprotectConfidentialData.mockResolvedValueOnce(existingContent as any);
 
       const response = await manager.process(makeBatchJob());
@@ -731,7 +769,7 @@ describe('FamilyManager', () => {
         claims: existingClaims,
       });
       const existingDocument = {
-        id: 'legacy-active-id',
+        id: EXISTING_INDIVIDUAL_UUID,
         status: EntityLifecycleStatus.Active,
         sequence: 4,
         indexed: { attributes: [], hmac: { id: 'urn:test', type: 'Sha256HmacKey2019' } },
@@ -785,7 +823,8 @@ describe('FamilyManager', () => {
           'org.schema.Organization.member.role': 'ONESELF',
         },
       });
-      mockVaultRepository.query.mockResolvedValue([{ id: 'existing-active-id', jwe: { ciphertext: '' } } as any]);
+      existingContent.claims[GatewayClaim.OrganizationDid] = EXISTING_INDIVIDUAL_DID;
+      mockVaultRepository.query.mockResolvedValue([{ id: EXISTING_INDIVIDUAL_UUID, jwe: { ciphertext: '' } } as any]);
       mockKmsService.unprotectConfidentialData.mockResolvedValueOnce(existingContent as any);
 
       const response = await manager.process(makeBatchJob({
@@ -843,6 +882,9 @@ describe('FamilyManager', () => {
         [SchemaOrgOrganizationClaim.OwnerTelephone]: '',
         [SchemaOrgOrganizationClaim.OwnerIdentifierValue]: '',
         [SchemaOrgPersonClaim.BirthDate]: '',
+      });
+      (job.content as any).meta = verifiedControllerMeta({
+        [SchemaOrgOrganizationClaim.OwnerEmail]: EXAMPLE_SELF_REGISTERED_INDIVIDUAL_EMAIL_NORMALIZED,
       });
       const firstEntry = (job.content?.body?.data?.[0] || {}) as BundleEntry;
       firstEntry.meta = {
@@ -1074,6 +1116,7 @@ describe('FamilyManager', () => {
         const response = await manager.process(makeTransactionJob(
           {
             [SchemaOrgOrganizationClaim.OwnerTelephone]: '',
+            [SchemaOrgOrganizationClaim.OwnerEmail]: SIGNED_INDIVIDUAL_PDF_EXPECTED.controllerEmail,
             [SchemaOrgServiceClaim.Category]: SECTOR,
             [SchemaOrgServiceClaim.IdentifierReference]: 'did:web:provider.example.com',
             [SchemaOrgServiceClaim.ServiceType]: testDefaultTenantServiceTypeClaim,
@@ -1117,6 +1160,7 @@ describe('FamilyManager', () => {
           const response = await manager.process(makeTransactionJob(
             {
               [SchemaOrgOrganizationClaim.OwnerTelephone]: '',
+            [SchemaOrgOrganizationClaim.OwnerEmail]: SIGNED_INDIVIDUAL_PDF_EXPECTED.controllerEmail,
               [SchemaOrgServiceClaim.Category]: SECTOR,
               [SchemaOrgServiceClaim.IdentifierReference]: 'did:web:provider.example.com',
               [SchemaOrgServiceClaim.ServiceType]: testDefaultTenantServiceTypeClaim,
@@ -1207,7 +1251,7 @@ describe('FamilyManager', () => {
       mockVaultRepository.getContainersInSection.mockResolvedValue([availableSeat]);
       mockVaultRepository.put.mockResolvedValue(true);
 
-      await manager.process(makeOrderJob(offerId));
+      await manager.process(makeOrderJob(offerId, { phone: controllerPhone }));
 
       const persistedLicense = mockVaultRepository.put.mock.calls
         .flatMap((call) => call[1] as ConfidentialStorageDoc[])
