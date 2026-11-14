@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Use SOS-owned confidential record/job/batch contracts and HTTP descriptors,
+  and Antifraud's encoded JWS types, across Gateway runtime and consuming tests.
+  Keep existing serialized job states, headers and adapter behavior.
 - Consume shared contact identity, jurisdiction-bound organization identifiers,
   routing taxonomy and clinical purpose/category vocabulary from their independent
   Antifraud, SOS Data and FHIR owners. Preserve existing wire values and hashes.

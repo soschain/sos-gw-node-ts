@@ -1,10 +1,10 @@
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { v4 as uuidv4 } from 'uuid';
-import type { BundleEntry } from 'gdc-common-utils-ts/models/bundle';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import type { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import {
   ClaimsOfferSchemaorg,
   ClaimsOrderSchemaorg,
@@ -15,7 +15,7 @@ import {
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { getBundleResponseTypeForAction } from '../../utils/bundle';
 import { normalizeContextualizedClaims } from '../../utils/claims';
 import { validateNewOrganizationClaims } from '../../utils/claims-validator';

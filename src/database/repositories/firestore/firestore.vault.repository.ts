@@ -1,6 +1,6 @@
 import type { CollectionReference, DocumentReference, Firestore } from 'firebase-admin/firestore';
 import { IVaultRepository, type VaultQueryOptions } from '../../../database/repositories/vault/vault.repository';
-import { RecordBase, VaultConfig } from 'gdc-common-utils-ts/models/resource-document';
+import { RecordBase, VaultConfig } from 'sos-data-utils-ts/confidential-storage';
 import { stripUndefinedDeep } from 'gdc-common-utils-ts';
 import { getEnvSectionId } from '../../../utils/section-env';
 import type { IConfidentialBlobStore } from '../../storage/IConfidentialBlobStore';

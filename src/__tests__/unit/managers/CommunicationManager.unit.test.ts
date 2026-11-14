@@ -17,8 +17,8 @@ import { TwinCompositionManager } from '../../../managers/TwinCompositionManager
 import type { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { testCommunicationAppointmentFhirR4, testCommMsgExtAppointmentRequest, testAppointmentRequestText } from '../../data/appointment.data';
 import { DataEntry } from 'gdc-common-utils-ts/models/comm';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { createHash, randomUUID } from 'crypto';
 import { createServer, type Server } from 'node:http';
 import type { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
@@ -30,7 +30,7 @@ import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-claims/communication-claims';
 import { BundleTypes } from 'gdc-common-utils-ts/models/bundle-editor-types';
 import { Format } from 'gdc-common-utils-ts/constants/Schemas';
-import { HttpMediaTypes } from 'gdc-common-utils-ts/constants/http';
+import { HttpMediaTypes } from 'sos-data-utils-ts/bff-wire-contract';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import {
   EXAMPLE_ALLERGY_IDENTIFIER,

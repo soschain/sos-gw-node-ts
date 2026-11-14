@@ -3,7 +3,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { extractHttpRequestDataAsJson } from '../../utils/http-parser';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { sendDidcommEarlyError } from '../../utils/didcomm-error-response';
 import { ConsoleLogger } from '../../loggers/ConsoleLogger';

@@ -3,8 +3,8 @@
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 import { IJobProcessor } from './registry';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import type { ITenantsManager } from './ITenantsManager';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';

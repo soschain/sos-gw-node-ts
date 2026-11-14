@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { BundleEntry, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { BundleEntry, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import {
   ClaimsOrganizationSchemaorg,
   ClaimsServiceSchemaorg,

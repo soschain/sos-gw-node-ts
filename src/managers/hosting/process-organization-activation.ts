@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { BundleEntry, BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { BundleEntry, BundleJsonApi, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { DidDocument } from 'gdc-common-utils-ts/models/did';
 import type { EntityConfig, OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';

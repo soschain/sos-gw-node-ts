@@ -1,4 +1,4 @@
-import { DidCommDecodedMetadata } from 'gdc-common-utils-ts/models/confidential-message';
+import { DidCommDecodedMetadata } from 'sos-data-utils-ts/confidential-job';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';

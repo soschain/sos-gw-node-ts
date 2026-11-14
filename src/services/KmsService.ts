@@ -2,13 +2,13 @@ import { VerificationMethod } from '../gdc-backend-utils-node/models/did';// src
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { JWK, JwkSet } from '../gdc-backend-utils-node/models/jwk';
-import { JwsHeader, JwsMultiSign } from 'gdc-common-utils-ts/models/jws';
-import { ConfidentialStorageDoc, IndexedAttribute } from 'gdc-common-utils-ts/models/confidential-storage';
+import { JwsHeader, JwsMultiSign } from 'antifraud-data-utils-ts/cryptography';
+import { ConfidentialStorageDoc, IndexedAttribute } from 'sos-data-utils-ts/confidential-storage';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import type { SigningPurpose } from '../gdc-backend-utils-node/models/IKmsService';
 import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { v4 as uuidv4 } from 'uuid';
 import { MldsaPublicJwk, MlkemPrivateJwk, MlkemPublicJwk, PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { Content } from 'antifraud-data-utils-ts/cryptography';

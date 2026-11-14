@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { BundleEntryResponse, BundleJsonApi } from 'gdc-common-utils-ts/models/bundle';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { BundleEntryResponse, BundleJsonApi } from 'sos-data-utils-ts/bundle-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { ExampleHttpStatusText } from 'gdc-common-utils-ts';
 import { GatewayEnvelopeTypes } from '../shared/gateway-response-types';

@@ -2,8 +2,8 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { TenantsCacheManager } from './TenantsCacheManager';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 
 /**
  * Defines the standard contract for any manager that processes a job.

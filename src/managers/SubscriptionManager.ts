@@ -1,11 +1,11 @@
 import { ResourceTypesFhirR5 } from 'fhir-data-utils-ts';
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { randomUUID } from 'crypto';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import {
   buildFhirR5SubscriptionNotification,

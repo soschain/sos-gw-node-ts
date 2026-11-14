@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { ClaimConsent, ConsentDecisions } from 'fhir-data-utils-ts';
-import type { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
+import type { RecordBase } from 'sos-data-utils-ts/confidential-storage';
 import {
   isVetChainAnimalCardDid,
   VeterinaryBreakGlassMaxLifetimeSeconds,

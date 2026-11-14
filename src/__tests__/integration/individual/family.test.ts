@@ -25,7 +25,7 @@ import {
 import { getClaimValue } from '../../../utils/claims';
 import { withCanonicalEntryClaims } from '../../helpers/canonical-bundle-entry';
 import { FAMILY_REGISTRATION_REQUEST, withoutIncompleteJwsProof } from '../../data/example-payloads';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { IStorageAdapter } from '../../../database/storage/IStorageAdapter';
 import { ILogger } from '../../../loggers/ILogger';
 import { testTenant1TenantId } from '../../data/organization.data';

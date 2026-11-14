@@ -19,7 +19,7 @@ import { QueueAdapter } from '../../adapters/queue';
 import { TenantsCacheManager } from '../../managers/TenantsCacheManager';
 import { testClaimsHostInitialization, testClaimsTenant1Registration } from '../data/end-to-end.data';
 import { testEncryptedJwe1 } from '../data/async-response.data';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { mockKmsService } from '../mocks/kms.mock';
 import { VaultMemRepository } from '../../database/repositories/vault/vault.mem.repository';
 import { AsyncResponseStoreMem, IAsyncResponseStore } from '../../adapters/async-response-store.mem';
@@ -36,7 +36,7 @@ import {
 } from '../data/example-payloads';
 import { withCanonicalEntryClaims } from '../helpers/canonical-bundle-entry';
 import { ORGANIZATION_REGISTRATION_JOB } from '../data/example-jobs';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { MlkemPrivateJwk, MlkemPublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { createHash } from 'crypto';
 import { Content } from 'gdc-common-utils-ts/utils/content';

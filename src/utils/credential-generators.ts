@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { buildGaiaXLegalPersonCredentialDraft } from 'gdc-common-utils-ts/convert/schemaorg-to-gaia-x';
 
 export interface GaiaXLegalParticipantCredentialOptions {

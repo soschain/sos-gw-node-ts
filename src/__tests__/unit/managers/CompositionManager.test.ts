@@ -9,7 +9,7 @@ import {
 } from '../../../managers/CompositionManager';
 import { TwinCompositionManager, TWIN_COMPOSITION_SECTION_RESOURCE_CONFIG } from '../../../managers/TwinCompositionManager';
 import { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import {
   DataCollectionIds,
   HealthcareBasicSections,

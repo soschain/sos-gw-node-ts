@@ -1,5 +1,5 @@
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
-import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { VerificationMethod } from '../gdc-backend-utils-node/models/did';
 import { resolveSubjectIdentityChannel } from './ledger';
 import { ManageAssetCryptographicKey, type CryptographicKeyLedgerPayload } from '../blockchain/fabric/v3/manageAssetCryptographicKey';

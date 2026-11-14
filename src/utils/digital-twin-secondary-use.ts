@@ -4,7 +4,7 @@ import { FhirResourceTypeDataCollections } from 'gdc-common-utils-ts/constants/i
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { ClaimConsent } from 'fhir-data-utils-ts';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
-import type { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
+import type { RecordBase } from 'sos-data-utils-ts/confidential-storage';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { SUBJECT_SECTION_DIGITAL_TWIN, SUBJECT_SECTION_INDIVIDUAL } from '../constants/domain';
 import { getClaimValue } from './claims';

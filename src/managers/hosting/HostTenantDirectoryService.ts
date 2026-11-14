@@ -3,7 +3,7 @@ import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import type { IHostingTenantRegistry } from '../IHostingTenantRegistry';
 import { GatewayClaim } from '../../shared/gateway-claim-contract';
 import { getTenantAuthorizationStatus } from '../../utils/tenant-lifecycle';

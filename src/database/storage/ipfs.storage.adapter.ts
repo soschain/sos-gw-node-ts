@@ -1,6 +1,6 @@
 // src/database/storage/ipfs.storage.adapter.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 
 import { sha3_384 } from '@noble/hashes/sha3.js';
 import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';

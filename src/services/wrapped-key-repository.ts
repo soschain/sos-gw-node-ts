@@ -1,4 +1,4 @@
-import type { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
+import type { RecordBase } from 'sos-data-utils-ts/confidential-storage';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { getEnvSectionId } from '../utils/section-env';
 

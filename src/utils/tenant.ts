@@ -2,7 +2,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { scopePhysicalCollectionName } from '../config/storage-layout';
 

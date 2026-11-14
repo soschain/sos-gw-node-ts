@@ -1,6 +1,6 @@
 // Flow contract: License search returns 0..n actual resources as Bundle
 // entries; a FHIR resource is never replaced by a nested `{ total, data }` list.
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { mock, MockProxy } from 'jest-mock-extended';
 
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
@@ -8,8 +8,8 @@ import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsServic
 import { LicenseManager } from '../../managers/LicenseManager';
 import { getEnvSectionId } from '../../utils/section-env';
 
-import { JobStatus, type JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { JobStatus, type JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import {
   buildFhirParametersResourceFromSearchParams,

@@ -9,7 +9,7 @@ import { FirestoreVaultRepository } from '../../database/repositories/firestore/
 import type { IConfidentialBlobStore } from '../../database/storage/IConfidentialBlobStore';
 import { CONFIDENTIAL_JWE_INLINE_MAX_BYTES_ENV } from '../../database/repositories/vault/confidential-storage-persistence';
 import { getEnvSectionId } from '../../utils/section-env';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { VaultMemRepository } from '../../database/repositories/vault/vault.mem.repository';
 
 // Teaching goal:

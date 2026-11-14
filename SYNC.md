@@ -61,3 +61,12 @@ FHIR utilities for clinical purpose/category vocabulary. A negative architecture
 test protects those owners. The fresh default Jest matrix passes 261 suites and
 1,544 tests without pending tests. Configured network E2E, browser journeys and
 full registry-dependency independence remain separate promotion gates.
+
+Record/job protocol disposition: `adopted` as independent data contracts. SOS
+Data owns records, routing, lifecycle values and batch entry views; Antifraud
+owns neutral signature header/serialization shapes. This is neither a package
+alias nor a wrapper around the frozen implementation. The scoped ownership guard
+and type check pass. All 48 changed default suites plus three additional crypto,
+queue and storage suites pass 597 tests without pending cases. The full default
+261-suite result above belongs to the preceding foundation checkpoint; configured
+network and browser gates remain pending for the cumulative release.

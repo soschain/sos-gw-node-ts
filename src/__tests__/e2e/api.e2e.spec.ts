@@ -1,8 +1,17 @@
+// Flow contract: configured legacy authentication and JSON ingress reach one queue admission; durable completion remains a separate pending gate.
+/**
+ * 1. Authenticate the configured test account.
+ * 2. Submit its legacy JSON organization request with that bearer.
+ * 3. Assert queued acceptance, the polling location and one queue submission.
+ * Authorization invariant: the HTTP request carries the authenticated bearer.
+ * Persistence evidence is limited to queue admission; the existing durable-write
+ * verification TODO must be completed before this can count as a full E2E journey.
+ */
 // src/__tests__/e2e/api.e2e.spec.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 // This E2E test runs against a LIVE Firestore instance, configured via a local env profile.
-// It validates the entire LEGACY API flow (unencrypted JSON) from HTTP request to database interaction.
+// It currently exercises legacy JSON queue admission with an isolated KMS.
 // NOTE: This test requires TEST_USER_EMAIL and TEST_USER_PASSWORD to be set in the active env profile
 //       and for that user to exist in the Firebase Auth project.
 
@@ -13,9 +22,9 @@ import { startServer } from '../../server';
 import { QueueAdapter } from '../../adapters/queue';
 import { testPayloadCreateTenant1 } from '../data/end-to-end.data';
 import { KmsService } from '../../services/KmsService';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { getGoogleAuthTokenForTesting } from '../utils/auth';
 
 // Mock the KmsService to bypass actual JWE decryption for this legacy test

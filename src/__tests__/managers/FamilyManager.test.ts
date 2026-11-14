@@ -8,9 +8,9 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { tmpdir } from 'os';
 import path from 'path';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
-import { BundleJsonApi, BundleEntry } from 'gdc-common-utils-ts/models/bundle';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
+import { BundleJsonApi, BundleEntry } from 'sos-data-utils-ts/bundle-contract';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import {
   buildExampleFamilyRegistrationClaims,
   buildExampleFamilyRegistrationContent,

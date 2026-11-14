@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'crypto';
-import type { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
+import type { RecordBase } from 'sos-data-utils-ts/confidential-storage';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { getEnvSectionId } from './section-env';

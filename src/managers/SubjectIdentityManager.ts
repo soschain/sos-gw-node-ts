@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import type { BundleEntry } from 'gdc-common-utils-ts/models/bundle';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import {
   buildSubjectIdentifierAssetId,
   readSubjectIdentityBundleEntry,

@@ -13,7 +13,7 @@ import { StoredJob } from '../../adapters/async-response-store.mem';
 import { decodedPingMessage, testEncryptedJwePing, decodedTenantPingMessage } from '../data/ping.data';
 import { testCompletedJob, testPendingJob } from '../data/async-response.data';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { DidService } from '../../gdc-backend-utils-node/models/did';
 import { Content } from 'gdc-common-utils-ts/utils/content';
 import { invokeExpress } from './helpers/invokeExpress';

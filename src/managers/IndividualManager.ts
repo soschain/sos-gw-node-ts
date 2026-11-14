@@ -1,15 +1,15 @@
 // src/managers/IndividualManager.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 import { SchemaOrgTypes } from 'gdc-common-utils-ts/constants/schemaorg';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
 import { v4 as uuidv4} from 'uuid';
 import { BundleType, getBundleResponseTypeForAction } from '../utils/bundle';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
-import { BundleJsonApi, BundleEntry, BundleEntryRequest, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
+import { BundleJsonApi, BundleEntry, BundleEntryRequest, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
@@ -17,7 +17,7 @@ import { ClaimsOfferSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaor
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import { initializeCustomerServices } from '../utils/services'; 
 import { createOperationOutcome } from '../utils/outcome';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { ParameterData } from 'gdc-common-utils-ts/models/params'; // extends ParamAttribute with `type` and others
 import { CredentialManager } from './CredentialManager';
 import { parseTenantUrn } from '../utils/urn';
@@ -32,7 +32,7 @@ import { parseIdentifierType } from '../utils/identifier-parser';
 import { generateUrnHash } from '../utils/urn-hash';
 import { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
 import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { EntityLifecycleStatus, EntityType } from '../gdc-backend-utils-node/models/enums';
 import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { generateLicenseOffer } from '../utils/offer';

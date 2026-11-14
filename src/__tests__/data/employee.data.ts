@@ -1,7 +1,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/__tests__/data/employee.data.ts
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { testTenant1DidWebExternal, testTenant1Domain, testTenant1IdentifierUrn } from './organization.data';
 

@@ -1,7 +1,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/managers/FamilyManager.ts
 import { createHash } from 'crypto';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { HealthcareActorRoleCodes } from 'sos-data-utils-ts/healthcare-roles';
 import { HL7_CODING_SYSTEM_V3_ROLE_CODE } from 'fhir-data-utils-ts';
 import { SecureIdTypesIndividual } from 'gdc-common-utils-ts/constants/identity-identifiers';
@@ -15,13 +15,13 @@ import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { IStorageAdapter } from '../database/storage/IStorageAdapter';
 import { ILogger } from '../loggers/ILogger';
-import { BundleEntry, BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { BundleEntry, BundleJsonApi, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { ClaimsIndividualProductSchemaorg, ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { buildStableActorIdentifier, StableActorContactKinds } from 'antifraud-data-utils-ts/organization-identity';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';

@@ -9,7 +9,7 @@ import { IHostingTenantRegistry } from './IHostingTenantRegistry';
 import { IApiTenantRegistry } from './IApiTenantRegistry';
 import { ILedgerTenantRegistry } from './ILedgerTenantRegistry';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import {
   getIdentifierUrnFromClaims,
   generateTenantCollectionNameFromClaims,

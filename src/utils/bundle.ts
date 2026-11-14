@@ -1,9 +1,9 @@
 // src/utils/bundle.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
-import { BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
+import { BundleJsonApi, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { safelyJoinUrl } from 'gdc-common-utils-ts/utils/url';
 

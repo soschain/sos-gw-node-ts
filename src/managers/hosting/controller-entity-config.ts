@@ -1,7 +1,7 @@
 import type { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
 import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { DidDocument } from 'gdc-common-utils-ts/models/did';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { ParameterData } from 'gdc-common-utils-ts/models/params';
 import type { JwkSet } from 'antifraud-data-utils-ts/cryptography';
 import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';

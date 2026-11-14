@@ -9,7 +9,7 @@ import { IAsyncResponseStore } from '../adapters/async-response-store.mem';
 import { parseCdsRequest } from '../gdc-backend-utils-node/middleware/parseCdsRequest';
 import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { createDecodeRequestMiddleware } from '../gdc-backend-utils-node/middleware/decodeRequest';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { Worker } from '../worker';
 import { enqueueAsyncJob } from '../services/async-job-submission';
 

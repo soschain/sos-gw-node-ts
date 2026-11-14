@@ -2,22 +2,22 @@
 // File: src/managers/DeviceRegistrationManager.ts
 import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
 import { v4 as uuidv4 } from 'uuid';
 import { IJobProcessor } from './registry';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { BundleJsonApi, BundleEntry, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { BundleJsonApi, BundleEntry, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { composeHostDidWebId } from '../utils/did-backend';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType, IssueLevel } from 'fhir-data-utils-ts/operation-outcome';
 import { createOperationOutcome } from '../utils/outcome';
 import { DcrRegistrationRequest, DcrRegistrationResponse, OpenIdDeviceInfo } from 'gdc-common-utils-ts/models/openid-device';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { getTenantVaultId } from '../utils/tenant';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { DeviceLicense, DeviceInfo } from 'gdc-common-utils-ts/models/device-license';
 import { getEnvSectionId } from '../utils/section-env';
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';

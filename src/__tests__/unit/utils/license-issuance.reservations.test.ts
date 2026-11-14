@@ -1,5 +1,6 @@
+// Flow contract: independent SOS record and job contracts preserve payload, route and lifecycle boundaries.
 import { describe, expect, it, jest } from '@jest/globals';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import {
   issueActivationCodeFromPool,
   reserveTechnicalControllerSeat,

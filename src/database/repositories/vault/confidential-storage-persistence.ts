@@ -1,8 +1,5 @@
 import { createHash } from 'node:crypto';
-import type {
-  ConfidentialBlobInfo,
-  ConfidentialStorageDoc,
-} from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialBlobInfo, ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import {
   CONFIDENTIAL_JWE_BLOB_CONTENT_TYPE,
   hydrateConfidentialStorageDocFromPersistence,

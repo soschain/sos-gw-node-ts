@@ -16,7 +16,7 @@ import { testTenant1TenantId } from '../data/organization.data';
 import express from 'express';
 import request from 'supertest';
 import { createApiRouter } from '../../routes/api';
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
 
 describe('Patient $match API', () => {

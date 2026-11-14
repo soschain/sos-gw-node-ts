@@ -1,6 +1,6 @@
 // Copyright 2026 Antifraud Services Inc. under the Apache License, Version 2.0.
 
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { buildStableActorIdentifier, StableActorContactKinds } from 'antifraud-data-utils-ts/organization-identity';
 import { stableActorIdentifierFromDidWeb } from 'gdc-common-utils-ts/utils/actor-identifier';
 

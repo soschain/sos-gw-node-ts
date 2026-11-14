@@ -1,4 +1,4 @@
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService.js';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository.js';

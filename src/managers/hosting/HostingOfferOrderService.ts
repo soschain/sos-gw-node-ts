@@ -1,8 +1,8 @@
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { v4 as uuidv4 } from 'uuid';
-import { BundleEntry } from 'gdc-common-utils-ts/models/bundle';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { EntityLifecycleStatus } from '../../gdc-backend-utils-node/models/enums';

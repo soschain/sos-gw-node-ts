@@ -1,8 +1,8 @@
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
-import type { BundleEntry, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import type { DidCommDecodedMetadata } from 'gdc-common-utils-ts/models/confidential-message';
-import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
+import type { BundleEntry, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
+import type { DidCommDecodedMetadata } from 'sos-data-utils-ts/confidential-job';
+import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';

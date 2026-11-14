@@ -1,4 +1,4 @@
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { DecryptCommand, EncryptCommand, KMSClient } from '@aws-sdk/client-kms';
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypto';
 import { GoogleAuth } from 'google-auth-library';

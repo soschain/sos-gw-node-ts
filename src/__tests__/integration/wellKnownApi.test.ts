@@ -12,7 +12,7 @@ import type { TenantsCacheManager } from '../../managers/TenantsCacheManager';
 import { testTenant1AlternateName, testTenant1DidWebHosted, testTenant1IdentifierUrn, testTenant1VaultId } from '../data/organization.data';
 import { DidDocument } from '../../gdc-backend-utils-node/models/did';
 import { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { parseTenantUrn } from '../../utils/urn';
 import { ILogger } from '../../loggers/ILogger';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';

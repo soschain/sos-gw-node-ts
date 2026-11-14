@@ -11,7 +11,7 @@ import { generateTenantCollectionNameFromClaims, getTenantVaultId } from '../../
 import { getEnvSectionId } from '../../../utils/section-env';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { DidService } from '../../../gdc-backend-utils-node/models/did';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { buildOrganizationDidWeb } from 'gdc-common-utils-ts/utils/did';
 import { EXAMPLE_HOST_PUBLIC_DID } from 'gdc-common-utils-ts/examples/shared';

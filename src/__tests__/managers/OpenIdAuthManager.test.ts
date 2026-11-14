@@ -9,7 +9,7 @@
 import { OpenIdAuthManager } from '../../managers/OpenIdAuthManager';
 import { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import { TenantsCacheManager } from '../../managers/TenantsCacheManager';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import {
   testConsentRulePermitEmailWildcardRole,

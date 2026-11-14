@@ -1,10 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'fhir-data-utils-ts';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';

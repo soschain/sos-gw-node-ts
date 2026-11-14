@@ -1,5 +1,5 @@
 import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { determineResourceId } from '../../utils/resource';

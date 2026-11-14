@@ -1,10 +1,10 @@
 // src/managers/CompositionManager.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import type { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
+import type { RecordBase } from 'sos-data-utils-ts/confidential-storage';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { DataCollectionIds, HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';

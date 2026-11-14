@@ -1,4 +1,4 @@
-import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import type { DidDocument } from 'gdc-common-utils-ts/models/did';
 import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
 import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';

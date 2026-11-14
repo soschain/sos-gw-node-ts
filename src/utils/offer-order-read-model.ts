@@ -1,7 +1,7 @@
 // Copyright 2026 Antifraud Services Inc. under the Apache License, Version 2.0.
 
-import type { BundleEntry } from 'gdc-common-utils-ts/models/bundle';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { normalizeContextualizedClaims } from './claims';
 
 /**

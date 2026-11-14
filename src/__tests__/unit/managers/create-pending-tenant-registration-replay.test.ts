@@ -1,7 +1,7 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { describe, expect, it, jest } from '@jest/globals';
 import { ClaimsOfferSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { EntityLifecycleStatus } from '../../../gdc-backend-utils-node/models/enums';
 import { createPendingTenantRegistration } from '../../../managers/hosting/create-pending-tenant-registration';
 import { testClaimsRegisterTenantExpanded, testTenant1VaultId } from '../../data/organization.data';

@@ -2,7 +2,7 @@
 // File: src/models/entity.ts
 
 import { DidDocument, DidService } from 'gdc-common-utils-ts/models/did';
-import { RecordBase, ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { RecordBase, ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
 import { EntityLifecycleStatus, NetworkAccessStatus, EntityType } from './enums';
 

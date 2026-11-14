@@ -1,9 +1,9 @@
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { v4 as uuidv4 } from 'uuid';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import {

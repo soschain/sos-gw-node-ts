@@ -1,11 +1,11 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { createHash, randomUUID } from 'crypto';
 import { mock, MockProxy } from 'jest-mock-extended';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { ConsentManager } from '../../managers/ConsentManager';
 import { IVaultRepository } from '../../database/repositories/vault/vault.repository';
-import { BundleJsonApi, BundleEntryRequest, BundleEntryResponse, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
+import { BundleJsonApi, BundleEntryRequest, BundleEntryResponse, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
 import { ConsentRule, ClaimConsent, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
 import { CONSENT_CREATION_MESSAGE } from '../data/example-payloads';

@@ -8,9 +8,9 @@ import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { AdapterCryptoSdkNode } from '../../../gdc-backend-utils-node/adapters/node/crypto';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { Content } from 'gdc-common-utils-ts/utils/content';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 
 describe('DemoKmsService', () => {
     let devKmsService: DemoKmsService;

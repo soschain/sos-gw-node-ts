@@ -3,8 +3,8 @@
 
 import { ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { JobAction, Resource, Format, Section, Sector } from 'gdc-common-utils-ts/models/urlPath';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { testCustomer1Data } from './customer.data';
 import { testTenant1AddressCountry,
     testTenant1AlternateName,

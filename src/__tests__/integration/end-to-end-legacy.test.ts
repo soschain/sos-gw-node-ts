@@ -53,7 +53,7 @@ import { ConsoleLogger } from '../../loggers/ConsoleLogger';
 import { getEnvSectionId } from '../../utils/section-env';
 import { IServerConfig } from '../../config';
 import { IAuthorizationManager } from '../../managers/auth/IAuthorizationManager';
-import { BundleEntry } from 'gdc-common-utils-ts/models/bundle';
+import { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
 import { IAccessTokenClaims } from 'gdc-common-utils-ts/models/auth';
 import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { getTenantVaultId, generateTenantCollectionNameFromClaims } from '../../utils/tenant';

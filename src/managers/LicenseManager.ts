@@ -4,18 +4,18 @@
 import { v4 as uuidv4 } from 'uuid';
 import { OrganizationEmployeeSearchResponseEntryTypes } from 'gdc-common-utils-ts';
 import { IJobProcessor } from './registry';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 
 import { getTenantVaultId } from '../utils/tenant';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { getClaimValue, normalizeContextualizedClaims } from '../utils/claims';
-import type { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
+import type { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { createOperationOutcome } from '../utils/outcome';
 import { IssueLevel } from 'fhir-data-utils-ts/operation-outcome';
 import {
@@ -60,7 +60,7 @@ import {
   ensureIssuedRoleLicenseOnLedger,
 } from '../utils/ledger-role-license';
 import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { normalizeIndexedEmail, normalizeIndexedPhone } from '../utils/indexed-contact';
 import { REGISTERED_PROFILE_ACCOUNT_DIRECTORY_META } from '../utils/secure-route-bearer-binding';

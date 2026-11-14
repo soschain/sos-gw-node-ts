@@ -35,7 +35,7 @@ import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg } from 'gdc-common-utils-ts/
 import type { IHostRuntime } from '../../managers/IHostRuntime';
 import { testClaimsHostInitialization } from '../data/end-to-end.data';
 import { buildLicensePurchaseEntry } from 'gdc-common-utils-ts';
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { getTenantVaultId } from '../../utils/tenant';
 
 const hostBootstrapClaims = testClaimsHostInitialization;

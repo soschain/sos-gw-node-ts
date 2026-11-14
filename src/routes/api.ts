@@ -10,7 +10,7 @@ import { QueueAdapter } from '../adapters/queue';
 import { IAsyncResponseStore } from '../adapters/async-response-store.mem';
 import { createJobName } from '../utils/naming';
 import { isRequestValid } from '../utils/request-validator';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { Content } from 'antifraud-data-utils-ts/cryptography';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
@@ -30,7 +30,7 @@ import { getTenantAuthorizationStatus as readTenantAuthorizationStatusFromConfig
 import { enforceSmartScopeRouteCompatibility } from '../utils/smart-scope-route-authorization';
 import { IdentityAuthActions } from 'gdc-common-utils-ts/constants/identity-auth';
 import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { resolveHostRegistrySector } from '../utils/services';
 import { isEncryptionJwk, isSignatureJwk } from '../managers/hosting/registration-keys';
 import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';

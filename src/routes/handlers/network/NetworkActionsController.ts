@@ -7,7 +7,7 @@ import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
 import { getTenantVaultId } from '../../../utils/tenant';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 
 export class NetworkActionsController {
   private queueAdapter: QueueAdapter;

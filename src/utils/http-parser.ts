@@ -2,7 +2,7 @@
 // File: src/utils/http-parser.ts
 
 import { URL } from 'url';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { v4 as uuidv4 } from 'uuid';
 
 // --- Helper Functions ---

@@ -1,8 +1,9 @@
+// Flow contract: independent SOS record and job contracts preserve payload, route and lifecycle boundaries.
 // src/__tests__/unit/database/repositories/vault/VaultMemRepository.test.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { VaultMemRepository } from '../../../../../database/repositories/vault/vault.mem.repository';
-import { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
+import { RecordBase } from 'sos-data-utils-ts/confidential-storage';
 import { getEnvSectionId } from '../../../../../utils/section-env';
 
 describe('VaultMemRepository', () => {

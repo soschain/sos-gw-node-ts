@@ -8,7 +8,7 @@ import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { MldsaPublicJwk, MlkemPublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { JWK } from '../../../gdc-backend-utils-node/models/jwk';
 import { DataCompactJWT } from 'antifraud-data-utils-ts/cryptography';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { InMemoryEnvelopeAdapter } from '../../../services/kms-envelope-adapter';
 import { InMemoryWrappedKeyRepository } from '../../../services/wrapped-key-repository';

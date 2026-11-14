@@ -2,19 +2,19 @@
 // File: src/managers/MessagingManager.ts
 
 import { v4 as uuidv4 } from 'uuid';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { BundleJsonApi, BundleEntry, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import { BundleJsonApi, BundleEntry, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { createOperationOutcome } from '../utils/outcome';
 import { getBundleResponseTypeForAction } from '../utils/bundle';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { getTenantVaultId } from '../utils/tenant';
 import { getEnvSectionId } from '../utils/section-env';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { GatewayClaim } from '../shared/gateway-claim-contract';
 import { GatewayEnvelopeTypes, GatewayResponseEntryTypes } from '../shared/gateway-response-types';

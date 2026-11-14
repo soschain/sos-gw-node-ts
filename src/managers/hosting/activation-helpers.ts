@@ -1,6 +1,6 @@
 import { validate as uuidValidate } from 'uuid';
 import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { getBaseUrlFromDidWeb } from '../../utils/did-backend';
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { JwkSet } from 'antifraud-data-utils-ts/cryptography';

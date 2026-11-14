@@ -2,23 +2,23 @@
 // File: src/managers/HostingManager.ts
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 import { IServerConfig } from '../config';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { IStorageAdapter } from '../database/storage/IStorageAdapter';
-import { BundleJsonApi, BundleEntry, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { BundleJsonApi, BundleEntry, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { DidDocument, DidService } from 'gdc-common-utils-ts/models/did';
 import { OrganizationConfig } from '../gdc-backend-utils-node/models/entity';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { ClaimsIndividualProductSchemaorg, ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import type { PostalActivationCodeBinding } from 'gdc-common-utils-ts/utils/organization-test-network-credential';

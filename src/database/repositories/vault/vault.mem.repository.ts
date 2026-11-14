@@ -2,7 +2,7 @@
 // File: src/database/repositories/vault/vault.mem.repository.ts
 
 import { IVaultRepository } from './vault.repository';
-import { RecordBase, VaultConfig } from 'gdc-common-utils-ts/models/resource-document';
+import { RecordBase, VaultConfig } from 'sos-data-utils-ts/confidential-storage';
 import { InMemoryVault } from '../../../gdc-backend-utils-node/models/repository';
 import { getEnvSectionId } from '../../../utils/section-env';
 

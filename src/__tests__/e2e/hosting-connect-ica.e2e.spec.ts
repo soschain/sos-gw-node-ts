@@ -1,3 +1,4 @@
+// Flow contract: real signed organization evidence crosses the ICA boundary and reaches its exact terminal credential response.
 /**
  * Live HostingManager -> connect-ica journey:
  * 1. Load one real, multi-signature terms PDF from the shared local fixture path.
@@ -13,7 +14,7 @@
 import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { describe, expect, it } from '@jest/globals';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE } from 'gdc-common-utils-ts/utils/didcomm-submit';
 import { deriveDeterministicEcJwkPair } from 'gdc-common-utils-ts/utils/deterministic-jwk';
 import { forwardOrganizationVerificationTransactionToIca } from '../../managers/hosting/ica-verification';

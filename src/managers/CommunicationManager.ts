@@ -2,8 +2,8 @@
 // File: src/managers/CommunicationManager.ts
 // Description: Manager for handling business logic related to FHIR Communications.
 import { FhirDataTypes } from 'fhir-data-utils-ts';
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
 import { CommMsgExtended, DataEntry, FhirCommunication } from 'gdc-common-utils-ts/models/comm';
 import { DataCollectionIds, FhirResourceTypeDataCollections, HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
@@ -26,14 +26,14 @@ import { normalizeClaimsFromFhirResource } from 'gdc-common-utils-ts/utils/inter
 import { compositionFhirR4ToFlat } from 'gdc-common-utils-ts/convert/convert-composition';
 import { buildConfidentialDocumentIndexedAttributes } from 'gdc-common-utils-ts/utils/confidential-document-provenance';
 import { requireClaimsOnlyResourceShape } from '../utils/fhir-flat-claims';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { BundleJsonApi, BundleEntryResponse, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import { BundleJsonApi, BundleEntryResponse, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import type { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
 import { determineResourceId } from '../utils/resource';
 import { v4 as uuidv4 } from 'uuid';
 import { IJobProcessor } from './registry';
 import type { ITenantsManager } from './ITenantsManager';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { getTenantVaultId } from '../utils/tenant';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { getSubjectScopedSectionId } from '../utils/individual-sections';
@@ -72,7 +72,7 @@ import {
 } from 'gdc-common-utils-ts/utils/clinical-resource-replacement';
 import { getClinicalCreatorBindingsSectionId } from '../utils/clinical-creator-binding';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { EntityLifecycleStatus } from '../gdc-backend-utils-node/models/enums';
 import type { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
 import { ClinicalEvidenceChaincode } from '../utils/ledger';

@@ -1,10 +1,10 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { createHash, randomUUID } from 'node:crypto';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { GroupFlatClaimCatalog, normalizeGroupR5FlatClaimsResource } from 'vet-data-utils-ts';

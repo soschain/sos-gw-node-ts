@@ -1,11 +1,11 @@
 import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
 import { OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { DidDocument } from 'gdc-common-utils-ts/models/did';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { initializeHostServicesConfig } from '../../utils/services';

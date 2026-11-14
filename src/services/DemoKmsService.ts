@@ -1,11 +1,11 @@
 // src/services/DemoKmsService.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
-import { ConfidentialStorageDoc, IndexedAttribute } from 'gdc-common-utils-ts/models/confidential-storage';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { ConfidentialStorageDoc, IndexedAttribute } from 'sos-data-utils-ts/confidential-storage';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { v4 as uuidv4 } from 'uuid';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
-import { JwsHeader, JwsMultiSign } from 'gdc-common-utils-ts/models/jws';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
+import { JwsHeader, JwsMultiSign } from 'antifraud-data-utils-ts/cryptography';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import type { SigningPurpose } from '../gdc-backend-utils-node/models/IKmsService';
 import { JwkSet, JWK } from '../gdc-backend-utils-node/models/jwk';

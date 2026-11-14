@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
 import {
   buildOrganizationAuthorizationUrn,

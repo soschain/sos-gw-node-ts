@@ -16,15 +16,15 @@ import type { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsSer
 import { buildOrganizationAuthorizationUrnCds, buildOrganizationEmployeeAuthorizationUrnCds } from 'sos-data-utils-ts/organization-authorization-urn';
 import { FhirIpsCreatorKinds, OrganizationEmployeeSearchResponseEntryTypes } from 'gdc-common-utils-ts';
 import { ClaimsOfferSchemaorg, ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { RecordBase, ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { RecordBase, ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { JwkSet } from '../../../gdc-backend-utils-node/models/jwk';
 import {
   testBaseJobForEmployeeClaims as testBaseJobForEmployeeClaims,
   testClaimsTenant1Nurse1,
   testClaimsTenant1Receptionist1,
 } from '../../data/employee.data';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { EntityConfig } from '../../../gdc-backend-utils-node/models/entity';
 import { normalizeCodeSystemAndValue } from '../../../utils/normalize-codeAndSystem';

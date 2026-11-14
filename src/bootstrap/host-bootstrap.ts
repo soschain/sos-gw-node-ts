@@ -2,7 +2,7 @@ import { IServerConfig } from '../config';
 import { HostingManager } from '../managers/HostingManager';
 import { ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 
 function getHostEnv(key: string): string | undefined {
   const newKey = `HOST_${key}`;

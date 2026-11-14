@@ -12,10 +12,10 @@ import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { IStorageAdapter } from '../../../database/storage/IStorageAdapter';
 import { ILogger } from '../../../loggers/ILogger';
 import { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { LICENSE_STATUS_AVAILABLE, LICENSE_STATUS_ISSUED, SUBJECT_SECTION_INDIVIDUAL } from '../../../constants/domain';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import {
   ClaimsOfferSchemaorg,
   ClaimsOrderSchemaorg,

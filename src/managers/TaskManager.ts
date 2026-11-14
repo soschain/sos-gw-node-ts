@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { BundleEntry, BundleEntryRequest, BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { BundleEntry, BundleEntryRequest, BundleJsonApi, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
+import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { TaskClaimsFhirApi } from 'fhir-data-utils-ts';
 import { determineResourceId } from '../utils/resource';

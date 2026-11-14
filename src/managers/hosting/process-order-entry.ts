@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { BundleEntry } from 'gdc-common-utils-ts/models/bundle';
-import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import type { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
+import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import type { Sector } from 'gdc-common-utils-ts/models/urlPath';

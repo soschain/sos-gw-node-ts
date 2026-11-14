@@ -3,11 +3,6 @@
 
 // Back-end code historically imported DID models from `gdc-backend-utils-node/models/did`.
 // The canonical definitions live in the shared SDK package under `crypto-ts/models/did`.
-export type {
-  DidDocument,
-  DidService,
-  ServiceEndpointSelector,
-  SecureServiceEndpointSelector,
-  VerificationMethod,
-} from 'gdc-common-utils-ts/models/did';
+export type { DidDocument, DidService, VerificationMethod } from 'gdc-common-utils-ts/models/did';
+export type { ServiceEndpointSelector, SecureServiceEndpointSelector } from 'sos-data-utils-ts/confidential-job';
 

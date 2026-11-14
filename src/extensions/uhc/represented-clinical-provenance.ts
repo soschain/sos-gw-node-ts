@@ -1,6 +1,6 @@
 import { CommunicationClaim } from 'fhir-data-utils-ts';
 import { CompositionClaim } from 'fhir-data-utils-ts';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import type { ClinicalCreatorBinding } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { getClinicalCreatorBindingsSectionId } from '../../utils/clinical-creator-binding';

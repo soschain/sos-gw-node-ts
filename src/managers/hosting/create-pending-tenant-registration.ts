@@ -1,11 +1,11 @@
-import type { DidCommDecodedMetadata } from 'gdc-common-utils-ts/models/confidential-message';
-import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import type { DidCommDecodedMetadata } from 'sos-data-utils-ts/confidential-job';
+import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import {
   ClaimsOfferSchemaorg,
   ClaimsOrganizationSchemaorg,
   ClaimsServiceSchemaorg,
 } from 'gdc-common-utils-ts/constants/schemaorg';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';

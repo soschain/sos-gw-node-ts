@@ -7,11 +7,11 @@ import { jest } from '@jest/globals';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { Worker } from '../../worker';
 import { IJobProcessor, ManagerRegistry } from '../../managers/registry';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { testCreateCustomerJobRequestProfessionalOnboarding } from '../data/customer-onboarding.data';
 import { createJobName } from '../../utils/naming';
 import { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 
 describe('Worker', () => {
   let worker: Worker;

@@ -8,14 +8,14 @@
 
 import cloneDeep from 'lodash.clonedeep';
 import { validate as uuidValidate } from 'uuid';
-import { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
+import { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { DeviceRegistrationManager } from '../../managers/DeviceRegistrationManager';
 import { DCR_REGISTRATION_JOB } from '../data/example-jobs';
 import { VaultMemRepository } from '../../database/repositories/vault/vault.mem.repository';
 import { mockKmsService } from '../mocks/kms.mock';
 import { getTenantVaultId } from '../../utils/tenant';
 import { getEnvSectionId } from '../../utils/section-env';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
 import type { EntityConfig } from '../../gdc-backend-utils-node/models/entity';
@@ -26,7 +26,7 @@ import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';
 import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
 import { IdentityAuthActions, IdentityAuthRequestFields, IdentityDcrMetadataFields } from 'gdc-common-utils-ts/constants/identity-auth';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import { createEmployeeUrn, createOrganizationUrn } from '../../utils/urn';
 import { URN_NAMESPACE, URN_NETWORK, URN_VERSION } from '../data/urn.data';

@@ -8,7 +8,7 @@ import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { getTenantVaultId } from '../utils/tenant';
 import { Content } from 'antifraud-data-utils-ts/cryptography';
 import { getEnvSectionId } from '../utils/section-env';

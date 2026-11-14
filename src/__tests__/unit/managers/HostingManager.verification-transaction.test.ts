@@ -1,3 +1,4 @@
+// Flow contract: independent SOS record and job contracts preserve payload, route and lifecycle boundaries.
 // TDD contract: each verification transaction starts with an isolated tenant repository and preserves exact Offer/controller evidence.
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
@@ -7,7 +8,7 @@ import {
   getLegalOrganizationVerificationController,
   getLegalOrganizationVerificationRepresentativePayload,
 } from 'gdc-common-utils-ts/utils/legal-organization-verification-transaction';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import type { IServerConfig } from '../../../config';
 import type { IStorageAdapter } from '../../../database/storage/IStorageAdapter';

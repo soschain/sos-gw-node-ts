@@ -2,8 +2,8 @@
 // src/__tests__/integration/end-to-end-flow.test.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 import { GatewayRequestEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
 
 process.env.DEV_SEED = 'true';
@@ -22,8 +22,8 @@ import type { MldsaPrivateJwk, MlkemPrivateJwk, MlkemPublicJwk } from 'antifraud
 import type { QueueAdapter } from '../../adapters/queue';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { TenantsCacheManager } from '../../managers/TenantsCacheManager';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { startServer } from '../../server';

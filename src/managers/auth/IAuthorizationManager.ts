@@ -2,7 +2,7 @@
 // File: src/managers/auth/IAuthorizationManager.ts
 
 import { IAccessTokenClaims } from 'gdc-common-utils-ts/models/auth';
-import { BundleEntry } from 'gdc-common-utils-ts/models/bundle';
+import { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
 
 /**
  * Defines the contract for the Authorization Manager.

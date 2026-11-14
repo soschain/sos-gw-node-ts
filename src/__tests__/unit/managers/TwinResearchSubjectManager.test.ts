@@ -3,7 +3,7 @@
 import { TwinCompositionManager } from '../../../managers/TwinCompositionManager';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
 import type { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { afterAll, beforeAll } from '@jest/globals';
 import { SearchResponseProfileEnvironment, SearchResponseProfiles } from '../../../utils/didcomm-response';
 

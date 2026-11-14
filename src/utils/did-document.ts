@@ -1,7 +1,8 @@
 // src/utils/did-document.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
-import { DidService, ServiceEndpointSelector } from 'gdc-common-utils-ts/models/did';
+import { DidService } from 'gdc-common-utils-ts/models/did';
+import { ServiceEndpointSelector } from 'sos-data-utils-ts/confidential-job';
 import { generateServiceId } from 'gdc-common-utils-ts/utils/did';
 
 /**

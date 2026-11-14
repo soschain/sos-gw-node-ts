@@ -25,7 +25,7 @@ process.env.LEDGER_ENABLED = 'true';
 process.env.LEDGER_MSP_ID = 'TestMSP';
 
 import { afterAll, afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import type * as express from 'express';
 import type { Server } from 'http';
 import type { QueueAdapterMem } from '../../adapters/queue-mem';

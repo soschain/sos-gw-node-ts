@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { ConsentRule } from 'gdc-common-utils-ts/models/consent-rule';
 import { ClaimConsent } from 'fhir-data-utils-ts';
-import { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
+import { RecordBase } from 'sos-data-utils-ts/confidential-storage';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { getClaimValue } from './claims';
 import { buildConsentRuleStorageKey, expandConsentActorRoles, hashConsentRuleId } from './consent';

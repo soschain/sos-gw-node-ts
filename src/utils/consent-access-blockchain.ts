@@ -1,6 +1,6 @@
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { createHash } from 'crypto';
-import type { BundleEntry, BundleJsonApi } from 'gdc-common-utils-ts/models/bundle';
+import type { BundleEntry, BundleJsonApi } from 'sos-data-utils-ts/bundle-contract';
 import { HealthcareAllRolesByClaim } from 'sos-data-utils-ts/healthcare-roles';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'fhir-data-utils-ts';
 import { getClaimValue } from './claims';

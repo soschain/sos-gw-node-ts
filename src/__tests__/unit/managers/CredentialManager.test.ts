@@ -12,10 +12,10 @@ import { IServerConfig } from '../../../config';
 import { testClaimsTenant1Receptionist1, testTenant1Receptionist1Email, testTenant1Receptionist1Urn } from '../../data/employee.data';
 import { MldsaPublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { ProofEBSIv2, VerifiableCredentialV2 } from '../../../gdc-backend-utils-node/models/verifiable-credential';
-import { JwsMultiSign } from 'gdc-common-utils-ts/models/jws';
+import { JwsMultiSign } from 'antifraud-data-utils-ts/cryptography';
 import { testHostDidWeb, testHostDomain, testTenant1IdentifierUrn, testTenant1VaultId } from '../../data/organization.data';
 import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 
 const uuidMock = {
   v4: jest.fn(),

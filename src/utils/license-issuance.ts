@@ -2,7 +2,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { randomBytes, randomUUID } from 'crypto';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { DEFAULT_LICENSE_DEVICE_ALLOWANCE } from 'gdc-common-utils-ts/utils/license';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';

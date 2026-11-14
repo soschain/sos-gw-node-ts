@@ -1,4 +1,4 @@
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { DidDocument } from 'gdc-common-utils-ts/models/did';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';

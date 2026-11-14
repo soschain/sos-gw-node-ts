@@ -1,7 +1,7 @@
 // src/__tests__/data/example-jobs.ts
 
 import { v4 as uuidv4 } from 'uuid';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import { DEVICE_REGISTRATION_REQUEST, ORGANIZATION_ORDER_REQUEST, ORGANIZATION_REGISTRATION_REQUEST } from './example-payloads';
 

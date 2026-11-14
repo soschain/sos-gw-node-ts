@@ -1,16 +1,16 @@
 // src/managers/ConsentManager.ts
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
 import { randomUUID } from 'crypto';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
-import { BundleEntryRequest, BundleJsonApi, BundleEntryResponse, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
+import { BundleEntryRequest, BundleJsonApi, BundleEntryResponse, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { ConsentRule } from 'gdc-common-utils-ts/models/consent-rule';
 import { ClaimConsent, ConsentStatuses } from 'fhir-data-utils-ts';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { createOperationOutcome } from '../utils/outcome';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
-import { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
+import { RecordBase } from 'sos-data-utils-ts/confidential-storage';
 import { buildConsentRuleKey, expandConsentActorRoles, hashConsentRuleId } from '../utils/consent';
 import { getClaimValue, normalizeContextualizedClaims } from '../utils/claims';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';

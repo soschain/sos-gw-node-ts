@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { BundleJsonApi } from 'gdc-common-utils-ts/models/bundle';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { BundleJsonApi } from 'sos-data-utils-ts/bundle-contract';
 import { DataCollectionIds, HealthcareSummarySections } from 'gdc-common-utils-ts/constants/index';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';

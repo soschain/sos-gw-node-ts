@@ -1,5 +1,5 @@
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { CommunicationManager } from '../../managers/CommunicationManager';
 import type { IJobProcessor } from '../../managers/registry';
 import { getAuthenticatedJobActorDid } from '../../utils/authenticated-job-actor';

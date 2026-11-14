@@ -1,7 +1,7 @@
 // src/api-examples/communication.examples.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 import { CommunicationCategoryCodes } from 'fhir-data-utils-ts';

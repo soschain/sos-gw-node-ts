@@ -4,7 +4,7 @@
 import { MldsaPublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { ClaimsActionSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { DidDocument } from '../../gdc-backend-utils-node/models/did';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { testTenant1Data, testClaimsTenant1Registration } from './end-to-end.data';
 import { testHostDidWeb, testTenant1DidWebExternal, testTenant1DidWebHosted } from './organization.data';
 

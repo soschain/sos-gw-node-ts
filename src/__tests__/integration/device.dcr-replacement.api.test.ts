@@ -1,6 +1,6 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 // TDD contract: Device DCR accepts only verified initial-access claims and a valid nested signature.
 process.env.DEV_SEED = 'true';
 process.env.NODE_ENV = 'test';
@@ -46,7 +46,7 @@ import { invokeExpress } from './helpers/invokeExpress';
 import { testClaimsHostInitialization, testClaimsTenant1Registration } from '../data/end-to-end.data';
 import { ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { EntityConfig } from '../../gdc-backend-utils-node/models/entity';
 import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { ManageAssetCryptographicKey } from '../../blockchain/fabric/v3/manageAssetCryptographicKey';

@@ -2,7 +2,7 @@
 // File: src/database/repositories/vault/vault.repository.ts
 
 import { ConsentRule } from "gdc-common-utils-ts/models/consent-rule";
-import { RecordBase, VaultConfig } from "gdc-common-utils-ts/models/resource-document";
+import { RecordBase, VaultConfig } from 'sos-data-utils-ts/confidential-storage';
 
 export type VaultQueryOptions = {
     hydrate?: boolean;

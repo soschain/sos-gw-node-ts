@@ -3,7 +3,7 @@ import express from 'express';
 import request from 'supertest';
 import { createApiRouter } from '../../routes/api';
 import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 
 type PatientMatchSearchset = Readonly<{
   resourceType: 'Bundle';

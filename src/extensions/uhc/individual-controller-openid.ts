@@ -13,8 +13,8 @@ import type { IVaultRepository } from '../../database/repositories/vault/vault.r
 import { getEnvSectionId } from '../../utils/section-env';
 import { normalizeIndexedEmail, normalizeIndexedPhone } from '../../utils/indexed-contact';
 import { getTenantVaultId } from '../../utils/tenant';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import type { IJobProcessor } from '../../managers/registry';
 import type { ITenantsManager } from '../../managers/ITenantsManager';
 import type { IClearingHouseService } from '../../services/ClearingHouseService';

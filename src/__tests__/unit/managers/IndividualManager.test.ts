@@ -7,9 +7,9 @@ import { mock, MockProxy } from 'jest-mock-extended';
 import type { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
 import { ClaimsOfferSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 
 import { CredentialManager } from '../../../managers/CredentialManager';
 import { EntityConfig } from '../../../gdc-backend-utils-node/models/entity';
@@ -21,7 +21,7 @@ import {
   testCreateCustomerJobRequestProfessionalOnboarding,
   testIndividualOnboardingBatchEntries,
 } from '../../data/customer-onboarding.data';
-import { BundleEntry, BundleEntryResponse, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
+import { BundleEntry, BundleEntryResponse, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
 import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';

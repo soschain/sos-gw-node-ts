@@ -1,4 +1,4 @@
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import type { IEmailNotificationAdapter } from './IEmailNotificationAdapter.js';
 import type { EmailNotificationPayload, EmailNotificationResult } from './types.js';
 

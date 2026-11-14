@@ -33,7 +33,7 @@ import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { QueueAdapter } from '../../adapters/queue';
 import { TenantsCacheManager } from '../../managers/TenantsCacheManager';
 import { testEncryptedJwe1 } from '../data/async-response.data';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { mockKmsService } from '../mocks/kms.mock';
 import { VaultMemRepository } from '../../database/repositories/vault/vault.mem.repository';
 import { AsyncResponseStoreMem, IAsyncResponseStore } from '../../adapters/async-response-store.mem';

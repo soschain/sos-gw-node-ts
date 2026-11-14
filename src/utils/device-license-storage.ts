@@ -1,5 +1,5 @@
 import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 

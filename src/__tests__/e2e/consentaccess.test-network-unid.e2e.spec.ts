@@ -13,7 +13,7 @@
  * TEST_NETWORK_JURISDICTION, TEST_NETWORK_SECTOR and TEST_NETWORK_SUBJECT_DID.
  * TEST_NETWORK_MAX_POLLS and TEST_NETWORK_POLL_MS bound the polling window.
  */
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
 
 import { HealthcareConsentActions } from 'gdc-common-utils-ts/constants/index';

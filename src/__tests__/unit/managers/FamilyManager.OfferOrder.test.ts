@@ -20,7 +20,7 @@ import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { IStorageAdapter } from '../../../database/storage/IStorageAdapter';
 import { ILogger } from '../../../loggers/ILogger';
 import type { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { FAMILY_ORDER_REQUEST, FAMILY_REGISTRATION_REQUEST } from '../../data/example-payloads';
 import * as tenantUtils from '../../../utils/tenant';
 import {
@@ -30,7 +30,7 @@ import {
   ClaimsOrganizationSchemaorg,
   ClaimsServiceSchemaorg,
 } from 'gdc-common-utils-ts/constants/schemaorg';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { getEnvSectionId } from '../../../utils/section-env';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
 import { FamilyManager } from '../../../managers/FamilyManager';
