@@ -2,7 +2,7 @@
 // File: src/managers/FamilyManager.ts
 import { createHash } from 'crypto';
 import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
-import { HealthcareActorRoleCodes } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareActorRoleCodes } from 'sos-data-utils-ts/healthcare-roles';
 import { HL7_CODING_SYSTEM_V3_ROLE_CODE } from 'gdc-common-utils-ts/constants/hl7-roles';
 import { SecureIdTypesIndividual } from 'gdc-common-utils-ts/constants/identity-identifiers';
 import {

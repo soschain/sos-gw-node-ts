@@ -5,11 +5,8 @@
  * one-section Digital Twin Parameters accepted by GW VET; local code-text
  * aliases must never return to the research search surface.
  */
-import {
-  HealthcareActorRoles,
-  HealthcareBasicSections,
-  HealthcareConsentPurposes,
-} from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
+import { HealthcareBasicSections, HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
 import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
 import {
   EXAMPLE_CONSENT_ATTACHMENT_CONTENT_TYPE,

@@ -25,7 +25,7 @@ import { ManageAssetSubjectKeyBinding } from '../../blockchain/fabric/v3/manageA
 import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';
 import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
 import { IdentityAuthActions, IdentityAuthRequestFields, IdentityDcrMetadataFields } from 'gdc-common-utils-ts/constants/identity-auth';
-import { HealthcareActorRoles } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
 import { DataspaceSectors } from 'gdc-common-utils-ts/constants/sectors';
 import { createEmployeeUrn, createOrganizationUrn } from '../../utils/urn';

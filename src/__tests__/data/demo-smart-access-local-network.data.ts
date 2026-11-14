@@ -3,11 +3,8 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import {
-  HealthcareActorRoles,
-  HealthcareBasicSections,
-  HealthcareConsentPurposes,
-} from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
+import { HealthcareBasicSections, HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
 import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
 import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
 import {

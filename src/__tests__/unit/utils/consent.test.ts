@@ -1,9 +1,8 @@
 // Flow contract: Consent actor roles normalize to the shared canonical healthcare vocabulary before authorization comparison.
 import {
-  getHealthcareRoleByClaim,
-  HealthcareActorRoles,
-  ISCO08_CODING_SYSTEM,
-} from 'gdc-common-utils-ts/constants/healthcare';
+  Isco08CodingSystem,
+} from 'antifraud-data-utils-ts/isco-08';
+import { getHealthcareRoleByClaim, HealthcareActorRoles, ISCO08_CODING_SYSTEM } from 'sos-data-utils-ts/healthcare-roles';
 import {
   buildConsentRuleKey,
   expandConsentActorRoles,
@@ -44,10 +43,13 @@ describe('consent utils', () => {
   it('normalizes professional role formats to the shared canonical ISCO-08 descriptor', () => {
     const veterinarian = getHealthcareRoleByClaim(HealthcareActorRoles.Veterinarian);
     expect(veterinarian).toBeDefined();
-    const canonicalRole = `${veterinarian!.codingSystem}|${veterinarian!.code}`;
+    const canonicalRole = `${ISCO08_CODING_SYSTEM}|${veterinarian!.code}`;
 
     expect(normalizeConsentActorRole(HealthcareActorRoles.Veterinarian, 'professional')).toBe(canonicalRole);
     expect(normalizeConsentActorRole(canonicalRole, 'professional')).toBe(canonicalRole);
+    expect(normalizeConsentActorRole(`${Isco08CodingSystem}|${veterinarian!.code}`, 'professional')).toBe(canonicalRole);
+    expect(normalizeConsentActorRole(`org.ilo.isco-08|${veterinarian!.code}`, 'professional')).toBe(canonicalRole);
+    expect(normalizeConsentActorRole(`unknown-isco-08|${veterinarian!.code}`, 'professional')).not.toBe(canonicalRole);
   });
 
   it('validates ISCO and FHIR role codes', () => {

@@ -24,11 +24,9 @@ import { getMatchingSubjectIdentityBindingFromVpToken } from 'gdc-common-utils-t
 import { calculateJwkThumbprint, compactVerify, decodeProtectedHeader, importJWK, type JWK } from 'jose';
 import { getEnvSectionId } from '../utils/section-env';
 import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
-import {
-  HealthcareActorRoleCodes,
-  HealthcareConsentPurposes,
-} from 'gdc-common-utils-ts/constants/healthcare';
-import { deriveGrantedSmartScopes } from 'gdc-common-utils-ts/utils/smart-scope';
+import { HealthcareActorRoleCodes } from 'sos-data-utils-ts/healthcare-roles';
+import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
+import { deriveGrantedSmartScopes } from 'sos-data-utils-ts/consent-smart-scopes';
 import { type ConsentRule } from 'gdc-common-utils-ts/models/consent-rule';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'fhir-data-utils-ts';
 import { getMatchingIndividualMemberCredentialFromVpToken } from 'gdc-common-utils-ts/utils/individual-smart';

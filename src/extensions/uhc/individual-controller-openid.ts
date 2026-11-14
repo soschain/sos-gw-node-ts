@@ -1,9 +1,5 @@
 import { DeviceBindingStatuses, DeviceUserClasses } from 'gdc-common-utils-ts/constants/device';
-import {
-  getHealthcareRoleByClaim,
-  HealthcareActorRoleCodes,
-  HealthcareActorRoles,
-} from 'gdc-common-utils-ts/constants/healthcare';
+import { getHealthcareRoleByClaim, HealthcareActorRoleCodes, HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
 import { parseActorFromSub } from 'gdc-common-utils-ts/utils/actor';
 import {

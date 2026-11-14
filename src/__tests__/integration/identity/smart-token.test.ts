@@ -30,7 +30,8 @@ import { buildInterTenantAccessContractCredential } from 'gdc-common-utils-ts/ut
 import { buildClientAssertionFixture, buildClientAssertionJwt } from 'gdc-common-utils-ts/utils/client-assertion';
 import { addVC, createVP } from 'gdc-common-utils-ts/utils/vp-token';
 import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
-import { HealthcareActorRoles, HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
+import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
 import {
   EXAMPLE_ALTERNATE_PORTAL_INDIVIDUAL_DID,

@@ -23,10 +23,7 @@ import {
 } from 'gdc-common-utils-ts/examples/shared';
 import { EXAMPLE_ALTERNATE_PORTAL_INDIVIDUAL_DID } from 'gdc-common-utils-ts/examples/subject-identity-binding';
 import { DeviceBindingStatuses, DeviceUserClasses } from 'gdc-common-utils-ts/constants/device';
-import {
-  getHealthcareRoleByClaim,
-  HealthcareActorRoles,
-} from 'gdc-common-utils-ts/constants/healthcare';
+import { getHealthcareRoleByClaim, HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import {
   FhirIpsCreatorKinds,
   normalizeClinicalCreatorBinding,

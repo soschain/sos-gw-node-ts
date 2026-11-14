@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Consume SOS-owned healthcare role lookup and Consent scope projection. Include
+  Dentistry in clinical creator metadata while excluding Controller authority
+  and preserving reverse-DNS occupation values and persisted Consent identifiers.
+
 - Remove the unused frozen SDK client dependency and its Jest, TypeScript and
   emitted-import resolution entries. Remaining GDC imports and transitive paths
   are still tracked separately; this is not complete dependency independence.

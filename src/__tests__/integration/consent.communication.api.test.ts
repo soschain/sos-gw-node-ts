@@ -9,10 +9,7 @@ import {
   HealthcareConsentActions,
   HealthcareConsentPurposes,
 } from 'gdc-common-utils-ts/constants/index';
-import {
-  getHealthcareRoleByClaim,
-  HealthcareActorRoles,
-} from 'gdc-common-utils-ts/constants/healthcare';
+import { getHealthcareRoleByClaim, HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { testPayloadCreateTenant1 } from '../data/end-to-end.data';
 import { initializeTenantServicesConfig } from '../../utils/services';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';

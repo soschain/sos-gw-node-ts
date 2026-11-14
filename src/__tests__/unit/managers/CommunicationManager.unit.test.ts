@@ -24,26 +24,8 @@ import { createServer, type Server } from 'node:http';
 import type { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
-import {
-  buildCommunicationParticipantSearchParameters,
-  buildCommunicationParticipantIndexAttributes,
-  buildExampleCommunicationParticipantProjection,
-  buildExampleCommunicationParticipantSearchInput,
-  BundleEditableResourceTypes,
-  BundleEditor,
-  BundleOperations,
-  CommunicationParticipantPrefixes,
-  CompositionAttesterModes,
-  CompositionClaim,
-  ConfidentialDocumentIndex,
-  ConsentDecisions,
-  ConsentStatuses,
-  DataCollectionIds,
-  HealthcareActorRoles,
-  HealthcareBasicSections,
-  HealthcareConsentPurposes,
-  ResourceTypesFhirR4,
-} from 'gdc-common-utils-ts';
+import { buildCommunicationParticipantSearchParameters, buildCommunicationParticipantIndexAttributes, buildExampleCommunicationParticipantProjection, buildExampleCommunicationParticipantSearchInput, BundleEditableResourceTypes, BundleEditor, BundleOperations, CommunicationParticipantPrefixes, CompositionAttesterModes, CompositionClaim, ConfidentialDocumentIndex, ConsentDecisions, ConsentStatuses, DataCollectionIds, HealthcareBasicSections, HealthcareConsentPurposes, ResourceTypesFhirR4 } from 'gdc-common-utils-ts';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-claims/communication-claims';
 import { BundleTypes } from 'gdc-common-utils-ts/models/bundle-editor-types';
 import { Format } from 'gdc-common-utils-ts/constants/Schemas';

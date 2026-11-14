@@ -5,7 +5,7 @@ import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confiden
 import type { ParameterData } from 'gdc-common-utils-ts/models/params';
 import type { JwkSet } from 'antifraud-data-utils-ts/cryptography';
 import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { HealthcareActorRoles } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { buildProfessionalDidWeb } from 'gdc-common-utils-ts/utils/did';
 import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';

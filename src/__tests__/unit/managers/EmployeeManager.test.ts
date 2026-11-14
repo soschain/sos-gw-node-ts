@@ -43,7 +43,8 @@ import {
 } from '../../../utils/didcomm-response';
 import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
 import { getClinicalCreatorBindingsSectionId } from '../../../utils/clinical-creator-binding';
-import { HealthcareActorRoles } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 
 const uuidMock = {
   v4: jest.fn(),
@@ -240,18 +241,20 @@ describe('EmployeeManager', () => {
       expect(response.iss).toBe(TENANT_URN);
     });
 
-    it('preauthorizes the employee and occupation UUIDs as one stable professional creator', async () => {
+    it.each([HealthcareActorRoles.Veterinarian, HealthcareActorRoles.Dentist])('preauthorizes a governed occupation profile as one stable professional creator: %s', async (role) => {
       const employeeUuid = '31b2c3d4-e5f6-7890-1234-567890abcdef';
       const occupationUuid = '41b2c3d4-e5f6-7890-1234-567890abcdef';
       const providerDid = 'did:web:provider.example.com';
       const clinicalClaims = {
         ...testClaimsTenant1Receptionist1,
-        [ClaimsPersonSchemaorg.hasOccupation]: HealthcareActorRoles.Veterinarian,
+        [ClaimsPersonSchemaorg.hasOccupation]: role,
       };
+      const sector = role === HealthcareActorRoles.Dentist ? 'health-care' : TENANT_SECTOR;
+      const tenantVaultId = `${sector}_${TENANT_ALTERNATE_NAME}`;
       const job = testBaseJobForEmployeeClaims(
         clinicalClaims,
         TENANT_ALTERNATE_NAME,
-        TENANT_SECTOR,
+        sector,
       );
       (job.content as any).aud = providerDid;
       ((job.content as any).body.data[0] as any).resource.id = employeeUuid;
@@ -263,7 +266,7 @@ describe('EmployeeManager', () => {
 
       expect(mockVaultRepository.put).toHaveBeenNthCalledWith(
         2,
-        TENANT_VAULT_ID,
+        tenantVaultId,
         [{
           id: `urn:uuid:${occupationUuid}`,
           kind: FhirIpsCreatorKinds.Professional,
@@ -275,7 +278,7 @@ describe('EmployeeManager', () => {
             identifierType: 'tax',
             identifierValue: '123456789',
           }),
-          role: HealthcareActorRoles.Veterinarian,
+          role,
           verifiedContactIdentifiers: [buildStableActorIdentifier({
             contactKind: 'email',
             contact: testClaimsTenant1Receptionist1[ClaimsPersonSchemaorg.email],
@@ -283,6 +286,21 @@ describe('EmployeeManager', () => {
         }],
         getClinicalCreatorBindingsSectionId(),
       );
+    });
+
+    it('does not treat an organization controller profile as a professional clinical creator', async () => {
+      // Controller onboarding uses its own authority flow, not Employee/_batch.
+      // Isolate the clinical projection guard so this proof cannot pass because
+      // an unrelated employee validator rejected a non-occupation role first.
+      await (employeeManager as any).persistProfessionalClinicalCreatorBinding({
+        tenantVaultId: TENANT_VAULT_ID,
+        employeeId: SAFE.resourceUuid,
+        occupationId: MOCKED_OCCUPATION_UUID,
+        ownerIdentifier: TENANT_URN,
+        role: HealthcareActorRoles.Controller,
+        email: testClaimsTenant1Receptionist1[ClaimsPersonSchemaorg.email],
+      });
+      expect(mockVaultRepository.put).not.toHaveBeenCalled();
     });
 
     it('does not create an IPS creator binding for an occupational role outside the governed clinical catalog', async () => {

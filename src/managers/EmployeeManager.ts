@@ -3,7 +3,7 @@
 import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
-import { getHealthcareRoleByClaim } from 'gdc-common-utils-ts/constants/healthcare';
+import { getHealthcareRoleByClaim, HealthcareRoleFamilies } from 'sos-data-utils-ts/healthcare-roles';
 
 import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import { v4 as uuidv4 } from 'uuid';
@@ -594,7 +594,7 @@ export class EmployeeManager {
     role: string;
     email: string;
   }): Promise<void> {
-    if (!getHealthcareRoleByClaim(params.role)) return;
+    if (getHealthcareRoleByClaim(params.role)?.family !== HealthcareRoleFamilies.ProfessionalOccupationIsco08) return;
     const actorIdentifier = canonicalUuidUrn(params.employeeId);
     const authorIdentifier = canonicalUuidUrn(params.occupationId);
     const ownerIdentifier = String(params.ownerIdentifier || '').trim();

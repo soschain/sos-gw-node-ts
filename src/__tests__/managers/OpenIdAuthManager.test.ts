@@ -33,12 +33,8 @@ import { buildInterTenantAccessContractCredential } from 'gdc-common-utils-ts/ut
 import { buildClientAssertionFixture, buildClientAssertionJwt } from 'gdc-common-utils-ts/utils/client-assertion';
 import { addVC, createVP } from 'gdc-common-utils-ts/utils/vp-token';
 import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
-import {
-  HealthcareActorRoles,
-  getHealthcareRoleByClaim,
-  HealthcareBasicSections,
-  HealthcareConsentPurposes,
-} from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareActorRoles, getHealthcareRoleByClaim } from 'sos-data-utils-ts/healthcare-roles';
+import { HealthcareBasicSections, HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
 import { buildSmartCompositionReadScope } from 'gdc-common-utils-ts/utils/smart-scope';
 import {
   buildUnsignedIndividualControllerIdentityVpJwt,

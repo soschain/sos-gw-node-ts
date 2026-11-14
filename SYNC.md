@@ -25,3 +25,22 @@ The baseline is current SOSChain GW `main` plus only the GDC Core contracts
 explicitly reproduced and proven here. New entries record source commit,
 disposition, owning files and test evidence; they do not inventory downstream
 consumers.
+
+## Independent healthcare roles and Consent scope projection
+
+Disposition: `adopted` through the independent SOS Data owner. The frozen
+Common Utilities 2.9.30 contract was read-only compatibility evidence; no
+upstream branch was merged and no frozen source was changed.
+
+Healthcare occupation definitions come from Antifraud, relationship vocabulary
+from FHIR utilities, and healthcare selection/family policy from SOS Data.
+EmployeeManager projects professional clinical identities only for occupation
+roles, including Dentistry. Controller authority is not a clinical occupation.
+OpenIdAuthManager consumes SOS Data's read-only Composition scope projection.
+Existing compact and reverse-DNS wire values remain valid; external coding
+identifiers are specific to their interoperability profiles.
+
+Validation: the ownership guard and type check pass. The 14 affected role and
+Consent suites pass 191 tests; the two family suites pass another 49 tests.
+The full project dependency-independence gate remains incomplete and blocks
+promotion until all remaining direct and transitive dependencies are removed.

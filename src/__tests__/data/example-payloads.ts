@@ -5,11 +5,8 @@
 import { testClaimsOfferEntityExpanded, testClaimsOfferFamilyExpanded } from './offer.data';
 import { testClaimsRegisterTenantExpanded } from './organization.data';
 import { testFamilyRegisterExpanded } from './family.data';
-import {
-  HealthcareActorRoles,
-  HealthcareConsentActions,
-  HealthcareConsentPurposes,
-} from 'gdc-common-utils-ts/constants/index';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
+import { HealthcareConsentActions, HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/index';
 import {
   ClaimsOrderSchemaorg,
   ClaimsOrganizationSchemaorg,

@@ -10,7 +10,7 @@ import {
 import { URN_NAMESPACE, URN_VERSION } from "../../data/urn.data";
 import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';
 import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
-import { HealthcareActorRoles } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 
 describe('createEmployeeUrn', () => {
     const baseParams = {
