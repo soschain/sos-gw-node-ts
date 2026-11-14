@@ -46,7 +46,7 @@ import {
 } from 'gdc-common-utils-ts/examples/shared';
 import { SearchResponseProfileEnvironment, SearchResponseProfiles } from '../../../utils/didcomm-response';
 import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
-import { Format } from 'gdc-common-utils-ts/constants/Schemas';
+import { Format } from 'sos-data-utils-ts/bff-wire-contract';
 import { RelatedPersonClaim } from 'gdc-common-utils-ts/models/interoperable-claims/related-person-claims';
 import { testExamplesDidWeb } from '../../data/identity.data';
 import { SecureIdTypesIndividual } from 'gdc-common-utils-ts/constants/identity-identifiers';

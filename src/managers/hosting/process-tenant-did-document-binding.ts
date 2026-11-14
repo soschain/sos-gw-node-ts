@@ -1,4 +1,4 @@
-import { GatewayInternalResourceTypes } from 'gdc-common-utils-ts/constants/gateway-response';
+import { GatewayInternalResourceTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { v4 as uuidv4 } from 'uuid';

@@ -1,7 +1,7 @@
 // src/routes/api.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
-import { GatewayInternalResourceTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
+import { GatewayInternalResourceTypes } from 'sos-data-utils-ts/gateway-response-contract';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 
 import * as express from 'express';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';

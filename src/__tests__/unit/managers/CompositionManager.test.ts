@@ -24,7 +24,7 @@ import {
 import { buildOrganizationDidWeb, buildProfessionalDidWeb } from 'gdc-common-utils-ts/utils/did';
 import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
 import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
-import { FhirIpsCreatorKinds } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { CompositionAttesterModes } from 'gdc-common-utils-ts';
 import {
   EXAMPLE_HOST_PUBLIC_HOSTNAME,

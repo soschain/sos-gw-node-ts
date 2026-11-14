@@ -66,10 +66,7 @@ import {
   IdentityAuthResourceTypes,
   SmartPostDcrActions,
 } from 'gdc-common-utils-ts/constants/identity-auth';
-import {
-  GatewayRouteFormats,
-  GatewayRouteSections,
-} from 'gdc-common-utils-ts/constants/gateway-response';
+import { GatewayRouteFormats, GatewayRouteSections } from 'sos-data-utils-ts/gateway-response-contract';
 import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
 import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { EXAMPLE_DEVICE_BOUND_SMART_DIDCOMM_MESSAGE } from 'gdc-common-utils-ts/examples/didcomm-identity';

@@ -1,6 +1,6 @@
 // src/managers/EmployeeManager.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
-import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { getHealthcareRoleByClaim, HealthcareRoleFamilies } from 'sos-data-utils-ts/healthcare-roles';
@@ -9,7 +9,8 @@ import { readIsco08Code } from 'antifraud-data-utils-ts/isco-08';
 import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import { v4 as uuidv4 } from 'uuid';
 import { buildOrganizationAuthorizationUrnCds, buildOrganizationEmployeeAuthorizationUrnCds } from 'sos-data-utils-ts/organization-authorization-urn';
-import { FhirIpsCreatorKinds, OrganizationEmployeeSearchResponseEntryTypes } from 'gdc-common-utils-ts';
+import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
+import { OrganizationEmployeeSearchResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
@@ -24,7 +25,7 @@ import { getTenantVaultId } from '../utils/tenant';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { BundleEntry, ErrorEntry, BundleEntryRequest, BundleJsonApi } from 'sos-data-utils-ts/bundle-contract';
 import { ClaimsRecord, RecordBase } from 'sos-data-utils-ts/confidential-storage';
-import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
+import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { getBundleResponseTypeForAction } from '../utils/bundle';
 import { normalizeCodeSystemAndValue } from '../utils/normalize-codeAndSystem';
 import { ParameterData } from 'gdc-common-utils-ts/models/params';
@@ -46,7 +47,7 @@ import { buildOfferOrderIndexedAttributes } from '../utils/offer-order-read-mode
 import { buildSearchResponseEntries } from '../utils/didcomm-response';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { normalizePublicAliasList } from 'gdc-common-utils-ts/utils/same-as';
-import type { ClinicalCreatorBinding } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import type { ClinicalCreatorBinding } from 'sos-data-utils-ts/clinical-creator-contract';
 import { getClinicalCreatorBindingsSectionId } from '../utils/clinical-creator-binding';
 import { canonicalizeBundleEntryMetadata } from '../utils/canonical-entry-metadata';
 import { requireExplicitLifecycleResourceId } from '../utils/lifecycle-resource-id';

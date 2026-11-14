@@ -33,7 +33,7 @@ import {
   SUBJECT_SECTION_INDIVIDUAL,
 } from '../../constants/domain';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
-import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { GatewayClaim } from '../../shared/gateway-claim-contract';
 import { shouldUseFabricLedger } from '../../adapters/credential-ledger-resolver';
 import { resolveOrganizationIdentityChannel } from '../../utils/ledger';

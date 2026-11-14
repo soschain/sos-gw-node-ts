@@ -117,3 +117,32 @@ with their runtime counterparts. The type check, scoped ownership guard and all
 includes memory-backed API/queue flows for employees, registration, hosting
 orders and clinical/Consent searches. Configured browser/network gates and the
 project-wide dependency/registry gate remain pending for cumulative acceptance.
+
+Response and clinical profile disposition: `adopted` from the independent SOS
+Data and SDK Core owners. Original repository:
+<https://github.com/Global-DataCare/gdc-common-utils-ts>; reviewed
+[gateway response catalogs](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/constants/gateway-response.ts),
+[clinical creator profile](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/utils/fhir-ips-creator-identity.ts)
+and [document successor profile](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/utils/clinical-resource-replacement.ts).
+The stable person UUID, assignment UUID and owning organization remain distinct.
+Gateway authentication, tenant/subject admission, persistence and delete checks
+retain their owning boundaries. Descriptive ownership and successor comparison
+do not grant actor authority or deletion rights.
+
+OpenID, DIDComm and native clinical exchange disposition: `adopted` using the
+existing neutral Antifraud client/device profile, neutral protocol envelope,
+SOS-owned message entries/wire catalog and FHIR-owned Communication/claim syntax.
+Original repository: <https://github.com/Global-DataCare/gdc-common-utils-ts>;
+reviewed [OpenID device contracts](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/models/openid-device.ts)
+and [token profile](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/models/auth.ts),
+and [communication declarations](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/models/comm.ts).
+The registration response retains its required issuance time, and native FHIR
+metadata extensions remain explicitly separate from protocol verification.
+The type check and all 14 scoped ownership guards pass. The 22 affected/default
+consumer suites pass 399 assertions without pending cases, including the actual
+manager path that accepts an authorized successor update, rejects deletion by
+the former attesting assignment and preserves the record. Memory-backed DCR,
+composition readback, employee and organization API flows also pass. These are
+backend suites and assertions, not additional UI user journeys. Configured ICA
+and browser/network journeys remain pending. The project-wide GDC declaration,
+source and registry checks still fail and block main/release acceptance.

@@ -6,9 +6,7 @@ import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import {
-  DIDCOMM_DEFAULT_ACCEPT_HEADER,
-} from 'gdc-common-utils-ts/utils/didcomm-submit';
+import { DIDCOMM_DEFAULT_ACCEPT_HEADER } from 'sos-data-utils-ts/bff-wire-contract';
 
 type LegalOrganizationVerificationTransactionResource = Readonly<{
   meta?: { claims?: ClaimsRecord };

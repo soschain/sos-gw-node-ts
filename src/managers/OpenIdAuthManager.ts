@@ -51,7 +51,7 @@ import {
   type ResearchStudyConsentRecord,
 } from './ResearchStudyConsentManager';
 import { getClinicalCreatorBindingsSectionId } from '../utils/clinical-creator-binding';
-import type { ClinicalCreatorBinding } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import type { ClinicalCreatorBinding } from 'sos-data-utils-ts/clinical-creator-contract';
 import { readClaimsOnlyContent, type FlatClaims } from '../utils/fhir-flat-claims';
 import {
   LICENSE_STATUS_ACTIVE,

@@ -2,7 +2,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { v4 as uuidv4 } from 'uuid';
-import { OrganizationEmployeeSearchResponseEntryTypes } from 'gdc-common-utils-ts';
+import { OrganizationEmployeeSearchResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { IJobProcessor } from './registry';
 import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
@@ -59,7 +59,7 @@ import {
   buildIssuedRoleLicenseLedgerIdentity,
   ensureIssuedRoleLicenseOnLedger,
 } from '../utils/ledger-role-license';
-import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { normalizeIndexedEmail, normalizeIndexedPhone } from '../utils/indexed-contact';

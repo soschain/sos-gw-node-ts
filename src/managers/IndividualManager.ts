@@ -31,7 +31,7 @@ import { normalizePhoneNumber } from '../utils/phone-number';
 import { parseIdentifierType } from '../utils/identifier-parser';
 import { generateUrnHash } from '../utils/urn-hash';
 import { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
-import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
+import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { EntityLifecycleStatus, EntityType } from '../gdc-backend-utils-node/models/enums';
 import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';

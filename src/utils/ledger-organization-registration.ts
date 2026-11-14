@@ -1,6 +1,6 @@
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
-import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
+import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { OrganizationConfig } from '../gdc-backend-utils-node/models/entity';

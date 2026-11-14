@@ -17,13 +17,9 @@ import { TWIN_COMPOSITION_SECTION_RESOURCE_CONFIG } from '../managers/TwinCompos
 import { canonicalizeFhirClaims } from './claims';
 import { SupportedFhirIngestionFormat } from './fhir-ingestion';
 import { randomUUID } from 'crypto';
-import { Format } from 'gdc-common-utils-ts/constants/Schemas';
-import {
-  FhirIpsCreatorKinds,
-  buildFhirIpsCreatorProvenance,
-  resolveClinicalCreatorBinding,
-  type ClinicalCreatorBinding,
-} from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import { Format } from 'sos-data-utils-ts/bff-wire-contract';
+import { FhirIpsCreatorKinds, type ClinicalCreatorBinding } from 'sos-data-utils-ts/clinical-creator-contract';
+import { buildFhirIpsCreatorProvenance, resolveClinicalCreatorBinding } from 'sos-sdk-core-ts/clinical-creator';
 import { getClinicalCreatorBindingsSectionId } from './clinical-creator-binding';
 export { getClinicalCreatorBindingsSectionId } from './clinical-creator-binding';
 

@@ -15,7 +15,7 @@ import { GatewayDidDocument as DidDocument, GatewayDidService as DidService } fr
 import { OrganizationConfig } from '../gdc-backend-utils-node/models/entity';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
-import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
+import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
@@ -197,10 +197,8 @@ import type { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { verifyOrganizationTestNetworkCredential } from './hosting/organization-test-network-credential';
 import { registerOrganizationOnLedger } from '../utils/ledger-organization-registration';
 import { OrganizationDidBindingEntryTypes } from 'gdc-common-utils-ts/utils/organization-did-binding';
-import {
-  DIDCOMM_DEFAULT_ACCEPT_HEADER,
-  DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE,
-} from 'gdc-common-utils-ts/utils/didcomm-submit';
+import { DIDCOMM_DEFAULT_ACCEPT_HEADER } from 'sos-data-utils-ts/bff-wire-contract';
+import { DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE } from 'antifraud-data-utils-ts/didcomm-contracts';
 
 // Transitional ICA transport contract:
 // GW host routes use the newer `application/didcomm-plain+json`, but the

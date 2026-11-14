@@ -1,6 +1,6 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/managers/DeviceRegistrationManager.ts
-import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
@@ -12,7 +12,7 @@ import { composeHostDidWebId } from '../utils/did-backend';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType, IssueLevel } from 'fhir-data-utils-ts/operation-outcome';
 import { createOperationOutcome } from '../utils/outcome';
-import { DcrRegistrationRequest, DcrRegistrationResponse, OpenIdDeviceInfo } from 'gdc-common-utils-ts/models/openid-device';
+import { DeviceClientRegistrationRequest as DcrRegistrationRequest, DeviceClientRegistrationResponse as DcrRegistrationResponse, RegisteredDeviceInfo as OpenIdDeviceInfo } from 'antifraud-data-utils-ts/openid-contracts';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
@@ -25,13 +25,8 @@ import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import { DidDocument, VerificationMethod } from '../gdc-backend-utils-node/models/did';
 import { registerSubjectKeysOnLedger, revokeSubjectKeysOnLedger } from '../utils/ledger-device-registration';
 import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
-import {
-  IdentityAuthActions,
-  IdentityAuthRequestFields,
-  IdentityAuthResponseEntryTypes,
-  IdentityAuthResponseTypes,
-  IdentityDcrMetadataFields,
-} from 'gdc-common-utils-ts/constants/identity-auth';
+import { IdentityAuthActions, IdentityAuthRequestFields, IdentityAuthResponseTypes, IdentityDcrMetadataFields } from 'gdc-common-utils-ts/constants/identity-auth';
+import { IdentityAuthResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { DEFAULT_LICENSE_DEVICE_ALLOWANCE, LICENSE_USER_CLASS_EMPLOYEE, LICENSE_USER_CLASS_INDIVIDUAL } from '../constants/domain';
 import type { ITenantsManager } from './ITenantsManager';
 import { hasRoleCode } from 'gdc-common-utils-ts/utils/activation-policy';
@@ -49,10 +44,7 @@ import {
   parseTenantUrn,
   resolveRoleBearingEmployeeUrn,
 } from '../utils/urn';
-import {
-  FhirIpsCreatorKinds,
-  type ClinicalCreatorBinding,
-} from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import { FhirIpsCreatorKinds, type ClinicalCreatorBinding } from 'sos-data-utils-ts/clinical-creator-contract';
 import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import { getHealthcareRoleByClaim } from 'sos-data-utils-ts/healthcare-roles';
 import { getClinicalCreatorBindingsSectionId } from '../utils/clinical-creator-binding';

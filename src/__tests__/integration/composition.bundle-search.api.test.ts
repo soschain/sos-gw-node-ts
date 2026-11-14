@@ -38,7 +38,7 @@ import {
   EXAMPLE_SUBJECT_DID,
   EXAMPLE_TENANT_SERVICE_DID,
 } from 'gdc-common-utils-ts/examples/shared';
-import { FhirIpsCreatorKinds } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { getClinicalCreatorBindingsSectionId } from '../../utils/ips-bundle';
 import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
 import { ExampleEmployeeEmails, ExampleEmployeeRoles } from 'gdc-common-utils-ts/examples/employee';

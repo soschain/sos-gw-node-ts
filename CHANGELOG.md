@@ -1,5 +1,18 @@
 ## Unreleased
 
+- Use independent SOS response/routing catalogs and included-resource contracts
+  without changing entry discriminators or terminal response correlation.
+- Consume clinical creator profile data from SOS Data and portable binding,
+  provenance and document-successor behavior from SDK Core. Keep Gateway actor,
+  tenant/subject and delete admission checks in their existing paths.
+- Use Antifraud's client-bound OpenID registration/token/device contracts and
+  neutral DIDComm envelope contracts, SOS message entries and wire formats, and
+  FHIR's native Communication projection and claim-key normalization. Preserve
+  existing field spellings and require verification independently of data shapes.
+- Validate these response/clinical/OpenID/message slices with the type check,
+  14 scoped ownership guards and 22 backend consumer suites (399 assertions,
+  no pending cases). The full project dependency guard remains red; browser and
+  configured network journeys still require cumulative acceptance.
 - Use neutral Antifraud person, organization, service, action and commerce claim
   catalogs across onboarding, identity, indexed search and order flows. Preserve
   each stored wire key, including identifier references versus identifier values,

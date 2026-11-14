@@ -46,7 +46,7 @@ import {
   EXAMPLE_EMPLOYEE_ACTIVE_DEVICE_BINDINGS,
   EXAMPLE_LICENSE_ACTIVE_RECORD,
 } from 'gdc-common-utils-ts/examples/license';
-import { FhirIpsCreatorKinds } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { getClinicalCreatorBindingsSectionId } from '../../utils/clinical-creator-binding';
 import { testIndividualControllerDcrIdentity } from '../data/identity.data';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';

@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { getEnvSectionId } from '../../../utils/section-env';
-import { DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE } from 'gdc-common-utils-ts/utils/didcomm-submit';
+import { DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE } from 'antifraud-data-utils-ts/didcomm-contracts';
 import {
   getLegalOrganizationVerificationController,
   getLegalOrganizationVerificationRepresentativePayload,

@@ -76,7 +76,7 @@ import { testTenant1IdentifierUrn } from '../data/organization.constants';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { IdentityDcrMetadataFields } from 'gdc-common-utils-ts/constants/identity-auth';
 import { createEmployeeUrnFromStableActorIdentifier } from '../../utils/urn';
-import { FhirIpsCreatorKinds } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { testIndividualControllerDcrIdentity } from '../data/identity.data';
 import { getClinicalCreatorBindingsSectionId } from '../../utils/clinical-creator-binding';
 

@@ -29,7 +29,7 @@ import {
   HOST_ACTIVATE_REQUIRED_OUTPUT_CLAIMS,
 } from './hosting-claim-contracts';
 import { allowsLegacyRepresentativeBootstrap } from './legacy-representative-bootstrap-policy';
-import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { GatewayClaim } from '../../shared/gateway-claim-contract';
 

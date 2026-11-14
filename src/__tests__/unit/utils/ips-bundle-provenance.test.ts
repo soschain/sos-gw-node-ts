@@ -6,7 +6,8 @@
  * Authorization invariant: author remains the individual and attester remains the registered member.
  * Persistence invariant: summary export does not replace either reference with transport actorDid.
  */
-import { CompositionAttesterModes, CompositionClaim, FhirIpsCreatorKinds, HealthcareBasicSections, HL7_RELATED_PERSON_FUNCTIONAL_ROLES, ResourceTypesFhirR4 } from 'gdc-common-utils-ts';
+import { CompositionAttesterModes, CompositionClaim, HealthcareBasicSections, HL7_RELATED_PERSON_FUNCTIONAL_ROLES, ResourceTypesFhirR4 } from 'gdc-common-utils-ts';
+import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import {
   EXAMPLE_ALLERGY_IDENTIFIER,

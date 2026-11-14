@@ -1,7 +1,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/managers/auth/IAuthorizationManager.ts
 
-import { IAccessTokenClaims } from 'gdc-common-utils-ts/models/auth';
+import { ClientAccessTokenClaims as IAccessTokenClaims } from 'antifraud-data-utils-ts/openid-contracts';
 import { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
 
 /**

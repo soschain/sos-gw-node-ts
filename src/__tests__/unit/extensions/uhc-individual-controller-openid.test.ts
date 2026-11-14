@@ -24,10 +24,8 @@ import {
 import { EXAMPLE_ALTERNATE_PORTAL_INDIVIDUAL_DID } from 'gdc-common-utils-ts/examples/subject-identity-binding';
 import { DeviceBindingStatuses, DeviceUserClasses } from 'gdc-common-utils-ts/constants/device';
 import { getHealthcareRoleByClaim, HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
-import {
-  FhirIpsCreatorKinds,
-  normalizeClinicalCreatorBinding,
-} from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
+import { normalizeClinicalCreatorBinding } from 'sos-sdk-core-ts/clinical-creator';
 import { buildSmartCompositionReadScope } from 'gdc-common-utils-ts/utils/smart-scope';
 import { CompositionClaim } from 'gdc-common-utils-ts/models/interoperable-claims/composition-claims';
 import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-claims/communication-claims';

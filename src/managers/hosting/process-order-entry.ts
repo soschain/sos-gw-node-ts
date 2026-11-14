@@ -35,7 +35,7 @@ import {
   buildIssuedRoleLicenseLedgerIdentity,
   ensureIssuedRoleLicenseOnLedger,
 } from '../../utils/ledger-role-license';
-import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { verifyBoundPostalActivationCode } from './postal-activation-code';
 import {

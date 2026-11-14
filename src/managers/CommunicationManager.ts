@@ -5,12 +5,13 @@ import { FhirDataTypes } from 'fhir-data-utils-ts';
 import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
-import { CommMsgExtended, DataEntry, FhirCommunication } from 'gdc-common-utils-ts/models/comm';
+import { CommMsgExtended, DataEntry } from 'sos-data-utils-ts/communication-message-contract';
+import { FhirCommunication } from 'fhir-data-utils-ts/fhir-types';
 import { DataCollectionIds, FhirResourceTypeDataCollections, HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { CommunicationClaim } from 'fhir-data-utils-ts';
 import { CompositionAttesterModes, CompositionClaim } from 'fhir-data-utils-ts';
-import { Format } from 'gdc-common-utils-ts/constants/Schemas';
+import { Format } from 'sos-data-utils-ts/bff-wire-contract';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { claimsToContentCid } from 'gdc-common-utils-ts/utils/fhir-cid';
@@ -58,18 +59,10 @@ import {
 import { getAuthenticatedJobActorIdentifiers } from '../utils/authenticated-job-actor';
 import { ClaimConsent, ConsentStatuses } from 'fhir-data-utils-ts';
 import { canonicalizeBundleEntryMetadata } from '../utils/canonical-entry-metadata';
-import {
-  FhirIpsCreatorKinds,
-  resolveClinicalCreatorBinding,
-  type AuthenticatedClinicalCreatorEvidence,
-  type ClinicalCreatorBinding,
-} from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
-import {
-  ClinicalResourceReplacementDecision,
-  evaluateClinicalResourceReplacement,
-  resolveClinicalDocumentAuthorOrganization,
-  type ClinicalDocumentAuthorOrganization,
-} from 'gdc-common-utils-ts/utils/clinical-resource-replacement';
+import { FhirIpsCreatorKinds, type AuthenticatedClinicalCreatorEvidence, type ClinicalCreatorBinding } from 'sos-data-utils-ts/clinical-creator-contract';
+import { resolveClinicalCreatorBinding } from 'sos-sdk-core-ts/clinical-creator';
+import { ClinicalResourceReplacementDecision, type ClinicalDocumentAuthorOrganization } from 'sos-data-utils-ts/clinical-creator-contract';
+import { evaluateClinicalResourceReplacement, resolveClinicalDocumentAuthorOrganization } from 'sos-sdk-core-ts/clinical-resource-replacement';
 import { getClinicalCreatorBindingsSectionId } from '../utils/clinical-creator-binding';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';

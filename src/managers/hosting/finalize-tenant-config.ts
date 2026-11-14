@@ -5,7 +5,7 @@ import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiab
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import type { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
+import type { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { EntityLifecycleStatus, EntityType, NetworkAccessStatus, NetworkName } from '../../gdc-backend-utils-node/models/enums';
 import type { OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
 import type { Sector } from 'gdc-common-utils-ts/models/urlPath';

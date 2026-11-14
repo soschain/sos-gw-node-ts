@@ -1,4 +1,4 @@
-import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
+import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';

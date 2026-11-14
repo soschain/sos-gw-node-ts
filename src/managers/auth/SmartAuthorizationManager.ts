@@ -1,7 +1,7 @@
 // src/managers/auth/SmartAuthorizationManager.ts
 
 import { IAuthorizationManager } from './IAuthorizationManager';
-import { IAccessTokenClaims } from 'gdc-common-utils-ts/models/auth';
+import { ClientAccessTokenClaims as IAccessTokenClaims } from 'antifraud-data-utils-ts/openid-contracts';
 
 export class SmartAuthorizationManager implements IAuthorizationManager {
   public async canAccess(

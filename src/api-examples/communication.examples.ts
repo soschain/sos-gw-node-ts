@@ -1,12 +1,12 @@
 // src/api-examples/communication.examples.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
-import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 import { CommunicationCategoryCodes } from 'fhir-data-utils-ts';
 import { HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
-import { Format } from 'gdc-common-utils-ts/constants/Schemas';
+import { Format } from 'sos-data-utils-ts/bff-wire-contract';
 
 const IPS_BUNDLE_LIGHT_EXAMPLE = {
   resourceType: ResourceTypesFhirR4.Bundle,

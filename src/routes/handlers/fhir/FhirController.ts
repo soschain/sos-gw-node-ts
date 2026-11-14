@@ -5,7 +5,7 @@ import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { Request, Response, Router } from 'express';
 import { IAuthorizationManager } from '../../../managers/auth/IAuthorizationManager';
 import { QueueAdapter } from '../../../adapters/queue';
-import { IAccessTokenClaims } from 'gdc-common-utils-ts/models/auth';
+import { ClientAccessTokenClaims as IAccessTokenClaims } from 'antifraud-data-utils-ts/openid-contracts';
 import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { validOrNewUuidv4 } from '../../../utils/uuid';

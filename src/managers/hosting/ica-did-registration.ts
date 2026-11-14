@@ -2,10 +2,8 @@ import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
-import {
-  DIDCOMM_DEFAULT_ACCEPT_HEADER,
-  DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE,
-} from 'gdc-common-utils-ts/utils/didcomm-submit';
+import { DIDCOMM_DEFAULT_ACCEPT_HEADER } from 'sos-data-utils-ts/bff-wire-contract';
+import { DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE } from 'antifraud-data-utils-ts/didcomm-contracts';
 import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
 
 type ActivationParticipantMaterial = {

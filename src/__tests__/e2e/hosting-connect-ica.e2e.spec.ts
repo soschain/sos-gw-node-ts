@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { describe, expect, it } from '@jest/globals';
 import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
-import { DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE } from 'gdc-common-utils-ts/utils/didcomm-submit';
+import { DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE } from 'antifraud-data-utils-ts/didcomm-contracts';
 import { deriveDeterministicEcJwkPair } from 'gdc-common-utils-ts/utils/deterministic-jwk';
 import { forwardOrganizationVerificationTransactionToIca } from '../../managers/hosting/ica-verification';
 

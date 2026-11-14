@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import type { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
+import type { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';

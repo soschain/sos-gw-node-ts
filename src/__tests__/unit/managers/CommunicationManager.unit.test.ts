@@ -16,7 +16,7 @@ import { CommunicationManager } from '../../../managers/CommunicationManager';
 import { TwinCompositionManager } from '../../../managers/TwinCompositionManager';
 import type { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { testCommunicationAppointmentFhirR4, testCommMsgExtAppointmentRequest, testAppointmentRequestText } from '../../data/appointment.data';
-import { DataEntry } from 'gdc-common-utils-ts/models/comm';
+import { DataEntry } from 'sos-data-utils-ts/communication-message-contract';
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { createHash, randomUUID } from 'crypto';
@@ -29,7 +29,7 @@ import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-claims/communication-claims';
 import { BundleTypes } from 'gdc-common-utils-ts/models/bundle-editor-types';
-import { Format } from 'gdc-common-utils-ts/constants/Schemas';
+import { Format } from 'sos-data-utils-ts/bff-wire-contract';
 import { HttpMediaTypes } from 'sos-data-utils-ts/bff-wire-contract';
 import { Sector } from 'gdc-common-utils-ts/models/urlPath';
 import {
@@ -53,7 +53,7 @@ import {
   EXAMPLE_CLIENT_INSTANCE_UUID,
   EXAMPLE_CONTROLLER_SIGN_KEY,
 } from 'gdc-common-utils-ts/examples/shared';
-import { FhirIpsCreatorKinds } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
 import { getClinicalCreatorBindingsSectionId } from '../../../utils/ips-bundle';
 import {
