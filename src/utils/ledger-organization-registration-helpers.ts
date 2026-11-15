@@ -2,7 +2,7 @@ import { createHash } from 'crypto';
 import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
+import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprints';
 import {
   buildOrganizationAuthorizationUrn,
   normalizeOrganizationAuthorizationUrn,

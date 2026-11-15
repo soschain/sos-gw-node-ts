@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Read public JWK thumbprint URI identifiers from neutral Antifraud operations
+  in five ledger, DID and controller-credential consumers; preserve existing
+  SHA-256 member transcripts and key-alias-independent identities.
+
 - Format existing DSP route and advertisement paths with SOS Data builders.
   Preserve tenant/host selector precedence, explicit dataset IDs and unscoped
   fallbacks; keep metadata-payload construction and access checks unchanged.

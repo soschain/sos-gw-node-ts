@@ -5,7 +5,7 @@ import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
+import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprints';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { populateDidDocumentFromJwks } from '../../utils/did-backend';

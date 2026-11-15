@@ -4,7 +4,7 @@ import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
 import { DIDCOMM_DEFAULT_ACCEPT_HEADER } from 'sos-data-utils-ts/bff-wire-contract';
 import { DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE } from 'antifraud-data-utils-ts/didcomm-contracts';
-import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
+import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprints';
 
 type ActivationParticipantMaterial = {
   did?: string;

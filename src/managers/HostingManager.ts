@@ -189,7 +189,7 @@ import {
   ACTION_PURGE,
   ACTION_STATUS,
 } from '../constants/domain';
-import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
+import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprints';
 import type { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { verifyOrganizationTestNetworkCredential } from './hosting/organization-test-network-credential';
 import { registerOrganizationOnLedger } from '../utils/ledger-organization-registration';

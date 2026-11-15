@@ -15,7 +15,7 @@ import {
   canonicalizeTestNetworkOrganizationCredential,
 } from 'gdc-common-utils-ts/utils/test-network-organization-credentials';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
-import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
+import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprints';
 import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
