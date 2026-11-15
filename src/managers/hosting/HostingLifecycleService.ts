@@ -5,9 +5,9 @@ import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-dat
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import {
-  extractRepresentativeMemberOfLegalIdentifier,
-  legalOrganizationIdentifiersMatch,
-} from 'gdc-common-utils-ts/utils/activation-policy';
+  readRepresentativeOrganizationIdentifier,
+  matchesTenantLegalIdentifier,
+} from '../../utils/tenant-representative-identity';
 import { OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
 import { EntityLifecycleStatus } from '../../gdc-backend-utils-node/models/enums';
 import type { IServerConfig } from '../../config';
@@ -352,7 +352,7 @@ export class HostingLifecycleService {
       ? (bearerPayload.vp as any).verifiableCredential
       : [];
     const representativeCredential = verifiableCredentials.find((credential: any) => {
-      return Boolean(extractRepresentativeMemberOfLegalIdentifier(credential));
+      return Boolean(readRepresentativeOrganizationIdentifier(credential));
     });
     if (!representativeCredential) {
       throw new ManagerError(
@@ -365,8 +365,8 @@ export class HostingLifecycleService {
       type: tenantConfig.claims?.[SchemaOrgOrganizationClaim.IdentifierType],
       value: tenantConfig.claims?.[SchemaOrgOrganizationClaim.IdentifierValue],
     };
-    if (!legalOrganizationIdentifiersMatch(
-      extractRepresentativeMemberOfLegalIdentifier(representativeCredential),
+    if (!matchesTenantLegalIdentifier(
+      readRepresentativeOrganizationIdentifier(representativeCredential),
       targetIdentifier,
     )) {
       throw new ManagerError(

@@ -146,3 +146,14 @@ composition readback, employee and organization API flows also pass. These are
 backend suites and assertions, not additional UI user journeys. Configured ICA
 and browser/network journeys remain pending. The project-wide GDC declaration,
 source and registry checks still fail and block main/release acceptance.
+
+
+## Tenant lifecycle representative identifier projection
+
+Adopted only the existing typed memberOf matching behavior in the GW-owned
+lifecycle admission helper. First credential subject, TAXID/TAX_ID aliases and
+complete punctuation-sensitive values are retained. Credential verification,
+controller proof and tenant lifecycle decisions remain at their original boundary;
+this projection grants no occupation or controller authority.
+Read-only compatibility source: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/activation-policy.ts .
+No source or release change was made in that original repository.

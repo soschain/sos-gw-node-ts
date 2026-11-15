@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Keep tenant lifecycle representative identifier projection and typed equality
+  in the owning GW admission helper, preserving first-subject, tax aliases and
+  punctuation-sensitive matching after existing credential verification.
+
 - Recover an existing active DCR installation only for the same current verified
   account, licence context, complete public-key set and canonical request. Return
   its original client receipt without vault or ledger writes; retain deliberate
