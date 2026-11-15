@@ -14,7 +14,7 @@ import { CompositionAttesterModes, CompositionClaim } from 'fhir-data-utils-ts';
 import { Format } from 'sos-data-utils-ts/bff-wire-contract';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import { claimsToContentCid } from 'gdc-common-utils-ts/utils/fhir-cid';
+import { buildOperationalClaimsContentCid } from '../utils/operational-claims-content-cid';
 import {
   buildCommunicationParticipantIndexAttributes,
   CommunicationParticipantIndexNames,
@@ -829,7 +829,7 @@ export class CommunicationManager implements IJobProcessor {
       resourceType: ResourceTypesFhirR4.Composition,
       resourceId: fallbackId,
     });
-    const contentVersionId = claimsToContentCid(claims).cid;
+    const contentVersionId = buildOperationalClaimsContentCid(claims);
     claims['Composition.meta.versionId'] = contentVersionId;
 
     const individualSectionId = getSubjectScopedSectionId(subject, SUBJECT_SECTION_INDIVIDUAL, 'composition');
@@ -864,7 +864,7 @@ export class CommunicationManager implements IJobProcessor {
       if (target.researchUseReference) {
         researchClaims['__digitalTwinStudy.reference'] = target.researchUseReference;
       }
-      const researchVersionId = claimsToContentCid(researchClaims).cid;
+      const researchVersionId = buildOperationalClaimsContentCid(researchClaims);
       researchClaims['Composition.meta.versionId'] = researchVersionId;
       researchClaims['org.hl7.fhir.r4.Composition.meta.versionId'] = researchVersionId;
       const researchRecordId = this.buildStableProjectionRecordId(
@@ -1674,7 +1674,7 @@ export class CommunicationManager implements IJobProcessor {
 
     const identifier = this.getFirstClaimValue(claims, config.identifierClaimKeys) || `urn:uuid:${uuidv4()}`;
     const fallbackId = determineResourceId(identifier, process.env.NODE_ENV);
-    const versionId = claimsToContentCid(this.clinicalContentVersionClaims(claims)).cid;
+    const versionId = buildOperationalClaimsContentCid(this.clinicalContentVersionClaims(claims));
     applyFhirCidVersioningToEntry({
       entry: { resource: input.resource },
       claims,
@@ -1855,7 +1855,7 @@ export class CommunicationManager implements IJobProcessor {
         if (target.researchUseReference) {
           researchClaims['__digitalTwinStudy.reference'] = target.researchUseReference;
         }
-        const researchVersionId = claimsToContentCid(this.clinicalContentVersionClaims(researchClaims)).cid;
+        const researchVersionId = buildOperationalClaimsContentCid(this.clinicalContentVersionClaims(researchClaims));
         researchClaims[`${input.resourceType}.meta.versionId`] = researchVersionId;
         researchClaims[`org.hl7.fhir.r4.${input.resourceType}.meta.versionId`] = researchVersionId;
         const digitalTwinSectionId = getSubjectScopedSectionId(

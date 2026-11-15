@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Compose operational content versions from the SOS flat-claim projection and
+  Antifraud DAG-JSON/SHA2-256 CID primitive. Preserve eight actual original byte/CID
+  vectors across six manager calls; canonical fields and distinct SHA3 ledger
+  reference profiles remain unchanged. Unsafe prototype-control input fails closed.
+
 - Own licence pool-family selection and issued-seat allowance projection in GW,
   consuming the existing Antifraud/FHIR coding identifiers. Keep issuance's
   two-device fallback distinct from the historical five-device runtime fallback;

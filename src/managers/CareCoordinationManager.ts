@@ -5,7 +5,7 @@ import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job'
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { IssueLevel, IssueType, type IssueTypeCode } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import { claimsToContentCid } from 'gdc-common-utils-ts/utils/fhir-cid';
+import { buildOperationalClaimsContentCid } from '../utils/operational-claims-content-cid';
 import {
   CommunicationRequestClaim,
   DocumentReferenceClaim,
@@ -146,7 +146,7 @@ export class CareCoordinationManager implements IJobProcessor {
     const versionClaim = `${this.deps.resourceType}.meta.versionId`;
     const contentClaims = { ...normalized.claims };
     delete contentClaims[versionClaim];
-    const versionId = claimsToContentCid(contentClaims).cid;
+    const versionId = buildOperationalClaimsContentCid(contentClaims);
     const versionedClaims: FlatClaims = { ...contentClaims, [versionClaim]: [versionId] };
     const current = await this.deps.repository.get<ConfidentialStorageDoc>(storage.collectionName, normalized.id, resourceConfig.section);
     const currentClaims = current

@@ -24,7 +24,7 @@ import { buildSearchResponseEntries } from '../utils/didcomm-response';
 import { GatewayResponseEntryTypes } from '../shared/gateway-response-types';
 import { buildClinicalDocumentSearchAttributes } from '../utils/clinical-document-search-attributes';
 import type { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
-import { claimsToContentCid } from 'gdc-common-utils-ts/utils/fhir-cid';
+import { buildOperationalClaimsContentCid } from '../utils/operational-claims-content-cid';
 import type { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
 import { ClinicalEvidenceChaincode } from '../utils/ledger';
 import {
@@ -184,7 +184,7 @@ export class MedicationStatementManager implements IJobProcessor {
             claims,
             sector: job.sector,
           });
-          const versionId = claimsToContentCid(claims).cid;
+          const versionId = buildOperationalClaimsContentCid(claims);
           const record = {
             id,
             ...claims,

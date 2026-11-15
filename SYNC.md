@@ -189,3 +189,16 @@ its fallback of two installations, while the existing GW authorization/device
 and search compatibility fallback of five remains profile-specific and unchanged.
 No general license builder or unused runtime API was moved.
 Read-only compatibility source: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/license.ts .
+
+
+## Operational content CID composition
+
+Adopted the default flat-claim content-version profile through the owning SOS
+Data projection and neutral Antifraud DAG-JSON/SHA2-256 primitive. Eight exact
+canonical UTF-8/CID vectors from the read-only original are retained as immutable
+compatibility evidence. Canonical Status/Entry data and significant array order
+remain intact; the distinct SHA3 ledger-reference profile is not replaced.
+Own prototype-control keys are rejected rather than repeating silent data loss.
+Read-only original source: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/utils/fhir-cid.ts .
+The original repository was not modified and new production/tests import no
+original hashing implementation.
