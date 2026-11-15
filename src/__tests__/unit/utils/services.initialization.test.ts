@@ -2,13 +2,13 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { initializeTenantServicesConfig } from '../../../utils/services';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { DidService } from '../../../gdc-backend-utils-node/models/did';
 
 describe('initializeTenantServicesConfig', () => {
   it('should include the "test-network" enrollment service by default for all new tenants', () => {
     // --- Arrange ---
-    const tenantSector = Sector.HEALTH_CARE;
+    const tenantSector = GatewaySector.HEALTH_CARE;
 
     // --- Act ---
     const services: DidService[] = initializeTenantServicesConfig(tenantSector);

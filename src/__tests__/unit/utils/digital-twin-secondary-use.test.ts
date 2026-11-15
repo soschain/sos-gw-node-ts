@@ -16,7 +16,7 @@ import {
   isRegisteredDigitalTwinSubjectId,
 } from '../../../utils/digital-twin-research-projection';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 describe('digital twin secondary-use lifecycle', () => {
   const tenantVaultId = 'health-care_acme';

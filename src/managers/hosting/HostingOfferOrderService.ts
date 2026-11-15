@@ -4,9 +4,9 @@ import { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { EntityLifecycleStatus } from '../../gdc-backend-utils-node/models/enums';
-import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import type { IServerConfig } from '../../config';
@@ -92,7 +92,7 @@ export class HostingOfferOrderService {
     entry: BundleEntry,
   ): Promise<BundleEntry> {
     const tenantId = String(job.tenantId || '').trim();
-    const sector = String(job.sector || '').trim() as Sector;
+    const sector = String(job.sector || '').trim() as GatewaySector;
     if (!tenantId || !sector) {
       throw new ManagerError('Professional-seat Offer requires tenantId and sector.', IssueType.Required);
     }
@@ -257,7 +257,7 @@ export class HostingOfferOrderService {
       throw new ManagerError('Commercial license offer is missing tenant alternateName or sector.', IssueType.Required);
     }
 
-    const tenantVaultId = getTenantVaultId(sector as Sector, tenantId);
+    const tenantVaultId = getTenantVaultId(sector as GatewaySector, tenantId);
     const quantity = Number(matchedOfferClaims[SchemaOrgOfferClaim.EligibleQuantityValue] || 1);
     const expiryDate = new Date(Date.now());
     expiryDate.setFullYear(expiryDate.getFullYear() + 1);

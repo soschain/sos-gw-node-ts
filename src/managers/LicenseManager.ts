@@ -9,7 +9,7 @@ import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
-import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 
 import { getTenantVaultId } from '../utils/tenant';

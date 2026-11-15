@@ -1,5 +1,5 @@
 import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';

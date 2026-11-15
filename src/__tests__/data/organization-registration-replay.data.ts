@@ -1,7 +1,7 @@
 import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { testClaimsRegisterTenantExpanded } from './organization.data';
 
 export const testRegistrationControllerDid = 'did:web:controller.example.test:organization:representative';
@@ -22,7 +22,7 @@ export const testRegistrationEncrypterJwk = {
   use: 'enc',
 } as PublicJwk;
 
-export const testAnimalResearchSector = DataspaceSectors.AnimalResearch as Sector;
+export const testAnimalResearchSector = DataspaceSectors.AnimalResearch as GatewaySector;
 
 export const testAnimalResearchRegistrationClaims = {
   ...testClaimsRegisterTenantExpanded,

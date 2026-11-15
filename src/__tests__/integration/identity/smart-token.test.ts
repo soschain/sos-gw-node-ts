@@ -10,7 +10,7 @@ import { testPayloadCreateTenant1 } from '../../data/end-to-end.data';
 import { testConsentRulePermitOrgDid } from '../../data/consent-rules.data';
 import { generateTenantCollectionNameFromClaims } from '../../../utils/tenant';
 import { initializeTenantServicesConfig } from '../../../utils/services';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { getIndividualSectionId } from '../../../utils/individual-sections';
 import { startServer, resetServerConfig } from '../../../server';
 import { getEnvSectionId } from '../../../utils/section-env';
@@ -52,7 +52,7 @@ import {
 } from 'gdc-common-utils-ts/examples/shared';
 import { OpenIdAuthManager } from '../../../managers/OpenIdAuthManager';
 import { buildResearchStudyControllerImportScope } from '../../../managers/ResearchStudyConsentManager';
-import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
+import { DeviceBindingStatuses } from 'sos-data-utils-ts/device-license-contract';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { LICENSE_USER_CLASS_INDIVIDUAL } from '../../../constants/domain';
 
@@ -115,7 +115,7 @@ describe('SMART token issuance (integration)', () => {
         [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
         [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
         [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
       const tenantVaultId = getTenantVaultId(
@@ -128,7 +128,7 @@ describe('SMART token issuance (integration)', () => {
         sequence: 0,
         content: {
           claims: tenantClaims,
-          didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+          didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
           didDocument: { id: EXAMPLE_HOSTING_OPERATOR_DID, '@context': 'https://www.w3.org/ns/did/v1' },
         },
       } as any, 'host');
@@ -198,7 +198,7 @@ describe('SMART token issuance (integration)', () => {
         [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
         [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
         [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
 
@@ -210,7 +210,7 @@ describe('SMART token issuance (integration)', () => {
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: EXAMPLE_HOSTING_OPERATOR_DID, '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -330,7 +330,7 @@ describe('SMART token issuance (integration)', () => {
         [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
         [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
         [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
 
@@ -342,7 +342,7 @@ describe('SMART token issuance (integration)', () => {
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerOrganizationDid, '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -452,7 +452,7 @@ describe('SMART token issuance (integration)', () => {
         [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
         [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
         [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
 
@@ -464,7 +464,7 @@ describe('SMART token issuance (integration)', () => {
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerOrganizationDid, '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -579,7 +579,7 @@ describe('SMART token issuance (integration)', () => {
         [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
         [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
         [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
 
@@ -591,7 +591,7 @@ describe('SMART token issuance (integration)', () => {
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerOrganizationDid, '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -710,7 +710,7 @@ describe('SMART token issuance (integration)', () => {
         sequence: 0,
         content: {
           claims: tenantClaims,
-          didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+          didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
           didDocument: { id: EXAMPLE_HOSTING_OPERATOR_DID, '@context': 'https://www.w3.org/ns/did/v1' },
         },
       } as any, 'host');

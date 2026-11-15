@@ -4,7 +4,7 @@ import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { OrganizationConfig } from '../gdc-backend-utils-node/models/entity';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { PdfSignatureEvidence } from './pdf-evidence';
 import { ILogger } from '../loggers/ILogger';
 import { resolveOrganizationIdentityChannel } from './ledger';
@@ -112,7 +112,7 @@ export async function registerOrganizationOnLedger(params: {
   config: OrganizationConfig;
   evidence?: PdfSignatureEvidence[];
   role: 'host' | 'tenant';
-  sector: Sector;
+  sector: GatewaySector;
   jurisdiction?: string;
 }): Promise<void> {
   const mspId = params.ledgerConfig?.mspId || process.env.LEDGER_MSP_ID || process.env.HLF_MSP_ID_ORG1;
@@ -202,7 +202,7 @@ export async function upsertOrganizationSectorHostingBindingOnLedger(params: {
   organizationClaims: Record<string, unknown>;
   tenantDid?: string;
   providerDomain?: string;
-  sector: Sector | string;
+  sector: GatewaySector | string;
   jurisdiction?: string;
   status: 'validated' | 'revoked';
 }): Promise<void> {

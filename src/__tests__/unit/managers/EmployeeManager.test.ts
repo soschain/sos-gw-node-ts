@@ -29,7 +29,7 @@ import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { EntityConfig } from '../../../gdc-backend-utils-node/models/entity';
 import { normalizeCodeSystemAndValue } from '../../../utils/normalize-codeAndSystem';
-import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { getEnvSectionId } from '../../../utils/section-env';
 import { EntityLifecycleStatus, EntityType } from '../../../gdc-backend-utils-node/models/enums';
 import { EXAMPLE_DEVICE_LICENSE_AVAILABLE } from 'gdc-common-utils-ts/examples/license';

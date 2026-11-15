@@ -14,11 +14,12 @@
  * TEST_NETWORK_MAX_POLLS and TEST_NETWORK_POLL_MS bound the polling window.
  */
 import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 import { HealthcareConsentActions } from 'gdc-common-utils-ts/constants/index';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
-import { Sector, knownDomainsReversedEnum } from 'gdc-common-utils-ts/models/urlPath';
+import { knownDomainsReversedEnum } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
 import {
   EXAMPLE_CONSENT_DATE,
@@ -71,7 +72,7 @@ describeIfConfigured('ConsentAccess smoke against deployed UNID test-network hos
     const bearer = process.env.TEST_NETWORK_AUTH_BEARER || 'demo-token';
     const tenantId = process.env.TEST_NETWORK_TENANT_ID || 'acme-id';
     const jurisdiction = process.env.TEST_NETWORK_JURISDICTION || 'ES';
-    const sector = process.env.TEST_NETWORK_SECTOR || Sector.HEALTH_CARE;
+    const sector = process.env.TEST_NETWORK_SECTOR || GatewaySector.HEALTH_CARE;
     const maxPolls = Number(process.env.TEST_NETWORK_MAX_POLLS || '40');
     const pollMs = Number(process.env.TEST_NETWORK_POLL_MS || '1500');
     const subjectDid = process.env.TEST_NETWORK_SUBJECT_DID || EXAMPLE_SUBJECT_DID;

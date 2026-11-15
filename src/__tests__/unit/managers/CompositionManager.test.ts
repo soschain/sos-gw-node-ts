@@ -23,7 +23,7 @@ import {
 } from '../../../api-examples';
 import { buildOrganizationDidWeb, buildProfessionalDidWeb } from 'gdc-common-utils-ts/utils/did';
 import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { CompositionAttesterModes } from 'gdc-common-utils-ts';
 import {

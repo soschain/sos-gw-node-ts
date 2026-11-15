@@ -9,7 +9,7 @@ import {
   getLegalOrganizationVerificationRepresentativePayload,
 } from 'gdc-common-utils-ts/utils/legal-organization-verification-transaction';
 import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import type { IServerConfig } from '../../../config';
 import type { IStorageAdapter } from '../../../database/storage/IStorageAdapter';
 import type { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
@@ -22,7 +22,7 @@ import { testClaimsRegisterTenantExpanded } from '../../data/organization.data';
 import { HOST_TRANSACTION_REQUIRED_INPUT_CLAIMS } from '../../../managers/hosting/hosting-claim-contracts';
 
 const { HostingManager } = await import('../../../managers/HostingManager');
-const EXAMPLE_SECTOR = Sector.HEALTH_CARE;
+const EXAMPLE_SECTOR = GatewaySector.HEALTH_CARE;
 const EXAMPLE_HOST_COLLECTION = 'system_host';
 const EXAMPLE_HOST_DID = 'did:web:host.example.org';
 const EXAMPLE_ICA_BASE_URL = 'https://ica.example.org';

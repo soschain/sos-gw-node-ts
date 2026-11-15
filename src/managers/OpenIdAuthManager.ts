@@ -31,7 +31,7 @@ import { type ConsentRule } from 'gdc-common-utils-ts/models/consent-rule';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'fhir-data-utils-ts';
 import { getMatchingIndividualMemberCredentialFromVpToken } from 'gdc-common-utils-ts/utils/individual-smart';
 import { getMatchingProfessionalCredentialFromVpToken } from 'gdc-common-utils-ts/utils/professional-smart';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { getOrCreateDigitalTwinSubjectId } from '../utils/digital-twin-research-projection';
 import { getMatchingIndividualControllerCredentialFromVpToken } from '../utils/individual-controller-smart';
 import { parseTenantUrn } from '../utils/urn';

@@ -20,7 +20,7 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
  */
 import { afterEach, expect, it } from '@jest/globals';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { projectResearchStudyR5SearchClaims } from 'vet-data-utils-ts';
 import {
   buildResearchStudyPartySectionId,
@@ -64,7 +64,7 @@ it('executes controller create, correlated party PATCH and official-claim search
     const tenantVaultId = getTenantVaultId(sector, tenantId);
     const tenantConfig = {
       claims: tenantClaims,
-      didConfig: { service: initializeTenantServicesConfig(sector as Sector) },
+      didConfig: { service: initializeTenantServicesConfig(sector as GatewaySector) },
       didDocument: {
         '@context': 'https://www.w3.org/ns/did/v1',
         id: 'did:web:tenant.integration.example',

@@ -10,7 +10,7 @@ import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { getHealthcareRoleByClaim, HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { testPayloadCreateTenant1 } from '../data/end-to-end.data';
 import { initializeTenantServicesConfig } from '../../utils/services';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { startServer, resetServerConfig } from '../../server';
 import { getEnvSectionId } from '../../utils/section-env';
 import { getIndividualSectionId, getSubjectScopedSectionId } from '../../utils/individual-sections';
@@ -82,7 +82,7 @@ describe('Consent via Communication API (integration)', () => {
         [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
         [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
         [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
@@ -93,7 +93,7 @@ describe('Consent via Communication API (integration)', () => {
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: 'did:web:api.acme.org', '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -169,7 +169,7 @@ describe('Consent via Communication API (integration)', () => {
         url: buildCommunicationBatchPath(
           testTenant1TenantId,
           EXAMPLE_HEALTHCARE_JURISDICTION,
-          Sector.HEALTH_CARE,
+          GatewaySector.HEALTH_CARE,
           communicationFormat,
           '_batch',
         ),
@@ -233,7 +233,7 @@ describe('Consent via Communication API (integration)', () => {
           url: buildCommunicationBatchPath(
             testTenant1TenantId,
             EXAMPLE_HEALTHCARE_JURISDICTION,
-            Sector.HEALTH_CARE,
+            GatewaySector.HEALTH_CARE,
             communicationFormat,
             '_batch-response',
           ),
@@ -330,7 +330,7 @@ describe('Consent via Communication API (integration)', () => {
         url: buildCommunicationBatchPath(
           testTenant1TenantId,
           EXAMPLE_HEALTHCARE_JURISDICTION,
-          Sector.HEALTH_CARE,
+          GatewaySector.HEALTH_CARE,
           communicationFormat,
           '_batch',
         ),
@@ -367,7 +367,7 @@ describe('Consent via Communication API (integration)', () => {
           url: buildCommunicationBatchPath(
             testTenant1TenantId,
             EXAMPLE_HEALTHCARE_JURISDICTION,
-            Sector.HEALTH_CARE,
+            GatewaySector.HEALTH_CARE,
             communicationFormat,
             '_batch-response',
           ),
@@ -392,7 +392,7 @@ describe('Consent via Communication API (integration)', () => {
         url: buildCommunicationBatchPath(
           testTenant1TenantId,
           EXAMPLE_HEALTHCARE_JURISDICTION,
-          Sector.HEALTH_CARE,
+          GatewaySector.HEALTH_CARE,
           communicationFormat,
           '_batch',
         ),
@@ -441,7 +441,7 @@ describe('Consent via Communication API (integration)', () => {
           url: buildCommunicationBatchPath(
             testTenant1TenantId,
             EXAMPLE_HEALTHCARE_JURISDICTION,
-            Sector.HEALTH_CARE,
+            GatewaySector.HEALTH_CARE,
             communicationFormat,
             '_batch-response',
           ),

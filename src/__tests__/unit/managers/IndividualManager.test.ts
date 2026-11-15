@@ -23,7 +23,7 @@ import {
   testIndividualOnboardingBatchEntries,
 } from '../../data/customer-onboarding.data';
 import { BundleEntry, BundleEntryResponse, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
-import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
 import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
 

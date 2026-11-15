@@ -3,7 +3,7 @@
 
 import { randomBytes, randomUUID } from 'crypto';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { DEFAULT_LICENSE_DEVICE_ALLOWANCE } from 'gdc-common-utils-ts/utils/license';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';

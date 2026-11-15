@@ -8,7 +8,7 @@ import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { randomUUID } from 'crypto';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { LicenseManager } from '../../managers/LicenseManager';
-import { DeviceLicense, DeviceRestrictions } from 'gdc-common-utils-ts/models/device-license';
+import { DeviceLicense, DeviceRestrictions } from 'sos-data-utils-ts/device-license-contract';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { getEnvSectionId } from '../../utils/section-env';
 import { EXAMPLE_SECTOR } from 'gdc-common-utils-ts/examples/shared';

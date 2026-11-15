@@ -13,7 +13,8 @@ import { afterEach, expect, it } from '@jest/globals';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
-import { knownDomainsReversedEnum, type Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { knownDomainsReversedEnum } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import {
   ANIMAL_INSURANCE_CONSENT_TEST_DATA,
   ANIMAL_INSURANCE_CONSENT_TEST_INPUT,
@@ -60,7 +61,7 @@ it('fails closed through the HTTP queue when an insurance Consent claim diverges
       sequence: 0,
       content: {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(DataspaceSectors.AnimalInsurance as Sector) },
+        didConfig: { service: initializeTenantServicesConfig(DataspaceSectors.AnimalInsurance as GatewaySector) },
         didDocument: {
           '@context': 'https://www.w3.org/ns/did/v1',
           id: 'did:web:animal-insurer.integration.example',

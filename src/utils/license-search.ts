@@ -2,7 +2,7 @@
 
 import type { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { getEnvSectionId } from './section-env';
 import { extractSearchFiltersFromEntry, type SearchFilters } from './search-request';

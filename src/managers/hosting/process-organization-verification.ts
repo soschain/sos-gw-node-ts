@@ -8,7 +8,7 @@ import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { getBundleResponseTypeForAction } from '../../utils/bundle';
 import { normalizeContextualizedClaims } from '../../utils/claims';
@@ -81,7 +81,7 @@ export const ORGANIZATION_ISSUE_RESPONSE_TYPE = 'Organization-issue-response-v1.
 type VerificationDeps = Readonly<{
   job: JobRequest;
   issuerDid: string;
-  config: { sectorsAllowed: Sector[]; namespace: string; securityMode?: string; networkMode?: string };
+  config: { sectorsAllowed: GatewaySector[]; namespace: string; securityMode?: string; networkMode?: string };
   normalizeClaims: (claims: ClaimsRecord) => ClaimsRecord;
   createPendingTenantRegistrationFromClaims: (input: {
     claims: ClaimsRecord;
@@ -341,7 +341,7 @@ type IssueClaimsDeps = Readonly<{
   environment?: string;
   fallbackAlternateName?: string;
   bearerPayload?: Record<string, any>;
-  config: { namespace: string; sectorsAllowed: Sector[]; securityMode?: string };
+  config: { namespace: string; sectorsAllowed: GatewaySector[]; securityMode?: string };
   vaultRepository: {
     vaultExists(id: string): Promise<boolean>;
     getContainersInSection(vaultId: string, sectionId: string): Promise<any[]>;
@@ -378,7 +378,7 @@ export async function createOrganizationIssueClaims(
     throw new ManagerError(`Invalid alternateName format: '${alternateName}'`, IssueType.Value);
   }
 
-  const requestedSector = enrichedClaims[SchemaOrgServiceClaim.Category] as Sector;
+  const requestedSector = enrichedClaims[SchemaOrgServiceClaim.Category] as GatewaySector;
   if (!requestedSector) {
     throw new ManagerError(`Missing required claim for existing tenant: '${SchemaOrgServiceClaim.Category}'`, IssueType.Required);
   }

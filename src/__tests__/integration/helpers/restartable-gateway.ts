@@ -16,7 +16,7 @@ import { KmsService } from '../../../services/KmsService';
 import { InMemoryEnvelopeAdapter } from '../../../services/kms-envelope-adapter';
 import { VaultWrappedKeyRepository } from '../../../services/wrapped-key-repository';
 import { Worker } from '../../../worker';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import type { IHostRuntime } from '../../../managers/IHostRuntime';
 import { testClaimsHostInitialization } from '../../data/end-to-end.data';
 import { generateTenantCollectionNameFromClaims } from '../../../utils/tenant';
@@ -66,7 +66,7 @@ export async function buildRestartableGateway(
     hostExternalDomain: 'testhost.com',
     apiBaseUrl: 'http://testhost:3000',
     namespace: 'test-namespace',
-    sectorsAllowed: [testAnimalResearchSector, Sector.TEST],
+    sectorsAllowed: [testAnimalResearchSector, GatewaySector.TEST],
     allowedPaymentMethods: ['Stripe'],
     dbProvider: 'mem',
     queueProvider: 'mem',

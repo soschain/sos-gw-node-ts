@@ -23,7 +23,7 @@ import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { projectResearchStudyR5SearchClaims } from 'vet-data-utils-ts';
 import { buildVeterinaryResearchStudyActiveConsentBatch } from 'vet-sdk-core-ts/research-study';
 import { OrganizationWorkflowCapabilities } from 'sos-data-utils-ts/organization-workflow-access';
@@ -76,7 +76,7 @@ it('activates one study-scoped Consent through the real HTTP queue and worker bo
       sequence: 0,
       content: {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(fixture.sector as Sector) },
+        didConfig: { service: initializeTenantServicesConfig(fixture.sector as GatewaySector) },
         didDocument: {
           '@context': 'https://www.w3.org/ns/did/v1',
           id: 'did:web:tenant.integration.example',

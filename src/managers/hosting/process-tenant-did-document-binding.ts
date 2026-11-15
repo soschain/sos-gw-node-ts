@@ -7,7 +7,7 @@ import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job'
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { OrganizationDidBindingEntryTypes } from 'gdc-common-utils-ts/utils/organization-did-binding';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
@@ -40,7 +40,7 @@ export async function processTenantDidDocumentBinding(
     throw new ManagerError('Organization DID binding requires at least one organization.url value.', IssueType.Required);
   }
 
-  const tenantSector = String(deps.job.sector || '').trim() as Sector;
+  const tenantSector = String(deps.job.sector || '').trim() as GatewaySector;
   const tenantRouteId = String(deps.job.tenantId || '').trim();
   const jurisdiction = String(deps.job.jurisdiction || '').trim();
   if (!tenantSector || !tenantRouteId || !jurisdiction) {

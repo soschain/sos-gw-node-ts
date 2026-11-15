@@ -10,7 +10,7 @@ import {
   buildServiceRequestTriageTaskFlatEntry,
 } from 'fhir-data-utils-ts';
 import { HealthcareServiceClaim } from 'fhir-data-utils-ts/claims';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { AppointmentResponseStatuses, buildAppointmentResource, buildAppointmentResponseResource, buildLocationResource, expandAvailability, normalizeSchedulingFlatClaimsResource } from 'vet-data-utils-ts/scheduling';
 import { buildOrganizationScopedResourceUrn } from 'sos-data-utils-ts/organization-scoped-resource-identity';
 import { REPOSITORY_SAFE_EXAMPLES } from 'sos-data-utils-ts/repository-privacy';
@@ -58,7 +58,7 @@ it('persists Location and Slot as encrypted flat claims and returns indexed sear
     await kmsService.provisionKeys(tenantVaultId);
     const secureTenant = await kmsService.protectConfidentialData({ id: tenantVaultId, status: 'active', sequence: 0, content: {
       claims: tenantClaims,
-      didConfig: { service: initializeTenantServicesConfig(sector as Sector) },
+      didConfig: { service: initializeTenantServicesConfig(sector as GatewaySector) },
       didDocument: { '@context': 'https://www.w3.org/ns/did/v1', id: 'did:web:veterinary-clinic.example', controller: [authenticatedActor.actorDid] },
     } } as any, 'host');
     await vaultRepository.put(hostCollection, [secureTenant as any], getEnvSectionId('tenants'));
@@ -349,7 +349,7 @@ async function provisionTenant({ authenticatedActor, tenantManager, vaultReposit
   const hostCollection = resolveHostPhysicalCollectionName();
   const tenantClaims = { ...(testPayloadCreateTenant1.body.data[0].resource.meta.claims as any), [SchemaOrgOrganizationClaim.AlternateName]: tenantId, [SchemaOrgOrganizationClaim.AddressCountry]: 'CA', [SchemaOrgOrganizationClaim.AddressRegion]: jurisdiction, [SchemaOrgServiceClaim.Category]: sector };
   const tenantVaultId = getTenantVaultId(sector, tenantId); await kmsService.provisionKeys(tenantVaultId);
-  const secureTenant = await kmsService.protectConfidentialData({ id: tenantVaultId, status: 'active', sequence: 0, content: { claims: tenantClaims, didConfig: { service: initializeTenantServicesConfig(sector as Sector) }, didDocument: { '@context': 'https://www.w3.org/ns/did/v1', id: 'did:web:veterinary-clinic.example', controller: [authenticatedActor.actorDid] } } } as any, 'host');
+  const secureTenant = await kmsService.protectConfidentialData({ id: tenantVaultId, status: 'active', sequence: 0, content: { claims: tenantClaims, didConfig: { service: initializeTenantServicesConfig(sector as GatewaySector) }, didDocument: { '@context': 'https://www.w3.org/ns/did/v1', id: 'did:web:veterinary-clinic.example', controller: [authenticatedActor.actorDid] } } } as any, 'host');
   await vaultRepository.put(hostCollection, [secureTenant as any], getEnvSectionId('tenants')); await tenantManager.getTenant(tenantVaultId);
 }
 

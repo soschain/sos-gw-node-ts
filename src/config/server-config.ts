@@ -1,5 +1,5 @@
 import { IServerConfig } from '../config';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 
 let configInstance: IServerConfig;
 const DEFAULT_MAX_HEADER_SIZE_BYTES = 128 * 1024;
@@ -138,15 +138,15 @@ export function determineApiBaseUrl(port: number, apiHostname: string): string {
   return `${protocol}://${publicHost}:${port}`;
 }
 
-export function parseAndValidateSectors(csv: string | undefined): Sector[] {
+export function parseAndValidateSectors(csv: string | undefined): GatewaySector[] {
   if (!csv) return [];
-  const legacySectors = new Set(Object.values(Sector) as string[]);
+  const legacySectors = new Set(Object.values(GatewaySector) as string[]);
   const compatibilitySectors = new Set<string>(COMPATIBILITY_SECTORS);
   const requestedSectors = csv.split(',').map((s) => s.trim());
   const syntheticSectorPattern = /^(animal|health)-(research|care|index|tech|insurance)$/;
   for (const sector of requestedSectors) {
-    if (sector === Sector.SYSTEM) {
-      throw new Error(`Config Error: The '${Sector.SYSTEM}' sector is reserved and cannot be set in SECTORS_ALLOWED.`);
+    if (sector === GatewaySector.SYSTEM) {
+      throw new Error(`Config Error: The '${GatewaySector.SYSTEM}' sector is reserved and cannot be set in SECTORS_ALLOWED.`);
     }
     if (!legacySectors.has(sector) && !compatibilitySectors.has(sector) && !syntheticSectorPattern.test(sector)) {
       throw new Error(
@@ -156,7 +156,7 @@ export function parseAndValidateSectors(csv: string | undefined): Sector[] {
       );
     }
   }
-  return requestedSectors as Sector[];
+  return requestedSectors as GatewaySector[];
 }
 
 export function parseAndValidateMainSector(value: string | undefined): MainSector {
@@ -194,11 +194,11 @@ export function parseAndValidateSubsectors(csv: string | undefined): Subsector[]
   return deduped;
 }
 
-export function buildSectorsFromMainAndSubsectors(main: MainSector, subsectors: Subsector[]): Sector[] {
-  return subsectors.map((sub) => `${main}-${sub}` as Sector);
+export function buildSectorsFromMainAndSubsectors(main: MainSector, subsectors: Subsector[]): GatewaySector[] {
+  return subsectors.map((sub) => `${main}-${sub}` as GatewaySector);
 }
 
-export function resolveAllowedSectorsFromEnv(env: NodeJS.ProcessEnv): Sector[] {
+export function resolveAllowedSectorsFromEnv(env: NodeJS.ProcessEnv): GatewaySector[] {
   const canonicalCsv = String(env.ALLOWED_SECTORS || '').trim();
   if (canonicalCsv) {
     return parseAndValidateSectors(canonicalCsv);

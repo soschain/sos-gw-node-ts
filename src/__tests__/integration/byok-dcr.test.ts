@@ -4,7 +4,7 @@
 import { GatewayRequestEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
 import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 process.env.DEV_SEED = 'true';
 process.env.NODE_ENV = 'test';
@@ -24,7 +24,7 @@ import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsServic
 import type { TenantsCacheManager } from '../../managers/TenantsCacheManager';
 import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { startServer } from '../../server';
 import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';

@@ -31,7 +31,7 @@ import { ACTION_DISABLE, ACTION_ENABLE, ACTION_PURGE, ACTION_STATUS } from '../c
 import { getTenantAuthorizationStatus as readTenantAuthorizationStatusFromConfig } from '../utils/tenant-lifecycle';
 import { enforceSmartScopeRouteCompatibility } from '../utils/smart-scope-route-authorization';
 import { IdentityAuthActions } from 'gdc-common-utils-ts/constants/identity-auth';
-import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
+import { DeviceBindingStatuses } from 'sos-data-utils-ts/device-license-contract';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { resolveHostRegistrySector } from '../utils/services';
 import { isEncryptionJwk, isSignatureJwk } from '../managers/hosting/registration-keys';

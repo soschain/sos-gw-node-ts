@@ -4,7 +4,7 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 import { randomUUID } from 'node:crypto';
 import { buildSubjectIdentityBundleEntry } from 'gdc-common-utils-ts/utils/subject-identity';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { EXAMPLE_EMAIL_CONTROLLER_ORG } from 'gdc-common-utils-ts/examples/shared';
 import { startServer, resetServerConfig } from '../../server';
 import { getTenantVaultId, generateTenantCollectionNameFromClaims } from '../../utils/tenant';
@@ -53,7 +53,7 @@ describe('Antifraud request-bound SD-JWT API', () => {
         sequence: 0,
         content: {
           claims: tenantClaims,
-          didConfig: { service: initializeTenantServicesConfig(sector as Sector) },
+          didConfig: { service: initializeTenantServicesConfig(sector as GatewaySector) },
           didDocument: {
             '@context': 'https://www.w3.org/ns/did/v1',
             id: 'did:web:veterinary-clinic.example',

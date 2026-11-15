@@ -15,7 +15,7 @@ import { resolveHostPhysicalCollectionName } from '../../../config/storage-layou
 import { afterAll, beforeAll, jest } from '@jest/globals';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
 import { IServerConfig } from '../../../config';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { IStorageAdapter } from '../../../database/storage/IStorageAdapter';
 import { ILogger } from '../../../loggers/ILogger';
@@ -45,7 +45,7 @@ import {
   EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME,
 } from 'gdc-common-utils-ts/examples/shared';
 import { SearchResponseProfileEnvironment, SearchResponseProfiles } from '../../../utils/didcomm-response';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { Format } from 'sos-data-utils-ts/bff-wire-contract';
 import { RelatedPersonClaim } from 'gdc-common-utils-ts/models/interoperable-claims/related-person-claims';
 import { testExamplesDidWeb } from '../../data/identity.data';
@@ -150,7 +150,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       hostExternalDomain: 'host.example.com',
       apiBaseUrl: 'http://host.example.com',
       namespace: 'test-namespace',
-      sectorsAllowed: [Sector.HEALTH_CARE, Sector.SYSTEM, Sector.TEST],
+      sectorsAllowed: [GatewaySector.HEALTH_CARE, GatewaySector.SYSTEM, GatewaySector.TEST],
       dbProvider: 'mem',
       queueProvider: 'mem',
       storageProvider: 'mem',
@@ -172,9 +172,9 @@ describe('FamilyManager - Offer/Order Flow', () => {
     // FamilyManager is the unit under test. Seed one verified active tenant
     // directly from the shared organization fixture; HostingManager's own
     // activation/Order lifecycle is covered by route integration tests.
-    const expectedTenantVaultId = tenantUtils.getTenantVaultId(Sector.HEALTH_CARE, testTenant1TenantId);
+    const expectedTenantVaultId = tenantUtils.getTenantVaultId(GatewaySector.HEALTH_CARE, testTenant1TenantId);
     const tenantConfig = structuredClone(testConfigTenant1) as any;
-    tenantConfig.claims[SchemaOrgServiceClaim.Category] = Sector.HEALTH_CARE;
+    tenantConfig.claims[SchemaOrgServiceClaim.Category] = GatewaySector.HEALTH_CARE;
     tenantConfig.didDocument = {
       ...(tenantConfig.didDocument || {}),
       id: testTenant1DidWebExternal,
@@ -217,7 +217,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId,
       jurisdiction: 'ES',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -244,7 +244,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId: testTenant1TenantId,
       jurisdiction: 'ES',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -280,7 +280,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId,
       jurisdiction: 'ES',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -302,7 +302,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -317,7 +317,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
     expect(entry.resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier]).toBe(offerId);
     expect(entry.resource.meta.claims[SchemaOrgIndividualProductClaim.SerialNumber]).toEqual(expect.any(String));
 
-    const tenantVaultId = tenantUtils.getTenantVaultId(Sector.HEALTH_CARE, tenantId);
+    const tenantVaultId = tenantUtils.getTenantVaultId(GatewaySector.HEALTH_CARE, tenantId);
     const tenantCollectionName = await tenantsCacheManager.getCollectionName(tenantVaultId);
     expect(tenantCollectionName).toBeDefined();
     const communications = await vaultRepository.getContainersInSection(
@@ -406,7 +406,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId,
       jurisdiction: 'ES',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -427,7 +427,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -436,7 +436,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
     });
 
     expect(orderPayload.body.data[0].response.status).toBe('500');
-    const tenantVaultId = tenantUtils.getTenantVaultId(Sector.HEALTH_CARE, tenantId);
+    const tenantVaultId = tenantUtils.getTenantVaultId(GatewaySector.HEALTH_CARE, tenantId);
     const tenantCollectionName = await tenantsCacheManager.getCollectionName(tenantVaultId);
     const storedIndividuals = await vaultRepository.getContainersInSection(
       tenantCollectionName!,
@@ -457,7 +457,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId,
       jurisdiction: 'ES',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -478,7 +478,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -492,7 +492,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
     ] as string;
     expect(activationCode).toBeTruthy();
 
-    const tenantVaultId = tenantUtils.getTenantVaultId(Sector.HEALTH_CARE, tenantId);
+    const tenantVaultId = tenantUtils.getTenantVaultId(GatewaySector.HEALTH_CARE, tenantId);
     const tenantCollectionName = (await tenantsCacheManager.getCollectionName(tenantVaultId))!;
     const individualId = String(offerPayload.body.data[0].resource.id);
     const individualDocument = (await vaultRepository.get<ConfidentialStorageDoc>(
@@ -592,7 +592,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId,
       jurisdiction: 'ES',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -613,7 +613,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -624,7 +624,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
     const firstActivationCode = String(firstOrder.body.data[0].resource.meta.claims[
       SchemaOrgIndividualProductClaim.SerialNumber
     ]);
-    const tenantVaultId = tenantUtils.getTenantVaultId(Sector.HEALTH_CARE, tenantId);
+    const tenantVaultId = tenantUtils.getTenantVaultId(GatewaySector.HEALTH_CARE, tenantId);
     const tenantCollectionName = (await tenantsCacheManager.getCollectionName(tenantVaultId))!;
     const licenses = await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(
       tenantVaultId,
@@ -678,7 +678,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId,
       jurisdiction: 'ES',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -699,7 +699,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -713,7 +713,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_search',
@@ -739,7 +739,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_search',
@@ -768,7 +768,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId: testTenant1TenantId,
       jurisdiction: 'es',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -789,7 +789,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId: testTenant1TenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -807,7 +807,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
     process.env.PAYMENT_VERIFICATION_MODE = 'mock';
 
     const tenantId = testTenant1TenantId;
-    const tenantVaultId = tenantUtils.getTenantVaultId(Sector.HEALTH_CARE, tenantId);
+    const tenantVaultId = tenantUtils.getTenantVaultId(GatewaySector.HEALTH_CARE, tenantId);
     const tenantCollectionName = await tenantsCacheManager.getCollectionName(tenantVaultId);
     expect(tenantCollectionName).toBeDefined();
 
@@ -815,7 +815,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       2,
       'did:web:host.example.com',
       'es',
-      Sector.HEALTH_CARE,
+      GatewaySector.HEALTH_CARE,
       ['Stripe'],
       'individual' as any,
     );
@@ -850,7 +850,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',

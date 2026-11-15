@@ -3,7 +3,7 @@
 
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { scopePhysicalCollectionName } from '../config/storage-layout';
 
 /**

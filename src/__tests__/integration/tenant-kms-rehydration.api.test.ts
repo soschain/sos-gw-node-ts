@@ -25,7 +25,7 @@ import { InMemoryEnvelopeAdapter } from '../../services/kms-envelope-adapter';
 import { VaultWrappedKeyRepository } from '../../services/wrapped-key-repository';
 import { Worker } from '../../worker';
 import type { IServerConfig } from '../../config';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { generateTenantCollectionNameFromClaims } from '../../utils/tenant';
 import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { invokeExpress } from './helpers/invokeExpress';
@@ -107,7 +107,7 @@ describe('Tenant KMS rehydration after activate route story', () => {
   it('keeps the published tenant key and employee flow working when provisioning is replayed after restart', async () => {
     const replayEmployeeIdentifier = 'urn:uuid:71f84db2-dd41-4d99-a2d6-31a075319a86';
     const replayEmployeeEmail = 'receptionist-replayed-provisioning@acme.example';
-    const tenantVaultId = getTenantVaultId(Sector.HEALTH_CARE, tenantId);
+    const tenantVaultId = getTenantVaultId(GatewaySector.HEALTH_CARE, tenantId);
     const publishedDid = await restartedHarness.tenantManager.getDidDocument(tenantVaultId);
     const publishedEncryptionKid = (publishedDid?.verificationMethod || [])
       .find((method) => (method.publicKeyJwk as any)?.use === 'enc')?.publicKeyJwk?.kid;
@@ -235,7 +235,7 @@ async function buildHarness(
     hostExternalDomain: 'testhost.com',
     apiBaseUrl: 'http://testhost:3000',
     namespace: 'test-namespace',
-    sectorsAllowed: [Sector.HEALTH_CARE, Sector.TEST],
+    sectorsAllowed: [GatewaySector.HEALTH_CARE, GatewaySector.TEST],
     allowedPaymentMethods: ['Stripe'],
     dbProvider: 'mem',
     queueProvider: 'mem',

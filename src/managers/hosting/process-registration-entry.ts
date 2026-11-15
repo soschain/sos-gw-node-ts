@@ -6,7 +6,7 @@ import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { BundleEntryType } from '../../gdc-backend-utils-node/models/enums';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { normalizeContextualizedClaims } from '../../utils/claims';
@@ -62,11 +62,11 @@ export async function processRegistrationEntry(
         throw new ManagerError(`Invalid alternateName format: '${alternateName}'`, IssueType.Value);
       }
 
-      const requestedSector = normalizedClaims[SchemaOrgServiceClaim.Category] as Sector;
+      const requestedSector = normalizedClaims[SchemaOrgServiceClaim.Category] as GatewaySector;
       if (!requestedSector) {
         throw new ManagerError(`Missing required claim for new tenant: '${SchemaOrgServiceClaim.Category}'`, IssueType.Required);
       }
-      if (requestedSector === Sector.SYSTEM) {
+      if (requestedSector === GatewaySector.SYSTEM) {
         throw new ManagerError("The 'system' sector is a reserved keyword and cannot be used by tenants.", IssueType.Forbidden);
       }
       if (!deps.sectorsAllowed.includes(requestedSector)) {

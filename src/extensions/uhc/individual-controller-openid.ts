@@ -1,6 +1,6 @@
-import { DeviceBindingStatuses, DeviceUserClasses } from 'gdc-common-utils-ts/constants/device';
+import { DeviceBindingStatuses, DeviceUserClasses } from 'sos-data-utils-ts/device-license-contract';
 import { getHealthcareRoleByClaim, HealthcareActorRoleCodes, HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { parseActorFromSub } from 'gdc-common-utils-ts/utils/actor';
 import { FhirIpsCreatorKinds, type ClinicalCreatorBinding } from 'sos-data-utils-ts/clinical-creator-contract';
 import { normalizeClinicalCreatorBinding } from 'sos-sdk-core-ts/clinical-creator';

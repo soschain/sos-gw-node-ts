@@ -19,13 +19,13 @@ import type { IVaultRepository } from '../database/repositories/vault/vault.repo
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { getTenantVaultId } from '../utils/tenant';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import { DeviceLicense, DeviceInfo } from 'gdc-common-utils-ts/models/device-license';
+import { DeviceLicense, DeviceInfo } from 'sos-data-utils-ts/device-license-contract';
 import { getEnvSectionId } from '../utils/section-env';
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import { DidDocument, VerificationMethod } from '../gdc-backend-utils-node/models/did';
 import { registerSubjectKeysOnLedger, revokeSubjectKeysOnLedger } from '../utils/ledger-device-registration';
-import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
+import { DeviceBindingStatuses } from 'sos-data-utils-ts/device-license-contract';
 import { IdentityAuthActions, IdentityAuthRequestFields, IdentityAuthResponseTypes, IdentityDcrMetadataFields } from 'gdc-common-utils-ts/constants/identity-auth';
 import { IdentityAuthResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { DEFAULT_LICENSE_DEVICE_ALLOWANCE, LICENSE_USER_CLASS_EMPLOYEE, LICENSE_USER_CLASS_INDIVIDUAL } from '../constants/domain';

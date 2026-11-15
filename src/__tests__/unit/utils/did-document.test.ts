@@ -2,7 +2,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { populateDidDocumentServices } from '../../../utils/did-document';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { initializeTenantServicesConfig } from '../../../utils/services';
 
 describe('populateDidDocumentServices', () => {
@@ -11,8 +11,8 @@ describe('populateDidDocumentServices', () => {
     // --- Arrange ---
     const did = 'did:web:gateway.com:acme:cds-es:v1:health-care';
     const baseUrl = 'https://gateway.com';
-    const businessConfig = initializeTenantServicesConfig(Sector.HEALTH_CARE);
-    const tenantContext = { alternateName: 'acme', jurisdiction: 'es', version: 'v1', sector: Sector.HEALTH_CARE };
+    const businessConfig = initializeTenantServicesConfig(GatewaySector.HEALTH_CARE);
+    const tenantContext = { alternateName: 'acme', jurisdiction: 'es', version: 'v1', sector: GatewaySector.HEALTH_CARE };
 
     // --- Act ---
     const allServices = populateDidDocumentServices(did, baseUrl, businessConfig, true, tenantContext);
@@ -37,7 +37,7 @@ describe('populateDidDocumentServices', () => {
     // --- Arrange ---
     const did = 'did:web:api.acme-health.com';
     const baseUrl = 'https://api.acme-health.com';
-    const businessConfig = initializeTenantServicesConfig(Sector.HEALTH_CARE);
+    const businessConfig = initializeTenantServicesConfig(GatewaySector.HEALTH_CARE);
     const tenantContext = {} as any;
 
     // --- Act ---
@@ -62,8 +62,8 @@ describe('populateDidDocumentServices', () => {
     const did = 'did:web:public.acme-health.com';
     const publicBaseUrl = 'https://public.acme-health.com';
     const operationalBaseUrl = 'https://operator.gateway.net';
-    const businessConfig = initializeTenantServicesConfig(Sector.HEALTH_CARE);
-    const tenantContext = { alternateName: 'acme', jurisdiction: 'es', version: 'v1', sector: Sector.HEALTH_CARE };
+    const businessConfig = initializeTenantServicesConfig(GatewaySector.HEALTH_CARE);
+    const tenantContext = { alternateName: 'acme', jurisdiction: 'es', version: 'v1', sector: GatewaySector.HEALTH_CARE };
 
     const allServices = populateDidDocumentServices(
       did,
@@ -87,8 +87,8 @@ describe('populateDidDocumentServices', () => {
     const did = 'did:web:gateway.com:acme:cds-es:v1:health-care';
     const publicBaseUrl = 'https://gateway.com';
     const operationalBaseUrl = 'https://34.175.78.233/acme/cds-es/v1/health-care';
-    const businessConfig = initializeTenantServicesConfig(Sector.HEALTH_CARE);
-    const tenantContext = { alternateName: 'acme', jurisdiction: 'es', version: 'v1', sector: Sector.HEALTH_CARE };
+    const businessConfig = initializeTenantServicesConfig(GatewaySector.HEALTH_CARE);
+    const tenantContext = { alternateName: 'acme', jurisdiction: 'es', version: 'v1', sector: GatewaySector.HEALTH_CARE };
 
     const allServices = populateDidDocumentServices(
       did,
@@ -109,8 +109,8 @@ describe('populateDidDocumentServices', () => {
     const did = 'did:web:34.175.78.233:acme-id:cds-ES:v1:health-care';
     const publicBaseUrl = 'http://34.175.78.233';
     const operationalBaseUrl = 'https://34.175.78.233/acme-id/cds-es/v1/health-care';
-    const businessConfig = initializeTenantServicesConfig(Sector.HEALTH_CARE);
-    const tenantContext = { alternateName: 'acme-id', jurisdiction: 'ES', version: 'v1', sector: Sector.HEALTH_CARE };
+    const businessConfig = initializeTenantServicesConfig(GatewaySector.HEALTH_CARE);
+    const tenantContext = { alternateName: 'acme-id', jurisdiction: 'ES', version: 'v1', sector: GatewaySector.HEALTH_CARE };
 
     const allServices = populateDidDocumentServices(
       did,

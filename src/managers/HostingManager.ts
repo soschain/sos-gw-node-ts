@@ -20,7 +20,7 @@ import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import type { PostalActivationCodeBinding } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
 import { getBundleResponseTypeForAction } from '../utils/bundle';
 import { getClaimValue, normalizeContextualizedClaims } from '../utils/claims';
@@ -44,7 +44,7 @@ import { ParameterData } from 'gdc-common-utils-ts/models/params';
 import { normalizeCodeSystemAndValue } from '../utils/normalize-codeAndSystem';
 import { VerificationMethod } from 'antifraud-data-utils-ts/did-document';
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
-import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { issueActivationCodeFromPool, reserveTechnicalControllerSeat } from '../utils/license-issuance';
 import {
   LICENSE_STATUS_ACTIVE,
@@ -561,7 +561,7 @@ export class HostingManager {
 
   private createOrganizationUrnSafely(
     claims: ClaimsRecord,
-    requestedSector: Sector,
+    requestedSector: GatewaySector,
   ): string {
     this.assertActivationUrnInputs(claims);
     try {
@@ -963,7 +963,7 @@ export class HostingManager {
 
     validateNewOrganizationClaims(normalizedClaims);
     const alternateName = String(normalizedClaims[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
-    const sector = String(normalizedClaims[SchemaOrgServiceClaim.Category] || '').trim() as Sector;
+    const sector = String(normalizedClaims[SchemaOrgServiceClaim.Category] || '').trim() as GatewaySector;
     const vaultId = getTenantVaultId(sector, alternateName);
     if (!await this.vaultRepository.vaultExists(vaultId)) return undefined;
 
@@ -1200,7 +1200,7 @@ export class HostingManager {
         const tenant = await this.kmsService.unprotectConfidentialData<OrganizationConfig>(record, 'host');
         const claims = tenant?.claims as ClaimsRecord | undefined;
         const tenantId = String(claims?.[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
-        const sector = String(claims?.[SchemaOrgServiceClaim.Category] || '').trim() as Sector;
+        const sector = String(claims?.[SchemaOrgServiceClaim.Category] || '').trim() as GatewaySector;
         if (!claims || !tenantId || !sector) continue;
         const tenantVaultId = getTenantVaultId(sector, tenantId);
         await this.reconcileLegacyRepresentativeEmployeeSeats({ tenantVaultId, tenantId, claims });
@@ -1306,7 +1306,7 @@ export class HostingManager {
       const tenantId = String(claims?.[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
       if (!claims || !tenantId || !tenant.didDocument?.id) continue;
 
-      const sector = String(claims[SchemaOrgServiceClaim.Category] || '').trim() as Sector;
+      const sector = String(claims[SchemaOrgServiceClaim.Category] || '').trim() as GatewaySector;
       const jurisdiction = String(claims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim();
       if (!sector || !jurisdiction) continue;
       const publicTenantUrl = this.normalizeTenantPublicUrl(
@@ -1732,7 +1732,7 @@ export class HostingManager {
    */
   private withHostedOrganizationOfferClaims(
     claims: ClaimsRecord,
-    requestedSector: Sector,
+    requestedSector: GatewaySector,
   ): ClaimsRecord {
     const hostDid = composeHostDidWebId(this.config.apiBaseUrl, this.config.hostExternalDomain);
     const requestedEmployeeCount = Number(
@@ -1951,7 +1951,7 @@ export class HostingManager {
     altName: string,
     allClaims: ClaimsRecord,
     contained: Array<IncludedResource | undefined>,
-    sector: Sector,
+    sector: GatewaySector,
   ) {
     return persistTenantConfigExternal({
       org,
@@ -1973,7 +1973,7 @@ export class HostingManager {
     org: IncludedResource,
     altName: string,
     allClaims: ClaimsRecord,
-    sector: Sector,
+    sector: GatewaySector,
     vaultId: string,
     options?: {
       primaryDid?: string;

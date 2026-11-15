@@ -1,4 +1,5 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import { REPOSITORY_SAFE_EXAMPLES } from 'sos-data-utils-ts/repository-privacy';
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 // src/__tests__/integration/end-to-end-legacy.test.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
@@ -61,7 +62,7 @@ import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { getClaimsInFirstDataEntry } from 'gdc-common-utils-ts/utils/bundle-reader';
 import { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import { invokeExpress } from './helpers/invokeExpress';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 
 // Mock implementation for the AuthorizationManager
 class MockAuthorizationManager implements IAuthorizationManager {
@@ -124,7 +125,7 @@ describe('End-to-End API Flow (Legacy / Unencrypted)', () => {
       didcommPlainEnabled: true,
       demoAllowInsecureBearer: true,
       nodeEnv: 'test', port: 3000, maxHeaderSize: 16 * 1024, apiHostname: 'testhost', hostExternalDomain: 'testhost.com',
-      apiBaseUrl: 'http://testhost:3000', namespace: 'test-namespace', sectorsAllowed: [Sector.HEALTH_CARE, Sector.TEST],
+      apiBaseUrl: REPOSITORY_SAFE_EXAMPLES.httpsBaseUrl, namespace: 'test-namespace', sectorsAllowed: [GatewaySector.HEALTH_CARE, GatewaySector.TEST],
       allowedPaymentMethods: ['Stripe'],
       dbProvider: 'mem', queueProvider: 'mem', storageProvider: 'mem',
       host: { legalName: 'Test Host', jurisdiction: 'us', idType: 'test-id', idValue: '12345' },

@@ -8,7 +8,7 @@ import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import type { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { EntityLifecycleStatus, EntityType, NetworkAccessStatus, NetworkName } from '../../gdc-backend-utils-node/models/enums';
 import type { OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { applyLegacyX509Metadata, composeHostDidWebId, createHostedDidWeb, populateDidDocumentFromJwks } from '../../utils/did-backend';
 import { populateDidDocumentServices } from '../../utils/did-document';
 import { initializeHostServicesConfig, initializeTenantServicesConfig } from '../../utils/services';
@@ -21,7 +21,7 @@ type FinalizeTenantConfigDeps = Readonly<{
   org: IncludedResource;
   altName: string;
   allClaims: ClaimsRecord;
-  sector: Sector;
+  sector: GatewaySector;
   vaultId: string;
   options?: {
     primaryDid?: string;
@@ -220,7 +220,7 @@ export function buildGaiaXLegalParticipantOptionsForTenant(input: {
   did: string;
   issuerDid: string;
   alternateName: string;
-  sector: Sector;
+  sector: GatewaySector;
   isDemoSecurityMode: () => boolean;
   logger: any;
   hostJurisdiction?: string;

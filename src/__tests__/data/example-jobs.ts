@@ -2,7 +2,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { DEVICE_REGISTRATION_REQUEST, ORGANIZATION_ORDER_REQUEST, ORGANIZATION_REGISTRATION_REQUEST } from './example-payloads';
 
 /**
@@ -15,7 +15,7 @@ export const DCR_REGISTRATION_JOB: JobRequest = {
   sequence: 0,
   createdAtTimestamp: Date.now(),
   content: DEVICE_REGISTRATION_REQUEST,
-  sector: Sector.TEST,
+  sector: GatewaySector.TEST,
   section: 'identity',
   format: 'openid',
   resourceType: 'Device',
@@ -33,7 +33,7 @@ export const ORGANIZATION_REGISTRATION_JOB: JobRequest = {
   sequence: 0,
   createdAtTimestamp: Date.now(),
   content: ORGANIZATION_REGISTRATION_REQUEST,
-  sector: Sector.TEST,
+  sector: GatewaySector.TEST,
   section: 'registry',
   format: 'org.schema',
   action: '_batch',

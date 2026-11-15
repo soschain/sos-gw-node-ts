@@ -21,7 +21,7 @@ import { createOrganizationUrn } from '../../utils/urn';
 import { registerOrganizationOnLedger } from '../../utils/ledger-organization-registration';
 import { parseServiceCapabilityTokens } from 'sos-data-utils-ts/service-capabilities';
 import { validateActivationServiceAuthorizationPolicy } from 'gdc-common-utils-ts/utils/activation-policy';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import type { NetworkName } from '../../gdc-backend-utils-node/models/enums';
 import { composeHostDidWebId, createHostedDidWeb } from '../../utils/did-backend';
 import {
@@ -73,8 +73,8 @@ type ActivationDeps = Readonly<{
   applyLegalOrganizationIdentityCompatibility: (claims: ClaimsRecord, organizationCredential?: unknown) => ClaimsRecord;
   logActivationIdentityDiagnostics: (stage: string, claims: ClaimsRecord, routeJurisdiction?: string) => void;
   normalizeTenantPublicUrl: (urlOrDomain?: string) => string | undefined;
-  createOrganizationUrnSafely: (claims: ClaimsRecord, requestedSector: Sector) => string;
-  withHostedOrganizationOfferClaims: (claims: ClaimsRecord, requestedSector: Sector) => ClaimsRecord;
+  createOrganizationUrnSafely: (claims: ClaimsRecord, requestedSector: GatewaySector) => string;
+  withHostedOrganizationOfferClaims: (claims: ClaimsRecord, requestedSector: GatewaySector) => ClaimsRecord;
   mapHostRegistrySectorToNetworkName: (hostSector?: string) => NetworkName;
   extractResources: (claims: ClaimsRecord, environment?: string) => { organization: any; person?: any; service: any };
   handleServiceAttachment: (service?: any) => Promise<any>;
@@ -82,7 +82,7 @@ type ActivationDeps = Readonly<{
     org: any,
     altName: string,
     allClaims: ClaimsRecord,
-    sector: Sector,
+    sector: GatewaySector,
     vaultId: string,
     options?: {
       primaryDid?: string;
@@ -223,7 +223,7 @@ async function processActivationEntry(
     throw new ManagerError(`Invalid alternateName format: '${alternateName}'`, IssueType.Value);
   }
 
-  const requestedSector = normalizedClaims[SchemaOrgServiceClaim.Category] as Sector;
+  const requestedSector = normalizedClaims[SchemaOrgServiceClaim.Category] as GatewaySector;
   if (!requestedSector) {
     throw new ManagerError(`Missing required claim for activation: '${HOST_ACTIVATE_REQUIRED_INPUT_CLAIMS[1]}'`, IssueType.Required);
   }

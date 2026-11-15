@@ -7,7 +7,7 @@ import {
   RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import { generateCollectionName } from '../../../utils/firestore';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 
 let testEnv: RulesTestEnvironment;
@@ -59,7 +59,7 @@ describe('firestore.utils', () => {
         [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
         [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
         [SchemaOrgOrganizationClaim.IdentifierValue]: 'B00112233',
-        [SchemaOrgServiceClaim.Category]: Sector.HEALTH_CARE,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.HEALTH_CARE,
       };
       const section = 'customers';
 

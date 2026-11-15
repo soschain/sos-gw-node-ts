@@ -5,7 +5,7 @@ import { VaultMemRepository } from '../../../database/repositories/vault/vault.m
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { HostingManager } from '../../../managers/HostingManager';
 import { IServerConfig } from '../../../config';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { ORGANIZATION_REGISTRATION_JOB } from '../../data/example-jobs';
 import { testClaimsHostInitialization } from '../../data/end-to-end.data';
 import { SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
@@ -37,7 +37,7 @@ beforeEach(async () => {
     hostExternalDomain: 'testhost.com',
     apiBaseUrl: 'http://testhost:3000',
     namespace: 'test-namespace',
-    sectorsAllowed: [Sector.HEALTH_CARE, Sector.SYSTEM, Sector.HEALTH_INSURANCE],
+    sectorsAllowed: [GatewaySector.HEALTH_CARE, GatewaySector.SYSTEM, GatewaySector.HEALTH_INSURANCE],
     dbProvider: 'mem',
     queueProvider: 'mem',
     storageProvider: 'mem',
@@ -86,7 +86,7 @@ test('should FAIL if tenant vaultId is constructed with network sector instead o
     throw new Error('Malformed ORGANIZATION_REGISTRATION_JOB fixture');
   }
   // Forzamos el sector a uno de red (incorrecto para tenant)
-  registrationClaims[SchemaOrgServiceClaim.Category] = Sector.TEST;
+  registrationClaims[SchemaOrgServiceClaim.Category] = GatewaySector.TEST;
   // El manager encapsula errores en el bundle de respuesta (no lanza excepción aquí).
   const response = await hostingManager.process(job as any);
   const issue = (response as any)?.body?.data?.[0]?.response?.outcome?.issue?.[0];

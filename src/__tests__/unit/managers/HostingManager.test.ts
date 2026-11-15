@@ -33,7 +33,7 @@ import { EntityConfig } from '../../../gdc-backend-utils-node/models/entity';
 import type { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { IServerConfig } from '../../../config';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { IStorageAdapter } from '../../../database/storage/IStorageAdapter';
 import { JwkSet } from 'antifraud-data-utils-ts/cryptography';
@@ -172,7 +172,7 @@ describe('HostingManager', () => {
       hostExternalDomain: 'testhost.com',
       apiBaseUrl: 'http://testhost:3000',
       namespace: 'test-namespace',
-      sectorsAllowed: [Sector.HEALTH_CARE, Sector.SYSTEM, Sector.HEALTH_INSURANCE],
+      sectorsAllowed: [GatewaySector.HEALTH_CARE, GatewaySector.SYSTEM, GatewaySector.HEALTH_INSURANCE],
       dbProvider: 'mem',
       queueProvider: 'mem',
       storageProvider: 'mem',
@@ -317,7 +317,7 @@ describe('HostingManager', () => {
 
     const refreshedServices = await mockTenantsCacheManager.getDidServiceConfig('host');
     const expectedServices = initializeHostServicesConfig(
-      mockConfig.sectorsAllowed as Sector[],
+      mockConfig.sectorsAllowed as GatewaySector[],
       mockConfig.nodeEnv,
       mockConfig.networkMode,
     );
@@ -347,7 +347,7 @@ describe('HostingManager', () => {
 
   it('[1.2a TENANT] migrates stale canonical twin routes without requiring split-runtime configuration', async () => {
     const tenantId = 'VATES-G02793480';
-    const sector = Sector.HEALTH_CARE;
+    const sector = GatewaySector.HEALTH_CARE;
     const tenantVaultId = tenantUtils.getTenantVaultId(sector, tenantId);
     const hostCollectionName = await mockTenantsCacheManager.getCollectionName('host') as string;
     const claims: ClaimsRecord = {
@@ -402,7 +402,7 @@ describe('HostingManager', () => {
 
   it('[1.2b TENANT] repairs a stale operational catalog when the public DID catalog is already canonical', async () => {
     const tenantId = 'VATES-G02793479';
-    const sector = 'animal-research' as Sector;
+    const sector = 'animal-research' as GatewaySector;
     const tenantVaultId = tenantUtils.getTenantVaultId(sector, tenantId);
     const hostCollectionName = await mockTenantsCacheManager.getCollectionName('host') as string;
     const claims: ClaimsRecord = {
@@ -475,7 +475,7 @@ describe('HostingManager', () => {
 
     // Verify the provisional document was created in the host's vault
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      testClaimsTenant1Registration[SchemaOrgServiceClaim.Category] as Sector,
+      testClaimsTenant1Registration[SchemaOrgServiceClaim.Category] as GatewaySector,
       testClaimsTenant1Registration[SchemaOrgOrganizationClaim.AlternateName]
     );
     const provisionalDoc = await vaultRepository.get(
@@ -569,7 +569,7 @@ describe('HostingManager', () => {
         x5c: ['leaf-cert', 'issuer-cert'],
       }] as any,
       role: 'tenant',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       jurisdiction: 'ES',
     });
 
@@ -617,7 +617,7 @@ describe('HostingManager', () => {
     }));
 
     const sectorOrganizationUrn = buildLegalSectorOrganizationUrn({
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       country: 'ES',
       identifierType: 'TAX',
       identifierValue: 'acme-id',
@@ -636,7 +636,7 @@ describe('HostingManager', () => {
         attributes: expect.objectContaining({
           organizationId: ledgerOrgId,
           legalSectorOrganizationUrn: sectorOrganizationUrn,
-          sector: Sector.HEALTH_CARE,
+          sector: GatewaySector.HEALTH_CARE,
           tenantDid: 'did:web:api.acme.org',
           providerDomain: mockConfig.hostExternalDomain,
         }),
@@ -727,7 +727,7 @@ describe('HostingManager', () => {
         },
       } as any,
       role: 'tenant',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       jurisdiction: 'ES',
     });
 
@@ -817,7 +817,7 @@ describe('HostingManager', () => {
         },
       } as any,
       role: 'tenant',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       jurisdiction: 'ES',
     });
 
@@ -889,7 +889,7 @@ describe('HostingManager', () => {
         governanceVc: { id: 'urn:vc:governance:conflicting-org' } as any,
       } as any,
       role: 'tenant',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       jurisdiction: 'ES',
     })).rejects.toMatchObject({
       code: 'conflict',
@@ -931,7 +931,7 @@ describe('HostingManager', () => {
         governanceVc: { id: 'urn:vc:governance:retryable-endorsement' } as any,
       } as any,
       role: 'tenant',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       jurisdiction: 'ES',
     })).rejects.toMatchObject({
       code: 'exception',
@@ -954,7 +954,7 @@ describe('HostingManager', () => {
     expect(entry.resource?.meta?.claims?.[SchemaOrgOrganizationClaim.AlternateName]).toBe(expectedAlternateName);
 
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      claimsWithoutAlternateName[SchemaOrgServiceClaim.Category] as Sector,
+      claimsWithoutAlternateName[SchemaOrgServiceClaim.Category] as GatewaySector,
       expectedAlternateName,
     );
     const provisionalDoc = await vaultRepository.get(
@@ -1021,7 +1021,7 @@ describe('HostingManager', () => {
 
     const responsePayload = await hostingManager.process(job);
 
-    const sector = testClaimsTenant1Registration[SchemaOrgServiceClaim.Category] as Sector;
+    const sector = testClaimsTenant1Registration[SchemaOrgServiceClaim.Category] as GatewaySector;
     const alternateName = testClaimsTenant1Registration[SchemaOrgOrganizationClaim.AlternateName];
     const expectedVaultId = tenantUtils.getTenantVaultId(sector, alternateName);
 
@@ -1106,7 +1106,7 @@ describe('HostingManager', () => {
       [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
     };
     const sectorUrn = buildLegalSectorOrganizationUrn({
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       country: 'ES',
       identifierType: 'TAX',
       identifierValue: 'acme-id',
@@ -1121,7 +1121,7 @@ describe('HostingManager', () => {
       organizationClaims: claims,
       tenantDid,
       providerDomain: 'provider.example.org',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       jurisdiction: 'ES',
       status: 'validated',
     });

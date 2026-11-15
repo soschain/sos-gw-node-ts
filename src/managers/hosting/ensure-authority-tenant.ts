@@ -3,7 +3,7 @@ import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-stor
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
 import type { OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
 import type { IServerConfig } from '../../config';
@@ -35,7 +35,7 @@ type EnsureAuthorityTenantDeps = Readonly<{
 export async function ensureAuthorityTenant(
   deps: EnsureAuthorityTenantDeps,
 ): Promise<void> {
-  const sector = Sector.SYSTEM;
+  const sector = GatewaySector.SYSTEM;
   const vaultId = getTenantVaultId(sector, deps.alternateName);
   const hostCollectionName = deps.hostRuntime.hostCollectionName;
   if (!hostCollectionName) {

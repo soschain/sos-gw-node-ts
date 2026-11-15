@@ -7,7 +7,7 @@ import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job'
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import { GroupFlatClaimCatalog, normalizeGroupR5FlatClaimsResource } from 'vet-data-utils-ts';
+import { GroupFlatClaimCatalog, normalizeGroupR5FlatClaimsResource } from 'fhir-data-utils-ts/group-r5';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { EntityLifecycleStatus } from '../gdc-backend-utils-node/models/enums';

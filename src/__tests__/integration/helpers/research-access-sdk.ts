@@ -7,7 +7,7 @@ import { EXAMPLE_KYC_CONTROLLER_UUID } from 'gdc-common-utils-ts/examples/shared
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import {
   EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT,
   EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONSUMER_PROFESSIONAL_DID,
@@ -220,7 +220,7 @@ export class TestResearchOrgControllerSdk {
     await this.registerHostedTenant({
       claims: providerClaims,
       didDocumentId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerOrganizationDid,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
     });
   }
 
@@ -232,7 +232,7 @@ export class TestResearchOrgControllerSdk {
     await this.registerHostedTenant({
       claims: buildLabTenantClaims(),
       didDocumentId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerOrganizationDid,
-      sector: 'health-research' as Sector,
+      sector: 'health-research' as GatewaySector,
     });
   }
 
@@ -257,7 +257,7 @@ export class TestResearchOrgControllerSdk {
         app: this.deps.app,
         tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
         jurisdiction: 'ES',
-        sector: String(Sector.HEALTH_CARE),
+        sector: String(GatewaySector.HEALTH_CARE),
         format: 'org.hl7.fhir.api',
         thid: `${RESEARCH_ACCESS_TEST_IDS.subjectPermitRule}-${index + 1}`,
         authorization: this.authorizationHeader,
@@ -272,7 +272,7 @@ export class TestResearchOrgControllerSdk {
    */
   public async grantResearchPermitByRoleForSubjects(subjectDids: readonly string[]): Promise<void> {
     const providerVaultId = getTenantVaultId(
-      String(Sector.HEALTH_CARE),
+      String(GatewaySector.HEALTH_CARE),
       EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
     );
     await Promise.all(subjectDids.map(async (subjectDid, index) => {
@@ -294,7 +294,7 @@ export class TestResearchOrgControllerSdk {
    */
   public async grantResearchPermitByDirectEmailForSubjects(subjectDids: readonly string[]): Promise<void> {
     const providerVaultId = getTenantVaultId(
-      String(Sector.HEALTH_CARE),
+      String(GatewaySector.HEALTH_CARE),
       EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
     );
     await Promise.all(subjectDids.map(async (subjectDid, index) => {
@@ -430,7 +430,7 @@ export class TestResearchOrgControllerSdk {
   private async registerHostedTenant(input: {
     claims: Record<string, unknown>;
     didDocumentId: string;
-    sector: Sector;
+    sector: GatewaySector;
   }): Promise<void> {
     const tenantId = String(input.claims[SchemaOrgOrganizationClaim.AlternateName] || '');
     const tenantVaultId = getTenantVaultId(String(input.sector), tenantId);

@@ -49,7 +49,7 @@ import { SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-util
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { EntityConfig } from '../../gdc-backend-utils-node/models/entity';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { ManageAssetCryptographicKey } from '../../blockchain/fabric/v3/manageAssetCryptographicKey';
 import { ManageAssetSubjectKeyBinding } from '../../blockchain/fabric/v3/manageAssetSubjectKeyBinding';
 import { ManageAssetOrganization } from '../../blockchain/fabric/v3/manageAssetOrganization';

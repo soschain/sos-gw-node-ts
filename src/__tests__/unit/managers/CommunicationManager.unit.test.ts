@@ -31,7 +31,7 @@ import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-cla
 import { BundleTypes } from 'gdc-common-utils-ts/models/bundle-editor-types';
 import { Format } from 'sos-data-utils-ts/bff-wire-contract';
 import { HttpMediaTypes } from 'sos-data-utils-ts/bff-wire-contract';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import {
   EXAMPLE_ALLERGY_IDENTIFIER,
   EXAMPLE_ALLERGY_ONSET_DATE_TIME,
@@ -1862,7 +1862,7 @@ describe('CommunicationManager Unit Tests', () => {
         createdAtTimestamp: Date.now(),
         tenantId,
         jurisdiction: EXAMPLE_HEALTHCARE_JURISDICTION,
-        sector: Sector.HEALTH_CARE,
+        sector: GatewaySector.HEALTH_CARE,
         section: 'individual',
         format: Format.FHIR_R4,
         resourceType: ResourceTypesFhirR4.Communication,
@@ -1914,7 +1914,7 @@ describe('CommunicationManager Unit Tests', () => {
         } }],
       };
 
-      const tenantVaultId = `${Sector.HEALTH_CARE}_${tenantId}`;
+      const tenantVaultId = `${GatewaySector.HEALTH_CARE}_${tenantId}`;
       await mockVaultRepository.put(tenantVaultId, [{
         id: `urn:uuid:${EXAMPLE_KYC_CONTROLLER_UUID}`,
         kind: FhirIpsCreatorKinds.Professional,
@@ -3075,7 +3075,7 @@ describe('CommunicationManager Unit Tests', () => {
       const job: JobRequest = {
         id: randomUUID(), status: JobStatus.DRAFT, sequence: 0, createdAtTimestamp: Date.now(),
         tenantId: 'acme', jurisdiction: EXAMPLE_HEALTHCARE_JURISDICTION,
-        sector: Sector.HEALTH_CARE, section: 'individual', format: Format.FHIR_R4,
+        sector: GatewaySector.HEALTH_CARE, section: 'individual', format: Format.FHIR_R4,
         resourceType: ResourceTypesFhirR4.Communication, action: '_batch',
         content: {
           jti: randomUUID(), thid: randomUUID(), iss: EXAMPLE_PROVIDER_ORGANIZATION_DID,
@@ -3107,7 +3107,7 @@ describe('CommunicationManager Unit Tests', () => {
 
       await communicationManager.process(job);
 
-      const tenantVaultId = `${Sector.HEALTH_CARE}_acme`;
+      const tenantVaultId = `${GatewaySector.HEALTH_CARE}_acme`;
       expect(mockVaultRepository.put.mock.calls.some((args) =>
         args[0] === tenantVaultId
         && args[2] === getSubjectScopedSectionId(subjectDid, 'individual', 'composition'))).toBe(true);
@@ -3654,7 +3654,7 @@ describe('CommunicationManager Unit Tests', () => {
 
       await expect(communicationManager.process({
         id: randomUUID(), status: JobStatus.DRAFT, sequence: 0, createdAtTimestamp: Date.now(),
-        tenantId: 'acme', jurisdiction: EXAMPLE_HEALTHCARE_JURISDICTION, sector: Sector.HEALTH_CARE,
+        tenantId: 'acme', jurisdiction: EXAMPLE_HEALTHCARE_JURISDICTION, sector: GatewaySector.HEALTH_CARE,
         section: 'individual', format: Format.FHIR_API as any,
         resourceType: ResourceTypesFhirR4.Communication, action: '_search',
         content: {
@@ -3705,7 +3705,7 @@ describe('CommunicationManager Unit Tests', () => {
         createdAtTimestamp: Date.now(),
         tenantId: 'acme',
         jurisdiction: EXAMPLE_HEALTHCARE_JURISDICTION,
-        sector: Sector.HEALTH_CARE,
+        sector: GatewaySector.HEALTH_CARE,
         section: 'individual',
         format: Format.FHIR_API as any,
         resourceType: ResourceTypesFhirR4.Communication,

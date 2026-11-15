@@ -16,7 +16,7 @@ import { getEnvSectionId } from '../../utils/section-env';
 import { generateTenantCollectionNameFromClaims, getTenantVaultId } from '../../utils/tenant';
 import { AllowedIndexableClaims } from '../../gdc-backend-utils-node/models/indexing';
 import { registerOrganizationOnLedger } from '../../utils/ledger-organization-registration';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { PdfSignatureEvidence } from '../../utils/pdf-evidence';
 
 type PersistHostConfigDeps = Readonly<{
@@ -38,7 +38,7 @@ type PersistTenantConfigDeps = Readonly<{
   altName: string;
   allClaims: ClaimsRecord;
   contained: Array<IncludedResource | undefined>;
-  sector: Sector;
+  sector: GatewaySector;
   vaultRepository: any;
   kmsService: any;
   hostRuntime: any;
@@ -46,7 +46,7 @@ type PersistTenantConfigDeps = Readonly<{
     org: IncludedResource,
     altName: string,
     allClaims: ClaimsRecord,
-    sector: Sector,
+    sector: GatewaySector,
     vaultId: string,
   ) => Promise<OrganizationConfig>;
 }>;
@@ -169,7 +169,7 @@ export async function persistHostConfig(deps: PersistHostConfigDeps): Promise<vo
       config: hostConfig,
       evidence: serviceEvidence,
       role: 'host',
-      sector: 'system' as Sector,
+      sector: 'system' as GatewaySector,
       jurisdiction: deps.config.host.jurisdiction,
     });
   }

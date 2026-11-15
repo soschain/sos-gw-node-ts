@@ -4,7 +4,7 @@ import { SchemaOrgOfferClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim 
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { EntityLifecycleStatus } from '../../gdc-backend-utils-node/models/enums';
 import type { IServerConfig } from '../../config';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
@@ -38,7 +38,7 @@ type CreatePendingTenantRegistrationDeps = Readonly<{
   handleServiceAttachment: (service: any) => Promise<any>;
   withHostedOrganizationOfferClaims: (
     claims: ClaimsRecord,
-    requestedSector: Sector,
+    requestedSector: GatewaySector,
   ) => ClaimsRecord;
   extractRegistrationKeys: (
     meta?: DidCommDecodedMetadata,
@@ -78,11 +78,11 @@ export async function createPendingTenantRegistration(
     throw new ManagerError(`Invalid alternateName format: '${alternateName}'`, IssueType.Value);
   }
 
-  const requestedSector = enrichedClaims[SchemaOrgServiceClaim.Category] as Sector;
+  const requestedSector = enrichedClaims[SchemaOrgServiceClaim.Category] as GatewaySector;
   if (!requestedSector) {
     throw new ManagerError(`Missing required claim for new tenant: '${HOST_TRANSACTION_REQUIRED_INPUT_CLAIMS[1]}'`, IssueType.Required);
   }
-  if (requestedSector === Sector.SYSTEM) {
+  if (requestedSector === GatewaySector.SYSTEM) {
     throw new ManagerError("The 'system' sector is a reserved keyword and cannot be used by tenants.", IssueType.Forbidden);
   }
   if (!deps.config.sectorsAllowed.includes(requestedSector)) {

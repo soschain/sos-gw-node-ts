@@ -1,7 +1,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/config.ts
 
-import { Sector } from "gdc-common-utils-ts/models/urlPath";
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 
 /**
  * Defines the shape of the application's configuration object.
@@ -38,7 +38,7 @@ export interface IServerConfig {
     chaincodeName?: string;
     schemaUrl?: string;
   };
-  sectorsAllowed: Sector[];
+  sectorsAllowed: GatewaySector[];
   allowedPaymentMethods: string[];
   dbProvider: string;
   storageProvider: string;

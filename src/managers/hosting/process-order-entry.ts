@@ -5,7 +5,7 @@ import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, S
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { EntityLifecycleStatus } from '../../gdc-backend-utils-node/models/enums';
 import type { IServerConfig } from '../../config';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
@@ -21,7 +21,7 @@ import { generateTenantCollectionNameFromClaims, getTenantVaultId, resolveOrgani
 import { AllowedIndexableClaims } from '../../gdc-backend-utils-node/models/indexing';
 import { registerOrganizationOnLedger } from '../../utils/ledger-organization-registration';
 import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { issueActivationCodeFromPool, reserveTechnicalControllerSeat } from '../../utils/license-issuance';
 import { getPersonOccupationClaim } from '../../utils/occupation';
 import { buildPaymentCommunication, readOfferPaymentContext } from '../../utils/order-communication';
@@ -59,7 +59,7 @@ type ProcessHostOrderEntryDeps = Readonly<{
     organization: any,
     alternateName: string,
     processedClaims: ClaimsRecord,
-    sector: Sector,
+    sector: GatewaySector,
     vaultId: string,
     options?: { primaryDid?: string; controllerDid?: string },
   ) => Promise<any>;
@@ -162,7 +162,7 @@ export async function processHostOrderEntry(deps: ProcessHostOrderEntryDeps): Pr
     ? verifyBoundPostalActivationCode(claims, postalActivationCodeBinding, process.env.HOST_POSTAL_ACTIVATION_PEPPER)
     : undefined;
   const alternateName = processedClaims[SchemaOrgOrganizationClaim.AlternateName] as string;
-  const sector = processedClaims[SchemaOrgServiceClaim.Category] as Sector;
+  const sector = processedClaims[SchemaOrgServiceClaim.Category] as GatewaySector;
   const routeJurisdiction = resolveOrganizationRouteJurisdiction(processedClaims);
   const tenantUrn = createOrganizationUrn({
     namespace: deps.config.namespace,
@@ -449,7 +449,7 @@ export async function processActivatedTenantOrderEntry(
     throw new ManagerError('Activated tenant Offer is missing tenant alternateName or sector.', IssueType.Required);
   }
 
-  const tenantVaultId = getTenantVaultId(sector as Sector, tenantId);
+  const tenantVaultId = getTenantVaultId(sector as GatewaySector, tenantId);
   const quantity = Number(deps.matchedOfferClaims[SchemaOrgOfferClaim.EligibleQuantityValue] || 1);
   const expiryDate = new Date(Date.now());
   expiryDate.setFullYear(expiryDate.getFullYear() + 1);

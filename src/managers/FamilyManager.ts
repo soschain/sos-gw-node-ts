@@ -24,7 +24,7 @@ import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { buildStableActorIdentifier, StableActorContactKinds } from 'antifraud-data-utils-ts/organization-identity';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { getBundleResponseTypeForAction } from '../utils/bundle';
 import { getClaimValue, normalizeContextualizedClaims } from '../utils/claims';
 import { formatMissingRequiredClaimDiagnostic, toExternalClaimLabel } from '../utils/claim-contract';
@@ -44,7 +44,7 @@ import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import { EntityLifecycleStatus } from '../gdc-backend-utils-node/models/enums';
 import type { ITenantsManager } from './ITenantsManager';
-import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { issueActivationCodeFromPool, materializeFreeIndividualLicenses } from '../utils/license-issuance';
 import { buildPaymentCommunication, readOfferPaymentContext } from '../utils/order-communication';
 import { buildGatewayInvoiceBundle } from '../utils/invoice-bundle';
@@ -293,7 +293,7 @@ export class FamilyManager {
 
   private async processFamilyOfferSearchEntry(job: JobRequest, entry: BundleEntry): Promise<BundleEntry[]> {
     const tenantId = job.tenantId;
-    const sector = job.sector as Sector | undefined;
+    const sector = job.sector as GatewaySector | undefined;
     if (!tenantId || !sector) {
       throw new ManagerError('Job is missing tenantId or sector.', IssueType.Required);
     }
@@ -333,7 +333,7 @@ export class FamilyManager {
 
   private async processFamilyOrderSearchEntry(job: JobRequest, entry: BundleEntry): Promise<BundleEntry[]> {
     const tenantId = job.tenantId;
-    const sector = job.sector as Sector | undefined;
+    const sector = job.sector as GatewaySector | undefined;
     if (!tenantId || !sector) {
       throw new ManagerError('Job is missing tenantId or sector.', IssueType.Required);
     }
@@ -402,7 +402,7 @@ export class FamilyManager {
     }
     assertAdmittedIndividualRegistrationClaims(admission, claims);
 
-    const requestedSector = claims[SchemaOrgServiceClaim.Category] as Sector | undefined;
+    const requestedSector = claims[SchemaOrgServiceClaim.Category] as GatewaySector | undefined;
     if (!requestedSector) {
       throw new ManagerError(`Missing required claim: '${SchemaOrgServiceClaim.Category}'`, IssueType.Required);
     }
@@ -875,7 +875,7 @@ export class FamilyManager {
     }
 
     const tenantId = job.tenantId;
-    const sector = job.sector as Sector | undefined;
+    const sector = job.sector as GatewaySector | undefined;
     if (!tenantId || !sector) {
       throw new ManagerError('Job is missing tenantId or sector.', IssueType.Required);
     }
@@ -1391,7 +1391,7 @@ export class FamilyManager {
     offerId: string,
   ): Promise<BundleEntry | ErrorEntry> {
     const tenantId = job.tenantId;
-    const sector = job.sector as Sector | undefined;
+    const sector = job.sector as GatewaySector | undefined;
     if (!tenantId || !sector) {
       throw new ManagerError('Job is missing tenantId or sector.', IssueType.Required);
     }
@@ -1542,7 +1542,7 @@ export class FamilyManager {
       throw new ManagerError('Malformed entry: missing meta.claims', IssueType.Required);
     }
 
-    const requestedSector = (job.sector || claims[SchemaOrgServiceClaim.Category]) as Sector | undefined;
+    const requestedSector = (job.sector || claims[SchemaOrgServiceClaim.Category]) as GatewaySector | undefined;
     if (!requestedSector || !job.tenantId) {
       throw new ManagerError('Job is missing tenantId or sector.', IssueType.Required);
     }
@@ -1666,7 +1666,7 @@ export class FamilyManager {
       throw new ManagerError('Malformed entry: missing meta.claims', IssueType.Required);
     }
 
-    const requestedSector = (job.sector || claims[SchemaOrgServiceClaim.Category]) as Sector | undefined;
+    const requestedSector = (job.sector || claims[SchemaOrgServiceClaim.Category]) as GatewaySector | undefined;
     if (!requestedSector || !job.tenantId) {
       throw new ManagerError('Job is missing tenantId or sector.', IssueType.Required);
     }
@@ -1875,7 +1875,7 @@ export class FamilyManager {
       throw new ManagerError('Malformed entry: missing meta.claims', IssueType.Required);
     }
 
-    const requestedSector = (job.sector || claims[SchemaOrgServiceClaim.Category]) as Sector | undefined;
+    const requestedSector = (job.sector || claims[SchemaOrgServiceClaim.Category]) as GatewaySector | undefined;
     if (!requestedSector || !job.tenantId) {
       throw new ManagerError('Job is missing tenantId or sector.', IssueType.Required);
     }

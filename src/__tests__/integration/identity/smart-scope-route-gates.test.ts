@@ -7,7 +7,7 @@ import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-dat
 import { testPayloadCreateTenant1 } from '../../data/end-to-end.data';
 import { generateTenantCollectionNameFromClaims } from '../../../utils/tenant';
 import { initializeTenantServicesConfig } from '../../../utils/services';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { startServer, resetServerConfig } from '../../../server';
 import { getEnvSectionId } from '../../../utils/section-env';
 import { testTenant1AlternateName } from '../../data/organization.data';
@@ -47,7 +47,7 @@ describe('SMART scope route gates (integration)', () => {
       [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
       [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
       [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
-      [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
+      [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
     };
     const hostCollectionName = resolveHostPhysicalCollectionName();
 
@@ -57,7 +57,7 @@ describe('SMART scope route gates (integration)', () => {
       tenantClaims['org.schema.Organization.alternateName'],
     );
 
-    const currentTenantServices = initializeTenantServicesConfig(Sector.HEALTH_CARE);
+    const currentTenantServices = initializeTenantServicesConfig(GatewaySector.HEALTH_CARE);
     const tenantServices = options.legacyDigitalTwinServices
       ? [
         ...currentTenantServices.filter((service: any) => service.selector?.section !== 'digitaltwin'),
@@ -66,7 +66,7 @@ describe('SMART scope route gates (integration)', () => {
           type: 'ApiService',
           serviceEndpoint: 'Composition',
           actions: ['_search'],
-          selector: { sector: Sector.HEALTH_CARE, section: 'digitaltwin', format: 'org.hl7.fhir.r4' },
+          selector: { sector: GatewaySector.HEALTH_CARE, section: 'digitaltwin', format: 'org.hl7.fhir.r4' },
         },
       ]
       : currentTenantServices;

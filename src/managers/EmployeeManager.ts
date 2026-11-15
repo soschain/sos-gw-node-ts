@@ -33,7 +33,7 @@ import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { DidDocument, VerificationMethod } from '../gdc-backend-utils-node/models/did';
 import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { EntityLifecycleStatus, EntityType } from '../gdc-backend-utils-node/models/enums';
-import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { generateLicenseOffer } from '../utils/offer';
 import { getEnvSectionId } from '../utils/section-env';
 import { getPersonOccupationClaim } from '../utils/occupation';

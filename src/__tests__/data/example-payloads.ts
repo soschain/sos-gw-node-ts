@@ -34,7 +34,7 @@ import {
   EmployeeResourceTypes,
 } from 'gdc-common-utils-ts/utils/employee';
 import { Format } from 'sos-data-utils-ts/bff-wire-contract';
-import { DeviceAppTypes, DeviceUserClasses } from 'gdc-common-utils-ts/constants/device';
+import { DeviceAppTypes, DeviceUserClasses } from 'sos-data-utils-ts/device-license-contract';
 import { buildLicensePurchaseEntry } from 'gdc-common-utils-ts/utils/license';
 import {
   EXAMPLE_API_ORGANIZATION_DID,

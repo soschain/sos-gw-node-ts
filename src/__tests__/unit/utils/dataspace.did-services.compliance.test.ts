@@ -1,7 +1,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/__tests__/unit/utils/dataspace.did-services.compliance.test.ts
 
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { DidServiceIds, DidServiceTypes } from 'gdc-common-utils-ts/constants/did-services';
 import {
   buildGwCatalogRequestPath,
@@ -14,8 +14,8 @@ describe('Dataspace DID Service Compliance (DSP/DCP)', () => {
   it('publishes DSP and DCP discovery services in tenant DID document', () => {
     const did = 'did:web:gateway.example.com:acme:cds-es:v1:health-care';
     const baseUrl = 'https://gateway.example.com';
-    const businessConfig = initializeTenantServicesConfig(Sector.HEALTH_CARE);
-    const tenantContext = { alternateName: 'acme', jurisdiction: 'es', version: 'v1', sector: Sector.HEALTH_CARE };
+    const businessConfig = initializeTenantServicesConfig(GatewaySector.HEALTH_CARE);
+    const tenantContext = { alternateName: 'acme', jurisdiction: 'es', version: 'v1', sector: GatewaySector.HEALTH_CARE };
 
     const services = populateDidDocumentServices(did, baseUrl, businessConfig, true, tenantContext);
 
@@ -48,14 +48,14 @@ describe('Dataspace DID Service Compliance (DSP/DCP)', () => {
   it('publishes the host catalog service as the operational DSP catalog endpoint', () => {
     const did = 'did:web:gateway.example.com';
     const baseUrl = 'https://gateway.example.com';
-    const businessConfig = initializeHostServicesConfig([Sector.HEALTH_CARE], 'test');
+    const businessConfig = initializeHostServicesConfig([GatewaySector.HEALTH_CARE], 'test');
 
     const services = populateDidDocumentServices(
       did,
       baseUrl,
       businessConfig,
       false,
-      { alternateName: 'host', jurisdiction: 'es', version: 'v1', sector: Sector.HEALTH_CARE },
+      { alternateName: 'host', jurisdiction: 'es', version: 'v1', sector: GatewaySector.HEALTH_CARE },
     );
 
     const catalogService = services.find((service) => service.id === `${did}${DidServiceIds.Catalog}`);

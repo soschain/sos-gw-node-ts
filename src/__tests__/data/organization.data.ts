@@ -7,7 +7,7 @@ import { URN_NAMESPACE, URN_NETWORK, URN_VERSION } from "./urn.data";
 import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { serializeServiceCapabilityTokens } from 'sos-data-utils-ts/service-capabilities';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
-import { Sector } from "gdc-common-utils-ts/models/urlPath";
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { EntityLifecycleStatus, EntityType } from "../../gdc-backend-utils-node/models/enums";
 import { testTenant1Vc } from "./credential.data";
 import { testHostDidWeb, testRootOrgDidWeb, testHostDomain, testTenant1IdentifierUrn } from "./organization.constants";
@@ -113,7 +113,7 @@ export const testTenant1TenantId = testClaimsRegisterTenantExpanded[SchemaOrgOrg
  */
 export const testTenant1AlternateName = testTenant1TenantId;
 export const testTenant1Domain = testClaimsRegisterTenantExpanded[SchemaOrgOrganizationClaim.Url];
-export const testTenant1ServiceProviderCategory = testClaimsRegisterTenantExpanded[SchemaOrgServiceClaim.Category] as Sector;
+export const testTenant1ServiceProviderCategory = testClaimsRegisterTenantExpanded[SchemaOrgServiceClaim.Category] as GatewaySector;
 export const testTenant1Admin1Email = testClaimsRegisterTenantExpanded[SchemaOrgPersonClaim.Email] as string;
 
 // --- EXPORTED FOR DEPENDENCIES ---

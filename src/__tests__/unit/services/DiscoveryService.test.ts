@@ -4,7 +4,7 @@
 import { DiscoveryService } from '../../../services/DiscoveryService';
 import { NativeFhirFormats } from '../../../constants/fhir-discovery';
 import { SUBJECT_SECTION_DIGITAL_TWIN, SUBJECT_SECTION_INDIVIDUAL } from '../../../constants/domain';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { Format } from 'gdc-common-utils-ts/models/urlPath';
 
 describe('DiscoveryService', () => {

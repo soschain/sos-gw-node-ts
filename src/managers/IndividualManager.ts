@@ -22,7 +22,7 @@ import { ParameterData } from 'gdc-common-utils-ts/models/params'; // extends Pa
 import { CredentialManager } from './CredentialManager';
 import { parseTenantUrn } from '../utils/urn';
 import { getTenantVaultId } from '../utils/tenant';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { determineResourceId } from '../utils/resource';
 import { uuidToBytes } from '../utils/uuid';
 import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
@@ -34,7 +34,7 @@ import { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
 import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { EntityLifecycleStatus, EntityType } from '../gdc-backend-utils-node/models/enums';
-import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { generateLicenseOffer } from '../utils/offer';
 import { getEnvSectionId } from '../utils/section-env';
 import { extractSearchFiltersFromEntry, extractSearchFiltersFromParametersResource } from '../utils/search-request';
@@ -174,7 +174,7 @@ export class IndividualManager {
     if (!parsedTenantUrn) {
       throw new ManagerError(`Invalid tenant URN format: '${tenantUrn}'`, IssueType.Value);
     }
-    const sector = parsedTenantUrn.sector as Sector;
+    const sector = parsedTenantUrn.sector as GatewaySector;
     const jurisdiction = parsedTenantUrn.jurisdiction;
 
     const aggregatedClaims = this._aggregateBatchClaims(entries);

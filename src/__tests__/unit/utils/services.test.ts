@@ -5,7 +5,7 @@
 
 import { hasProviderServiceCapabilityClaim, initializeHostServicesConfig, initializeTenantServicesConfig } from '../../../utils/services';
 import { OrganizationConfig } from '../../../gdc-backend-utils-node/models/entity';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { IServerConfig } from '../../../config';
 import { GatewayDidService as DidService } from 'sos-data-utils-ts/gateway-did-profile';
 import { DidServiceIds, DidServiceTypes } from 'gdc-common-utils-ts/constants/did-services';
@@ -24,9 +24,9 @@ const mockConfig: IServerConfig = {
 
 // Helper factory function to create tenant configurations for tests, reducing repetition.
 const createTestTenantConfig = (
-  sector: Sector,
+  sector: GatewaySector,
   didId: string,
-  sectorsAllowed: Sector[] = []
+  sectorsAllowed: GatewaySector[] = []
 ): OrganizationConfig => {
   const result: OrganizationConfig = {
     id: 'urn:uuid:tenant-uuid',
@@ -60,7 +60,7 @@ describe('Service Initialization Utilities', () => {
 
   describe('initializeTenantServicesConfig', () => {
     it('advertises organization Communication batches for veterinary appointment messaging', () => {
-      const services = initializeTenantServicesConfig('animal-care' as Sector);
+      const services = initializeTenantServicesConfig('animal-care' as GatewaySector);
 
       const communicationService = services.find((service: DidService) =>
         service.selector?.section === 'organization'
@@ -73,10 +73,10 @@ describe('Service Initialization Utilities', () => {
     
     it('should create default entity and individual services for a non-FHIR tenant', () => {
       // ARRANGE
-      const tenantConfig = createTestTenantConfig(Sector.RESEARCH, `did:web:${mockConfig.hostExternalDomain}:acme`);
+      const tenantConfig = createTestTenantConfig(GatewaySector.RESEARCH, `did:web:${mockConfig.hostExternalDomain}:acme`);
 
       // ACT
-      const services = initializeTenantServicesConfig(tenantConfig.provider!.service.sectorCategory as Sector);
+      const services = initializeTenantServicesConfig(tenantConfig.provider!.service.sectorCategory as GatewaySector);
 
       // ASSERT
       expect(services.length).toBeGreaterThanOrEqual(16);
@@ -147,10 +147,10 @@ describe('Service Initialization Utilities', () => {
 
     it('should ADD FHIR resources for a FHIR-enabled tenant', () => {
       // ARRANGE
-      const tenantConfig = createTestTenantConfig(Sector.HEALTH_CARE, `did:web:${mockConfig.hostExternalDomain}:acme`);
+      const tenantConfig = createTestTenantConfig(GatewaySector.HEALTH_CARE, `did:web:${mockConfig.hostExternalDomain}:acme`);
 
       // ACT
-      const services = initializeTenantServicesConfig(tenantConfig.provider!.service.sectorCategory as Sector);
+      const services = initializeTenantServicesConfig(tenantConfig.provider!.service.sectorCategory as GatewaySector);
       
       // ASSERT
       expect(services.length).toBeGreaterThanOrEqual(16);
@@ -314,7 +314,7 @@ describe('Service Initialization Utilities', () => {
     });
 
     it('should treat synthetic animal-tech as FHIR-enabled', () => {
-      const services = initializeTenantServicesConfig('animal-tech' as Sector);
+      const services = initializeTenantServicesConfig('animal-tech' as GatewaySector);
 
       expect(services.length).toBeGreaterThanOrEqual(16);
 
@@ -331,7 +331,7 @@ describe('Service Initialization Utilities', () => {
     });
 
     it('should expose digital twin ingestion for synthetic animal-research', () => {
-      const services = initializeTenantServicesConfig('animal-research' as Sector);
+      const services = initializeTenantServicesConfig('animal-research' as GatewaySector);
 
       const researchStudyService = services.find(
         (service: DidService) =>
@@ -436,7 +436,7 @@ describe('Service Initialization Utilities', () => {
 
     it('should filter tenant discovery endpoints to indexing-only capabilities when serviceType excludes digital twin', () => {
       const services = initializeTenantServicesConfig(
-        Sector.RESEARCH,
+        GatewaySector.RESEARCH,
         [],
         serializeServiceCapabilityTokens([ServiceCapability.IndexReader]),
       );
@@ -454,7 +454,7 @@ describe('Service Initialization Utilities', () => {
 
     it('should filter tenant discovery endpoints to digital twin-only capabilities when serviceType excludes indexing', () => {
       const services = initializeTenantServicesConfig(
-        Sector.RESEARCH,
+        GatewaySector.RESEARCH,
         [],
         serializeServiceCapabilityTokens([ServiceCapability.DigitalTwinReader]),
       );
@@ -472,7 +472,7 @@ describe('Service Initialization Utilities', () => {
 
     it('should read tenant discovery capabilities from additionalType during migration', () => {
       const services = initializeTenantServicesConfig(
-        Sector.RESEARCH,
+        GatewaySector.RESEARCH,
         [],
         undefined,
         serializeServiceCapabilityTokens([ServiceCapability.IndexReader]),
@@ -499,7 +499,7 @@ describe('Service Initialization Utilities', () => {
 
     it('should expose only personal-backup resources for a personal-backup provider', () => {
       const services = initializeTenantServicesConfig(
-        Sector.HEALTH_CARE,
+        GatewaySector.HEALTH_CARE,
         [],
         ContinuityServiceCapability.DocumentBackupProvider,
       );
@@ -524,10 +524,10 @@ describe('Service Initialization Utilities', () => {
 
     it('should not include standard discovery endpoints', () => {
       // ARRANGE
-      const tenantConfig = createTestTenantConfig(Sector.RESEARCH, 'did:web:acme.com');
+      const tenantConfig = createTestTenantConfig(GatewaySector.RESEARCH, 'did:web:acme.com');
 
       // ACT
-      const services = initializeTenantServicesConfig(tenantConfig.provider!.service.sectorCategory as Sector);
+      const services = initializeTenantServicesConfig(tenantConfig.provider!.service.sectorCategory as GatewaySector);
 
       // ASSERT
       const didDocService = services.find((s: DidService) => s.id.endsWith('#did-document'));
@@ -541,13 +541,13 @@ describe('Service Initialization Utilities', () => {
   describe('initializeHostServicesConfig', () => {
     it('should create a single registry service for the host (network env sector) and identity services per business sector', () => {
       // ARRANGE
-      const hostConfig = createTestTenantConfig(Sector.SYSTEM, `did:web:${mockConfig.hostExternalDomain}`, [Sector.RESEARCH, Sector.HEALTH_CARE]);
+      const hostConfig = createTestTenantConfig(GatewaySector.SYSTEM, `did:web:${mockConfig.hostExternalDomain}`, [GatewaySector.RESEARCH, GatewaySector.HEALTH_CARE]);
       if (hostConfig.claims) {
         (hostConfig.claims as any).alternateName = 'host'; // Override for host specific test
       }
 
       // ACT
-      const services = initializeHostServicesConfig(hostConfig.provider!.service.sectorsAllowed as Sector[], 'test');
+      const services = initializeHostServicesConfig(hostConfig.provider!.service.sectorsAllowed as GatewaySector[], 'test');
 
       // ASSERT
       const registryServices = services.filter((s: DidService) => (s as any).selector?.section === 'registry');
@@ -565,9 +565,9 @@ describe('Service Initialization Utilities', () => {
     });
 
     it('should allow explicit NETWORK_MODE override independently of NODE_ENV', () => {
-      const hostConfig = createTestTenantConfig(Sector.SYSTEM, 'did:web:host.example.com', [Sector.RESEARCH]);
+      const hostConfig = createTestTenantConfig(GatewaySector.SYSTEM, 'did:web:host.example.com', [GatewaySector.RESEARCH]);
       const services = initializeHostServicesConfig(
-        hostConfig.provider!.service.sectorsAllowed as Sector[],
+        hostConfig.provider!.service.sectorsAllowed as GatewaySector[],
         'production',
         'test-network',
       );
@@ -580,7 +580,7 @@ describe('Service Initialization Utilities', () => {
     });
 
     it('should publish the host catalog service at the host DSP catalog endpoint template', () => {
-      const services = initializeHostServicesConfig([Sector.RESEARCH], 'test');
+      const services = initializeHostServicesConfig([GatewaySector.RESEARCH], 'test');
 
       const catalogService = services.find((service: DidService) => service.id === DidServiceIds.Catalog);
 

@@ -10,7 +10,7 @@ import { getEnvSectionId } from '../../utils/section-env';
 
 import { JobStatus, type JobRequest } from 'sos-data-utils-ts/confidential-job';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { buildFhirParametersResourceFromSearchParams, buildGwCoreTenantResourceActionPath, DeviceAppTypes, DeviceUserClasses, EXAMPLE_API_ORGANIZATION_DID, EXAMPLE_BUNDLE_RESOURCE_TYPE, EXAMPLE_BUNDLE_TYPE_BATCH, EXAMPLE_CONTENT_TYPE_APPLICATION_JSON, EXAMPLE_EMAIL_CONTROLLER_ORG, EXAMPLE_HEALTHCARE_ACTOR_ROLE_GENERALIST_MEDICAL_PRACTITIONER, EXAMPLE_JOB_IDENTIFIER_LICENSE_SEARCH, EXAMPLE_JURISDICTION, EXAMPLE_LICENSE_OFFER_ID, EXAMPLE_LICENSE_RUNTIME_DEFAULTS, EXAMPLE_LICENSE_SEAT_UUID_ACTIVE, EXAMPLE_LICENSE_SEAT_UUID_AVAILABLE, EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE, EXAMPLE_LICENSE_SUBJECT_ID_AVAILABLE, EXAMPLE_ROUTE_VERSION, EXAMPLE_SECTOR, EXAMPLE_SERVICE_PUBLIC_DID, EXAMPLE_TENANT_IDENTIFIER, EXAMPLE_THREAD_IDENTIFIER_LICENSE_SEARCH, LicenseListSearchEditor, LicenseCategories, Resource, Section, Format, JobAction, LicenseStatuses } from 'gdc-common-utils-ts';
 import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {

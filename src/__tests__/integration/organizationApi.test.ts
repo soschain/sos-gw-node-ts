@@ -25,7 +25,7 @@ import { mockKmsService } from '../mocks/kms.mock';
 import { VaultMemRepository } from '../../database/repositories/vault/vault.mem.repository';
 import { AsyncResponseStoreMem, IAsyncResponseStore } from '../../adapters/async-response-store.mem';
 import { IServerConfig } from '../../config';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { IStorageAdapter } from '../../database/storage/IStorageAdapter';
 import { ILogger } from '../../loggers/ILogger';
 import { generateTenantCollectionNameFromClaims } from '../../utils/tenant';
@@ -245,7 +245,7 @@ describe('Organization Registration API', () => {
       hostExternalDomain: 'host.example.com',
       apiBaseUrl: 'http://host.example.com',
       namespace: 'test-namespace',
-      sectorsAllowed: [Sector.HEALTH_CARE, Sector.TEST, Sector.SYSTEM],
+      sectorsAllowed: [GatewaySector.HEALTH_CARE, GatewaySector.TEST, GatewaySector.SYSTEM],
       dbProvider: 'mem',
       queueProvider: 'mem',
       storageProvider: 'mem',
@@ -355,7 +355,7 @@ describe('Organization Registration API', () => {
       createdAtTimestamp: Date.now(),
       tenantId: 'host',
       jurisdiction: 'es',
-      sector: 'test' as Sector,
+      sector: 'test' as GatewaySector,
       section: 'registry',
       format: 'org.schema',
       action: '_activate',
@@ -475,7 +475,7 @@ describe('Organization Registration API', () => {
         createdAtTimestamp: Date.now(),
         tenantId: 'host',
         jurisdiction: 'es',
-        sector: 'test' as Sector,
+        sector: 'test' as GatewaySector,
         section: 'registry',
         format: 'org.schema',
         action: '_activate',

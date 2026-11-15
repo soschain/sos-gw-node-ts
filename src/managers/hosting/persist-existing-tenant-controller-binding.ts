@@ -2,7 +2,7 @@ import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim
 import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
@@ -98,7 +98,7 @@ export async function persistExistingTenantControllerBinding(
   }
 
   const alternateName = String(deps.claims[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
-  const sector = String(deps.claims[SchemaOrgServiceClaim.Category] || '').trim() as Sector;
+  const sector = String(deps.claims[SchemaOrgServiceClaim.Category] || '').trim() as GatewaySector;
   if (!alternateName || !sector) {
     throw new ManagerError('Controller binding requires tenant alternateName and Service.category.', IssueType.Required);
   }

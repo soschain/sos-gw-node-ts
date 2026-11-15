@@ -40,7 +40,7 @@ import {
 } from 'gdc-common-utils-ts/utils/dataspace-protocol';
 import { NativeFhirFormats } from '../../constants/fhir-discovery';
 import { SUBJECT_SECTION_DIGITAL_TWIN } from '../../constants/domain';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { ContinuityServiceCapability } from 'sos-data-utils-ts/continuity-service-capabilities';
 import { PublicAlertOperationalClaim } from 'sos-data-utils-ts/public-notifications';
 import { CommunicationRequestClaim, DocumentReferenceClaim } from 'fhir-data-utils-ts/claims';

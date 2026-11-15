@@ -28,7 +28,7 @@ import {
   createVP,
   addVC,
 } from 'gdc-common-utils-ts';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { buildExampleCommunicationIngestionPayload } from 'gdc-common-utils-ts/examples/shared';
 import {
   BundleDocumentRequestMessageTypes,

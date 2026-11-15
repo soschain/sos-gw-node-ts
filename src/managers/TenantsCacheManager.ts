@@ -17,7 +17,7 @@ import {
 } from '../utils/tenant';
 import { DidDocument, DidService, VerificationMethod } from '../gdc-backend-utils-node/models/did';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { getBaseUrlFromDidWeb, normalizeDidDocumentKeyRelationships } from '../utils/did-backend';
 import { parseTenantUrn } from '../utils/urn';
 import { getEnvSectionId } from '../utils/section-env';
@@ -67,7 +67,7 @@ type TenantRuntimeView = {
   alternateName?: string;
   domainUrl?: string;
   operationalUrl?: string;
-  sector?: Sector;
+  sector?: GatewaySector;
   serviceCapabilityClaim?: string;
 };
 
@@ -122,7 +122,7 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
       return tenantConfig;
     }
 
-    const defaultServices = initializeTenantServicesConfig(String(sector) as Sector);
+    const defaultServices = initializeTenantServicesConfig(String(sector) as GatewaySector);
     const mergedServices = [...existingServices];
     const seen = new Set(
       existingServices.map((service: any) =>
@@ -239,7 +239,7 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
       alternateName: tenantConfig?.claims?.[SchemaOrgOrganizationClaim.AlternateName] as string | undefined,
       domainUrl: getTenantServiceClaim(tenantConfig, SchemaOrgOrganizationClaim.Url),
       operationalUrl: getTenantServiceClaim(tenantConfig, SERVICE_OPERATIONAL_URL_CLAIM),
-      sector: parseTenantUrn(tenantIdentifierUrn || '')?.sector as Sector | undefined,
+      sector: parseTenantUrn(tenantIdentifierUrn || '')?.sector as GatewaySector | undefined,
       serviceCapabilityClaim: getTenantServiceCapabilityClaim(tenantConfig),
     };
   }
@@ -554,12 +554,12 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
    * @param vaultId The unique vault identifier for the tenant.
    * @returns The sector, or `undefined` if the tenant is not found or the URN is malformed.
    */
-  public async getTenantSector(vaultId: string): Promise<Sector | undefined> {
+  public async getTenantSector(vaultId: string): Promise<GatewaySector | undefined> {
     const urn = await this.getTenantIdentifierUrn(vaultId);
     if (!urn) return undefined;
     
     const parsedUrn = parseTenantUrn(urn);
-    return parsedUrn?.sector as Sector;
+    return parsedUrn?.sector as GatewaySector;
   }
 
   /**

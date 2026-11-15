@@ -4684,6 +4684,8 @@
 
 ## [Unreleased]
 
+- Replace selected FHIR resource/Group and route-sector catalogs plus persisted device/licence contracts with their independent FHIR/SOS owners; preserve wire values and authorization behavior. Align the six public utility/SDK pins while keeping the tested root Express version.
+
 ### Added
 - Integration coverage for `Bundle/_search` DocumentReference retrieval by canonical hash claim:
   - `DocumentReference?subject=<did>&contenthash=<cid>`

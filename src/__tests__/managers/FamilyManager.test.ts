@@ -60,7 +60,7 @@ import { ILogger } from '../../loggers/ILogger';
 import { FamilyManager } from '../../managers/FamilyManager';
 import { AnimalIndividualRegistration, FamilyRegistrationStatus, GatewayClaim } from '../../shared/gateway-claim-contract';
 import { EntityLifecycleStatus } from '../../gdc-backend-utils-node/models/enums';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { TenantsCacheManager } from '../../managers/TenantsCacheManager';
 import { mockKmsService } from '../mocks/kms.mock';
 import { buildClaimsFromIndividualFormPdf } from '../../utils/individual-form-pdf';
@@ -77,7 +77,7 @@ import {
 // ---------------------------------------------------------------------------
 
 const TENANT_ID = 'acme';
-const SECTOR = Sector.HEALTH_CARE;
+const SECTOR = GatewaySector.HEALTH_CARE;
 const COLLECTION_NAME = `${SECTOR}_${TENANT_ID}`;
 const TENANT_DID = 'did:web:host.example.com';
 const EXISTING_INDIVIDUAL_UUID = SAFE.resourceUuid;
@@ -651,7 +651,7 @@ describe('FamilyManager', () => {
       mockVaultRepository.put.mockResolvedValue(true);
 
       const response = await manager.process(makeBatchJob({
-        [SchemaOrgServiceClaim.Category]: 'animal-care' as Sector,
+        [SchemaOrgServiceClaim.Category]: 'animal-care' as GatewaySector,
         [SchemaOrgOrganizationClaim.AdditionalType]: 'animal',
         [SchemaOrgOrganizationClaim.AlternateName]: '',
         [SchemaOrgOrganizationClaim.SameAs]: '',
@@ -675,7 +675,7 @@ describe('FamilyManager', () => {
 
     it('rejects an animal envelope that assigns the controller RESPRSN role to its SELF member', async () => {
       const response = await manager.process(makeBatchJob({
-        [SchemaOrgServiceClaim.Category]: 'animal-care' as Sector,
+        [SchemaOrgServiceClaim.Category]: 'animal-care' as GatewaySector,
         [SchemaOrgOrganizationClaim.AdditionalType]: 'animal',
         [SchemaOrgOrganizationClaim.MemberRole]: 'RESPRSN',
       }));

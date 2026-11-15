@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { scryptSync } from 'node:crypto';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
 import { IServerConfig } from '../../../config';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { IStorageAdapter } from '../../../database/storage/IStorageAdapter';
@@ -112,7 +112,7 @@ describe('HostingManager - Offer/Order Flow', () => {
       hostExternalDomain: 'testhost.com',
       apiBaseUrl: 'http://testhost:3000',
       namespace: 'test-namespace',
-      sectorsAllowed: [Sector.HEALTH_CARE, Sector.SYSTEM, Sector.HEALTH_INSURANCE],
+      sectorsAllowed: [GatewaySector.HEALTH_CARE, GatewaySector.SYSTEM, GatewaySector.HEALTH_INSURANCE],
       dbProvider: 'mem',
       queueProvider: 'mem',
       storageProvider: 'mem',
@@ -181,7 +181,7 @@ describe('HostingManager - Offer/Order Flow', () => {
       claims[SchemaOrgOrganizationClaim.AlternateName]
       || claims[SchemaOrgOrganizationClaim.IdentifierValue];
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      claims[SchemaOrgServiceClaim.Category] as Sector,
+      claims[SchemaOrgServiceClaim.Category] as GatewaySector,
       tenantAlternateName,
     );
 
@@ -234,7 +234,7 @@ describe('HostingManager - Offer/Order Flow', () => {
       regClaims[SchemaOrgOrganizationClaim.AlternateName]
       || regClaims[SchemaOrgOrganizationClaim.IdentifierValue];
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      regClaims[SchemaOrgServiceClaim.Category] as Sector,
+      regClaims[SchemaOrgServiceClaim.Category] as GatewaySector,
       tenantAlternateName,
     );
     const finalDoc = (await vaultRepository.get(
@@ -289,7 +289,7 @@ describe('HostingManager - Offer/Order Flow', () => {
     const alternateName = regClaims[SchemaOrgOrganizationClaim.AlternateName]
       || regClaims[SchemaOrgOrganizationClaim.IdentifierValue];
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      regClaims[SchemaOrgServiceClaim.Category] as Sector, alternateName,
+      regClaims[SchemaOrgServiceClaim.Category] as GatewaySector, alternateName,
     );
     const pending = await vaultRepository.get(hostCollectionName, tenantVaultId, getEnvSectionId('tenants')) as ConfidentialStorageDoc;
     (pending.content as any).postalActivationCodeBinding = {
@@ -334,7 +334,7 @@ describe('HostingManager - Offer/Order Flow', () => {
       regClaims[SchemaOrgOrganizationClaim.AlternateName]
       || regClaims[SchemaOrgOrganizationClaim.IdentifierValue];
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      regClaims[SchemaOrgServiceClaim.Category] as Sector,
+      regClaims[SchemaOrgServiceClaim.Category] as GatewaySector,
       tenantAlternateName,
     );
 
@@ -342,7 +342,7 @@ describe('HostingManager - Offer/Order Flow', () => {
       2,
       'did:web:testhost.com',
       'us',
-      Sector.HEALTH_CARE,
+      GatewaySector.HEALTH_CARE,
       ['Stripe'],
     );
     extraOfferClaims[SchemaOrgOrganizationClaim.AlternateName] = tenantAlternateName;
@@ -463,7 +463,7 @@ describe('HostingManager - Offer/Order Flow', () => {
       2,
       'did:web:testhost.com',
       'us',
-      Sector.HEALTH_CARE,
+      GatewaySector.HEALTH_CARE,
       ['Stripe'],
     );
     extraOfferClaims[SchemaOrgOrganizationClaim.AlternateName] = tenantAlternateName;
@@ -500,7 +500,7 @@ describe('HostingManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId: tenantAlternateName,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'entity',
       format: 'org.schema',
       action: '_search',
@@ -525,7 +525,7 @@ describe('HostingManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId: tenantAlternateName,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'entity',
       format: 'org.schema',
       action: '_search',

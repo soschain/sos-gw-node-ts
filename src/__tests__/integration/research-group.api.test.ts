@@ -19,7 +19,7 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
  */
 import { afterEach, expect, it } from '@jest/globals';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import {
   projectGroupPractitionerRoleMemberFlatClaimResources,
   projectGroupR5FlatClaimsResource,
@@ -379,7 +379,7 @@ async function provisionTenant(input: {
     sequence: 0,
     content: {
       claims: tenantClaims,
-      didConfig: { service: initializeTenantServicesConfig(researchGroupRouteFixture.sector as Sector) },
+      didConfig: { service: initializeTenantServicesConfig(researchGroupRouteFixture.sector as GatewaySector) },
       didDocument: {
         '@context': 'https://www.w3.org/ns/did/v1',
         id: 'did:web:tenant.integration.example',

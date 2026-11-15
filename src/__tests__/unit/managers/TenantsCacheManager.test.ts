@@ -9,7 +9,7 @@ import { EntityConfig } from '../../../gdc-backend-utils-node/models/entity';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { generateTenantCollectionNameFromClaims, getTenantVaultId } from '../../../utils/tenant';
 import { getEnvSectionId } from '../../../utils/section-env';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { DidService } from '../../../gdc-backend-utils-node/models/did';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
@@ -66,7 +66,7 @@ describe('TenantsCacheManager', () => {
   } as EntityConfig;
   delete (acmeConfigWithoutServiceType.claims as ClaimsRecord)[SchemaOrgServiceClaim.ServiceType];
 
-  const acmeSector = (acmeConfig.claims as ClaimsRecord)[SchemaOrgServiceClaim.Category] as Sector;
+  const acmeSector = (acmeConfig.claims as ClaimsRecord)[SchemaOrgServiceClaim.Category] as GatewaySector;
   const acmeAlternateName = (acmeConfig.claims as ClaimsRecord)[SchemaOrgOrganizationClaim.AlternateName];
   const acmeVaultId = getTenantVaultId(acmeSector, acmeAlternateName);
 

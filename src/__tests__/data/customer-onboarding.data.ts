@@ -2,7 +2,8 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { JobAction, Resource, Format, Section, Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { JobAction, Resource, Format, Section } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { testCustomer1Data } from './customer.data';
@@ -13,7 +14,7 @@ import { testTenant1AddressCountry,
 } from './organization.data';
 
 export const testCustomer1ServiceProviderAcceptedTerms = "https://provider.example.com/terms";
-export const testCustomer1ServiceProviderCategory = Sector.HEALTH_CARE; // data from the individual consent (terms)
+export const testCustomer1ServiceProviderCategory = GatewaySector.HEALTH_CARE; // data from the individual consent (terms)
 
 /** http://terminology.hl7.org/CodeSystem/v3-ActReason */
 export const testCustomer1ServiceProviderAcceptedPurposeType = "http://terminology.hl7.org/CodeSystem/v3-ActReason|FAMRQT,PWATRNY,METAMGT,FRAUD,RECORDMGT,COVAUTH,TREAT,DISASTER,HPAYMT,MLTRAINING,ETREAT,HOPERAT,CAREMGT,HSYSADMIN,PATADMIN,PATSFTY";
