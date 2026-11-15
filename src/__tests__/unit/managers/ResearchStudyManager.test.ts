@@ -1,6 +1,6 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { describe, expect, it, jest } from '@jest/globals';
-import { ResearchStudyFlatClaimCatalog, projectResearchStudyR5SearchClaims } from 'vet-data-utils-ts';
+import { ResearchStudyFlatClaimCatalog, projectResearchStudyR5SearchClaims } from 'fhir-data-utils-ts/research-study-r5';
 import {
   ResearchStudyManager,
   buildResearchStudyPartyProjectionId,

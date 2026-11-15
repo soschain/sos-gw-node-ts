@@ -211,3 +211,13 @@ original declaration fixture proves all thirty-two members, optionality and type
 expressions plus complete decision/status and forty-claim catalogs. Mixed test
 imports retain actual runtime values. Consent evaluation/SMART policy is unchanged.
 Read-only original source: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/models/consent-rule.ts .
+
+
+## ResearchStudy standard owner
+
+The manager's four generic ResearchStudy exports and its retained unit projector
+come from the existing FHIR R5 owner. Complete catalog/search/role wire tables and
+eight accepted/rejected normalizer vectors are compared before the import change.
+Controller and party authorization, claims-only persistence and active Consent
+remain in GW and are exercised through the real asynchronous HTTP boundary.
+Canonical standard references: https://hl7.org/fhir/R5/researchstudy.html and https://hl7.org/fhir/R5/researchstudy-search.html .

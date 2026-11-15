@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Use the existing canonical FHIR ResearchStudy catalog and normalizer at the
+  study manager and retained fixture projector. Preserve all 31 flat claims, 25
+  standard search definitions, 12 party-role codes and correlated-party behavior.
+
 - Exercise KMS restart and provisioning replay with the actual stored tenant
   controller's verified HTTP principal; retain successful employee readback
   and prove a verified foreign controller cannot change employee records.

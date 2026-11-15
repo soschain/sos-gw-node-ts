@@ -1,0 +1,772 @@
+{
+  "provenance": {
+    "canonicalReferences": [
+      "https://hl7.org/fhir/R5/researchstudy.html",
+      "https://hl7.org/fhir/R5/researchstudy-search.html"
+    ],
+    "comparativeModuleSha256": "4ba570d09347814cdca7330757d6ffed909c72450625ea443dba617699b175a0",
+    "readOnly": true
+  },
+  "catalog": {
+    "standardSearch": [
+      "ResearchStudy.classifier",
+      "ResearchStudy.condition",
+      "ResearchStudy.date",
+      "ResearchStudy.description",
+      "ResearchStudy.eligibility",
+      "ResearchStudy.focus-code",
+      "ResearchStudy.focus-reference",
+      "ResearchStudy.identifier",
+      "ResearchStudy.keyword",
+      "ResearchStudy.name",
+      "ResearchStudy.objective-description",
+      "ResearchStudy.objective-type",
+      "ResearchStudy.part-of",
+      "ResearchStudy.phase",
+      "ResearchStudy.progress-status-state-actual",
+      "ResearchStudy.progress-status-state-period",
+      "ResearchStudy.progress-status-state-period-actual",
+      "ResearchStudy.protocol",
+      "ResearchStudy.recruitment-actual",
+      "ResearchStudy.recruitment-target",
+      "ResearchStudy.region",
+      "ResearchStudy.site",
+      "ResearchStudy.status",
+      "ResearchStudy.study-design",
+      "ResearchStudy.title"
+    ],
+    "associatedParty": [
+      "ResearchStudy.party-name",
+      "ResearchStudy.party-role",
+      "ResearchStudy.party-period-start",
+      "ResearchStudy.party-period-end",
+      "ResearchStudy.party-classifier",
+      "ResearchStudy.party"
+    ],
+    "all": [
+      "ResearchStudy.classifier",
+      "ResearchStudy.condition",
+      "ResearchStudy.date",
+      "ResearchStudy.description",
+      "ResearchStudy.eligibility",
+      "ResearchStudy.focus-code",
+      "ResearchStudy.focus-reference",
+      "ResearchStudy.identifier",
+      "ResearchStudy.keyword",
+      "ResearchStudy.name",
+      "ResearchStudy.objective-description",
+      "ResearchStudy.objective-type",
+      "ResearchStudy.part-of",
+      "ResearchStudy.phase",
+      "ResearchStudy.progress-status-state-actual",
+      "ResearchStudy.progress-status-state-period",
+      "ResearchStudy.progress-status-state-period-actual",
+      "ResearchStudy.protocol",
+      "ResearchStudy.recruitment-actual",
+      "ResearchStudy.recruitment-target",
+      "ResearchStudy.region",
+      "ResearchStudy.site",
+      "ResearchStudy.status",
+      "ResearchStudy.study-design",
+      "ResearchStudy.title",
+      "ResearchStudy.party-name",
+      "ResearchStudy.party-role",
+      "ResearchStudy.party-period-start",
+      "ResearchStudy.party-period-end",
+      "ResearchStudy.party-classifier",
+      "ResearchStudy.party"
+    ]
+  },
+  "partyRoleCodes": [
+    "sponsor",
+    "lead-sponsor",
+    "sponsor-investigator",
+    "primary-investigator",
+    "collaborator",
+    "funding-source",
+    "general-contact",
+    "recruitment-contact",
+    "sub-investigator",
+    "study-director",
+    "study-chair",
+    "irb"
+  ],
+  "partyRoleSystem": "http://hl7.org/fhir/research-study-party-role",
+  "searchParameters": [
+    {
+      "code": "classifier",
+      "type": "token",
+      "expression": "ResearchStudy.classifier",
+      "components": []
+    },
+    {
+      "code": "condition",
+      "type": "token",
+      "expression": "ResearchStudy.condition",
+      "components": []
+    },
+    {
+      "code": "date",
+      "type": "date",
+      "expression": "ResearchStudy.period",
+      "components": []
+    },
+    {
+      "code": "description",
+      "type": "string",
+      "expression": "ResearchStudy.description",
+      "components": []
+    },
+    {
+      "code": "eligibility",
+      "type": "reference",
+      "expression": "ResearchStudy.recruitment.eligibility",
+      "components": []
+    },
+    {
+      "code": "focus-code",
+      "type": "token",
+      "expression": "ResearchStudy.focus.concept",
+      "components": []
+    },
+    {
+      "code": "focus-reference",
+      "type": "reference",
+      "expression": "ResearchStudy.focus.reference",
+      "components": []
+    },
+    {
+      "code": "identifier",
+      "type": "token",
+      "expression": "ResearchStudy.identifier",
+      "components": []
+    },
+    {
+      "code": "keyword",
+      "type": "token",
+      "expression": "ResearchStudy.keyword",
+      "components": []
+    },
+    {
+      "code": "name",
+      "type": "string",
+      "expression": "ResearchStudy.name",
+      "components": []
+    },
+    {
+      "code": "objective-description",
+      "type": "string",
+      "expression": "ResearchStudy.objective.description",
+      "components": []
+    },
+    {
+      "code": "objective-type",
+      "type": "token",
+      "expression": "ResearchStudy.objective.type",
+      "components": []
+    },
+    {
+      "code": "part-of",
+      "type": "reference",
+      "expression": "ResearchStudy.partOf",
+      "components": []
+    },
+    {
+      "code": "phase",
+      "type": "token",
+      "expression": "ResearchStudy.phase",
+      "components": []
+    },
+    {
+      "code": "progress-status-state-actual",
+      "type": "composite",
+      "expression": "ResearchStudy.progressStatus",
+      "components": [
+        "http://hl7.org/fhir/SearchParameter/ResearchStudy-state",
+        "http://hl7.org/fhir/SearchParameter/ResearchStudy-actual"
+      ]
+    },
+    {
+      "code": "progress-status-state-period",
+      "type": "composite",
+      "expression": "ResearchStudy.progressStatus",
+      "components": [
+        "http://hl7.org/fhir/SearchParameter/ResearchStudy-state",
+        "http://hl7.org/fhir/SearchParameter/ResearchStudy-period"
+      ]
+    },
+    {
+      "code": "progress-status-state-period-actual",
+      "type": "composite",
+      "expression": "ResearchStudy.progressStatus",
+      "components": [
+        "http://hl7.org/fhir/SearchParameter/ResearchStudy-state",
+        "http://hl7.org/fhir/SearchParameter/ResearchStudy-period",
+        "http://hl7.org/fhir/SearchParameter/ResearchStudy-actual"
+      ]
+    },
+    {
+      "code": "protocol",
+      "type": "reference",
+      "expression": "ResearchStudy.protocol",
+      "components": []
+    },
+    {
+      "code": "recruitment-actual",
+      "type": "number",
+      "expression": "ResearchStudy.recruitment.actualNumber",
+      "components": []
+    },
+    {
+      "code": "recruitment-target",
+      "type": "number",
+      "expression": "ResearchStudy.recruitment.targetNumber",
+      "components": []
+    },
+    {
+      "code": "region",
+      "type": "token",
+      "expression": "ResearchStudy.region",
+      "components": []
+    },
+    {
+      "code": "site",
+      "type": "reference",
+      "expression": "ResearchStudy.site",
+      "components": []
+    },
+    {
+      "code": "status",
+      "type": "token",
+      "expression": "ResearchStudy.status",
+      "components": []
+    },
+    {
+      "code": "study-design",
+      "type": "token",
+      "expression": "ResearchStudy.studyDesign",
+      "components": []
+    },
+    {
+      "code": "title",
+      "type": "string",
+      "expression": "ResearchStudy.title",
+      "components": []
+    }
+  ],
+  "normalized": [
+    {
+      "name": "complete-catalog",
+      "input": {
+        "resourceType": "ResearchStudy",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "meta": {
+          "claims": {
+            "ResearchStudy.classifier": [
+              " value-0 "
+            ],
+            "ResearchStudy.condition": [
+              " value-1 "
+            ],
+            "ResearchStudy.date": [
+              " value-2 "
+            ],
+            "ResearchStudy.description": [
+              " value-3 "
+            ],
+            "ResearchStudy.eligibility": [
+              " value-4 "
+            ],
+            "ResearchStudy.focus-code": [
+              " value-5 "
+            ],
+            "ResearchStudy.focus-reference": [
+              " value-6 "
+            ],
+            "ResearchStudy.identifier": [
+              " value-7 "
+            ],
+            "ResearchStudy.keyword": [
+              " value-8 "
+            ],
+            "ResearchStudy.name": [
+              " value-9 "
+            ],
+            "ResearchStudy.objective-description": [
+              " value-10 "
+            ],
+            "ResearchStudy.objective-type": [
+              " value-11 "
+            ],
+            "ResearchStudy.part-of": [
+              " value-12 "
+            ],
+            "ResearchStudy.phase": [
+              " value-13 "
+            ],
+            "ResearchStudy.progress-status-state-actual": [
+              " value-14 "
+            ],
+            "ResearchStudy.progress-status-state-period": [
+              " value-15 "
+            ],
+            "ResearchStudy.progress-status-state-period-actual": [
+              " value-16 "
+            ],
+            "ResearchStudy.protocol": [
+              " value-17 "
+            ],
+            "ResearchStudy.recruitment-actual": [
+              " value-18 "
+            ],
+            "ResearchStudy.recruitment-target": [
+              " value-19 "
+            ],
+            "ResearchStudy.region": [
+              " value-20 "
+            ],
+            "ResearchStudy.site": [
+              " value-21 "
+            ],
+            "ResearchStudy.status": [
+              " value-22 "
+            ],
+            "ResearchStudy.study-design": [
+              " value-23 "
+            ],
+            "ResearchStudy.title": [
+              " value-24 "
+            ],
+            "ResearchStudy.party-name": [
+              " value-25 "
+            ],
+            "ResearchStudy.party-role": [
+              " value-26 "
+            ],
+            "ResearchStudy.party-period-start": [
+              " value-27 "
+            ],
+            "ResearchStudy.party-period-end": [
+              " value-28 "
+            ],
+            "ResearchStudy.party-classifier": [
+              " value-29 "
+            ],
+            "ResearchStudy.party": [
+              " value-30 "
+            ]
+          }
+        }
+      },
+      "output": {
+        "resourceType": "ResearchStudy",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "meta": {
+          "claims": {
+            "ResearchStudy.classifier": [
+              "value-0"
+            ],
+            "ResearchStudy.condition": [
+              "value-1"
+            ],
+            "ResearchStudy.date": [
+              "value-2"
+            ],
+            "ResearchStudy.description": [
+              "value-3"
+            ],
+            "ResearchStudy.eligibility": [
+              "value-4"
+            ],
+            "ResearchStudy.focus-code": [
+              "value-5"
+            ],
+            "ResearchStudy.focus-reference": [
+              "value-6"
+            ],
+            "ResearchStudy.identifier": [
+              "value-7"
+            ],
+            "ResearchStudy.keyword": [
+              "value-8"
+            ],
+            "ResearchStudy.name": [
+              "value-9"
+            ],
+            "ResearchStudy.objective-description": [
+              "value-10"
+            ],
+            "ResearchStudy.objective-type": [
+              "value-11"
+            ],
+            "ResearchStudy.part-of": [
+              "value-12"
+            ],
+            "ResearchStudy.phase": [
+              "value-13"
+            ],
+            "ResearchStudy.progress-status-state-actual": [
+              "value-14"
+            ],
+            "ResearchStudy.progress-status-state-period": [
+              "value-15"
+            ],
+            "ResearchStudy.progress-status-state-period-actual": [
+              "value-16"
+            ],
+            "ResearchStudy.protocol": [
+              "value-17"
+            ],
+            "ResearchStudy.recruitment-actual": [
+              "value-18"
+            ],
+            "ResearchStudy.recruitment-target": [
+              "value-19"
+            ],
+            "ResearchStudy.region": [
+              "value-20"
+            ],
+            "ResearchStudy.site": [
+              "value-21"
+            ],
+            "ResearchStudy.status": [
+              "value-22"
+            ],
+            "ResearchStudy.study-design": [
+              "value-23"
+            ],
+            "ResearchStudy.title": [
+              "value-24"
+            ],
+            "ResearchStudy.party-name": [
+              "value-25"
+            ],
+            "ResearchStudy.party-role": [
+              "value-26"
+            ],
+            "ResearchStudy.party-period-start": [
+              "value-27"
+            ],
+            "ResearchStudy.party-period-end": [
+              "value-28"
+            ],
+            "ResearchStudy.party-classifier": [
+              "value-29"
+            ],
+            "ResearchStudy.party": [
+              "value-30"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "minimal-empty-claims",
+      "input": {
+        "resourceType": "ResearchStudy",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "meta": {
+          "claims": {}
+        }
+      },
+      "output": {
+        "resourceType": "ResearchStudy",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "meta": {
+          "claims": {}
+        }
+      }
+    },
+    {
+      "name": "wrong-resource",
+      "input": {
+        "resourceType": "Observation",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "meta": {
+          "claims": {
+            "ResearchStudy.classifier": [
+              " value-0 "
+            ],
+            "ResearchStudy.condition": [
+              " value-1 "
+            ],
+            "ResearchStudy.date": [
+              " value-2 "
+            ],
+            "ResearchStudy.description": [
+              " value-3 "
+            ],
+            "ResearchStudy.eligibility": [
+              " value-4 "
+            ],
+            "ResearchStudy.focus-code": [
+              " value-5 "
+            ],
+            "ResearchStudy.focus-reference": [
+              " value-6 "
+            ],
+            "ResearchStudy.identifier": [
+              " value-7 "
+            ],
+            "ResearchStudy.keyword": [
+              " value-8 "
+            ],
+            "ResearchStudy.name": [
+              " value-9 "
+            ],
+            "ResearchStudy.objective-description": [
+              " value-10 "
+            ],
+            "ResearchStudy.objective-type": [
+              " value-11 "
+            ],
+            "ResearchStudy.part-of": [
+              " value-12 "
+            ],
+            "ResearchStudy.phase": [
+              " value-13 "
+            ],
+            "ResearchStudy.progress-status-state-actual": [
+              " value-14 "
+            ],
+            "ResearchStudy.progress-status-state-period": [
+              " value-15 "
+            ],
+            "ResearchStudy.progress-status-state-period-actual": [
+              " value-16 "
+            ],
+            "ResearchStudy.protocol": [
+              " value-17 "
+            ],
+            "ResearchStudy.recruitment-actual": [
+              " value-18 "
+            ],
+            "ResearchStudy.recruitment-target": [
+              " value-19 "
+            ],
+            "ResearchStudy.region": [
+              " value-20 "
+            ],
+            "ResearchStudy.site": [
+              " value-21 "
+            ],
+            "ResearchStudy.status": [
+              " value-22 "
+            ],
+            "ResearchStudy.study-design": [
+              " value-23 "
+            ],
+            "ResearchStudy.title": [
+              " value-24 "
+            ],
+            "ResearchStudy.party-name": [
+              " value-25 "
+            ],
+            "ResearchStudy.party-role": [
+              " value-26 "
+            ],
+            "ResearchStudy.party-period-start": [
+              " value-27 "
+            ],
+            "ResearchStudy.party-period-end": [
+              " value-28 "
+            ],
+            "ResearchStudy.party-classifier": [
+              " value-29 "
+            ],
+            "ResearchStudy.party": [
+              " value-30 "
+            ]
+          }
+        }
+      },
+      "error": "research_study_flat_resource_invalid"
+    },
+    {
+      "name": "native-root-field",
+      "input": {
+        "resourceType": "ResearchStudy",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "meta": {
+          "claims": {
+            "ResearchStudy.classifier": [
+              " value-0 "
+            ],
+            "ResearchStudy.condition": [
+              " value-1 "
+            ],
+            "ResearchStudy.date": [
+              " value-2 "
+            ],
+            "ResearchStudy.description": [
+              " value-3 "
+            ],
+            "ResearchStudy.eligibility": [
+              " value-4 "
+            ],
+            "ResearchStudy.focus-code": [
+              " value-5 "
+            ],
+            "ResearchStudy.focus-reference": [
+              " value-6 "
+            ],
+            "ResearchStudy.identifier": [
+              " value-7 "
+            ],
+            "ResearchStudy.keyword": [
+              " value-8 "
+            ],
+            "ResearchStudy.name": [
+              " value-9 "
+            ],
+            "ResearchStudy.objective-description": [
+              " value-10 "
+            ],
+            "ResearchStudy.objective-type": [
+              " value-11 "
+            ],
+            "ResearchStudy.part-of": [
+              " value-12 "
+            ],
+            "ResearchStudy.phase": [
+              " value-13 "
+            ],
+            "ResearchStudy.progress-status-state-actual": [
+              " value-14 "
+            ],
+            "ResearchStudy.progress-status-state-period": [
+              " value-15 "
+            ],
+            "ResearchStudy.progress-status-state-period-actual": [
+              " value-16 "
+            ],
+            "ResearchStudy.protocol": [
+              " value-17 "
+            ],
+            "ResearchStudy.recruitment-actual": [
+              " value-18 "
+            ],
+            "ResearchStudy.recruitment-target": [
+              " value-19 "
+            ],
+            "ResearchStudy.region": [
+              " value-20 "
+            ],
+            "ResearchStudy.site": [
+              " value-21 "
+            ],
+            "ResearchStudy.status": [
+              " value-22 "
+            ],
+            "ResearchStudy.study-design": [
+              " value-23 "
+            ],
+            "ResearchStudy.title": [
+              " value-24 "
+            ],
+            "ResearchStudy.party-name": [
+              " value-25 "
+            ],
+            "ResearchStudy.party-role": [
+              " value-26 "
+            ],
+            "ResearchStudy.party-period-start": [
+              " value-27 "
+            ],
+            "ResearchStudy.party-period-end": [
+              " value-28 "
+            ],
+            "ResearchStudy.party-classifier": [
+              " value-29 "
+            ],
+            "ResearchStudy.party": [
+              " value-30 "
+            ]
+          }
+        },
+        "status": "active"
+      },
+      "error": "research_study_flat_resource_invalid"
+    },
+    {
+      "name": "unknown-claim",
+      "input": {
+        "resourceType": "ResearchStudy",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "meta": {
+          "claims": {
+            "ResearchStudy.nonstandard": [
+              "unknown"
+            ]
+          }
+        }
+      },
+      "error": "research_study_flat_claim_invalid"
+    },
+    {
+      "name": "scalar-claim",
+      "input": {
+        "resourceType": "ResearchStudy",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "meta": {
+          "claims": {
+            "ResearchStudy.classifier": "scalar"
+          }
+        }
+      },
+      "error": "research_study_flat_claim_invalid"
+    },
+    {
+      "name": "empty-value-list",
+      "input": {
+        "resourceType": "ResearchStudy",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "meta": {
+          "claims": {
+            "ResearchStudy.classifier": []
+          }
+        }
+      },
+      "error": "research_study_flat_claim_invalid"
+    },
+    {
+      "name": "non-string-value",
+      "input": {
+        "resourceType": "ResearchStudy",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "meta": {
+          "claims": {
+            "ResearchStudy.classifier": [
+              7
+            ]
+          }
+        }
+      },
+      "error": "research_study_flat_claim_invalid"
+    }
+  ],
+  "projection": {
+    "input": {
+      "resourceType": "ResearchStudy",
+      "id": "00000000-0000-4000-8000-000000000001",
+      "status": "draft",
+      "title": "example-tenant study",
+      "period": {
+        "start": "1970-01-01T00:00:00.000Z",
+        "end": "1970-01-02T00:00:00.000Z"
+      }
+    },
+    "output": {
+      "ResearchStudy.date": [
+        "1970-01-01T00:00:00.000Z",
+        "1970-01-02T00:00:00.000Z"
+      ],
+      "ResearchStudy.status": [
+        "draft"
+      ],
+      "ResearchStudy.title": [
+        "example-tenant study"
+      ]
+    }
+  }
+}

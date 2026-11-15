@@ -10,7 +10,7 @@ import {
   ResearchStudyR5PartyRoleCodes,
   ResearchStudyR5PartyRoleSystem,
   normalizeResearchStudyR5FlatClaimsResource,
-} from 'vet-data-utils-ts';
+} from 'fhir-data-utils-ts/research-study-r5';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { EntityLifecycleStatus } from '../gdc-backend-utils-node/models/enums';
