@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Exercise KMS restart and provisioning replay with the actual stored tenant
+  controller's verified HTTP principal; retain successful employee readback
+  and prove a verified foreign controller cannot change employee records.
+
 - Read existing ConsentRule contracts from FHIR in eight consumers, retaining all
   thirty-two members and exact decision/status/claim catalogs. Preserve mixed
   test value imports, draft/active authorization boundaries and runtime policy.
