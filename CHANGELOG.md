@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Use neutral Antifraud public/controller/telephone alias operations in seven
+  production consumers. Preserve opaque CID lists, contact-hash bytes, licensed
+  employee/controller binding and SMART authorization behavior.
+
 - Read complete DID-service fragment/type and DSP metadata-path wire catalogs
   from the SOS gateway DID profile in existing discovery/service consumers.
   Preserve advertisement values, endpoint construction and authorization.

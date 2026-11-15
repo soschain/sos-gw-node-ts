@@ -7,7 +7,7 @@ import type { JwkSet } from 'antifraud-data-utils-ts/cryptography';
 import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { buildProfessionalDidWeb } from 'gdc-common-utils-ts/utils/did';
-import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';
+import { normalizeControllerAlias } from 'antifraud-data-utils-ts/public-aliases';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
@@ -124,7 +124,7 @@ export async function buildControllerEntityConfig(
   if (presentedDid && !presentedDid.startsWith('did:web:')) {
     throw new ManagerError('Presented controller alias must use a did:web identifier.', IssueType.Value);
   }
-  const actorSameAs = normalizeSameAsHash(deps.explicitBinding?.sameAs || email);
+  const actorSameAs = normalizeControllerAlias(deps.explicitBinding?.sameAs || email);
   const alsoKnownAs = Array.from(new Set([
     employeeUrn,
     presentedDid && presentedDid !== didId ? presentedDid : undefined,

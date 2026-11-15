@@ -46,7 +46,7 @@ import type { IHostRuntime } from './IHostRuntime';
 import { buildOfferOrderIndexedAttributes } from '../utils/offer-order-read-model';
 import { buildSearchResponseEntries } from '../utils/didcomm-response';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
-import { normalizePublicAliasList } from 'gdc-common-utils-ts/utils/same-as';
+import { normalizePublicAliasList } from 'antifraud-data-utils-ts/public-aliases';
 import type { ClinicalCreatorBinding } from 'sos-data-utils-ts/clinical-creator-contract';
 import { getClinicalCreatorBindingsSectionId } from '../utils/clinical-creator-binding';
 import { canonicalizeBundleEntryMetadata } from '../utils/canonical-entry-metadata';

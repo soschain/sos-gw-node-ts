@@ -16,7 +16,7 @@ import type { IHostingTenantRegistry } from '../IHostingTenantRegistry';
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
 import type { EntityConfig } from '../../gdc-backend-utils-node/models/entity';
 import { mergeActivationJwks } from './registration-keys';
-import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';
+import { normalizeControllerAlias } from 'antifraud-data-utils-ts/public-aliases';
 import type { ActivationParticipantMaterialLike } from './controller-entity-config';
 import {
   extractServiceControllerOccupationCodes,
@@ -52,7 +52,7 @@ export async function persistExistingTenantControllerBinding(
   if (!deps.controller?.publicKeyJwk && !deps.controller?.jwks?.keys?.length) return;
   const controllerDid = String(deps.controller?.did || '').trim();
   const controllerSameAs = String(deps.controller?.sameAs || '').trim();
-  const actorIdentifier = normalizeSameAsHash(controllerSameAs);
+  const actorIdentifier = normalizeControllerAlias(controllerSameAs);
   const controllerRoles = extractServiceControllerRoleCodes(deps.controllerCredential);
   const controllerOccupations = extractServiceControllerOccupationCodes(deps.controllerCredential);
   const controllerRole = controllerRoles.find((role) => role === 'RESPRSN');
@@ -89,7 +89,7 @@ export async function persistExistingTenantControllerBinding(
   })).values());
   const controllerSubject = (deps.controllerCredential.credentialSubject || {}) as Record<string, any>;
   const credentialOwner = (controllerSubject.owner || {}) as Record<string, any>;
-  if (normalizeSameAsHash(String(credentialOwner.sameAs || '')) !== actorIdentifier) {
+  if (normalizeControllerAlias(String(credentialOwner.sameAs || '')) !== actorIdentifier) {
     throw new ManagerError('Controller actor identifier does not match the ICA-issued controller credential.', IssueType.Conflict);
   }
   const credentialMaterial = String(credentialOwner.hasCredential?.material || '').trim();

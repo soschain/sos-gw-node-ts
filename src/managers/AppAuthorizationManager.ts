@@ -13,7 +13,7 @@ import { getTenantVaultId } from '../utils/tenant';
 import { Content } from 'antifraud-data-utils-ts/cryptography';
 import { getEnvSectionId } from '../utils/section-env';
 import { compactVerify, decodeProtectedHeader, importJWK, type JWK } from 'jose';
-import { normalizeSameAsHash, normalizeTelephoneHash } from 'gdc-common-utils-ts/utils/same-as';
+import { normalizeControllerAlias, normalizeTelephoneAlias } from 'antifraud-data-utils-ts/public-aliases';
 import { normalizeIndexedEmail, normalizeIndexedPhone } from '../utils/indexed-contact';
 import { DEFAULT_LICENSE_DEVICE_ALLOWANCE } from '../constants/domain';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
@@ -370,8 +370,8 @@ export class AppAuthorizationManager {
       throw new ManagerError('Activation identity does not match the licensed phone.', IssueType.Forbidden);
     }
     const actor = issuedEmail
-      ? normalizeSameAsHash(issuedEmail)
-      : normalizeTelephoneHash(issuedPhone!);
+      ? normalizeControllerAlias(issuedEmail)
+      : normalizeTelephoneAlias(issuedPhone!);
     if (license.status === 'active') {
       const legacyActor = Boolean(license.activatedBy
         && !/^urn:multibase:z[^:]+$/.test(String(license.activatedBy)));

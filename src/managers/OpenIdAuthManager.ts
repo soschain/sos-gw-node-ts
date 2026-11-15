@@ -61,7 +61,7 @@ import {
 import { isIso3166CountryCode, isIso3166SubdivisionForCountry } from 'vet-data-utils-ts/iso-jurisdictions';
 import { jurisdictionGrantCovers } from 'sos-data-utils-ts/professional-access-policy';
 import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { normalizePublicAliasList } from 'gdc-common-utils-ts/utils/same-as';
+import { normalizePublicAliasList } from 'antifraud-data-utils-ts/public-aliases';
 import { getAuthenticatedJobActorIdentifiers } from '../utils/authenticated-job-actor';
 import { normalizeIndexedEmail, normalizeIndexedPhone } from '../utils/indexed-contact';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';

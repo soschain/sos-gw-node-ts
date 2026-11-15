@@ -26,7 +26,7 @@ import { hasProviderServiceCapabilityClaim } from '../utils/services';
 import { getTenantServiceCapabilityClaim } from '../utils/service-capability-claims';
 import { initializeTenantServicesConfig } from '../utils/services';
 import { resolveLedgerOrganizationId } from '../utils/ledger-organization-registration-helpers';
-import { normalizePublicAliasList } from 'gdc-common-utils-ts/utils/same-as';
+import { normalizePublicAliasList } from 'antifraud-data-utils-ts/public-aliases';
 
 const SERVICE_OPERATIONAL_URL_CLAIM = 'org.schema.Service.url';
 
