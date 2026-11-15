@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Verify reviewed Test Network Organization controller and representative
+  contacts as exactly one email or telephone channel. Preserve signer, key,
+  PDF evidence and deployment-scope checks, including real detached PQC proofs.
+
 - Read public JWK thumbprint URI identifiers from neutral Antifraud operations
   in five ledger, DID and controller-credential consumers; preserve existing
   SHA-256 member transcripts and key-alias-independent identities.

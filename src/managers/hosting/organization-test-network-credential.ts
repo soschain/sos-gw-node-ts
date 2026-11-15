@@ -14,7 +14,7 @@ import {
 import {
   canonicalizeTestNetworkOrganizationCredential,
 } from 'gdc-common-utils-ts/utils/test-network-organization-credentials';
-import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
+import { buildStableActorIdentifier, normalizeActorContact, type ActorContactInput } from 'antifraud-data-utils-ts/organization-identity';
 import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprints';
 import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
@@ -26,7 +26,9 @@ type VerificationInput = Readonly<{
   controller?: Record<string, unknown>;
   organization?: Record<string, unknown>;
   controllerEmail?: string;
+  controllerTelephone?: string;
   legalRepresentativeEmail?: string;
+  legalRepresentativeTelephone?: string;
   testNetworkCredentials?: readonly VerifiableCredentialV2[];
   cryptography: ICryptography;
   trustedIssuers: string[];
@@ -89,9 +91,11 @@ export async function verifyOrganizationTestNetworkCredential(
   if (String(input.organization?.did || '') !== String(subject.id || '')) {
     fail('Admission subject DID does not match the requested organization DID.');
   }
-  if (String(input.controllerEmail || '').trim().toLowerCase()
-    !== String(subject.controller?.email || '').trim().toLowerCase()) {
-    fail('Admission controller email does not match the transaction.');
+  const controllerContact = reviewedPartyContact(input.controllerEmail, input.controllerTelephone, 'controller');
+  const admissionControllerContact = reviewedPartyContact(subject.controller?.email, subject.controller?.telephone, 'reviewed controller');
+  if (controllerContact.contactKind !== admissionControllerContact.contactKind
+    || controllerContact.contact !== admissionControllerContact.contact) {
+    fail('Admission controller contact does not match the transaction.');
   }
   const controllerJwk = input.controller?.publicKeyJwk as PublicJwk | undefined;
   if (!controllerJwk
@@ -152,8 +156,9 @@ export async function verifyOrganizationTestNetworkCredential(
     organizationTestNetworkCredential: credential,
     signerJwk,
     verificationMethod,
-    controllerEmail: input.controllerEmail,
+    controllerContact,
     legalRepresentativeEmail: input.legalRepresentativeEmail,
+    legalRepresentativeTelephone: input.legalRepresentativeTelephone,
     cryptography: input.cryptography,
   });
 
@@ -173,13 +178,32 @@ export async function verifyOrganizationTestNetworkCredential(
   };
 }
 
+function reviewedPartyContact(email: unknown, telephone: unknown, party: string): ActorContactInput {
+  if ((email !== undefined && typeof email !== 'string')
+    || (telephone !== undefined && typeof telephone !== 'string')) {
+    fail(`Admission ${party} contact must be a string.`);
+  }
+  const hasEmail = typeof email === 'string' && Boolean(email.trim());
+  const hasTelephone = typeof telephone === 'string' && Boolean(telephone.trim());
+  if (hasEmail === hasTelephone) fail(`Admission ${party} requires exactly one email or telephone.`);
+  const contactKind = hasEmail ? 'email' : 'phone';
+  const contact = hasEmail ? email : telephone;
+  if (typeof contact !== 'string') fail(`Admission ${party} contact is missing.`);
+  try {
+    return { contactKind, contact: normalizeActorContact({ contactKind, contact }) };
+  } catch {
+    return fail(`Admission ${party} contact is invalid.`);
+  }
+}
+
 async function verifyTestNetworkDomainCredentials(input: Readonly<{
   credentials?: readonly VerifiableCredentialV2[];
   organizationTestNetworkCredential: VerifiableCredentialV2;
   signerJwk: PublicJwk;
   verificationMethod: string;
-  controllerEmail?: string;
+  controllerContact: ActorContactInput;
   legalRepresentativeEmail?: string;
+  legalRepresentativeTelephone?: string;
   cryptography: ICryptography;
 }>): Promise<readonly VerifiableCredentialV2[]> {
   const credentials = input.credentials || [];
@@ -193,12 +217,10 @@ async function verifyTestNetworkDomainCredentials(input: Readonly<{
   }
   const admissionSubject = input.organizationTestNetworkCredential.credentialSubject as Record<string, any>;
   const pdfEvidenceId = `urn:sha256:${String(admissionSubject.applicationEvidence?.pdfSha256 || '')}`;
-  const controllerActor = buildStableActorIdentifier({
-    contactKind: 'email', contact: String(input.controllerEmail || ''),
-  });
-  const representativeActor = buildStableActorIdentifier({
-    contactKind: 'email', contact: String(input.legalRepresentativeEmail || ''),
-  });
+  const controllerActor = buildStableActorIdentifier(input.controllerContact);
+  const representativeActor = buildStableActorIdentifier(reviewedPartyContact(
+    input.legalRepresentativeEmail, input.legalRepresentativeTelephone, 'legal representative',
+  ));
   if (organization[0].credentialSubject.id !== admissionSubject.id
     || String(organization[0].credentialSubject.legalName || '') !== String(admissionSubject.organization?.legalName || '')) {
     fail('Test Network OrganizationCredential does not match the admission VC.');

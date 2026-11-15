@@ -264,3 +264,20 @@ both native cases, five retained suites (46 cases including discovery HTTP),
 strict TypeScript and scoped privacy pass. The touched DID compliance fixture
 uses governed synthetic routing values and its two cases pass on rerun.
 Read-only original source: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/utils/dataspace-protocol.ts .
+
+## Reviewed Organization contact channels (profile-specific)
+
+The existing Test Network admission verifier now compares normalized typed
+controller contacts and derives the reviewed controller and representative
+identifiers using their actual email or telephone channel. Hosting forwards
+telephone fields from the existing Organization transaction resource. Missing,
+ambiguous and mismatched channels fail closed; signer authorization/revocation,
+key commitment, PDF evidence and production-route denials remain enforced.
+This is an SOS host admission correction, not an upstream mutation or a new
+credential authority. Controller Order/licence issuance and online enrollment
+remain separate lifecycle boundaries.
+
+Validation: a genuine real-signature telephone admission RED preceded the fix.
+Both affected suites pass all 26 cases, including four new real-crypto cases;
+full strict TypeScript, integrated privacy and owned-file diff checks pass.
+These are manager/cryptography tests, not an online user-journey acceptance.
