@@ -20,7 +20,7 @@ import { buildOfferOrderIndexedAttributes } from '../../utils/offer-order-read-m
 import { createOrganizationUrn } from '../../utils/urn';
 import { registerOrganizationOnLedger } from '../../utils/ledger-organization-registration';
 import { parseServiceCapabilityTokens } from 'sos-data-utils-ts/service-capabilities';
-import { validateActivationServiceAuthorizationPolicy } from 'gdc-common-utils-ts/utils/activation-policy';
+import { validateHostedServiceAuthorization } from '../../utils/hosted-service-authorization';
 import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import type { NetworkName } from '../../gdc-backend-utils-node/models/enums';
 import { composeHostDidWebId, createHostedDidWeb } from '../../utils/did-backend';
@@ -235,7 +235,7 @@ async function processActivationEntry(
   }
 
   const requestedServiceTypes = parseServiceCapabilityTokens(normalizedClaims[SchemaOrgServiceClaim.ServiceType]);
-  const serviceAuthorizationErrors = validateActivationServiceAuthorizationPolicy({
+  const serviceAuthorizationErrors = validateHostedServiceAuthorization({
     organizationCredential: activation.organizationCredential,
     requiredCategory: requestedSector,
     requiredServiceTypes: requestedServiceTypes,

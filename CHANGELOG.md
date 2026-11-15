@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Own hosted-service activation scope admission in GW while reusing canonical
+  SOS capability parsing. Preserve category/service error order, category-only
+  wildcards, first-subject and makesOffer precedence after existing VC trust
+  verification; unknown additionalType labels never authorize capabilities.
+
 - Keep tenant lifecycle representative identifier projection and typed equality
   in the owning GW admission helper, preserving first-subject, tax aliases and
   punctuation-sensitive matching after existing credential verification.

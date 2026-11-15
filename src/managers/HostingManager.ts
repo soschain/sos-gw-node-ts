@@ -175,9 +175,6 @@ import {
   parseServiceCapabilityTokens,
 } from 'sos-data-utils-ts/service-capabilities';
 import {
-  validateActivationServiceAuthorizationPolicy,
-} from 'gdc-common-utils-ts/utils/activation-policy';
-import {
   DefaultActivationTrustAdapter,
   IActivationTrustAdapter,
 } from '../adapters/activation-trust.adapter';

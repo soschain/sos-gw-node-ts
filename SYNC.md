@@ -157,3 +157,14 @@ controller proof and tenant lifecycle decisions remain at their original boundar
 this projection grants no occupation or controller authority.
 Read-only compatibility source: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/activation-policy.ts .
 No source or release change was made in that original repository.
+
+
+## Hosted service activation scope
+
+Adopted the verified-credential service scope admission profile in a GW-owned
+helper. Canonical capability normalization and known-capability recognition are
+consumed from SOS Data; no vocabulary or issuer-verification implementation was
+copied. Category-only wildcard behavior, first-subject/makesOffer precedence and
+ordered error codes/messages are retained at the existing activation boundary.
+Read-only compatibility sources: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/activation-policy.ts and https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/dataspace-discovery.ts .
+Owning capability source: https://github.com/soschain/sos-data-utils-ts/blob/main/src/service-capabilities.ts .
