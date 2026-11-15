@@ -43,6 +43,7 @@ import {
   HOST_ORDER_REQUIRED_INPUT_DISPLAY_CLAIMS,
 } from './hosting-claim-contracts';
 import { GatewayClaim } from '../../shared/gateway-claim-contract';
+import { readBootstrapControllerContact } from './controller-entity-config';
 
 type ProcessHostOrderEntryDeps = Readonly<{
   entry: BundleEntry;
@@ -308,18 +309,17 @@ export async function processHostOrderEntry(deps: ProcessHostOrderEntryDeps): Pr
     }
     await deps.vaultRepository.put(vaultId, licenseDocs, getEnvSectionId('device-licenses'));
 
-    const legalRepEmail = processedClaims[SchemaOrgPersonClaim.Email] as string | undefined;
+    const legalRepContact = readBootstrapControllerContact(processedClaims);
     const legalRepRole = getPersonOccupationClaim(processedClaims as Record<string, any> | undefined);
-    if (legalRepEmail && legalRepRole) {
+    if (legalRepContact && legalRepRole) {
       try {
         const organizationOfficialId = resolveLedgerOrganizationId(processedClaims);
         const jurisdiction = resolveOrganizationRouteJurisdiction(processedClaims);
-        const stableActorIdentifier = buildStableActorIdentifier({ contactKind: 'email', contact: legalRepEmail });
+        const stableActorIdentifier = buildStableActorIdentifier(legalRepContact);
         const ledgerIdentity = buildIssuedRoleLicenseLedgerIdentity({
           organizationId: organizationOfficialId,
           jurisdiction,
-          contactKind: 'email',
-          contact: legalRepEmail,
+          ...legalRepContact,
           licensedRole: legalRepRole,
         });
         const { activationCode, licenseId } = await issueActivationCodeFromPool({
@@ -328,7 +328,8 @@ export async function processHostOrderEntry(deps: ProcessHostOrderEntryDeps): Pr
           tenantVaultId: vaultId,
           userClass: 'employee',
           type: 'mobile',
-          email: legalRepEmail,
+          ...(legalRepContact.contactKind === 'email'
+            ? { email: legalRepContact.contact } : { phone: legalRepContact.contact }),
           role: legalRepRole,
           activationCode: postalActivationCode,
           ownerOrganizationId: organizationOfficialId,
@@ -476,18 +477,17 @@ export async function processActivatedTenantOrderEntry(
 
   let activationCode: string | undefined;
   let representativeLicenseId: string | undefined;
-  const legalRepEmail = deps.matchedOfferClaims[SchemaOrgPersonClaim.Email] as string | undefined;
+  const legalRepContact = readBootstrapControllerContact(deps.matchedOfferClaims);
   const legalRepRole = getPersonOccupationClaim(deps.matchedOfferClaims as Record<string, any> | undefined);
-  if (legalRepEmail && legalRepRole) {
+  if (legalRepContact && legalRepRole) {
     try {
       const organizationOfficialId = resolveLedgerOrganizationId(deps.matchedOfferClaims);
       const jurisdiction = resolveOrganizationRouteJurisdiction(deps.matchedOfferClaims);
-      const stableActorIdentifier = buildStableActorIdentifier({ contactKind: 'email', contact: legalRepEmail });
+      const stableActorIdentifier = buildStableActorIdentifier(legalRepContact);
       const ledgerIdentity = buildIssuedRoleLicenseLedgerIdentity({
         organizationId: organizationOfficialId,
         jurisdiction,
-        contactKind: 'email',
-        contact: legalRepEmail,
+        ...legalRepContact,
         licensedRole: legalRepRole,
       });
       ({ activationCode, licenseId: representativeLicenseId } = await issueActivationCodeFromPool({
@@ -496,7 +496,8 @@ export async function processActivatedTenantOrderEntry(
         tenantVaultId,
         userClass: 'employee',
         type: 'mobile',
-        email: legalRepEmail,
+        ...(legalRepContact.contactKind === 'email'
+          ? { email: legalRepContact.contact } : { phone: legalRepContact.contact }),
         role: legalRepRole,
         ownerOrganizationId: organizationOfficialId,
         stableActorIdentifier,

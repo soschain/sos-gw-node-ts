@@ -24,7 +24,9 @@ import { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService'
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { EXAMPLE_LICENSE_INVALID_OFFER_ID } from 'gdc-common-utils-ts';
 import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
-import { SchemaOrgIndividualProductClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { SchemaOrgIndividualProductClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
+import { REPOSITORY_SAFE_EXAMPLES as safe } from 'sos-data-utils-ts/repository-privacy';
 
 // Create a mock KMS service for testing.
 export const mockKmsService: jest.Mocked<IKmsService> = {
@@ -275,6 +277,40 @@ describe('HostingManager - Offer/Order Flow', () => {
       getEnvSectionId('communications'),
     );
     expect(communications.length).toBeGreaterThan(0);
+  });
+
+  it('issues a telephone-only Organization controller licence without inventing an email', async () => {
+    // Trusted memory-manager fixture: real online bearer/VC admission is tested
+    // separately; this case exercises the actual pending Offer -> Order state.
+    const registrationJob = structuredClone(ORGANIZATION_REGISTRATION_JOB);
+    const claims = registrationJob.content!.body!.data[0]!.resource!.meta!.claims;
+    delete claims[SchemaOrgPersonClaim.Email];
+    claims[SchemaOrgPersonClaim.Telephone] = safe.phoneE164;
+    expect(claims).not.toHaveProperty(SchemaOrgPersonClaim.Email);
+    const offerResponse = await hostingManager.process(registrationJob);
+    const offerId = offerResponse.body.data[0].resource.meta.claims[SchemaOrgOfferClaim.Identifier];
+    expect(offerId).toEqual(expect.any(String));
+    const orderJob = structuredClone(ORGANIZATION_ORDER_JOB);
+    orderJob.content!.body!.data[0]!.resource!.meta!.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] = offerId;
+    const response = await hostingManager.process(orderJob);
+    if (response.body.data[0].response.status !== '201') {
+      throw new Error(`telephone_order_rejected:${JSON.stringify(response.body.data[0])}`);
+    }
+    expect(response.body.data[0].response.status).toBe('201');
+    const activationCode = response.body.data[0].resource.meta.claims[SchemaOrgIndividualProductClaim.SerialNumber];
+    expect(activationCode).toEqual(expect.any(String));
+    const sector = claims[SchemaOrgServiceClaim.Category];
+    if (sector !== GatewaySector.HEALTH_CARE) throw new Error('Fixture requires its governed health-care sector');
+    const tenantVaultId = tenantUtils.getTenantVaultId(
+      sector,
+      claims[SchemaOrgOrganizationClaim.AlternateName] || claims[SchemaOrgOrganizationClaim.IdentifierValue],
+    );
+    const licences = await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(tenantVaultId, getEnvSectionId('device-licenses'));
+    expect(licences.map(doc => doc.content)).toContainEqual(expect.objectContaining({
+      activationCode, issuedToPhone: safe.phoneE164,
+      activatedBy: buildStableActorIdentifier({ contactKind: 'phone', contact: safe.phoneE164 }),
+    }));
+    expect(licences.map(doc => doc.content)).not.toContainEqual(expect.objectContaining({ issuedToEmail: expect.any(String) }));
   });
 
   it('assigns the exact delivered postal code when the pending record has a server-owned VC binding', async () => {

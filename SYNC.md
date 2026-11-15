@@ -281,3 +281,20 @@ Validation: a genuine real-signature telephone admission RED preceded the fix.
 Both affected suites pass all 26 cases, including four new real-crypto cases;
 full strict TypeScript, integrated privacy and owned-file diff checks pass.
 These are manager/cryptography tests, not an online user-journey acceptance.
+
+## Telephone Organization controller Order (profile-specific)
+
+The existing controller builder accepts a telephone-only Person without
+substituting an email. It uses the neutral actor DID/hash and the existing
+stable-actor employee URN; private phone indexing follows the current employee
+index profile. Both Order licence callers pass the actual phone channel to the
+existing pool and ledger identity builder. Existing primary-email selection,
+required role, supplied/provisioned-key checks, postal-code binding and
+technical-seat reservation remain unchanged.
+
+Validation: a real memory-manager Offer-to-Order case first returned the exact
+required-email OperationOutcome instead of 201. After the fix, three suites
+pass 45 executions (37 distinct cases; the sector fixture reimports eight Order
+cases), including phone-bound licence persistence and retained activation
+controls. Strict TypeScript and scoped privacy/diff pass. This is manager
+coverage, not online Firebase, HTTP, ledger or complete phone-lifecycle proof.

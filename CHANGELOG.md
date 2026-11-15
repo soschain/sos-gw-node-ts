@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Issue hosted Organization controller identities and activation licences for
+  telephone-only Person contacts using the owned actor DID/hash and existing
+  licence pool. Preserve primary-email behavior, role/key checks and seats.
+
 - Address Employee search replies to the authenticated original caller rather
   than the provider. Retain exact phone registration installation, role and
   seat bindings when a completed device request is retried with a new thread.

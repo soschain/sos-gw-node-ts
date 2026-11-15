@@ -6,7 +6,7 @@ import type { ParameterData } from 'gdc-common-utils-ts/models/params';
 import type { JwkSet } from 'antifraud-data-utils-ts/cryptography';
 import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
-import { buildProfessionalDidWeb } from 'gdc-common-utils-ts/utils/did';
+import { buildOrganizationEmployeeDidWeb, buildStableActorIdentifier, normalizeActorContact, type ActorContactInput } from 'antifraud-data-utils-ts/organization-identity';
 import { normalizeControllerAlias } from 'antifraud-data-utils-ts/public-aliases';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
@@ -16,9 +16,9 @@ import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsServic
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { normalizeCodeSystemAndValue } from '../../utils/normalize-codeAndSystem';
 import { getPersonOccupationClaim } from '../../utils/occupation';
-import { normalizeIndexedEmail } from '../../utils/indexed-contact';
+import { normalizeIndexedEmail, normalizeIndexedPhone } from '../../utils/indexed-contact';
 import { getEnvSectionId } from '../../utils/section-env';
-import { createEmployeeUrn, parseTenantUrn } from '../../utils/urn';
+import { createEmployeeUrn, createEmployeeUrnFromStableActorIdentifier, createOrganizationUrn, parseTenantUrn } from '../../utils/urn';
 import { populateDidDocumentFromJwks } from '../../utils/did-backend';
 
 export type ActivationParticipantMaterialLike = Readonly<{
@@ -55,6 +55,20 @@ type StoreControllerEntityConfigDeps = Readonly<{
   bootstrapLifecycleRole: string;
 }>;
 
+/** Preserve the existing primary-email selection; telephone-only identities
+ * use a separate typed channel rather than an email-shaped placeholder. */
+export function readBootstrapControllerContact(claims: Readonly<Record<string, unknown>> | undefined): ActorContactInput | undefined {
+  const email = normalizeIndexedEmail(claims?.[SchemaOrgPersonClaim.Email]);
+  if (email) return { contactKind: 'email', contact: email };
+  const telephone = claims?.[SchemaOrgPersonClaim.Telephone];
+  if (typeof telephone !== 'string' || !telephone.trim()) return undefined;
+  try {
+    return { contactKind: 'phone', contact: normalizeActorContact({ contactKind: 'phone', contact: telephone }) };
+  } catch {
+    throw new ManagerError('Controller telephone must use E.164.', IssueType.Value);
+  }
+}
+
 /**
  * Builds the synthetic bootstrap controller employee used during tenant
  * onboarding.
@@ -65,16 +79,16 @@ type StoreControllerEntityConfigDeps = Readonly<{
  * must later bind its own JWK through the sector `_issue` and DCR flow.
  *
  * Required input claims on `legalRep.meta.claims`:
- * - `Person.email`
+ * - `Person.email` or `Person.telephone`
  * - `Person.hasOccupation`
  */
 export async function buildControllerEntityConfig(
   deps: BuildControllerEntityConfigDeps,
 ): Promise<EntityConfig> {
-  const email = normalizeIndexedEmail(deps.legalRep.meta?.claims?.[SchemaOrgPersonClaim.Email]) as string | undefined;
+  const contact = readBootstrapControllerContact(deps.legalRep.meta?.claims);
   const roleCode = getPersonOccupationClaim(deps.legalRep.meta?.claims as Record<string, any> | undefined);
-  if (!email || !roleCode) {
-    throw new ManagerError('Missing required admin Person claims (email, hasOccupation).', IssueType.Required);
+  if (!contact || !roleCode) {
+    throw new ManagerError('Missing required admin Person claims (email or telephone, hasOccupation).', IssueType.Required);
   }
 
   const parsedTenantUrn = parseTenantUrn(deps.tenantUrn);
@@ -85,7 +99,7 @@ export async function buildControllerEntityConfig(
     throw new ManagerError(`Invalid hosted tenant DID: '${deps.hostedTenantDid}'`, IssueType.Value);
   }
 
-  const employeeUrn = createEmployeeUrn({
+  const organizationUrnParams = {
     namespace: parsedTenantUrn.namespace,
     network: parsedTenantUrn.network,
     jurisdiction: parsedTenantUrn.jurisdiction,
@@ -93,9 +107,13 @@ export async function buildControllerEntityConfig(
     sector: parsedTenantUrn.sector,
     idType: parsedTenantUrn.idType,
     idValue: parsedTenantUrn.idValue,
-    email,
-    role: roleCode,
-  });
+  };
+  const employeeUrn = contact.contactKind === 'email'
+    ? createEmployeeUrn({ ...organizationUrnParams, email: contact.contact, role: roleCode })
+    : createEmployeeUrnFromStableActorIdentifier({
+      organizationUrn: createOrganizationUrn(organizationUrnParams),
+      stableActorIdentifier: buildStableActorIdentifier(contact), role: roleCode,
+    });
 
   let signerJwk = deps.explicitBinding?.publicKeyJwk
     || deps.findJwkByUse(deps.explicitBinding?.jwks, 'sig')
@@ -115,16 +133,16 @@ export async function buildControllerEntityConfig(
   // are always real did:web identifiers built with the shared SDK algorithm.
   // Portal-specific card/profile DIDs are aliases. They must not replace the
   // operational controller DID published and verified by this GW.
-  const didId = buildProfessionalDidWeb({
+  const didId = buildOrganizationEmployeeDidWeb({
     organizationDidWeb: deps.hostedTenantDid,
-    email,
+    ...contact,
     role: HealthcareActorRoles.Controller,
   });
   const presentedDid = String(deps.explicitBinding?.did || '').trim();
   if (presentedDid && !presentedDid.startsWith('did:web:')) {
     throw new ManagerError('Presented controller alias must use a did:web identifier.', IssueType.Value);
   }
-  const actorSameAs = normalizeControllerAlias(deps.explicitBinding?.sameAs || email);
+  const actorSameAs = normalizeControllerAlias(deps.explicitBinding?.sameAs || contact.contact);
   const alsoKnownAs = Array.from(new Set([
     employeeUrn,
     presentedDid && presentedDid !== didId ? presentedDid : undefined,
@@ -172,11 +190,13 @@ export async function storeControllerEntityConfig(
   deps: StoreControllerEntityConfigDeps,
 ): Promise<void> {
   const verificationMethods = deps.controllerConfig.didDocument?.verificationMethod || [];
-  const email = normalizeIndexedEmail(deps.controllerConfig.claims?.[SchemaOrgPersonClaim.Email]) as string | undefined;
+  const contact = readBootstrapControllerContact(deps.controllerConfig.claims);
   const roleCode = getPersonOccupationClaim(deps.controllerConfig.claims as Record<string, any> | undefined);
 
   const attributesToIndex: ParameterData[] = [
-    ...(email ? [{ name: 'email', value: email, unique: true, type: 'string' } as ParameterData] : []),
+    ...(contact ? [{ name: contact.contactKind,
+      value: contact.contactKind === 'phone' ? normalizeIndexedPhone(contact.contact) : contact.contact,
+      unique: true, type: 'string' }] : []),
     ...(roleCode ? [{ name: 'role', value: normalizeCodeSystemAndValue(roleCode), unique: false, type: 'token' } as ParameterData] : []),
     { name: 'lifecycleRole', value: deps.bootstrapLifecycleRole, unique: false, type: 'string' } as ParameterData,
     ...verificationMethods
