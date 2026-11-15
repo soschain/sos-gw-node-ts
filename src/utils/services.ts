@@ -11,10 +11,7 @@ import {
   DidServiceTypes,
 } from 'sos-data-utils-ts/gateway-did-profile';
 import { DataspaceWellKnownPaths } from 'sos-data-utils-ts/gateway-did-profile';
-import {
-  buildGwCatalogRequestPath,
-  buildGwDspaceVersionWellKnownPath,
-} from 'gdc-common-utils-ts/utils/dataspace-protocol';
+import { buildGatewayDataspaceCatalogRequestPath, buildGatewayDataspaceVersionPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import {
   ServiceCapabilityKind,
   hasServiceCapabilityKind,
@@ -676,7 +673,7 @@ export function initializeTenantServicesConfig(
     {
       id: '#dsp-catalog-service',
       type: DidServiceTypes.CatalogService,
-      serviceEndpoint: buildGwCatalogRequestPath(),
+      serviceEndpoint: buildGatewayDataspaceCatalogRequestPath(),
     } as DidService,
     {
       id: '#dcp-issuer-service',
@@ -792,7 +789,7 @@ export function initializeHostServicesConfig(sectorsAllowed: GatewaySector[], no
     {
       id: '#dsp-data-service',
       type: 'DataService',
-      serviceEndpoint: buildGwDspaceVersionWellKnownPath({
+      serviceEndpoint: buildGatewayDataspaceVersionPath({
         participantId: 'host',
         jurisdiction: '{hostCoverageScope}',
         version: 'v1',
@@ -802,7 +799,7 @@ export function initializeHostServicesConfig(sectorsAllowed: GatewaySector[], no
     {
       id: DidServiceIds.Catalog,
       type: DidServiceTypes.CatalogService,
-      serviceEndpoint: buildGwCatalogRequestPath({
+      serviceEndpoint: buildGatewayDataspaceCatalogRequestPath({
         participantId: 'host',
         jurisdiction: '{hostCoverageScope}',
         version: 'v1',

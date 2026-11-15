@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Format existing DSP route and advertisement paths with SOS Data builders.
+  Preserve tenant/host selector precedence, explicit dataset IDs and unscoped
+  fallbacks; keep metadata-payload construction and access checks unchanged.
+
 - Use neutral Antifraud public/controller/telephone alias operations in seven
   production consumers. Preserve opaque CID lists, contact-hash bytes, licensed
   employee/controller binding and SMART authorization behavior.

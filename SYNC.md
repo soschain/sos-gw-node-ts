@@ -248,3 +248,19 @@ Validation: genuine import-owner RED plus a full-catalog control precede the
 import-only change; both native cases, four retained service/discovery suites
 (twenty cases), strict TypeScript and scoped privacy checks pass.
 Read-only original sources: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/constants/did-services.ts and https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/constants/dataspace-protocol.ts .
+
+## DSP relative-path owner
+
+Six deterministic relative-path builders move to the SOS Data owner across
+five route/service/test consumers, with canonical names and no compatibility
+aliases. A symbol-bound source packet changes imports and bound call names
+only. All 106 read-only original tenant/host, precedence, whitespace/slash,
+unscoped fallback and explicit dataset-ID vectors remain exact without input
+mutation. The mixed metadata-payload helper import is deliberately retained
+and remains a separate owner gap; this does not claim full module independence.
+No new endpoint or access policy is introduced.
+Validation: actual ownership RED plus a 106-vector control precede migration;
+both native cases, five retained suites (46 cases including discovery HTTP),
+strict TypeScript and scoped privacy pass. The touched DID compliance fixture
+uses governed synthetic routing values and its two cases pass on rerun.
+Read-only original source: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/utils/dataspace-protocol.ts .

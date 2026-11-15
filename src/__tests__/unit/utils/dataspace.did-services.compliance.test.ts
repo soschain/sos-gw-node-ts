@@ -1,29 +1,28 @@
+// Flow contract: tenant and host DID services retain their exact DSP discovery/catalog endpoints and issuer services using governed synthetic routing identities.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/__tests__/unit/utils/dataspace.did-services.compliance.test.ts
 
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { DidServiceIds, DidServiceTypes } from 'sos-data-utils-ts/gateway-did-profile';
-import {
-  buildGwCatalogRequestPath,
-  buildGwDspaceVersionWellKnownPath,
-} from 'gdc-common-utils-ts/utils/dataspace-protocol';
+import { buildGatewayDataspaceCatalogRequestPath, buildGatewayDataspaceVersionPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import { populateDidDocumentServices } from '../../../utils/did-document';
 import { initializeHostServicesConfig, initializeTenantServicesConfig } from '../../../utils/services';
 
 describe('Dataspace DID Service Compliance (DSP/DCP)', () => {
   it('publishes DSP and DCP discovery services in tenant DID document', () => {
-    const did = 'did:web:gateway.example.com:acme:cds-es:v1:health-care';
-    const baseUrl = 'https://gateway.example.com';
+    const did = `${SAFE.didWeb}:cds-es:v1:health-care`;
+    const baseUrl = SAFE.httpsBaseUrl;
     const businessConfig = initializeTenantServicesConfig(GatewaySector.HEALTH_CARE);
-    const tenantContext = { alternateName: 'acme', jurisdiction: 'es', version: 'v1', sector: GatewaySector.HEALTH_CARE };
+    const tenantContext = { alternateName: SAFE.tenantId, jurisdiction: 'es', version: 'v1', sector: GatewaySector.HEALTH_CARE };
 
     const services = populateDidDocumentServices(did, baseUrl, businessConfig, true, tenantContext);
 
     const dataService = services.find((s) => s.id === `${did}#dsp-data-service`);
     expect(dataService).toBeDefined();
     expect(dataService?.type).toBe('DataService');
-    expect(dataService?.serviceEndpoint).toBe(`https://gateway.example.com${buildGwDspaceVersionWellKnownPath({
-      tenantId: 'acme',
+    expect(dataService?.serviceEndpoint).toBe(`${baseUrl}${buildGatewayDataspaceVersionPath({
+      tenantId: SAFE.tenantId,
       jurisdiction: 'es',
       version: 'v1',
       sector: 'health-care',
@@ -32,8 +31,8 @@ describe('Dataspace DID Service Compliance (DSP/DCP)', () => {
     const catalogService = services.find((s) => s.id === `${did}#dsp-catalog-service`);
     expect(catalogService).toBeDefined();
     expect(catalogService?.type).toBe('CatalogService');
-    expect(catalogService?.serviceEndpoint).toBe(`https://gateway.example.com${buildGwCatalogRequestPath({
-      tenantId: 'acme',
+    expect(catalogService?.serviceEndpoint).toBe(`${baseUrl}${buildGatewayDataspaceCatalogRequestPath({
+      tenantId: SAFE.tenantId,
       jurisdiction: 'es',
       version: 'v1',
       sector: 'health-care',
@@ -42,12 +41,12 @@ describe('Dataspace DID Service Compliance (DSP/DCP)', () => {
     const issuerService = services.find((s) => s.id === `${did}#dcp-issuer-service`);
     expect(issuerService).toBeDefined();
     expect(issuerService?.type).toBe('IssuerService');
-    expect(issuerService?.serviceEndpoint).toBe('https://gateway.example.com/acme/cds-es/v1/health-care/presentations/query');
+    expect(issuerService?.serviceEndpoint).toBe(`${baseUrl}/${SAFE.tenantId}/cds-es/v1/health-care/presentations/query`);
   });
 
   it('publishes the host catalog service as the operational DSP catalog endpoint', () => {
-    const did = 'did:web:gateway.example.com';
-    const baseUrl = 'https://gateway.example.com';
+    const did = `did:web:${SAFE.domain}`;
+    const baseUrl = SAFE.httpsBaseUrl;
     const businessConfig = initializeHostServicesConfig([GatewaySector.HEALTH_CARE], 'test');
 
     const services = populateDidDocumentServices(
@@ -61,7 +60,7 @@ describe('Dataspace DID Service Compliance (DSP/DCP)', () => {
     const catalogService = services.find((service) => service.id === `${did}${DidServiceIds.Catalog}`);
     expect(catalogService).toBeDefined();
     expect(catalogService?.type).toBe(DidServiceTypes.CatalogService);
-    expect(catalogService?.serviceEndpoint).toBe(`https://gateway.example.com${buildGwCatalogRequestPath({
+    expect(catalogService?.serviceEndpoint).toBe(`${baseUrl}${buildGatewayDataspaceCatalogRequestPath({
       participantId: 'host',
       jurisdiction: '{hostCoverageScope}',
       version: 'v1',

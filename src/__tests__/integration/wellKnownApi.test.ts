@@ -34,10 +34,7 @@ import {
   EXAMPLE_SECONDARY_TENANT_SERVICE_DID,
   EXAMPLE_SIGNED_TERMS_PDF_URL,
 } from 'gdc-common-utils-ts/examples/shared';
-import {
-  buildGwCatalogArtifactPath,
-  buildGwDspaceVersionWellKnownPath,
-} from 'gdc-common-utils-ts/utils/dataspace-protocol';
+import { buildGatewayDataspaceCatalogArtifactPath, buildGatewayDataspaceVersionPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import { NativeFhirFormats } from '../../constants/fhir-discovery';
 import { SUBJECT_SECTION_DIGITAL_TWIN } from '../../constants/domain';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
@@ -646,7 +643,7 @@ describe('Well-Known Tenant Artifacts API', () => {
   it('should hide tenant dataspace publication endpoints when the tenant is disabled', async () => {
     const urnParts = parseTenantUrn(testTenant1IdentifierUrn)!;
     const tenantId = testTenant1AlternateName;
-    const expectedUrl = buildGwDspaceVersionWellKnownPath({
+    const expectedUrl = buildGatewayDataspaceVersionPath({
       tenantId,
       jurisdiction: urnParts.jurisdiction,
       version: urnParts.version,
@@ -709,7 +706,7 @@ describe('DSP Discovery API', () => {
 
     const response = await invokeExpress(app, {
       method: 'GET',
-      url: buildGwDspaceVersionWellKnownPath({
+      url: buildGatewayDataspaceVersionPath({
         participantId: 'host',
         jurisdiction: 'eu',
         version: 'v1',
@@ -776,7 +773,7 @@ describe('DSP Discovery API', () => {
 
     const response = await invokeExpress(app, {
       method: 'GET',
-      url: buildGwCatalogArtifactPath({
+      url: buildGatewayDataspaceCatalogArtifactPath({
         participantId: 'host',
         jurisdiction: 'eu',
         version: 'v1',
@@ -853,7 +850,7 @@ describe('DSP Discovery API', () => {
 
     const response = await invokeExpress(app, {
       method: 'GET',
-      url: buildGwCatalogArtifactPath({
+      url: buildGatewayDataspaceCatalogArtifactPath({
         participantId: 'host',
         jurisdiction: 'eu',
         version: 'v1',

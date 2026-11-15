@@ -22,15 +22,8 @@ import {
   type ContinuityServiceCapabilityValue,
   type ServiceOfferingRole,
 } from 'sos-data-utils-ts/continuity-service-capabilities';
-import {
-  buildDspaceVersionMetadata,
-  buildGwCatalogArtifactPath,
-  buildGwCatalogCollectionPath,
-  buildGwCatalogDatasetPath,
-  buildGwCatalogRequestPath,
-  buildGwDataspaceBasePath,
-  buildGwDspaceVersionWellKnownPath,
-} from 'gdc-common-utils-ts/utils/dataspace-protocol';
+import { buildDspaceVersionMetadata } from 'gdc-common-utils-ts/utils/dataspace-protocol';
+import { buildGatewayDataspaceCatalogArtifactPath, buildGatewayDataspaceCatalogCollectionPath, buildGatewayDataspaceCatalogDatasetPath, buildGatewayDataspaceCatalogRequestPath, buildGatewayDataspaceBasePath, buildGatewayDataspaceVersionPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import { getBaseUrlFromDidWeb } from '../utils/did-backend';
 import { isFhirSector, isResearchSector } from '../utils/sector';
 import { hasProviderServiceCapabilityClaim } from '../utils/services';
@@ -420,7 +413,7 @@ export function createDiscoveryRouter(
         (hostClaims[SchemaOrgOrganizationClaim.Name] as string | undefined)?.trim() ||
         hostDid,
       discoveryUrl: (routeContext?.hostCoverageScope || hostCoverageScope) && routeContext?.hostNetwork
-        ? buildAbsoluteUrl(publicOrigin, buildGwDspaceVersionWellKnownPath({
+        ? buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceVersionPath({
           participantId: 'host',
           jurisdiction: routeContext?.hostCoverageScope || hostCoverageScope,
           version: routeContext.version || 'v1',
@@ -428,7 +421,7 @@ export function createDiscoveryRouter(
         }))
         : undefined,
       catalogUrl: (routeContext?.hostCoverageScope || hostCoverageScope) && routeContext?.hostNetwork
-        ? buildAbsoluteUrl(publicOrigin, buildGwCatalogArtifactPath({
+        ? buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogArtifactPath({
           participantId: 'host',
           jurisdiction: routeContext?.hostCoverageScope || hostCoverageScope,
           version: routeContext.version || 'v1',
@@ -473,7 +466,7 @@ export function createDiscoveryRouter(
             hostingOperatorDid: hostMatch.operatorDid,
             hostingOperatorTitle: hostMatch.title,
             discoveryUrl: appendTenantPath(dataset.baseUrl, DataspaceWellKnownPaths.VersionMetadata),
-            catalogUrl: appendTenantPath(dataset.baseUrl, buildGwCatalogArtifactPath()),
+            catalogUrl: appendTenantPath(dataset.baseUrl, buildGatewayDataspaceCatalogArtifactPath()),
             record: {
               providerDid: dataset.publisherDid,
               serviceType,
@@ -481,7 +474,7 @@ export function createDiscoveryRouter(
               areaServed: dataset.jurisdiction || inferCoverageScope(dataset.jurisdiction),
               endpointUrl: offering.endpointUrl,
               discoveryUrl: appendTenantPath(dataset.baseUrl, DataspaceWellKnownPaths.VersionMetadata),
-              catalogUrl: appendTenantPath(dataset.baseUrl, buildGwCatalogArtifactPath()),
+              catalogUrl: appendTenantPath(dataset.baseUrl, buildGatewayDataspaceCatalogArtifactPath()),
             },
             hostingOperator: hostMatch.record,
           })),
@@ -1252,7 +1245,7 @@ export function createDiscoveryRouter(
    *       '404': { description: Not found }
    */
   // --- DSP catalog endpoints (synchronous/public discovery) ---
-  router.post(buildGwCatalogRequestPath({
+  router.post(buildGatewayDataspaceCatalogRequestPath({
     participantId: 'host',
     jurisdiction: ':hostCoverageScope',
     version: ':version',
@@ -1271,7 +1264,7 @@ export function createDiscoveryRouter(
 
     const filtered = filterDatasets(datasets, req.body?.filters);
     const publicOrigin = buildPublicOrigin(req);
-    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGwCatalogCollectionPath({
+    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogCollectionPath({
       participantId: 'host',
       jurisdiction: req.params.hostCoverageScope,
       version: req.params.version,
@@ -1280,7 +1273,7 @@ export function createDiscoveryRouter(
     res.json(buildCatalog(catalogBaseUrl, publicOrigin, filtered));
   });
 
-  router.get(buildGwDspaceVersionWellKnownPath({
+  router.get(buildGatewayDataspaceVersionPath({
     participantId: 'host',
     jurisdiction: ':hostCoverageScope',
     version: ':version',
@@ -1292,7 +1285,7 @@ export function createDiscoveryRouter(
     const hostDid = await tenantsCacheManager.getDidDocument('host');
     if (!hostDid?.id) return res.status(503).type('text').send('Service Unavailable');
 
-    res.json(buildDspaceVersionMetadata(buildGwDataspaceBasePath({
+    res.json(buildDspaceVersionMetadata(buildGatewayDataspaceBasePath({
       participantId: 'host',
       jurisdiction: req.params.hostCoverageScope,
       version: req.params.version,
@@ -1438,7 +1431,7 @@ export function createDiscoveryRouter(
     return res.json({ notifications });
   });
 
-  router.get(buildGwCatalogArtifactPath({
+  router.get(buildGatewayDataspaceCatalogArtifactPath({
     participantId: 'host',
     jurisdiction: ':hostCoverageScope',
     version: ':version',
@@ -1455,7 +1448,7 @@ export function createDiscoveryRouter(
       .map(toProviderDataset)
       .filter((d): d is ProviderDataset => !!d));
     const publicOrigin = buildPublicOrigin(req);
-    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGwCatalogCollectionPath({
+    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogCollectionPath({
       participantId: 'host',
       jurisdiction: req.params.hostCoverageScope,
       version: req.params.version,
@@ -1464,7 +1457,7 @@ export function createDiscoveryRouter(
     res.json(buildCatalog(catalogBaseUrl, publicOrigin, datasets));
   });
 
-  router.get(buildGwCatalogDatasetPath({
+  router.get(buildGatewayDataspaceCatalogDatasetPath({
     participantId: 'host',
     jurisdiction: ':hostCoverageScope',
     version: ':version',
@@ -1484,7 +1477,7 @@ export function createDiscoveryRouter(
     if (!dataset) return res.status(404).type('text').send('Not Found');
 
     const publicOrigin = buildPublicOrigin(req);
-    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGwCatalogCollectionPath({
+    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogCollectionPath({
       participantId: 'host',
       jurisdiction: req.params.hostCoverageScope,
       version: req.params.version,
@@ -1494,7 +1487,7 @@ export function createDiscoveryRouter(
     res.json(single);
   });
 
-  router.get(buildGwDspaceVersionWellKnownPath({
+  router.get(buildGatewayDataspaceVersionPath({
     tenantId: ':tenantId',
     jurisdiction: ':jurisdiction',
     version: ':version',
@@ -1504,7 +1497,7 @@ export function createDiscoveryRouter(
       return res.status(404).type('text').send('Not Found');
     }
 
-    res.json(buildDspaceVersionMetadata(buildGwDataspaceBasePath({
+    res.json(buildDspaceVersionMetadata(buildGatewayDataspaceBasePath({
       tenantId: req.params.tenantId,
       jurisdiction: req.params.jurisdiction,
       version: req.params.version,
@@ -1512,7 +1505,7 @@ export function createDiscoveryRouter(
     })));
   });
 
-  router.post(buildGwCatalogRequestPath({
+  router.post(buildGatewayDataspaceCatalogRequestPath({
     tenantId: ':tenantId',
     jurisdiction: ':jurisdiction',
     version: ':version',
@@ -1527,7 +1520,7 @@ export function createDiscoveryRouter(
     const filtered = filterDatasets([dataset], req.body?.filters);
 
     const publicOrigin = buildPublicOrigin(req);
-    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGwCatalogCollectionPath({
+    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogCollectionPath({
       tenantId: req.params.tenantId,
       jurisdiction: req.params.jurisdiction,
       version: req.params.version,
@@ -1536,7 +1529,7 @@ export function createDiscoveryRouter(
     res.json(buildCatalog(catalogBaseUrl, publicOrigin, filtered));
   });
 
-  router.get(buildGwCatalogArtifactPath({
+  router.get(buildGatewayDataspaceCatalogArtifactPath({
     tenantId: ':tenantId',
     jurisdiction: ':jurisdiction',
     version: ':version',
@@ -1550,7 +1543,7 @@ export function createDiscoveryRouter(
     if (!dataset) return res.status(404).type('text').send('Not Found');
 
     const publicOrigin = buildPublicOrigin(req);
-    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGwCatalogCollectionPath({
+    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogCollectionPath({
       tenantId: req.params.tenantId,
       jurisdiction: req.params.jurisdiction,
       version: req.params.version,
@@ -1559,7 +1552,7 @@ export function createDiscoveryRouter(
     res.json(buildCatalog(catalogBaseUrl, publicOrigin, [dataset]));
   });
 
-  router.get(buildGwCatalogDatasetPath({
+  router.get(buildGatewayDataspaceCatalogDatasetPath({
     tenantId: ':tenantId',
     jurisdiction: ':jurisdiction',
     version: ':version',
@@ -1573,7 +1566,7 @@ export function createDiscoveryRouter(
     if (!dataset || dataset.datasetId !== req.params.id) return res.status(404).type('text').send('Not Found');
 
     const publicOrigin = buildPublicOrigin(req);
-    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGwCatalogCollectionPath({
+    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogCollectionPath({
       tenantId: req.params.tenantId,
       jurisdiction: req.params.jurisdiction,
       version: req.params.version,

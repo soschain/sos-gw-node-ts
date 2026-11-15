@@ -9,7 +9,7 @@ import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { IServerConfig } from '../../../config';
 import { GatewayDidService as DidService } from 'sos-data-utils-ts/gateway-did-profile';
 import { DidServiceIds, DidServiceTypes } from 'sos-data-utils-ts/gateway-did-profile';
-import { buildGwCatalogRequestPath } from 'gdc-common-utils-ts/utils/dataspace-protocol';
+import { buildGatewayDataspaceCatalogRequestPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { serializeServiceCapabilityTokens } from 'sos-data-utils-ts/service-capabilities';
 import { EntityLifecycleStatus, EntityType } from '../../../gdc-backend-utils-node/models/enums';
@@ -586,7 +586,7 @@ describe('Service Initialization Utilities', () => {
 
       expect(catalogService).toBeDefined();
       expect(catalogService?.type).toBe(DidServiceTypes.CatalogService);
-      expect(catalogService?.serviceEndpoint).toBe(buildGwCatalogRequestPath({
+      expect(catalogService?.serviceEndpoint).toBe(buildGatewayDataspaceCatalogRequestPath({
         participantId: 'host',
         jurisdiction: '{hostCoverageScope}',
         version: 'v1',
