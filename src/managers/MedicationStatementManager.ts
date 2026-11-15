@@ -22,7 +22,7 @@ import {
 import { listEnabledDigitalTwinStudyTargets } from '../utils/digital-twin-secondary-use';
 import { buildSearchResponseEntries } from '../utils/didcomm-response';
 import { GatewayResponseEntryTypes } from '../shared/gateway-response-types';
-import { buildConfidentialDocumentIndexedAttributes } from 'gdc-common-utils-ts/utils/confidential-document-provenance';
+import { buildClinicalDocumentSearchAttributes } from '../utils/clinical-document-search-attributes';
 import type { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
 import { claimsToContentCid } from 'gdc-common-utils-ts/utils/fhir-cid';
 import type { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
@@ -180,7 +180,7 @@ export class MedicationStatementManager implements IJobProcessor {
             getClaimValue<string>(claims, 'MedicationStatement.identifier') ||
             getClaimValue<string>(claims, 'MedicationStatement.identifier.value');
           const id = String(entry?.resource?.id || determineResourceId(identifierClaim, process.env.NODE_ENV));
-          const indexedAttributes = buildConfidentialDocumentIndexedAttributes({
+          const indexedAttributes = buildClinicalDocumentSearchAttributes({
             claims,
             sector: job.sector,
           });
@@ -224,7 +224,7 @@ export class MedicationStatementManager implements IJobProcessor {
                 id: researchId,
                 ...researchClaims,
                 indexed: {
-                  attributes: buildConfidentialDocumentIndexedAttributes({
+                  attributes: buildClinicalDocumentSearchAttributes({
                     claims: researchClaims,
                     sector: job.sector,
                   }),

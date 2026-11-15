@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Project clinical document search attributes through the GW-owned index profile
+  in Communication and Medication persistence. Retain twelve supported Composition
+  claims, CSV aliases, audit order and identifier uniqueness without changing
+  signed/stored Status or Entry fields, canonical content or CIDs.
+
 - Own hosted-service activation scope admission in GW while reusing canonical
   SOS capability parsing. Preserve category/service error order, category-only
   wildcards, first-subject and makesOffer precedence after existing VC trust

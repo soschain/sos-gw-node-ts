@@ -168,3 +168,13 @@ copied. Category-only wildcard behavior, first-subject/makesOffer precedence and
 ordered error codes/messages are retained at the existing activation boundary.
 Read-only compatibility sources: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/activation-policy.ts and https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/dataspace-discovery.ts .
 Owning capability source: https://github.com/soschain/sos-data-utils-ts/blob/main/src/service-capabilities.ts .
+
+
+## Clinical document search index projection
+
+Adopted only the derived storage-index behavior in the GW owner. The operational
+profile explicitly selects twelve published FHIR Composition claim constants and
+six CSV claims; qualified Status remains an unmodified passthrough attribute.
+Canonical stored/signed resources, FHIR views and content-CID input are unchanged.
+AuditInfo/IndexedAttribute contracts come from SOS Data.
+Read-only compatibility source: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/confidential-document-provenance.ts .

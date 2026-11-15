@@ -25,7 +25,7 @@ import {
 import { SearchBundleTypes } from 'gdc-common-utils-ts/utils/fhir-search';
 import { normalizeClaimsFromFhirResource } from 'gdc-common-utils-ts/utils/interoperable-resource-operation';
 import { compositionFhirR4ToFlat } from 'gdc-common-utils-ts/convert/convert-composition';
-import { buildConfidentialDocumentIndexedAttributes } from 'gdc-common-utils-ts/utils/confidential-document-provenance';
+import { buildClinicalDocumentSearchAttributes } from '../utils/clinical-document-search-attributes';
 import { requireClaimsOnlyResourceShape } from '../utils/fhir-flat-claims';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { BundleJsonApi, BundleEntryResponse, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
@@ -1810,7 +1810,7 @@ export class CommunicationManager implements IJobProcessor {
       ...persistedClaims,
       ...(audit ? { audit } : {}),
       indexed: {
-        attributes: buildConfidentialDocumentIndexedAttributes({
+        attributes: buildClinicalDocumentSearchAttributes({
           claims: persistedClaims,
           sector: String(input.job.sector || ''),
           audit,
@@ -1886,7 +1886,7 @@ export class CommunicationManager implements IJobProcessor {
           ...researchClaims,
           ...(researchAudit ? { audit: researchAudit } : {}),
           indexed: {
-            attributes: buildConfidentialDocumentIndexedAttributes({
+            attributes: buildClinicalDocumentSearchAttributes({
               claims: researchClaims,
               sector: String(input.job.sector || ''),
               audit: researchAudit,
