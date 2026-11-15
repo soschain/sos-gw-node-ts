@@ -26,7 +26,7 @@ import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import { DidDocument, VerificationMethod } from '../gdc-backend-utils-node/models/did';
 import { registerSubjectKeysOnLedger, revokeSubjectKeysOnLedger } from '../utils/ledger-device-registration';
 import { DeviceBindingStatuses } from 'sos-data-utils-ts/device-license-contract';
-import { IdentityAuthActions, IdentityAuthRequestFields, IdentityAuthResponseTypes, IdentityDcrMetadataFields } from 'gdc-common-utils-ts/constants/identity-auth';
+import { IdentityAuthActions, IdentityAuthRequestFields, IdentityAuthResponseTypes, IdentityDcrMetadataFields } from 'sos-data-utils-ts/identity-auth-wire-contract';
 import { IdentityAuthResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { DEFAULT_LICENSE_DEVICE_ALLOWANCE, LICENSE_USER_CLASS_EMPLOYEE, LICENSE_USER_CLASS_INDIVIDUAL } from '../constants/domain';
 import type { ITenantsManager } from './ITenantsManager';

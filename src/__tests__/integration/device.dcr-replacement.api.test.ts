@@ -75,7 +75,7 @@ import { DCR_REGISTRATION_JOB } from '../data/example-jobs';
 import { testTenant1AlternateName, testTenant1IdValue } from '../data/organization.data';
 import { testTenant1IdentifierUrn } from '../data/organization.constants';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
-import { IdentityDcrMetadataFields } from 'gdc-common-utils-ts/constants/identity-auth';
+import { IdentityDcrMetadataFields } from 'sos-data-utils-ts/identity-auth-wire-contract';
 import { createEmployeeUrnFromStableActorIdentifier } from '../../utils/urn';
 import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { testIndividualControllerDcrIdentity } from '../data/identity.data';

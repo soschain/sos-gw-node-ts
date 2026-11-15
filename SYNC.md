@@ -221,3 +221,17 @@ eight accepted/rejected normalizer vectors are compared before the import change
 Controller and party authorization, claims-only persistence and active Consent
 remain in GW and are exercised through the real asynchronous HTTP boundary.
 Canonical standard references: https://hl7.org/fhir/R5/researchstudy.html and https://hl7.org/fhir/R5/researchstudy-search.html .
+
+## Identity/auth wire owner
+
+Adopt the SOS Data operational identity/auth wire leaf in eleven existing
+consumers, including retained manager and HTTP fixtures. All six frozen catalogs
+and thirty literal members match the read-only original. Response-entry
+discriminators remain in the separate existing gateway response contract.
+These are wire names, not bearer, grant, licence or controller authority; current
+manager checks and SMART compatibility polling remain unchanged.
+Validation: native ownership/full-catalog controls pass after the genuine import
+owner RED; seven retained manager/HTTP suites pass all 131 cases, with strict
+TypeScript and scoped privacy checks green. This is functional integration,
+not a package publication or gateway promotion.
+Read-only original source: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/constants/identity-auth.ts .

@@ -33,7 +33,7 @@ import {
   SUBJECT_SECTION_INDIVIDUAL,
 } from '../constants/domain';
 import { mergeServiceCapabilityClaims } from './service-capability-claims';
-import { IdentityAuthActions } from 'gdc-common-utils-ts/constants/identity-auth';
+import { IdentityAuthActions } from 'sos-data-utils-ts/identity-auth-wire-contract';
 
 export type HostRegistrySector = 'test' | 'local-network' | 'test-network' | 'network';
 

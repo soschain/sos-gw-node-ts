@@ -1,7 +1,7 @@
 import {
   IdentityAuthResourceTypes,
   SmartPostDcrActions,
-} from 'gdc-common-utils-ts/constants/identity-auth';
+} from 'sos-data-utils-ts/identity-auth-wire-contract';
 import { GatewayRouteFormats, GatewayRouteSections } from 'sos-data-utils-ts/gateway-response-contract';
 import { SecureIdTypesIndividual } from 'gdc-common-utils-ts/constants/identity-identifiers';
 import {

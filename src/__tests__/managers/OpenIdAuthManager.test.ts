@@ -65,7 +65,7 @@ import {
 import {
   IdentityAuthResourceTypes,
   SmartPostDcrActions,
-} from 'gdc-common-utils-ts/constants/identity-auth';
+} from 'sos-data-utils-ts/identity-auth-wire-contract';
 import { GatewayRouteFormats, GatewayRouteSections } from 'sos-data-utils-ts/gateway-response-contract';
 import { DeviceBindingStatuses } from 'sos-data-utils-ts/device-license-contract';
 import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';

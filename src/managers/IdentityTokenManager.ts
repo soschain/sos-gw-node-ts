@@ -10,7 +10,7 @@ import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { AppAuthorizationManager } from './AppAuthorizationManager';
 import { TokenManager } from './TokenManager';
 import { federateOidcIdTokenToFirebaseCustomToken } from '../auth/OidcFederationService';
-import { IdentityAuthRequestFields } from 'gdc-common-utils-ts/constants/identity-auth';
+import { IdentityAuthRequestFields } from 'sos-data-utils-ts/identity-auth-wire-contract';
 
 type TokenExchangeBody = {
   [IdentityAuthRequestFields.SubjectToken]?: string;

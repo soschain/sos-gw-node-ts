@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Read six identity/auth wire catalogs from their SOS Data owner across eleven
+  consumers. Preserve all thirty members, DCR replay and bearer checks, and
+  SMART polling compatibility without changing routes or admission behavior.
+
 - Use the existing canonical FHIR ResearchStudy catalog and normalizer at the
   study manager and retained fixture projector. Preserve all 31 flat claims, 25
   standard search definitions, 12 party-role codes and correlated-party behavior.

@@ -1,0 +1,44 @@
+{
+  "IdentityAuthActions": {
+    "Exchange": "_exchange",
+    "ExchangeResponse": "_exchange-response",
+    "Dcr": "_dcr",
+    "DcrResponse": "_dcr-response",
+    "Issue": "_issue",
+    "IssueResponse": "_issue-response",
+    "Revoke": "_revoke",
+    "RevokeResponse": "_revoke-response",
+    "Search": "_search",
+    "SearchResponse": "_search-response"
+  },
+  "IdentityAuthRequestFields": {
+    "SubjectToken": "subject_token",
+    "EmployeeAuthorizationUrn": "employee_authorization_urn",
+    "ClientInstanceId": "client_instance_id",
+    "LicenseId": "license_id",
+    "ClientId": "client_id",
+    "Code": "code"
+  },
+  "IdentityAuthResourceTypes": {
+    "Smart": "smart"
+  },
+  "IdentityAuthResponseTypes": {
+    "DeviceRevoke": "device-revoke-response"
+  },
+  "IdentityDcrMetadataFields": {
+    "ExtendedDeviceInfo": "ext_device_info",
+    "RedirectUris": "redirect_uris",
+    "Jwks": "jwks",
+    "SoftwareId": "software_id",
+    "ApplicationType": "application_type",
+    "ClientName": "client_name",
+    "ActorDid": "actor_did",
+    "ProfileDid": "profile_did",
+    "ClinicalCreatorBinding": "clinical_creator_binding"
+  },
+  "SmartPostDcrActions": {
+    "Token": "token",
+    "TokenResponse": "token-response",
+    "LegacyBatchResponse": "_batch-response"
+  }
+}

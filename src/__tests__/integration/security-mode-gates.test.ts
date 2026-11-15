@@ -20,7 +20,7 @@ import {
 } from 'gdc-common-utils-ts/examples/shared';
 import { buildUnsignedJwt } from 'gdc-common-utils-ts/utils/jwt';
 import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
-import { IdentityAuthRequestFields } from 'gdc-common-utils-ts/constants/identity-auth';
+import { IdentityAuthRequestFields } from 'sos-data-utils-ts/identity-auth-wire-contract';
 import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
