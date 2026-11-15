@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Address Employee search replies to the authenticated original caller rather
+  than the provider. Retain exact phone registration installation, role and
+  seat bindings when a completed device request is retried with a new thread.
+
 - Verify reviewed Test Network Organization controller and representative
   contacts as exactly one email or telephone channel. Preserve signer, key,
   PDF evidence and deployment-scope checks, including real detached PQC proofs.

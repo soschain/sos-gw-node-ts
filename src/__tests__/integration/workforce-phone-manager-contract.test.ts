@@ -97,7 +97,7 @@ describe('phone workforce actual manager persistence',()=>{
    }
    const dcr=job('Device','_dcr',{code:activationCode,application_type:'web',redirect_uris:['http://localhost:4338/__/auth/handler'],
     actor_did:employeeDid,profile_did:employeeDid,jwks:{keys:publicKeys},ext_device_info:{device_id:'synthetic-installation'}},employeeDid);
-   (dcr.content!.meta as any).bearer={token:'Bearer synthetic-host-initial-token',jwt:{payload:{sub:'verified-phone-recipient',act_code:activationCode}}};
+   (dcr.content!.meta as any).bearer={token:'Bearer synthetic-host-initial-token',jwt:{payload:{sub:'verified-phone-recipient',act_code:activationCode,scope:'dcr:register'}}};
    const registered=await new DeviceRegistrationManager('https://example.invalid',repository,kms,tenants as any).process(dcr);
    const device=(registered.body as any).data[0];
    if(scenario==='malformed-subject'||scenario==='ambiguous'){
@@ -121,8 +121,16 @@ describe('phone workforce actual manager persistence',()=>{
    expect(licence?.content.issuedToEmail).toBeFalsy();
    expect(await repository.getContainersInSection(vaultId,getEnvSectionId('device-licenses'))).toHaveLength(1);
    if(scenario==='normal'){
-    const replayed=await new DeviceRegistrationManager('https://example.invalid',repository,kms,tenants as any).process(dcr);
-    expect((replayed.body as any).data[0]).toMatchObject({response:{status:'201'}});
+    // A retry after an unobserved acknowledgement uses new transport correlation,
+    // while the exact authenticated installation and public key request stay fixed.
+    const replayRequest=structuredClone(dcr);
+    replayRequest.content!.thid=SAFE.demoOrganizationUuids.healthCare;
+    replayRequest.content!.jti=SAFE.demoOrganizationUuids.publicHealth;
+    const replayed=await new DeviceRegistrationManager('https://example.invalid',repository,kms,tenants as any).process(replayRequest);
+    expect((replayed.body as any).data[0]).toMatchObject({response:{status:'201'},resource:{id:device.resource.id,client_id:device.resource.client_id}});
+    expect(await repository.getContainersInSection(vaultId,getEnvSectionId('device-profiles'))).toHaveLength(1);
+    const exchangedAgain=await tokens.process(exchange);
+    expect((exchangedAgain.body as any).initial_access_token).toBe('synthetic-host-initial-token');
     const replaySeat=await repository.get<any>(vaultId,seat.meta.licenseId,getEnvSectionId('device-licenses'));
     expect(replaySeat?.content.deviceBindings.filter((binding:any)=>binding.status==='active')).toHaveLength(1);
     const employee=await repository.get<any>(vaultId,employeeResourceId,getEnvSectionId('employees'));

@@ -616,6 +616,24 @@ describe('EmployeeManager', () => {
       expect(mockVaultRepository.put).not.toHaveBeenCalled();
     });
 
+    it('binds the employee search reply to the original caller rather than its provider audience', async () => {
+      const job = testBaseJobForEmployeeClaims(testClaimsTenant1Receptionist1, TENANT_ALTERNATE_NAME, TENANT_SECTOR);
+      job.action = '_search';
+      job.content!.aud = `${SAFE.didWeb}:provider`;
+      job.content!.body = { resourceType: 'Bundle', type: 'batch', entry: [{
+        request: { method: 'POST', url: 'Employee/_search' }, resource: { resourceType: 'Parameters' },
+      }] } as any;
+      mockTenantsCacheManager.getTenantIdentifierUrn.mockResolvedValue(TENANT_URN);
+      mockTenantsCacheManager.getCollectionName.mockResolvedValue(TENANT_VAULT_ID);
+      mockVaultRepository.getContainersInSection.mockResolvedValue([]);
+      const response = await employeeManager.process(job);
+      expect(response.iss).toBe(TENANT_URN);
+      expect(response.aud).toBe(currentControllerDid);
+      expect(response.thid).toBe(job.content!.thid);
+      expect(response.body.data).toEqual([]);
+      expect(mockVaultRepository.put).not.toHaveBeenCalled();
+    });
+
     it('keeps disabled employees visible but excludes terminal purge markers', async () => {
       const job = testBaseJobForEmployeeClaims(testClaimsTenant1Receptionist1, TENANT_ALTERNATE_NAME, TENANT_SECTOR);
       job.action = '_search';
