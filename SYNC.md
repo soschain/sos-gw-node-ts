@@ -178,3 +178,14 @@ six CSV claims; qualified Status remains an unmodified passthrough attribute.
 Canonical stored/signed resources, FHIR views and content-CID input are unchanged.
 AuditInfo/IndexedAttribute contracts come from SOS Data.
 Read-only compatibility source: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/confidential-document-provenance.ts .
+
+## Licence pool and issuance policy
+
+Adopted the used pool-family classification and issued-seat allowance behavior
+in the GW owner. Coding-system recognition comes from Antifraud ISCO and FHIR
+RoleCode identifiers; classification is not credential or occupation authority.
+Relationship and occupation pools remain separate. The issuance receipt retains
+its fallback of two installations, while the existing GW authorization/device
+and search compatibility fallback of five remains profile-specific and unchanged.
+No general license builder or unused runtime API was moved.
+Read-only compatibility source: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/license.ts .

@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Own licence pool-family selection and issued-seat allowance projection in GW,
+  consuming the existing Antifraud/FHIR coding identifiers. Keep issuance's
+  two-device fallback distinct from the historical five-device runtime fallback;
+  role classification does not grant professional authority.
+
 - Project clinical document search attributes through the GW-owned index profile
   in Communication and Medication persistence. Retain twelve supported Composition
   claims, CSV aliases, audit order and identifier uniqueness without changing

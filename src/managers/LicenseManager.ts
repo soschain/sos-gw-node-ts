@@ -24,7 +24,7 @@ import {
 import {
   classifyLicenseRole,
   LicenseRoleKinds,
-} from 'gdc-common-utils-ts/utils/license';
+} from '../utils/license-seat-policy';
 import { getEnvSectionId } from '../utils/section-env';
 import { getPersonOccupationClaim } from '../utils/occupation';
 import {
