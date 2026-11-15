@@ -298,3 +298,22 @@ pass 45 executions (37 distinct cases; the sector fixture reimports eight Order
 cases), including phone-bound licence persistence and retained activation
 controls. Strict TypeScript and scoped privacy/diff pass. This is manager
 coverage, not online Firebase, HTTP, ledger or complete phone-lifecycle proof.
+
+
+## Organization workflow Consent authority and revocation
+
+Disposition: profile-specific. Reuse the existing Organization R5
+ResearchStudyConsentManager selected by the worker. Do not route operational
+Group permissions through the ordinary patient Consent/PDF manager. A full
+inactive PUT must preserve the stored identity, target, capability, date and
+provenance; status-only PATCH remains supported. The current controller's
+verified principal is required. Two actual phone workforce grants remain
+independent, and the controller may revoke an original grant after membership
+has been removed. The ordinary attachment policy remains unchanged.
+
+Validation: six real memory-workforce/Group/Consent/admission cases plus the
+retained owner and authenticated HTTP/queue suite passed (30 cases); full
+nondeleting TypeScript passed. These are local authority/persistence controls,
+not Fabric, cloud authentication or an online lifecycle acceptance. The
+existing actor-DID extraction import still needs its neutral owner before
+independence promotion.

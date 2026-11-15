@@ -437,6 +437,8 @@ function buildJob(
       thid: 'research-study-consent-batch',
       iss: overrides.issuer || fixture.controllerDid,
       aud: 'did:web:example.test:gw',
+      // Trusted verified-principal port; the retained API suite verifies JWTs.
+      meta:{bearer:{jwt:{payload:{sub:overrides.issuer||fixture.controllerDid}}}},
       body: { data: [{ request: { method: 'POST', url: 'Consent' }, resource: consent }] },
     },
   } as any;

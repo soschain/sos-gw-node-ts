@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Bind routed Organization R5 Consent operations to the verified current
+  controller. Support full inactive PUT against the exact stored grant while
+  preserving status-only PATCH, independent Group grants and stale-grant
+  revocation. Keep ordinary Consent evidence requirements unchanged.
+
 - Issue hosted Organization controller identities and activation licences for
   telephone-only Person contacts using the owned actor DID/hash and existing
   licence pool. Preserve primary-email behavior, role/key checks and seats.
