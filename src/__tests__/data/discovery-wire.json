@@ -1,0 +1,25 @@
+{
+  "DidServiceIds": {
+    "DidDocument": "#did-document",
+    "Jwks": "#jwks",
+    "OpenIdConfiguration": "#openid-configuration",
+    "SmartConfiguration": "#smart-configuration",
+    "SmartToken": "#identity:openid:smart:token",
+    "CredentialIssuer": "#openid-credential-issuer",
+    "CapabilityStatement": "#fhir:capabilitystatement",
+    "Catalog": "#catalog"
+  },
+  "DidServiceTypes": {
+    "LinkedDomains": "LinkedDomains",
+    "JsonWebKeyService2020": "JsonWebKeyService2020",
+    "OpenIdProvider": "OpenIdProvider",
+    "SmartOnFhirConfiguration": "SmartOnFhirConfiguration",
+    "ApiService": "ApiService",
+    "CredentialIssuer": "OpenIdCredentialIssuer",
+    "FhirCapabilityStatement": "CapabilityStatement",
+    "CatalogService": "CatalogService"
+  },
+  "DataspaceWellKnownPaths": {
+    "VersionMetadata": "/.well-known/dspace-version"
+  }
+}

@@ -2,7 +2,7 @@
 // File: src/__tests__/unit/utils/dataspace.did-services.compliance.test.ts
 
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
-import { DidServiceIds, DidServiceTypes } from 'gdc-common-utils-ts/constants/did-services';
+import { DidServiceIds, DidServiceTypes } from 'sos-data-utils-ts/gateway-did-profile';
 import {
   buildGwCatalogRequestPath,
   buildGwDspaceVersionWellKnownPath,

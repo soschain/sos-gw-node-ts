@@ -235,3 +235,16 @@ owner RED; seven retained manager/HTTP suites pass all 131 cases, with strict
 TypeScript and scoped privacy checks green. This is functional integration,
 not a package publication or gateway promotion.
 Read-only original source: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/constants/identity-auth.ts .
+
+## Discovery advertisement wire owner
+
+The three complete service fragment/type and DSP metadata-path catalogs now
+come from the SOS gateway DID profile at four existing consumers. Seventeen
+literal values are preserved, including the qualified SMART service fragment.
+Generic DID types remain owned by Antifraud. Existing URL builders, discovery
+scope and endpoint access checks are unchanged; this wire-owner migration does
+not resolve the separate remaining runtime URL-helper dependencies.
+Validation: genuine import-owner RED plus a full-catalog control precede the
+import-only change; both native cases, four retained service/discovery suites
+(twenty cases), strict TypeScript and scoped privacy checks pass.
+Read-only original sources: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/constants/did-services.ts and https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/constants/dataspace-protocol.ts .

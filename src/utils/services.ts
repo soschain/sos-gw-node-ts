@@ -9,8 +9,8 @@ import { ServiceEndpointSelector } from 'sos-data-utils-ts/confidential-job';
 import {
   DidServiceIds,
   DidServiceTypes,
-} from 'gdc-common-utils-ts/constants/did-services';
-import { DataspaceWellKnownPaths } from 'gdc-common-utils-ts/constants/dataspace-protocol';
+} from 'sos-data-utils-ts/gateway-did-profile';
+import { DataspaceWellKnownPaths } from 'sos-data-utils-ts/gateway-did-profile';
 import {
   buildGwCatalogRequestPath,
   buildGwDspaceVersionWellKnownPath,

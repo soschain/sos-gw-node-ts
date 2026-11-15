@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Read complete DID-service fragment/type and DSP metadata-path wire catalogs
+  from the SOS gateway DID profile in existing discovery/service consumers.
+  Preserve advertisement values, endpoint construction and authorization.
+
 - Read six identity/auth wire catalogs from their SOS Data owner across eleven
   consumers. Preserve all thirty members, DCR replay and bearer checks, and
   SMART polling compatibility without changing routes or admission behavior.

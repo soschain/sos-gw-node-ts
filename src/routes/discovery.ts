@@ -10,7 +10,7 @@ import { pingHandler } from './handlers/discovery/ping.handler';
 import { signVerifiableCredential } from '../utils/vc-signer';
 import { findSigningMethod, toPublicJwkSet } from '../utils/did-backend';
 import { buildStatusListCredential, buildStatusListEntry, createStatusListEncodedList } from '../utils/status-list';
-import { DataspaceWellKnownPaths } from 'gdc-common-utils-ts/constants/dataspace-protocol';
+import { DataspaceWellKnownPaths } from 'sos-data-utils-ts/gateway-did-profile';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { isEuCountryCode, normalizeCountryCode } from 'gdc-common-utils-ts/constants/eu-countries';
 import {
