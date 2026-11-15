@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Recover an existing active DCR installation only for the same current verified
+  account, licence context, complete public-key set and canonical request. Return
+  its original client receipt without vault or ledger writes; retain deliberate
+  changed-key rotation and reject stale or mismatched replay authority. Persist
+  only a request digest, not a duplicate arbitrary registration body.
+
 - Link the existing professional clinical assignment during device enrollment
   using normalized valid Employee UUIDs, preserving role/ambiguity checks and
   preventing successful DCR from leaving the assignment's device channels empty.

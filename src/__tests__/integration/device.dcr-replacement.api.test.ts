@@ -1,4 +1,5 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import { DCR_REPLAY_PUBLIC_KEYS } from '../data/dcr-replay-public-keys';
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 // TDD contract: Device DCR accepts only verified initial-access claims and a valid nested signature.
@@ -594,6 +595,121 @@ describe('Device DCR multi-device route story', () => {
     expect(storedBinding).toEqual(expect.objectContaining({
       actorDids: [testIndividualControllerDcrIdentity.actorDid],
     }));
+  });
+
+
+  // Flow: authorized recipient -> verified route -> actual queue/worker -> DCR -> lost local commit -> exact replay. Signature isolation is retained; this is not real cryptographic or Fabric proof.
+  it('replays authorized same-key controller DCR through API queue without client replacement', async () => {
+    const processed = jest.spyOn(DeviceRegistrationManager.prototype, 'process');
+    const activationCode = String((DCR_REGISTRATION_JOB.content?.body as any)?.code);
+    verifyInitialAccessToken.mockResolvedValue({
+      sub: testIndividualControllerDcrIdentity.authenticatedSubject,
+      act_code: activationCode,
+      scope: testIndividualControllerDcrIdentity.scope,
+    } as any);
+    const license = {
+      id: 'individual-controller-license-1',
+      tenantId: testTenant1AlternateName,
+      orderId: 'individual-controller-order-1',
+      activationCode,
+      userClass: 'individual',
+      type: 'mobile',
+      status: 'issued',
+      plan: 'default',
+      renewalCycle: '12m',
+      reactivationEnabled: false,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+      ownerOrganizationId: EXAMPLE_PRIVATE_INDIVIDUAL_UUID,
+      issuedToEmail: EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL,
+      issuedToRole: testIndividualControllerDcrIdentity.role,
+    } as DeviceLicense;
+    await vaultRepository.put(tenantVaultId, [{
+      id: license.id,
+      status: license.status,
+      sequence: 0,
+      content: license,
+    } as ConfidentialStorageDoc], getEnvSectionId('device-licenses'));
+
+    const dcrRequest = {
+      ...DEVICE_REGISTRATION_REQUEST,
+      thid: 'individual-controller-dcr-route-thid',
+      body: {
+        ...DEVICE_REGISTRATION_REQUEST.body,
+        code: activationCode,
+        [IdentityDcrMetadataFields.ActorDid]: testIndividualControllerDcrIdentity.actorDid,
+        [IdentityDcrMetadataFields.ProfileDid]: testIndividualControllerDcrIdentity.actorDid,
+        [IdentityDcrMetadataFields.ClinicalCreatorBinding]: {
+          kind: FhirIpsCreatorKinds.IndividualMember,
+          actorIdentifier: `urn:uuid:${EXAMPLE_KYC_CONTROLLER_USER_UUID}`,
+          authorIdentifier: `urn:uuid:${EXAMPLE_KYC_CONTROLLER_UUID}`,
+          ownerIdentifier: `urn:uuid:${EXAMPLE_PRIVATE_INDIVIDUAL_UUID}`,
+          role: testIndividualControllerDcrIdentity.role,
+        },
+      },
+    };
+    Object.assign(dcrRequest.body, { jwks: { keys: structuredClone(DCR_REPLAY_PUBLIC_KEYS) } });
+    jest.spyOn(cryptographyService, 'verifyDetachedJws').mockResolvedValue(true);
+    jest.spyOn(kmsService, 'decodeRequest').mockResolvedValue({ content: dcrRequest } as any);
+
+    const submit = await invokeExpress(app, {
+      method: HttpRequestMethods.Post,
+      url: '/acme-id/cds-es/v1/health-care/identity/openid/Device/_dcr',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        authorization: 'Bearer individual-controller-initial-access-token',
+      },
+      body: { request: JSON.stringify(dcrRequest) },
+    });
+    expect(submit.status).toBe(202);
+    await queueAdapter.waitForEmptyQueue();
+
+    const poll = await invokeExpress(app, {
+      method: HttpRequestMethods.Post,
+      url: new URL(submit.headers.location, 'http://localhost').pathname,
+      headers: { 'content-type': 'application/json' },
+      body: { thid: 'individual-controller-dcr-route-thid' },
+    });
+    expect(poll.status).toBe(200);
+    expect(poll.text).toMatch(/^response=.+/);
+
+    const storedBinding = await vaultRepository.get<any>(
+      tenantVaultId,
+      `urn:uuid:${EXAMPLE_KYC_CONTROLLER_UUID}`,
+      getClinicalCreatorBindingsSectionId(),
+    );
+    expect(storedBinding).toEqual(expect.objectContaining({
+      actorDids: [testIndividualControllerDcrIdentity.actorDid],
+    }));
+
+    const firstResult = await processed.mock.results[0]!.value;
+    const beforeProfiles = await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(tenantVaultId, getEnvSectionId('device-profiles'));
+    expect(beforeProfiles).toHaveLength(1);
+    const firstClientId = beforeProfiles[0]?.id;
+    expect(firstClientId).toBeTruthy();
+    expect(firstResult).toMatchObject({ body: { data: [{ response: { status: '201' }, resource: { client_id: firstClientId } }] } });
+    const beforeLicense = await vaultRepository.get<ConfidentialStorageDoc>(tenantVaultId, license.id, getEnvSectionId('device-licenses'));
+    const registeredKeys = jest.mocked(ManageAssetCryptographicKey.prototype.registerKey).mock.calls.length;
+    const replayRequest = { ...dcrRequest, thid: dcrRequest.thid + '-same-installation-retry' };
+    jest.mocked(kmsService.decodeRequest).mockResolvedValue({ content: replayRequest } as any);
+    const secondSubmit = await invokeExpress(app, {
+      method: HttpRequestMethods.Post,
+      url: '/acme-id/cds-es/v1/health-care/identity/openid/Device/_dcr',
+      headers: { 'content-type': 'application/x-www-form-urlencoded', authorization: 'Bearer individual-controller-initial-access-token' },
+      body: { request: JSON.stringify(replayRequest) },
+    });
+    expect(secondSubmit.status).toBe(202);
+    await queueAdapter.waitForEmptyQueue();
+    const secondPoll = await invokeExpress(app, {
+      method: HttpRequestMethods.Post,
+      url: new URL(secondSubmit.headers.location, 'http://localhost').pathname,
+      headers: { 'content-type': 'application/json' }, body: { thid: replayRequest.thid },
+    });
+    expect(secondPoll.status).toBe(200);
+    const secondResult = await processed.mock.results[1]!.value;
+    expect(secondResult).toMatchObject({ body: { data: [{ response: { status: '201' }, resource: { client_id: firstClientId } }] } });
+    expect(await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(tenantVaultId, getEnvSectionId('device-profiles'))).toEqual(beforeProfiles);
+    expect(await vaultRepository.get<ConfidentialStorageDoc>(tenantVaultId, license.id, getEnvSectionId('device-licenses'))).toEqual(beforeLicense);
+    expect(jest.mocked(ManageAssetCryptographicKey.prototype.registerKey).mock.calls).toHaveLength(registeredKeys);
   });
 
 });

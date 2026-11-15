@@ -30,3 +30,19 @@ leak internal claims or storage metadata.
 
 Integrators should use published package versions and the generated gateway
 OpenAPI contract. A client method never widens server-side authorization.
+
+## Device registration recovery
+
+The existing Device registration operation can return its original receipt for
+an exact retry of an active installation. Recovery still requires the current
+verified initial-access account and activation binding, current active licence,
+unchanged actor/subject/tenant context, complete public-key material and request
+metadata. An installation identifier alone grants no lookup or registration
+right. Unordered JWKS serialization does not rotate keys; changed key material
+retains the existing authorized replacement path.
+
+Successful recovery does not write another profile, revoke the current device,
+change its licence or repeat ledger registration. Historical profiles without a
+server-stored replay binding are not inferred to have one. The response retains
+the actual registration fields; it does not manufacture a registration access
+token. These manager/API tests do not establish online or blockchain acceptance.
