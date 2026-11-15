@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Preserve credential JSON/UTF-8 signing transcripts with Antifraud Content and
+  keep stored index HMAC-SHA3-256 bytes with the native Node implementation,
+  removing two legacy primitive imports without changing key purposes.
+
 - Compose operational content versions from the SOS flat-claim projection and
   Antifraud DAG-JSON/SHA2-256 CID primitive. Preserve eight actual original byte/CID
   vectors across six manager calls; canonical fields and distinct SHA3 ledger

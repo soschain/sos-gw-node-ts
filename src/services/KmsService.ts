@@ -12,10 +12,9 @@ import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { v4 as uuidv4 } from 'uuid';
 import { MldsaPublicJwk, MlkemPrivateJwk, MlkemPublicJwk, PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { Content } from 'antifraud-data-utils-ts/cryptography';
-import { createHash, randomBytes, createPrivateKey } from 'crypto';
+import { createHash, randomBytes, createPrivateKey, createHmac } from 'crypto';
 import { p256, p384 } from '@noble/curves/nist.js';
 import { deriveKeyPair } from '../utils/pki';
-import { computeHmacSha256Base64Url } from 'gdc-common-utils-ts/hmac';
 import { ProtectedDataAES } from 'antifraud-data-utils-ts/cryptography';
 import { ParameterData } from 'gdc-common-utils-ts/models/params';
 import { InMemoryKeyMaterialProvider } from './in-memory-key-material-provider';
@@ -778,7 +777,7 @@ export class KmsService implements IKmsService {
   }
 
   /**
-   * Computes a keyed hash (HMAC) of a plaintext string using the specified entity's secret HMAC key.
+   * Computes the stored HMAC-SHA3-256 profile using the specified entity's secret HMAC key.
    * @param plaintext The string to hash.
    * @param entityVaultId The vault ID of the entity (e.g., 'host', 'health-care_acme') whose HMAC key should be used.
    * @returns The resulting HMAC as a Base64UrlSafe string.
@@ -790,7 +789,7 @@ export class KmsService implements IKmsService {
       // This should not happen if provisionKeys is always used.
       throw new Error(`HMAC key is missing for entity: ${entityVaultId}`);
     }
-    return computeHmacSha256Base64Url(plaintext, keys.hmacKey);
+    return createHmac('sha3-256', keys.hmacKey).update(plaintext, 'utf8').digest('base64url');
   }
 
   /**

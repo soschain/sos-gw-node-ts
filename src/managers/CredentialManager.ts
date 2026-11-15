@@ -5,11 +5,10 @@ import { IVaultRepository } from '../database/repositories/vault/vault.repositor
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { VerifiableCredentialV2, ProofEBSIv2 } from '../gdc-backend-utils-node/models/verifiable-credential';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import { objectToBytes } from 'gdc-common-utils-ts/utils/object-convert';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { generateVcId } from '../utils/vc-id';
-import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
+import { Content, PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { ParameterData } from 'gdc-common-utils-ts/models/params';
 import { parseValidityPeriod } from '../utils/time';
@@ -197,7 +196,7 @@ export class CredentialManager {
     unsignedVc.id = generateVcId(unsignedVc.credentialSubject.identifier as string, unsignedVc.validFrom as string);
 
     const signatureResult = await this.kmsService.signWithManagedKey(
-      objectToBytes(unsignedVc),
+      Content.objectToBytes(unsignedVc),
       signerEntityId,
       undefined,
       'vc_sign',
