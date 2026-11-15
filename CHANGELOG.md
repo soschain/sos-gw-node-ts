@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Read existing ConsentRule contracts from FHIR in eight consumers, retaining all
+  thirty-two members and exact decision/status/claim catalogs. Preserve mixed
+  test value imports, draft/active authorization boundaries and runtime policy.
+
 - Preserve credential JSON/UTF-8 signing transcripts with Antifraud Content and
   keep stored index HMAC-SHA3-256 bytes with the native Node implementation,
   removing two legacy primitive imports without changing key purposes.

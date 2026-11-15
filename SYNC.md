@@ -202,3 +202,12 @@ Own prototype-control keys are rejected rather than repeating silent data loss.
 Read-only original source: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/utils/fhir-cid.ts .
 The original repository was not modified and new production/tests import no
 original hashing implementation.
+
+
+## Canonical ConsentRule owner
+
+The eight existing type consumers use the published FHIR contract. A read-only
+original declaration fixture proves all thirty-two members, optionality and type
+expressions plus complete decision/status and forty-claim catalogs. Mixed test
+imports retain actual runtime values. Consent evaluation/SMART policy is unchanged.
+Read-only original source: https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/models/consent-rule.ts .

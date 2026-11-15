@@ -1,0 +1,193 @@
+{
+  "provenance": {
+    "source": "https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/models/consent-rule.ts",
+    "sourceSha256": "ba521b62bc24f60848b45e4640b9446e5d4bcec13f66596a0fe0a77059e61df9",
+    "readOnly": true
+  },
+  "members": {
+    "@context": {
+      "optional": false,
+      "type": "'org.hl7.fhir.api'"
+    },
+    "Consent.status": {
+      "optional": true,
+      "type": "ConsentStatus"
+    },
+    "Consent.decision": {
+      "optional": false,
+      "type": "ConsentDecision"
+    },
+    "Consent.action": {
+      "optional": false,
+      "type": "string"
+    },
+    "Consent.category": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.subject": {
+      "optional": false,
+      "type": "string"
+    },
+    "Consent.actor-identifier": {
+      "optional": false,
+      "type": "string"
+    },
+    "Consent.actor-role": {
+      "optional": false,
+      "type": "string"
+    },
+    "Consent.date": {
+      "optional": false,
+      "type": "string"
+    },
+    "Consent.period-start": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.period-end": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.data-period-start": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.data-period-end": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.grantor": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.grantee": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.manager": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.controller": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.verified-by": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.verified-date": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.purpose": {
+      "optional": false,
+      "type": "string"
+    },
+    "Consent.identifier": {
+      "optional": false,
+      "type": "string"
+    },
+    "Consent.resource-type": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.security-label": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.document-type": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.provision-code": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.contained-reference-list": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.contained-resource-list": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.contained-documents": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.attachment-content-ids": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.attachment-contenttype": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.attachment-data": {
+      "optional": true,
+      "type": "string"
+    },
+    "Consent.attachment-id": {
+      "optional": true,
+      "type": "string"
+    }
+  },
+  "catalogues": {
+    "ConsentDecisions": {
+      "Permit": "permit",
+      "Deny": "deny"
+    },
+    "ConsentStatuses": {
+      "Draft": "draft",
+      "Active": "active",
+      "Inactive": "inactive",
+      "NotDone": "not-done",
+      "EnteredInError": "entered-in-error",
+      "Unknown": "unknown"
+    }
+  },
+  "claimCatalog": {
+    "decision": "Consent.decision",
+    "status": "Consent.status",
+    "action": "Consent.action",
+    "category": "Consent.category",
+    "categoryText": "Consent.category-text",
+    "categoryDisplay": "Consent.category-display",
+    "resourceType": "Consent.resource-type",
+    "subject": "Consent.subject",
+    "patient": "Consent.patient",
+    "actorIdentifier": "Consent.actor-identifier",
+    "actorRole": "Consent.actor-role",
+    "date": "Consent.date",
+    "periodStart": "Consent.period-start",
+    "periodEnd": "Consent.period-end",
+    "dataPeriodStart": "Consent.data-period-start",
+    "dataPeriodEnd": "Consent.data-period-end",
+    "grantor": "Consent.grantor",
+    "grantee": "Consent.grantee",
+    "manager": "Consent.manager",
+    "controller": "Consent.controller",
+    "verifiedBy": "Consent.verified-by",
+    "verifiedDate": "Consent.verified-date",
+    "purpose": "Consent.purpose",
+    "identifier": "Consent.identifier",
+    "eventBasedOn": "Consent.event-basedon",
+    "sourceReference": "Consent.source-reference",
+    "scope": "Consent.scope",
+    "scopeDisplay": "Consent.scope-display",
+    "policyRule": "Consent.policy-rule",
+    "provisionCode": "Consent.provision-code",
+    "provisionCodeDisplay": "Consent.provision-code-display",
+    "securityLabel": "Consent.security-label",
+    "documentType": "Consent.document-type",
+    "containedReferenceList": "Consent.contained-reference-list",
+    "containedResourceList": "Consent.contained-resource-list",
+    "containedDocuments": "Consent.contained-documents",
+    "attachmentContentIds": "Consent.attachment-content-ids",
+    "attachmentContentType": "Consent.attachment-contenttype",
+    "attachmentData": "Consent.attachment-data",
+    "attachmentId": "Consent.attachment-id"
+  }
+}

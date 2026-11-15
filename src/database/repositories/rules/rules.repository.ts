@@ -1,6 +1,6 @@
 // src/database/repositories/rules/rules.repository.ts
 
-import { ConsentRule } from "gdc-common-utils-ts/models/consent-rule";
+import type { ConsentRule } from "fhir-data-utils-ts";
 
 /**
  * Defines the scope or partition for a set of consent rules.

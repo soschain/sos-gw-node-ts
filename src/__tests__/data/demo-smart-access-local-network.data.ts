@@ -18,7 +18,7 @@ import {
   EXAMPLE_TENANT_IDENTIFIER,
 } from 'gdc-common-utils-ts/examples/shared';
 import { EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_PURPOSE } from 'gdc-common-utils-ts/examples/inter-tenant-access-contract';
-import { ClaimConsent, ConsentDecisions, ConsentStatuses, type ConsentRule } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent, ConsentDecisions, ConsentStatuses, type ConsentRule } from 'fhir-data-utils-ts';
 import { ClaimInterTenantAccessContract } from 'gdc-common-utils-ts/models/inter-tenant-access-contract';
 import { MedicationStatementClaim } from 'gdc-common-utils-ts/models/interoperable-claims';
 import {

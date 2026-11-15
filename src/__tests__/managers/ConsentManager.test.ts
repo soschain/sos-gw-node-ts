@@ -7,7 +7,7 @@ import { ConsentManager } from '../../managers/ConsentManager';
 import { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { BundleJsonApi, BundleEntryRequest, BundleEntryResponse, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
-import { ConsentRule, ClaimConsent, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
+import { type ConsentRule, ClaimConsent, ConsentStatuses } from 'fhir-data-utils-ts';
 import { CONSENT_CREATION_MESSAGE } from '../data/example-payloads';
 import { buildConsentRuleStorageKey, expandConsentActorRoles, hashConsentRuleId } from '../../utils/consent';
 import { getClaimValue } from '../../utils/claims';

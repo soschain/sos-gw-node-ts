@@ -27,7 +27,7 @@ import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { HealthcareActorRoleCodes } from 'sos-data-utils-ts/healthcare-roles';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { deriveGrantedSmartScopes } from 'sos-data-utils-ts/consent-smart-scopes';
-import { type ConsentRule } from 'gdc-common-utils-ts/models/consent-rule';
+import type { ConsentRule } from 'fhir-data-utils-ts';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'fhir-data-utils-ts';
 import { getMatchingIndividualMemberCredentialFromVpToken } from 'gdc-common-utils-ts/utils/individual-smart';
 import { getMatchingProfessionalCredentialFromVpToken } from 'gdc-common-utils-ts/utils/professional-smart';

@@ -4,7 +4,7 @@ import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { randomUUID } from 'crypto';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { BundleEntryRequest, BundleJsonApi, BundleEntryResponse, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
-import { ConsentRule } from 'gdc-common-utils-ts/models/consent-rule';
+import type { ConsentRule } from 'fhir-data-utils-ts';
 import { ClaimConsent, ConsentStatuses } from 'fhir-data-utils-ts';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { JobRequest } from 'sos-data-utils-ts/confidential-job';
