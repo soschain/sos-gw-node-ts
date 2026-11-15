@@ -1,4 +1,4 @@
-// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+// Flow contract: reuse canonical fixtures, persist claims-first Group data and return the actual provider/caller/thread binding with versioned acknowledgements; membership alone confers no clinical authority.
 import { describe, expect, it, jest } from '@jest/globals';
 import {
   buildVeterinaryResearchStudyGroupCreateEntry,
@@ -58,7 +58,13 @@ describe('GroupManager FHIR R5 claims-first professional and subject-group workf
     });
     const harness = createHarness();
 
-    const created = await harness.manager.process(batchJob([entry]));
+    const request = batchJob([entry]);
+    const created = await harness.manager.process(request);
+
+    expect(created.iss).toBe(request.content.aud);
+    expect(created.aud).toBe(request.content.iss);
+    expect(created.thid).toBe(request.content.thid);
+    expect(created.body).toMatchObject({ type: 'batch-response' });
 
     expect((created.body as any).data[0].response.status).toBe('201');
     expect(harness.recordsIn('research-groups')[0].content.claims['Group.identifier'])

@@ -1,4 +1,4 @@
-// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+// Flow contract: preserve actual Consent persistence and revocation, provider/caller/thread reply binding and bare Consent acknowledgements without inventing returned resource IDs; reuse canonical fixtures and types.
 import { createHash, randomUUID } from 'crypto';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
@@ -261,9 +261,15 @@ describe('ConsentManager', () => {
     // Act
     const jobResponse = await consentManager.process(mockJobRequest);
 
+    expect(jobResponse.iss).toBe(mockDecodedMessage.aud);
+    expect(jobResponse.aud).toBe(mockDecodedMessage.iss);
+    expect(jobResponse.thid).toBe(mockDecodedMessage.thid);
+
     // Assert: Verify the response and interactions with the mock
     const responseBody = jobResponse.body as BundleJsonApi;
     const responseEntry = responseBody.data[0] as BundleEntryResponse;
+    expect(responseEntry.type).toBe('Consent');
+    expect(responseEntry).not.toHaveProperty('resource');
     expect(responseEntry.response.status).toEqual('201');
     expect(responseBody.type).toEqual('_batch-response');
     expect(responseEntry.response.location).toEqual(
