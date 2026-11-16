@@ -22,7 +22,7 @@ import {
   type ContinuityServiceCapabilityValue,
   type ServiceOfferingRole,
 } from 'sos-data-utils-ts/continuity-service-capabilities';
-import { buildDspaceVersionMetadata } from 'gdc-common-utils-ts/utils/dataspace-protocol';
+import { buildGatewayDataspaceVersionMetadata } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import { buildGatewayDataspaceCatalogArtifactPath, buildGatewayDataspaceCatalogCollectionPath, buildGatewayDataspaceCatalogDatasetPath, buildGatewayDataspaceCatalogRequestPath, buildGatewayDataspaceBasePath, buildGatewayDataspaceVersionPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import { getBaseUrlFromDidWeb } from '../utils/did-backend';
 import { isFhirSector, isResearchSector } from '../utils/sector';
@@ -1285,7 +1285,7 @@ export function createDiscoveryRouter(
     const hostDid = await tenantsCacheManager.getDidDocument('host');
     if (!hostDid?.id) return res.status(503).type('text').send('Service Unavailable');
 
-    res.json(buildDspaceVersionMetadata(buildGatewayDataspaceBasePath({
+    res.json(buildGatewayDataspaceVersionMetadata(buildGatewayDataspaceBasePath({
       participantId: 'host',
       jurisdiction: req.params.hostCoverageScope,
       version: req.params.version,
@@ -1497,7 +1497,7 @@ export function createDiscoveryRouter(
       return res.status(404).type('text').send('Not Found');
     }
 
-    res.json(buildDspaceVersionMetadata(buildGatewayDataspaceBasePath({
+    res.json(buildGatewayDataspaceVersionMetadata(buildGatewayDataspaceBasePath({
       tenantId: req.params.tenantId,
       jurisdiction: req.params.jurisdiction,
       version: req.params.version,

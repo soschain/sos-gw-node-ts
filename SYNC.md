@@ -1,5 +1,26 @@
 # GDC Core to SOSChain GW synchronization
 
+## Adopted operational search, lifecycle and DSP wire owners
+
+Communication search uses `GatewaySearchBundleTypes`, RelatedPerson purge and
+readback use `GatewayResourceLifecycleStatuses`, and DSP discovery uses
+`buildGatewayDataspaceVersionMetadata` from published SOS Data 0.8.1. Existing
+search/lifecycle values, supplied DSP paths and the default protocol version
+remain unchanged; admission and lifecycle decisions stay with their managers.
+
+Read-only historical source references:
+
+- https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/fhir-search.ts
+- https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/interoperable-resource-operation.ts
+- https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/dataspace-protocol.ts
+
+Evidence: the new source-ownership contract failed on the legacy import before
+replacement; all three ownership/wire cases then passed. Four actual manager
+and discovery suites passed 89 cases. Registry AF 0.3.2, Data 0.8.1 and Node
+0.5.1 replace temporary module overlays; Node remains a dev dependency and all
+other direct versions are preserved. Remaining source/dependency cuts still
+block the mandatory whole-project independence gate and service promotion.
+
 SOSChain GW originates from <https://github.com/Global-DataCare/gwtemplate-node-ts>.
 Synchronization is selective and
 one-way: downstream products and deprecated gateways do not define this

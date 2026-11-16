@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Use published SOS operational search/lifecycle constants and DSP metadata in
+  Communication search, RelatedPerson purge/readback and discovery. Preserve
+  existing wire values and authorization; pin AF 0.3.2, SOS Data 0.8.1 and the
+  development-only Node SDK 0.5.1 with all other direct versions retained.
+
 - Resolve queued actor DID identifier extraction from the neutral Antifraud
   identity owner, preserving existing contact binding and rejection behavior.
 

@@ -22,7 +22,7 @@ import {
   paginateCommunicationParticipantMatches,
   parseCommunicationParticipantSearchCriteria,
 } from 'gdc-common-utils-ts/utils/communication-participant-search';
-import { SearchBundleTypes } from 'gdc-common-utils-ts/utils/fhir-search';
+import { GatewaySearchBundleTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { normalizeClaimsFromFhirResource } from 'gdc-common-utils-ts/utils/interoperable-resource-operation';
 import { compositionFhirR4ToFlat } from 'gdc-common-utils-ts/convert/convert-composition';
 import { buildClinicalDocumentSearchAttributes } from '../utils/clinical-document-search-attributes';
@@ -474,7 +474,7 @@ export class CommunicationManager implements IJobProcessor {
 
     const responseBundle: BundleJsonApi<BundleEntryResponse | ErrorEntry> = {
       resourceType: ResourceTypesFhirR4.Bundle,
-      type: SearchBundleTypes.SearchResponse,
+      type: GatewaySearchBundleTypes.SearchResponse,
       total: records.length,
       data,
     };

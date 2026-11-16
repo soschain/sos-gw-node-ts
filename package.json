@@ -106,7 +106,6 @@
     "api:local-firestore-demo": "npm run build:swagger && npx dotenv -e .env.firestore-demo -- nodemon --legacy-watch --watch 'src/**/*.ts' --watch 'swagger.config.cjs' --exec 'TS_NODE_TRANSPILE_ONLY=1 TS_NODE_SKIP_IGNORE=1 TS_NODE_COMPILER_OPTIONS={\\\"module\\\":\\\"NodeNext\\\",\\\"moduleResolution\\\":\\\"NodeNext\\\",\\\"allowImportingTsExtensions\\\":true} node --loader ts-node/esm --experimental-specifier-resolution=node src/main.ts'"
   },
   "dependencies": {
-    "antifraud-data-utils-ts": "0.3.0",
     "@ahryman40k/ts-fhir-types": "^4.0.39",
     "@aws-sdk/client-kms": "3.1127.0",
     "@firebase/rules-unit-testing": "^5.0.0",
@@ -122,6 +121,7 @@
     "@types/argon2": "^0.14.1",
     "@types/base-x": "^3.0.0",
     "@types/cors": "^2.8.19",
+    "antifraud-data-utils-ts": "0.3.2",
     "argon2": "^0.44.0",
     "asn1js": "^3.0.6",
     "base-x": "^5.0.1",
@@ -143,7 +143,7 @@
     "pg": "^8.16.3",
     "pkijs": "^3.2.5",
     "redis": "^5.10.0",
-    "sos-data-utils-ts": "0.8.0",
+    "sos-data-utils-ts": "0.8.1",
     "sos-sdk-core-ts": "0.7.0",
     "stripe": "^20.4.1",
     "swagger-jsdoc": "^6.2.8",
@@ -179,7 +179,7 @@
     "lodash.clonedeep": "^4.5.0",
     "nodemon": "^3.1.10",
     "pg-mem": "^3.0.5",
-    "sos-sdk-node-ts": "0.5.0",
+    "sos-sdk-node-ts": "0.5.1",
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.1",
     "vet-sdk-core-ts": "0.7.1"

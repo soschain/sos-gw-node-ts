@@ -22,7 +22,7 @@ import { applyFhirCidVersioningToEntry, FhirCidVersionMapping, registerFhirCidMa
 import type { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
 import { ACTION_PURGE, SUBJECT_SECTION_DIGITAL_TWIN, SUBJECT_SECTION_INDIVIDUAL } from '../constants/domain';
 import { EntityLifecycleStatus } from '../gdc-backend-utils-node/models/enums';
-import { InteroperableLifecycleStatuses } from 'gdc-common-utils-ts/utils/interoperable-resource-operation';
+import { GatewayResourceLifecycleStatuses } from 'sos-data-utils-ts/gateway-response-contract';
 import type { ITenantsManager } from './ITenantsManager';
 import { extractSearchFiltersFromEntry, extractSearchFiltersFromParametersResource } from '../utils/search-request';
 import { buildSearchResponseEntries } from '../utils/didcomm-response';
@@ -229,7 +229,7 @@ export class RelatedPersonManager implements IJobProcessor {
           }
           const updatedRecord: Record<string, any> = {
             ...existingRecord,
-            status: InteroperableLifecycleStatuses.Purged,
+            status: GatewayResourceLifecycleStatuses.Purged,
             meta: {
               ...(existingRecord.meta || {}),
               lifecycleDisposition: 'purged',
@@ -368,6 +368,6 @@ export class RelatedPersonManager implements IJobProcessor {
 }
 
 function isPurgedRelatedPersonRecord(record: StoredRelatedPersonRecord): boolean {
-  return record.status === InteroperableLifecycleStatuses.Purged
+  return record.status === GatewayResourceLifecycleStatuses.Purged
     || record.meta?.lifecycleDisposition === 'purged';
 }
