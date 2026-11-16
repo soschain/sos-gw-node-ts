@@ -1,5 +1,13 @@
 ## Unreleased
 
+- Resolve FHIR code-system identifiers and appointment fixtures from the
+  canonical FHIR package, and search-response HTTP status values from SOS Data.
+  Preserve successful response strings and remove unused legacy clinical
+  catalog forwarders. Pin public SOS Data 0.8.2 and Antifraud Data 0.3.3 so
+  existing response envelopes and neutral credential canonicalizer types
+  resolve after a clean install. The remaining GDC dependency boundary is
+  still blocked.
+
 - Persist a bound pending state while reconciling the configured host DID.
   Restart retries publish the exact stored self-credentials before clearing
   that state; inconsistent targets fail closed. Keys, claims and tenants stay
