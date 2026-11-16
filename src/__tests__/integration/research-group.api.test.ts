@@ -20,10 +20,7 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 import { afterEach, expect, it } from '@jest/globals';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
-import {
-  projectGroupPractitionerRoleMemberFlatClaimResources,
-  projectGroupR5FlatClaimsResource,
-} from 'vet-data-utils-ts';
+import { projectGroupPractitionerRoleMemberFlatClaimResources, projectGroupR5FlatClaimsResource } from 'fhir-data-utils-ts';
 import { buildGroupMemberSectionId } from '../../managers/GroupManager';
 import { startServer, resetServerConfig } from '../../server';
 import { getEnvSectionId } from '../../utils/section-env';

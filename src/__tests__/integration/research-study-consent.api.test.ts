@@ -24,7 +24,7 @@ import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
 import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
-import { projectResearchStudyR5SearchClaims } from 'vet-data-utils-ts';
+import { projectResearchStudyR5SearchClaims } from 'fhir-data-utils-ts';
 import { buildVeterinaryResearchStudyActiveConsentBatch } from 'vet-sdk-core-ts/research-study';
 import { OrganizationWorkflowCapabilities } from 'sos-data-utils-ts/organization-workflow-access';
 import {

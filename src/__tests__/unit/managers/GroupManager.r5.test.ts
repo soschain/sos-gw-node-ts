@@ -4,10 +4,7 @@ import {
   buildVeterinaryResearchStudyGroupCreateEntry,
   buildVeterinaryResearchStudyReviewTeamGroupSearch,
 } from 'vet-sdk-core-ts/research-study';
-import {
-  projectGroupPractitionerRoleMemberFlatClaimResources,
-  projectGroupR5FlatClaimsResource,
-} from 'vet-data-utils-ts';
+import { projectGroupPractitionerRoleMemberFlatClaimResources, projectGroupR5FlatClaimsResource } from 'fhir-data-utils-ts';
 import {
   GroupManager,
   buildGroupMemberProjectionId,

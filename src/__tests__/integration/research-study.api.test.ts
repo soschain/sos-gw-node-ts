@@ -21,7 +21,7 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 import { afterEach, expect, it } from '@jest/globals';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
-import { projectResearchStudyR5SearchClaims } from 'vet-data-utils-ts';
+import { projectResearchStudyR5SearchClaims } from 'fhir-data-utils-ts';
 import {
   buildResearchStudyPartySectionId,
 } from '../../managers/ResearchStudyManager';
