@@ -1,4 +1,4 @@
-import { DataCollectionIds } from 'gdc-common-utils-ts/constants/index';
+import { DataCollectionIds } from 'sos-data-utils-ts/gateway-data-collections';
 import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';

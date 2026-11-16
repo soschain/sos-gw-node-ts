@@ -10,7 +10,7 @@ import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { generateVcId } from '../utils/vc-id';
 import { Content, PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import { ParameterData } from 'gdc-common-utils-ts/models/params';
+import type { GatewayParameterData } from 'sos-data-utils-ts/gateway-parameter-contract';
 import { parseValidityPeriod } from '../utils/time';
 import type { ITenantsManager } from './ITenantsManager';
 
@@ -102,7 +102,7 @@ export class CredentialManager {
     subjectUrn: string,
     decryptionEntityId: string,
   ): Promise<void> {
-    const indexIdentifier: ParameterData = {
+    const indexIdentifier: GatewayParameterData = {
       name: 'identifier',
       value: subjectUrn,
       unique: true,

@@ -18,7 +18,7 @@ import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import { initializeCustomerServices } from '../utils/services'; 
 import { createOperationOutcome } from '../utils/outcome';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import { ParameterData } from 'gdc-common-utils-ts/models/params'; // extends ParamAttribute with `type` and others
+import type { GatewayParameterData } from 'sos-data-utils-ts/gateway-parameter-contract'; // extends the owned scalar attribute contract
 import { CredentialManager } from './CredentialManager';
 import { parseTenantUrn } from '../utils/urn';
 import { getTenantVaultId } from '../utils/tenant';
@@ -442,8 +442,8 @@ export class IndividualManager {
     return aggregatedClaims;
   }
 
-  private _buildIndexParameters(claims: ClaimsRecord): ParameterData[] {
-    const parameters: ParameterData[] = [];
+  private _buildIndexParameters(claims: ClaimsRecord): GatewayParameterData[] {
+    const parameters: GatewayParameterData[] = [];
     for (const [key, value] of Object.entries(claims)) {
       if (key !== SchemaOrgPersonClaim.BirthDate) {
         if (typeof value === 'object' && value !== null && 'additionalType' in value && 'value' in value) {

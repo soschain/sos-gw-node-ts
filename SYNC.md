@@ -1,5 +1,30 @@
 # GDC Core to SOSChain GW synchronization
 
+## Adopted encrypted-index and collection data contracts
+
+Gateway parameter consumers use `GatewayParameterData` from SOS Data rather
+than the legacy parameter model. Its required value slot, optional uniqueness,
+configured type extensions and display/choice fields are unchanged. KMS still
+owns encryption, hashing and indexed storage; the data type makes no policy
+decision. Gateway response facades use the owned three-value envelope catalog,
+with response-entry discriminators kept distinct.
+
+Logical collection IDs and the complete FHIR-family and operational-summary
+fan-out maps use SOS Data `gateway-data-collections`. Resource family names
+come from the generic FHIR owner. These mappings describe the existing SOS
+storage taxonomy, not a FHIR database requirement. Their exact 18/15/16-entry
+wire vector is checked independently from the production ownership guard.
+
+These additive Data APIs belong to the cumulative unreleased contract group;
+GW release still requires their published registry version and the mandatory
+whole-project dependency boundary gate.
+
+Read-only historical source references:
+
+- https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/models/params.ts
+- https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/constants/data-collections.ts
+- https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/constants/gateway-response.ts
+
 ## Adopted operational IPS section owners
 
 Use published SOS Data `HealthcareCoreSections` for the former operational

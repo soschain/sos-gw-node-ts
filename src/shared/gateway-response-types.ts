@@ -1,2 +1,2 @@
-export { GatewayEnvelopeTypes } from 'gdc-common-utils-ts/constants/gateway-response';
+export { GatewayEnvelopeTypes } from 'sos-data-utils-ts/gateway-response-contract';
 export { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';

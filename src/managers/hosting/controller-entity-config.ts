@@ -2,7 +2,7 @@ import type { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import type { ParameterData } from 'gdc-common-utils-ts/models/params';
+import type { GatewayParameterData } from 'sos-data-utils-ts/gateway-parameter-contract';
 import type { JwkSet } from 'antifraud-data-utils-ts/cryptography';
 import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
@@ -193,16 +193,16 @@ export async function storeControllerEntityConfig(
   const contact = readBootstrapControllerContact(deps.controllerConfig.claims);
   const roleCode = getPersonOccupationClaim(deps.controllerConfig.claims as Record<string, any> | undefined);
 
-  const attributesToIndex: ParameterData[] = [
+  const attributesToIndex: GatewayParameterData[] = [
     ...(contact ? [{ name: contact.contactKind,
       value: contact.contactKind === 'phone' ? normalizeIndexedPhone(contact.contact) : contact.contact,
       unique: true, type: 'string' }] : []),
-    ...(roleCode ? [{ name: 'role', value: normalizeCodeSystemAndValue(roleCode), unique: false, type: 'token' } as ParameterData] : []),
-    { name: 'lifecycleRole', value: deps.bootstrapLifecycleRole, unique: false, type: 'string' } as ParameterData,
+    ...(roleCode ? [{ name: 'role', value: normalizeCodeSystemAndValue(roleCode), unique: false, type: 'token' } as GatewayParameterData] : []),
+    { name: 'lifecycleRole', value: deps.bootstrapLifecycleRole, unique: false, type: 'string' } as GatewayParameterData,
     ...verificationMethods
       .map((vm) => (vm.publicKeyJwk as PublicJwk | undefined)?.kid)
       .filter((kid): kid is string => Boolean(kid))
-      .map((kid) => ({ name: 'kid', value: kid, unique: false, type: 'string' } as ParameterData)),
+      .map((kid) => ({ name: 'kid', value: kid, unique: false, type: 'string' } as GatewayParameterData)),
   ];
   const protectedAttributes = await deps.kmsService.protectAttributesNameAndValue(attributesToIndex, deps.vaultId);
 

@@ -28,7 +28,7 @@ import { ClaimsRecord, RecordBase } from 'sos-data-utils-ts/confidential-storage
 import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { getBundleResponseTypeForAction } from '../utils/bundle';
 import { normalizeCodeSystemAndValue } from '../utils/normalize-codeAndSystem';
-import { ParameterData } from 'gdc-common-utils-ts/models/params';
+import type { GatewayParameterData } from 'sos-data-utils-ts/gateway-parameter-contract';
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { DidDocument, VerificationMethod } from '../gdc-backend-utils-node/models/did';
 import { JobRequest } from 'sos-data-utils-ts/confidential-job';
@@ -551,7 +551,7 @@ export class EmployeeManager {
       },
     };
 
-    const attributesToIndex: ParameterData[] = [
+    const attributesToIndex: GatewayParameterData[] = [
       { name: contact.contactKind, value: contact.contact, unique: true, type: 'string'},
       // The role code is normalized before HMAC to ensure consistent searching.
       { name: 'role', value: normalizeCodeSystemAndValue(roleCode), unique: false, type: 'token'},
@@ -562,7 +562,7 @@ export class EmployeeManager {
         value: alias,
         unique: false,
         type: 'string',
-      } as ParameterData)),
+      } as GatewayParameterData)),
     ];
     
     const protectedAttributes = await this.kmsService.protectAttributesNameAndValue(attributesToIndex, tenantVaultId);
@@ -653,7 +653,7 @@ export class EmployeeManager {
     contact: EmployeeContact,
     roleCode: string,
   ): Promise<ConfidentialStorageDoc | undefined> {
-    const queryAttributes: ParameterData[] = [
+    const queryAttributes: GatewayParameterData[] = [
       { name: contact.contactKind, value: contact.contact, unique: true, type: 'string' },
       { name: 'role', value: normalizeCodeSystemAndValue(roleCode), unique: false, type: 'token' },
     ];

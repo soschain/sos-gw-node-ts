@@ -16,7 +16,7 @@ import { createHash, randomBytes, createPrivateKey, createHmac } from 'crypto';
 import { p256, p384 } from '@noble/curves/nist.js';
 import { deriveKeyPair } from '../utils/pki';
 import { ProtectedDataAES } from 'antifraud-data-utils-ts/cryptography';
-import { ParameterData } from 'gdc-common-utils-ts/models/params';
+import type { GatewayParameterData } from 'sos-data-utils-ts/gateway-parameter-contract';
 import { InMemoryKeyMaterialProvider } from './in-memory-key-material-provider';
 import type { KeyMaterialProvider, KeyMaterialPurpose } from './key-material-provider';
 import { TenantKeyCache } from './tenant-key-cache';
@@ -798,11 +798,11 @@ export class KmsService implements IKmsService {
    * This is used to create the `indexed` array for a `ConfidentialStorageDoc`.
    * The implementation MUST use domain separation based on the attribute `type` to prevent collisions.
    *
-   * @param attributes The array of plaintext `ParameterData` objects.
+   * @param attributes The array of plaintext `GatewayParameterData` objects.
    * @param entityVaultId The security context for key selection.
    * @returns A promise that resolves to the array of protected `IndexedAttribute` objects, ready for storage.
    */
-  async protectAttributesNameAndValue(attributes: ParameterData[], entityVaultId: string): Promise<IndexedAttribute[]> {
+  async protectAttributesNameAndValue(attributes: GatewayParameterData[], entityVaultId: string): Promise<IndexedAttribute[]> {
     const protectedAttributes: IndexedAttribute[] = [];
     for (const attribute of attributes) {
       if (attribute.value === undefined) {

@@ -7,7 +7,7 @@ import type { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'sos-data-ut
 import type { RecordBase } from 'sos-data-utils-ts/confidential-storage';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import { DataCollectionIds } from 'gdc-common-utils-ts/constants/index';
+import { DataCollectionIds } from 'sos-data-utils-ts/gateway-data-collections';
 import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { createOperationOutcome } from '../utils/outcome';

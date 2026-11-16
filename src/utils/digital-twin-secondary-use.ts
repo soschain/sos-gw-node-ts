@@ -1,6 +1,6 @@
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { createHash } from 'crypto';
-import { FhirResourceTypeDataCollections } from 'gdc-common-utils-ts/constants/index';
+import { FhirResourceTypeDataCollections } from 'sos-data-utils-ts/gateway-data-collections';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { ClaimConsent } from 'fhir-data-utils-ts';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';

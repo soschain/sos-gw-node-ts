@@ -10,7 +10,7 @@ import {
 import { TwinCompositionManager, TWIN_COMPOSITION_SECTION_RESOURCE_CONFIG } from '../../../managers/TwinCompositionManager';
 import { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
-import { DataCollectionIds } from 'gdc-common-utils-ts/constants/index';
+import { DataCollectionIds } from 'sos-data-utils-ts/gateway-data-collections';
 import { HealthcareCoreSections, HealthcarePermissionSummarySections } from 'sos-data-utils-ts/healthcare-sections';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
 import {

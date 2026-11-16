@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Use owned SOS Data parameter types, gateway response envelopes and complete
+  logical collection mappings in KMS, employee/controller indexing and clinical
+  fan-out. Preserve required scalar values, configured parameter extensions,
+  response discriminators and every existing collection wire value.
+
 - Resolve operational IPS core and permission-summary sections from the
   published SOS Data owner in Communication, Composition and IPS assembly.
   Preserve all wire descriptors, non-enumerable compatibility keys and the

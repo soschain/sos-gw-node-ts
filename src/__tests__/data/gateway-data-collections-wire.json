@@ -1,0 +1,95 @@
+{
+  "sourceUrl": "https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/constants/data-collections.ts",
+  "installedOriginalSha256": "4382c805c7b52d92a065d34253bf59c80471ddac604a015379962ecc60c5b41b",
+  "remoteMainByteIdentityClaim": false,
+  "tables": {
+    "DataCollectionIds": {
+      "adverseEvents": "adverse-events",
+      "allergies": "allergies",
+      "carePlans": "care-plans",
+      "communications": "communications",
+      "composition": "composition",
+      "conditions": "conditions",
+      "consents": "consents",
+      "diagnosticReports": "diagnostic-reports",
+      "deviceUseStatements": "device-use-statements",
+      "documentReferences": "document-references",
+      "encounters": "encounters",
+      "flags": "flags",
+      "imagingStudies": "imaging-studies",
+      "immunizations": "immunizations",
+      "medications": "medications",
+      "observations": "observations",
+      "procedures": "procedures",
+      "relatedPersons": "related-persons"
+    },
+    "FhirResourceTypeDataCollections": {
+      "AdverseEvent": "adverse-events",
+      "AllergyIntolerance": "allergies",
+      "CarePlan": "care-plans",
+      "Condition": "conditions",
+      "Consent": "consents",
+      "DiagnosticReport": "diagnostic-reports",
+      "DeviceUseStatement": "device-use-statements",
+      "Encounter": "encounters",
+      "Flag": "flags",
+      "ImagingStudy": "imaging-studies",
+      "Immunization": "immunizations",
+      "MedicationStatement": "medications",
+      "Observation": "observations",
+      "Procedure": "procedures",
+      "RelatedPerson": "related-persons"
+    },
+    "HealthcareSummarySectionDataCollections": {
+      "LOINC|10160-0": [
+        "medications"
+      ],
+      "LOINC|48765-2": [
+        "allergies"
+      ],
+      "LOINC|11450-4": [
+        "conditions"
+      ],
+      "LOINC|30954-2": [
+        "observations",
+        "diagnostic-reports"
+      ],
+      "LOINC|47519-4": [
+        "procedures"
+      ],
+      "LOINC|11369-6": [
+        "immunizations"
+      ],
+      "LOINC|47420-5": [
+        "conditions"
+      ],
+      "LOINC|18776-5": [
+        "care-plans"
+      ],
+      "LOINC|29762-2": [
+        "observations"
+      ],
+      "LOINC|8716-3": [
+        "observations"
+      ],
+      "LOINC|42348-3": [
+        "consents"
+      ],
+      "LOINC|11348-0": [
+        "conditions"
+      ],
+      "LOINC|10162-6": [
+        "observations"
+      ],
+      "LOINC|81338-6": [
+        "consents"
+      ],
+      "LOINC|104605-1": [
+        "flags"
+      ],
+      "LOINC|46264-8": [
+        "device-use-statements"
+      ]
+    }
+  }
+}
