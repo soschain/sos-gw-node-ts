@@ -2,20 +2,14 @@
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
 // File: src/__tests__/data/example-payloads.ts
 
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { testClaimsOfferEntityExpanded, testClaimsOfferFamilyExpanded } from './offer.data';
 import { testClaimsRegisterTenantExpanded } from './organization.data';
 import { testFamilyRegisterExpanded } from './family.data';
-import {
-  HealthcareActorRoles,
-  HealthcareConsentActions,
-  HealthcareConsentPurposes,
-} from 'gdc-common-utils-ts/constants/index';
-import {
-  ClaimsOrderSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsPersonSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
+import { HealthcareConsentActions } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
+import { SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   EXAMPLE_EMPLOYEE_DOCTOR_ACTIVE,
   buildExampleEmployeeClaims,
@@ -39,8 +33,8 @@ import {
   EmployeeBundleMethods,
   EmployeeResourceTypes,
 } from 'gdc-common-utils-ts/utils/employee';
-import { Format } from 'gdc-common-utils-ts/constants/Schemas';
-import { DeviceAppTypes, DeviceUserClasses } from 'gdc-common-utils-ts/constants/device';
+import { Format } from 'sos-data-utils-ts/bff-wire-contract';
+import { DeviceAppTypes, DeviceUserClasses } from 'sos-data-utils-ts/device-license-contract';
 import { buildLicensePurchaseEntry } from 'gdc-common-utils-ts/utils/license';
 import {
   EXAMPLE_API_ORGANIZATION_DID,
@@ -190,18 +184,18 @@ const organizationVerificationTransactionBody = {
       meta: {
         claims: {
         '@context': 'org.schema',
-        [ClaimsOrganizationSchemaorg.legalName]: 'ACME HEALTH SL',
-        [ClaimsOrganizationSchemaorg.identifierType]: 'taxID',
-        [ClaimsOrganizationSchemaorg.identifierValue]: 'VATES-B00112233',
-        [ClaimsOrganizationSchemaorg.taxId]: 'VATES-B00112233',
-        [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-        [ClaimsPersonSchemaorg.email]: 'controller@example.org',
-        [ClaimsPersonSchemaorg.hasOccupationalRoleValue]: 'RESPRSN',
-        [ClaimsServiceSchemaorg.category]: 'health-care',
-        [ClaimsServiceSchemaorg.identifier]: 'did:web:tenant.example.org',
-        [ClaimsServiceSchemaorg.url]: 'https://operator.example.net/acme/cds-es/v1/health-care',
-        [ClaimsServiceSchemaorg.serviceType]:
-          testClaimsRegisterTenantExpanded[ClaimsServiceSchemaorg.serviceType],
+        [SchemaOrgOrganizationClaim.LegalName]: 'ACME HEALTH SL',
+        [SchemaOrgOrganizationClaim.IdentifierType]: 'taxID',
+        [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B00112233',
+        [SchemaOrgOrganizationClaim.TaxId]: 'VATES-B00112233',
+        [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+        [SchemaOrgPersonClaim.Email]: 'controller@example.org',
+        [SchemaOrgPersonClaim.OccupationIdentifierValue]: 'RESPRSN',
+        [SchemaOrgServiceClaim.Category]: 'health-care',
+        [SchemaOrgServiceClaim.IdentifierReference]: 'did:web:tenant.example.org',
+        [SchemaOrgServiceClaim.Url]: `${SAFE.httpsBaseUrl}/acme/cds-es/v1/health-care`,
+        [SchemaOrgServiceClaim.ServiceType]:
+          testClaimsRegisterTenantExpanded[SchemaOrgServiceClaim.ServiceType],
         },
       },
       controller: {
@@ -330,7 +324,7 @@ export const ORGANIZATION_ORDER_REQUEST = {
         "resourceType": "Order",
         "meta": { "claims": {
           "@context": "org.schema",
-          [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: "{{offerId}}",
+          [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: "{{offerId}}",
         } }
       }
     }]
@@ -1052,7 +1046,7 @@ export const FAMILY_ORDER_REQUEST = {
       "resource": { "meta": {
         "claims": {
           "@context": Format.SCHEMA,
-          [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: "{{offerId}}"
+          [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: "{{offerId}}"
         }
       } }
     }]

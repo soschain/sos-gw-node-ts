@@ -1,8 +1,8 @@
 // Flow contract: professional onboarding projects the exact FHIR assignment,
 // employee and legal-organization references into joinable opaque ledger links.
 import { describe, expect, it } from '@jest/globals';
-import { buildOrganizationAuthorizationUrnCds } from 'gdc-common-utils-ts';
-import { HealthcareActorRoles } from 'gdc-common-utils-ts/constants/healthcare';
+import { buildOrganizationAuthorizationUrnCds } from 'sos-data-utils-ts/organization-authorization-urn';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { CompositionClaim } from 'gdc-common-utils-ts/models/interoperable-claims/composition-claims';
 import {
   EXAMPLE_JURISDICTION,

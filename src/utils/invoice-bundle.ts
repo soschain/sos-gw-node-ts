@@ -1,4 +1,4 @@
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { Buffer } from 'buffer';
 import { hashUblInvoiceXml } from './ubl-invoice';
 

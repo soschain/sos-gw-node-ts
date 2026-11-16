@@ -10,27 +10,20 @@ import { pingHandler } from './handlers/discovery/ping.handler';
 import { signVerifiableCredential } from '../utils/vc-signer';
 import { findSigningMethod, toPublicJwkSet } from '../utils/did-backend';
 import { buildStatusListCredential, buildStatusListEntry, createStatusListEncodedList } from '../utils/status-list';
-import { DataspaceWellKnownPaths } from 'gdc-common-utils-ts/constants/dataspace-protocol';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { DataspaceWellKnownPaths } from 'sos-data-utils-ts/gateway-did-profile';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { isEuCountryCode, normalizeCountryCode } from 'gdc-common-utils-ts/constants/eu-countries';
 import {
   parseServiceCapabilityTokens,
-} from 'gdc-common-utils-ts/constants/service-capabilities';
+} from 'sos-data-utils-ts/service-capabilities';
 import {
   getServiceOfferingRole,
   isContinuityProviderCapability,
   type ContinuityServiceCapabilityValue,
   type ServiceOfferingRole,
 } from 'sos-data-utils-ts/continuity-service-capabilities';
-import {
-  buildDspaceVersionMetadata,
-  buildGwCatalogArtifactPath,
-  buildGwCatalogCollectionPath,
-  buildGwCatalogDatasetPath,
-  buildGwCatalogRequestPath,
-  buildGwDataspaceBasePath,
-  buildGwDspaceVersionWellKnownPath,
-} from 'gdc-common-utils-ts/utils/dataspace-protocol';
+import { buildGatewayDataspaceVersionMetadata } from 'sos-data-utils-ts/gateway-dataspace-routing';
+import { buildGatewayDataspaceCatalogArtifactPath, buildGatewayDataspaceCatalogCollectionPath, buildGatewayDataspaceCatalogDatasetPath, buildGatewayDataspaceCatalogRequestPath, buildGatewayDataspaceBasePath, buildGatewayDataspaceVersionPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import { getBaseUrlFromDidWeb } from '../utils/did-backend';
 import { isFhirSector, isResearchSector } from '../utils/sector';
 import { hasProviderServiceCapabilityClaim } from '../utils/services';
@@ -221,19 +214,19 @@ export function createDiscoveryRouter(
     const didDocumentUrl =
       tenantConfig?.didDocument?.service?.find((service: any) => service.id === `${publisherDid}#did-document`)?.serviceEndpoint as string | undefined;
     const title =
-      (tenantConfig?.claims?.[ClaimsOrganizationSchemaorg.legalName] as string | undefined) ||
-      (tenantConfig?.claims?.[ClaimsOrganizationSchemaorg.name] as string | undefined) ||
-      (tenantConfig?.claims?.[ClaimsOrganizationSchemaorg.alternateName] as string | undefined) ||
+      (tenantConfig?.claims?.[SchemaOrgOrganizationClaim.LegalName] as string | undefined) ||
+      (tenantConfig?.claims?.[SchemaOrgOrganizationClaim.Name] as string | undefined) ||
+      (tenantConfig?.claims?.[SchemaOrgOrganizationClaim.AlternateName] as string | undefined) ||
       publisherDid;
     const baseUrl = didDocumentUrl
       ? didDocumentUrl.replace(/\/\.well-known\/did\.json$/, '')
       : getBaseUrlFromDidWeb(publisherDid);
     const operationalUrl =
-      getTenantServiceClaim(tenantConfig, ClaimsServiceSchemaorg.url) ||
+      getTenantServiceClaim(tenantConfig, SchemaOrgServiceClaim.Url) ||
       baseUrl;
-    const alternateName = (tenantConfig?.claims?.[ClaimsOrganizationSchemaorg.alternateName] as string | undefined)?.trim();
-    const sector = parseCategory(getTenantServiceClaim(tenantConfig, ClaimsServiceSchemaorg.category));
-    const jurisdiction = parseJurisdiction(tenantConfig?.claims?.[ClaimsOrganizationSchemaorg.addressCountry]);
+    const alternateName = (tenantConfig?.claims?.[SchemaOrgOrganizationClaim.AlternateName] as string | undefined)?.trim();
+    const sector = parseCategory(getTenantServiceClaim(tenantConfig, SchemaOrgServiceClaim.Category));
+    const jurisdiction = parseJurisdiction(tenantConfig?.claims?.[SchemaOrgOrganizationClaim.AddressCountry]);
     const serviceTypeClaim = getTenantServiceCapabilityClaim(tenantConfig);
     return {
       datasetId: toDatasetId(publisherDid),
@@ -246,8 +239,8 @@ export function createDiscoveryRouter(
       sector,
       jurisdiction,
       serviceTypeClaim,
-      termsOfService: getTenantServiceClaim(tenantConfig, ClaimsServiceSchemaorg.termsOfService),
-      termsOfServiceHash: getTenantServiceClaim(tenantConfig, `${ClaimsServiceSchemaorg.termsOfService}#hash`),
+      termsOfService: getTenantServiceClaim(tenantConfig, SchemaOrgServiceClaim.TermsOfService),
+      termsOfServiceHash: getTenantServiceClaim(tenantConfig, `${SchemaOrgServiceClaim.TermsOfService}#hash`),
     };
   };
 
@@ -396,7 +389,7 @@ export function createDiscoveryRouter(
   ): Promise<NormalizedHostingOperatorDiscoveryMatch> => {
     const hostTenant = await tenantsCacheManager.getTenant('host');
     const hostClaims = hostTenant?.claims || {};
-    const hostCountry = parseJurisdiction(hostClaims[ClaimsOrganizationSchemaorg.addressCountry]);
+    const hostCountry = parseJurisdiction(hostClaims[SchemaOrgOrganizationClaim.AddressCountry]);
     const hostCoverageScope = inferCoverageScope(hostCountry);
     const aggregatedServiceTypes = Array.from(new Set(
       tenants.flatMap((tenant) => parseServiceCapabilityTokens(String(getTenantServiceCapabilityClaim(tenant) || '')))
@@ -404,11 +397,11 @@ export function createDiscoveryRouter(
     ));
     const aggregatedCategories = Array.from(new Set(
       tenants
-        .map((tenant) => parseCategory(getTenantServiceClaim(tenant, ClaimsServiceSchemaorg.category)))
+        .map((tenant) => parseCategory(getTenantServiceClaim(tenant, SchemaOrgServiceClaim.Category)))
         .filter(Boolean),
     ));
     const aggregatedAreaServed = Array.from(new Set([
-      ...parseAreaServedClaim(hostClaims[ClaimsServiceSchemaorg.areaServed]),
+      ...parseAreaServedClaim(hostClaims[SchemaOrgServiceClaim.AreaServed]),
       ...(hostCountry ? [hostCountry] : []),
       ...(hostCoverageScope ? [hostCoverageScope] : []),
     ]));
@@ -416,11 +409,11 @@ export function createDiscoveryRouter(
     return {
       operatorDid: hostDid,
       title:
-        (hostClaims[ClaimsOrganizationSchemaorg.legalName] as string | undefined)?.trim() ||
-        (hostClaims[ClaimsOrganizationSchemaorg.name] as string | undefined)?.trim() ||
+        (hostClaims[SchemaOrgOrganizationClaim.LegalName] as string | undefined)?.trim() ||
+        (hostClaims[SchemaOrgOrganizationClaim.Name] as string | undefined)?.trim() ||
         hostDid,
       discoveryUrl: (routeContext?.hostCoverageScope || hostCoverageScope) && routeContext?.hostNetwork
-        ? buildAbsoluteUrl(publicOrigin, buildGwDspaceVersionWellKnownPath({
+        ? buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceVersionPath({
           participantId: 'host',
           jurisdiction: routeContext?.hostCoverageScope || hostCoverageScope,
           version: routeContext.version || 'v1',
@@ -428,7 +421,7 @@ export function createDiscoveryRouter(
         }))
         : undefined,
       catalogUrl: (routeContext?.hostCoverageScope || hostCoverageScope) && routeContext?.hostNetwork
-        ? buildAbsoluteUrl(publicOrigin, buildGwCatalogArtifactPath({
+        ? buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogArtifactPath({
           participantId: 'host',
           jurisdiction: routeContext?.hostCoverageScope || hostCoverageScope,
           version: routeContext.version || 'v1',
@@ -473,7 +466,7 @@ export function createDiscoveryRouter(
             hostingOperatorDid: hostMatch.operatorDid,
             hostingOperatorTitle: hostMatch.title,
             discoveryUrl: appendTenantPath(dataset.baseUrl, DataspaceWellKnownPaths.VersionMetadata),
-            catalogUrl: appendTenantPath(dataset.baseUrl, buildGwCatalogArtifactPath()),
+            catalogUrl: appendTenantPath(dataset.baseUrl, buildGatewayDataspaceCatalogArtifactPath()),
             record: {
               providerDid: dataset.publisherDid,
               serviceType,
@@ -481,7 +474,7 @@ export function createDiscoveryRouter(
               areaServed: dataset.jurisdiction || inferCoverageScope(dataset.jurisdiction),
               endpointUrl: offering.endpointUrl,
               discoveryUrl: appendTenantPath(dataset.baseUrl, DataspaceWellKnownPaths.VersionMetadata),
-              catalogUrl: appendTenantPath(dataset.baseUrl, buildGwCatalogArtifactPath()),
+              catalogUrl: appendTenantPath(dataset.baseUrl, buildGatewayDataspaceCatalogArtifactPath()),
             },
             hostingOperator: hostMatch.record,
           })),
@@ -500,10 +493,10 @@ export function createDiscoveryRouter(
     // content hash produced by service attachment ingestion is available.
     if (!dataset.termsOfService || !dataset.termsOfServiceHash) return undefined;
     const claims = {
-      [ClaimsServiceSchemaorg.name]: offering.title,
-      [ClaimsServiceSchemaorg.url]: offering.endpointUrl,
-      [ClaimsServiceSchemaorg.serviceType]: offering.serviceTypes.join(','),
-      [ClaimsServiceSchemaorg.category]: offering.sector,
+      [SchemaOrgServiceClaim.Name]: offering.title,
+      [SchemaOrgServiceClaim.Url]: offering.endpointUrl,
+      [SchemaOrgServiceClaim.ServiceType]: offering.serviceTypes.join(','),
+      [SchemaOrgServiceClaim.Category]: offering.sector,
     };
     return buildGaiaXServiceOfferingCredentialDraft({
       claims,
@@ -1252,7 +1245,7 @@ export function createDiscoveryRouter(
    *       '404': { description: Not found }
    */
   // --- DSP catalog endpoints (synchronous/public discovery) ---
-  router.post(buildGwCatalogRequestPath({
+  router.post(buildGatewayDataspaceCatalogRequestPath({
     participantId: 'host',
     jurisdiction: ':hostCoverageScope',
     version: ':version',
@@ -1271,7 +1264,7 @@ export function createDiscoveryRouter(
 
     const filtered = filterDatasets(datasets, req.body?.filters);
     const publicOrigin = buildPublicOrigin(req);
-    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGwCatalogCollectionPath({
+    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogCollectionPath({
       participantId: 'host',
       jurisdiction: req.params.hostCoverageScope,
       version: req.params.version,
@@ -1280,7 +1273,7 @@ export function createDiscoveryRouter(
     res.json(buildCatalog(catalogBaseUrl, publicOrigin, filtered));
   });
 
-  router.get(buildGwDspaceVersionWellKnownPath({
+  router.get(buildGatewayDataspaceVersionPath({
     participantId: 'host',
     jurisdiction: ':hostCoverageScope',
     version: ':version',
@@ -1292,7 +1285,7 @@ export function createDiscoveryRouter(
     const hostDid = await tenantsCacheManager.getDidDocument('host');
     if (!hostDid?.id) return res.status(503).type('text').send('Service Unavailable');
 
-    res.json(buildDspaceVersionMetadata(buildGwDataspaceBasePath({
+    res.json(buildGatewayDataspaceVersionMetadata(buildGatewayDataspaceBasePath({
       participantId: 'host',
       jurisdiction: req.params.hostCoverageScope,
       version: req.params.version,
@@ -1380,8 +1373,8 @@ export function createDiscoveryRouter(
     const requested = new Set(datasetNames);
     const notifications: any[] = [];
     for (const tenant of await tenantsCacheManager.listAutodiscoverableTenants()) {
-      const tenantId = String(tenant?.claims?.[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
-      const sector = parseCategory(getTenantServiceClaim(tenant, ClaimsServiceSchemaorg.category));
+      const tenantId = String(tenant?.claims?.[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
+      const sector = parseCategory(getTenantServiceClaim(tenant, SchemaOrgServiceClaim.Category));
       if (!tenantId || !sector) continue;
       const vaultId = getTenantVaultId(sector, tenantId);
       const collectionName = String(tenant?.collectionName || await tenantsCacheManager.getCollectionName(vaultId) || '');
@@ -1422,7 +1415,7 @@ export function createDiscoveryRouter(
           notifications.push({
             notificationId: record.id, datasetName,
             issuerReference: one(CommunicationRequestClaim.InformationProvider),
-            issuerName: String(tenant?.claims?.[ClaimsOrganizationSchemaorg.name] || tenantId),
+            issuerName: String(tenant?.claims?.[SchemaOrgOrganizationClaim.Name] || tenantId),
             subject: one(CommunicationRequestClaim.Note),
             bodyMarkdown: Buffer.from(payloadData, 'base64').toString('utf8'),
             attachmentReferences: many(CommunicationRequestClaim.About),
@@ -1438,7 +1431,7 @@ export function createDiscoveryRouter(
     return res.json({ notifications });
   });
 
-  router.get(buildGwCatalogArtifactPath({
+  router.get(buildGatewayDataspaceCatalogArtifactPath({
     participantId: 'host',
     jurisdiction: ':hostCoverageScope',
     version: ':version',
@@ -1455,7 +1448,7 @@ export function createDiscoveryRouter(
       .map(toProviderDataset)
       .filter((d): d is ProviderDataset => !!d));
     const publicOrigin = buildPublicOrigin(req);
-    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGwCatalogCollectionPath({
+    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogCollectionPath({
       participantId: 'host',
       jurisdiction: req.params.hostCoverageScope,
       version: req.params.version,
@@ -1464,7 +1457,7 @@ export function createDiscoveryRouter(
     res.json(buildCatalog(catalogBaseUrl, publicOrigin, datasets));
   });
 
-  router.get(buildGwCatalogDatasetPath({
+  router.get(buildGatewayDataspaceCatalogDatasetPath({
     participantId: 'host',
     jurisdiction: ':hostCoverageScope',
     version: ':version',
@@ -1484,7 +1477,7 @@ export function createDiscoveryRouter(
     if (!dataset) return res.status(404).type('text').send('Not Found');
 
     const publicOrigin = buildPublicOrigin(req);
-    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGwCatalogCollectionPath({
+    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogCollectionPath({
       participantId: 'host',
       jurisdiction: req.params.hostCoverageScope,
       version: req.params.version,
@@ -1494,7 +1487,7 @@ export function createDiscoveryRouter(
     res.json(single);
   });
 
-  router.get(buildGwDspaceVersionWellKnownPath({
+  router.get(buildGatewayDataspaceVersionPath({
     tenantId: ':tenantId',
     jurisdiction: ':jurisdiction',
     version: ':version',
@@ -1504,7 +1497,7 @@ export function createDiscoveryRouter(
       return res.status(404).type('text').send('Not Found');
     }
 
-    res.json(buildDspaceVersionMetadata(buildGwDataspaceBasePath({
+    res.json(buildGatewayDataspaceVersionMetadata(buildGatewayDataspaceBasePath({
       tenantId: req.params.tenantId,
       jurisdiction: req.params.jurisdiction,
       version: req.params.version,
@@ -1512,7 +1505,7 @@ export function createDiscoveryRouter(
     })));
   });
 
-  router.post(buildGwCatalogRequestPath({
+  router.post(buildGatewayDataspaceCatalogRequestPath({
     tenantId: ':tenantId',
     jurisdiction: ':jurisdiction',
     version: ':version',
@@ -1527,7 +1520,7 @@ export function createDiscoveryRouter(
     const filtered = filterDatasets([dataset], req.body?.filters);
 
     const publicOrigin = buildPublicOrigin(req);
-    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGwCatalogCollectionPath({
+    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogCollectionPath({
       tenantId: req.params.tenantId,
       jurisdiction: req.params.jurisdiction,
       version: req.params.version,
@@ -1536,7 +1529,7 @@ export function createDiscoveryRouter(
     res.json(buildCatalog(catalogBaseUrl, publicOrigin, filtered));
   });
 
-  router.get(buildGwCatalogArtifactPath({
+  router.get(buildGatewayDataspaceCatalogArtifactPath({
     tenantId: ':tenantId',
     jurisdiction: ':jurisdiction',
     version: ':version',
@@ -1550,7 +1543,7 @@ export function createDiscoveryRouter(
     if (!dataset) return res.status(404).type('text').send('Not Found');
 
     const publicOrigin = buildPublicOrigin(req);
-    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGwCatalogCollectionPath({
+    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogCollectionPath({
       tenantId: req.params.tenantId,
       jurisdiction: req.params.jurisdiction,
       version: req.params.version,
@@ -1559,7 +1552,7 @@ export function createDiscoveryRouter(
     res.json(buildCatalog(catalogBaseUrl, publicOrigin, [dataset]));
   });
 
-  router.get(buildGwCatalogDatasetPath({
+  router.get(buildGatewayDataspaceCatalogDatasetPath({
     tenantId: ':tenantId',
     jurisdiction: ':jurisdiction',
     version: ':version',
@@ -1573,7 +1566,7 @@ export function createDiscoveryRouter(
     if (!dataset || dataset.datasetId !== req.params.id) return res.status(404).type('text').send('Not Found');
 
     const publicOrigin = buildPublicOrigin(req);
-    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGwCatalogCollectionPath({
+    const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogCollectionPath({
       tenantId: req.params.tenantId,
       jurisdiction: req.params.jurisdiction,
       version: req.params.version,

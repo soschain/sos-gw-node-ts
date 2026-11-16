@@ -1,6 +1,6 @@
 // Flow contract: GW validates CSR input, forwards authenticated enrollment only to Fabric-CA, and projects its terminal result under entry.resource.
 import { IcaManager } from '../../../managers/IcaManager';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { getEnvSectionId } from '../../../utils/section-env';
 
 const makeJob = (body: any): JobRequest => ({

@@ -5,12 +5,10 @@
  * one-section Digital Twin Parameters accepted by GW VET; local code-text
  * aliases must never return to the research search surface.
  */
-import {
-  HealthcareActorRoles,
-  HealthcareBasicSections,
-  HealthcareConsentPurposes,
-} from 'gdc-common-utils-ts/constants/healthcare';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import {
   EXAMPLE_CONSENT_ATTACHMENT_CONTENT_TYPE,
   EXAMPLE_CONSENT_ATTACHMENT_DATA_BASE64,
@@ -106,7 +104,7 @@ describe('demo smart access local-network builders', () => {
               method: 'GET',
               url:
                 `Bundle?type=document&composition.subject=${encodeURIComponent(subjectDid)}`
-                + `&composition.type=${encodeURIComponent(HealthcareBasicSections.PatientSummaryDocument.claim)}`,
+                + `&composition.type=${encodeURIComponent(HealthcareCoreSections.PatientSummaryDocument.claim)}`,
             },
           },
         ],
@@ -205,7 +203,7 @@ describe('demo smart access local-network builders', () => {
       body: {
         resourceType: 'Parameters',
         parameter: [
-          { name: 'section', valueString: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue },
+          { name: 'section', valueString: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue },
           { name: MedicationStatementClaim.Code, valueString: ibuprofenCode },
         ],
       },

@@ -1,4 +1,4 @@
-import type { BundleEntry } from 'gdc-common-utils-ts/models/bundle';
+import type { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
 import { readSubjectIdentityBundleEntry } from 'gdc-common-utils-ts/utils/subject-identity';
 import { ManageAssetSubjectIdentifier } from '../blockchain/fabric/v3/manageAssetSubjectIdentifier';
 

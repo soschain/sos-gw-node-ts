@@ -1,12 +1,13 @@
+// Flow contract: independent identity and commerce claim catalogs preserve exact stored keys and authorization boundaries.
 import { describe, expect, it, jest } from '@jest/globals';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { processOrganizationVerificationTransaction } from '../../../managers/hosting/process-organization-verification';
 
 describe('processOrganizationVerificationTransaction legacy re-registration', () => {
   it('uses the existing-tenant controller upsert and does not create a new Offer', async () => {
     const claims = {
-      [ClaimsOrganizationSchemaorg.alternateName]: 'VATES-G00000000',
-      [ClaimsServiceSchemaorg.category]: 'onehealth-research',
+      [SchemaOrgOrganizationClaim.AlternateName]: 'VATES-G00000000',
+      [SchemaOrgServiceClaim.Category]: 'onehealth-research',
     };
     const representativeCredential = {
       id: 'urn:example:credential:historical-representative',
@@ -18,7 +19,7 @@ describe('processOrganizationVerificationTransaction legacy re-registration', ()
     });
     const reregisterExistingLegacyRepresentativeController = jest.fn(async (_input: unknown) => ({
       ...claims,
-      [ClaimsOrganizationSchemaorg.identifier]: 'urn:example:organization:existing',
+      [SchemaOrgOrganizationClaim.IdentifierReference]: 'urn:example:organization:existing',
     }));
 
     const response = await processOrganizationVerificationTransaction({
@@ -50,7 +51,7 @@ describe('processOrganizationVerificationTransaction legacy re-registration', ()
     }));
     expect(createPendingTenantRegistrationFromClaims).not.toHaveBeenCalled();
     expect((response.body.data[0].resource as any).next).toBeUndefined();
-    expect((response.body.data[0].resource as any).meta.claims[ClaimsOrganizationSchemaorg.identifier])
+    expect((response.body.data[0].resource as any).meta.claims[SchemaOrgOrganizationClaim.IdentifierReference])
       .toBe('urn:example:organization:existing');
   });
 });

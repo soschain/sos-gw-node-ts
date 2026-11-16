@@ -1,6 +1,6 @@
 // src/database/repositories/rules/rules.mem.repository.ts
 
-import { ConsentRule } from "gdc-common-utils-ts/models/consent-rule";
+import type { ConsentRule } from "fhir-data-utils-ts";
 import { IRulesRepository, RuleScope } from "./rules.repository";
 
 // In-memory store structure: Map<sector, Map<subjectId, Map<ruleId, ConsentRule>>>

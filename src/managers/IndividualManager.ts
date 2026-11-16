@@ -1,40 +1,40 @@
 // src/managers/IndividualManager.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 import { SchemaOrgTypes } from 'gdc-common-utils-ts/constants/schemaorg';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
 import { v4 as uuidv4} from 'uuid';
 import { BundleType, getBundleResponseTypeForAction } from '../utils/bundle';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts';
-import { BundleJsonApi, BundleEntry, BundleEntryRequest, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
+import { BundleJsonApi, BundleEntry, BundleEntryRequest, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
-import { ClaimsOfferSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import { initializeCustomerServices } from '../utils/services'; 
 import { createOperationOutcome } from '../utils/outcome';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { ParameterData } from 'gdc-common-utils-ts/models/params'; // extends ParamAttribute with `type` and others
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import type { GatewayParameterData } from 'sos-data-utils-ts/gateway-parameter-contract'; // extends the owned scalar attribute contract
 import { CredentialManager } from './CredentialManager';
 import { parseTenantUrn } from '../utils/urn';
 import { getTenantVaultId } from '../utils/tenant';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { determineResourceId } from '../utils/resource';
 import { uuidToBytes } from '../utils/uuid';
-import { encodeMultibase58btc } from 'gdc-common-utils-ts/utils/multibase58';
+import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
 import { getJurisdictionGroup } from '../utils/jurisdiction';
 import { normalizePhoneNumber } from '../utils/phone-number';
 import { parseIdentifierType } from '../utils/identifier-parser';
 import { generateUrnHash } from '../utils/urn-hash';
 import { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
-import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
+import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { EntityLifecycleStatus, EntityType } from '../gdc-backend-utils-node/models/enums';
-import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { generateLicenseOffer } from '../utils/offer';
 import { getEnvSectionId } from '../utils/section-env';
 import { extractSearchFiltersFromEntry, extractSearchFiltersFromParametersResource } from '../utils/search-request';
@@ -49,7 +49,7 @@ import {
 } from '../constants/domain';
 import type { ITenantsManager } from './ITenantsManager';
 import type { IHostRuntime } from './IHostRuntime';
-import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent } from 'fhir-data-utils-ts';
 import { getClaimValue } from '../utils/claims';
 import { buildSearchResponseEntries } from '../utils/didcomm-response';
 import { GatewayResponseEntryTypes } from '../shared/gateway-response-types';
@@ -174,17 +174,17 @@ export class IndividualManager {
     if (!parsedTenantUrn) {
       throw new ManagerError(`Invalid tenant URN format: '${tenantUrn}'`, IssueType.Value);
     }
-    const sector = parsedTenantUrn.sector as Sector;
+    const sector = parsedTenantUrn.sector as GatewaySector;
     const jurisdiction = parsedTenantUrn.jurisdiction;
 
     const aggregatedClaims = this._aggregateBatchClaims(entries);
     const { person, service } = this._extractResources(aggregatedClaims, environment);
     const internalId = person.id;
-    const publicUuidUrn = person.meta.claims[ClaimsPersonSchemaorg.identifier] as string;
+    const publicUuidUrn = person.meta.claims[SchemaOrgPersonClaim.Identifier] as string;
 
     const licenseOffer = await this.tryConsumeIndividualSeatOrOffer({
       tenantVaultId,
-      tenantId: String((aggregatedClaims as any)[ClaimsOrganizationSchemaorg.alternateName] || this.extractTenantIdFromVaultId(tenantVaultId)),
+      tenantId: String((aggregatedClaims as any)[SchemaOrgOrganizationClaim.AlternateName] || this.extractTenantIdFromVaultId(tenantVaultId)),
       individualId: internalId,
       sector,
       jurisdiction,
@@ -194,7 +194,7 @@ export class IndividualManager {
     const parametersToIndex = this._buildIndexParameters(aggregatedClaims);
     const indexedAttributes = await this.kmsService.protectAttributesNameAndValue(parametersToIndex, tenantVaultId);
 
-    const multibaseId = encodeMultibase58btc(uuidToBytes(internalId));
+    const multibaseId = encodeBase58btc(uuidToBytes(internalId));
     const customerUrn = `${tenantUrn}:individual:multibase:${multibaseId}`;
     
     const individualConfig: EntityConfig = {
@@ -226,7 +226,7 @@ export class IndividualManager {
     const protectedDoc = await this.kmsService.protectConfidentialData(docToStore, tenantVaultId);
     await this.vaultRepository.put(tenantVaultId, [protectedDoc], INDIVIDUAL_SECTION);
     
-    person.meta.claims[ClaimsPersonSchemaorg.identifier] = publicUuidUrn;
+    person.meta.claims[SchemaOrgPersonClaim.Identifier] = publicUuidUrn;
 
     return {
       type: SchemaOrgTypes.Customer,
@@ -398,9 +398,9 @@ export class IndividualManager {
     let urn: string | undefined;
     let jurisdictionGroup: 'eu' | 'global' = 'global';
 
-    const identifierType = claims[ClaimsPersonSchemaorg.identifierType] as string;
-    const identifierValue = claims[ClaimsPersonSchemaorg.identifierValue] as string;
-    const telephone = claims[ClaimsPersonSchemaorg.telephone] as string;
+    const identifierType = claims[SchemaOrgPersonClaim.IdentifierType] as string;
+    const identifierValue = claims[SchemaOrgPersonClaim.IdentifierValue] as string;
+    const telephone = claims[SchemaOrgPersonClaim.Telephone] as string;
 
     if (identifierType && identifierValue) {
       const parsedId = parseIdentifierType(identifierType);
@@ -426,7 +426,7 @@ export class IndividualManager {
     for (const entry of entries) {
       const claims = entry.resource?.meta?.claims;
       if (!claims) continue;
-      const currentIdentifier = claims[ClaimsPersonSchemaorg.identifier] as string | undefined;
+      const currentIdentifier = claims[SchemaOrgPersonClaim.Identifier] as string | undefined;
       if (currentIdentifier) {
         if (!anchorIdentifier) {
           anchorIdentifier = currentIdentifier;
@@ -437,15 +437,15 @@ export class IndividualManager {
       Object.assign(aggregatedClaims, claims);
     }
     if (!anchorIdentifier) {
-      aggregatedClaims[ClaimsPersonSchemaorg.identifier] = `urn:uuid:${uuidv4()}`;
+      aggregatedClaims[SchemaOrgPersonClaim.Identifier] = `urn:uuid:${uuidv4()}`;
     }
     return aggregatedClaims;
   }
 
-  private _buildIndexParameters(claims: ClaimsRecord): ParameterData[] {
-    const parameters: ParameterData[] = [];
+  private _buildIndexParameters(claims: ClaimsRecord): GatewayParameterData[] {
+    const parameters: GatewayParameterData[] = [];
     for (const [key, value] of Object.entries(claims)) {
-      if (key !== ClaimsPersonSchemaorg.birthDate) {
+      if (key !== SchemaOrgPersonClaim.BirthDate) {
         if (typeof value === 'object' && value !== null && 'additionalType' in value && 'value' in value) {
           const val = value as any;
           parameters.push({ name: val.additionalType, value: val.value, unique: true, type: 'token' });
@@ -537,7 +537,7 @@ export class IndividualManager {
         allowedPaymentMethods,
         LICENSE_CATEGORY_INDIVIDUAL,
       );
-      offerClaims[ClaimsOrganizationSchemaorg.alternateName] = params.tenantId;
+      offerClaims[SchemaOrgOrganizationClaim.AlternateName] = params.tenantId;
       await this.persistCommercialIndividualOffer(params.tenantVaultId, offerClaims);
       return {
         type: GatewayResponseEntryTypes.IndividualLicenseOffer,
@@ -571,7 +571,7 @@ export class IndividualManager {
     claims: Record<string, unknown>,
   ): Promise<void> {
     const tenantCollectionName = await this.tenantsManager.getCollectionName(tenantVaultId);
-    const offerId = String(claims[ClaimsOfferSchemaorg.identifier] || '').trim();
+    const offerId = String(claims[SchemaOrgOfferClaim.Identifier] || '').trim();
     if (!tenantCollectionName || !offerId) return;
 
     const communicationDoc: ConfidentialStorageDoc = {

@@ -1,15 +1,15 @@
 // Flow contract: individual member seats are provisioned by organization
 // onboarding or Offer -> Order; lifecycle operations never use License/_add.
 import { describe, expect, it, jest } from '@jest/globals';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import {
   buildLicenseSearchEntry,
   LicenseStatuses,
 } from 'gdc-common-utils-ts/utils/license';
 import { LicenseManager } from '../../managers/LicenseManager';
 import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 
 /**
  * Flow contract: individual-organization member licenses

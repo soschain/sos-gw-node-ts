@@ -15,16 +15,18 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { scryptSync } from 'node:crypto';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
 import { IServerConfig } from '../../../config';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
-import { JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
+import { JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { IStorageAdapter } from '../../../database/storage/IStorageAdapter';
 import { ILogger } from '../../../loggers/ILogger';
 import { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { EXAMPLE_LICENSE_INVALID_OFFER_ID } from 'gdc-common-utils-ts';
 import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
-import { ClaimsIndividualProductSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgIndividualProductClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
+import { REPOSITORY_SAFE_EXAMPLES as safe } from 'sos-data-utils-ts/repository-privacy';
 
 // Create a mock KMS service for testing.
 export const mockKmsService: jest.Mocked<IKmsService> = {
@@ -57,12 +59,7 @@ import {
   ORGANIZATION_ORDER_JOB,
 } from '../../data/example-jobs';
 import { testClaimsHostInitialization } from '../../data/end-to-end.data';
-import {
-  ClaimsOrganizationSchemaorg,
-  ClaimsOfferSchemaorg,
-  ClaimsOrderSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import * as tenantUtils from '../../../utils/tenant';
 import { getEnvSectionId } from '../../../utils/section-env';
 import { testTenant1LegalName } from '../../data/organization.data';
@@ -117,7 +114,7 @@ describe('HostingManager - Offer/Order Flow', () => {
       hostExternalDomain: 'testhost.com',
       apiBaseUrl: 'http://testhost:3000',
       namespace: 'test-namespace',
-      sectorsAllowed: [Sector.HEALTH_CARE, Sector.SYSTEM, Sector.HEALTH_INSURANCE],
+      sectorsAllowed: [GatewaySector.HEALTH_CARE, GatewaySector.SYSTEM, GatewaySector.HEALTH_INSURANCE],
       dbProvider: 'mem',
       queueProvider: 'mem',
       storageProvider: 'mem',
@@ -178,15 +175,15 @@ describe('HostingManager - Offer/Order Flow', () => {
     const entry = responsePayload.body.data[0];
     expect(entry.response.status).toBe('201');
     expect(entry.type).toBe('Organization-registration-offer-v1.0');
-    expect(entry.resource.meta.claims[ClaimsOfferSchemaorg.identifier]).toBeDefined();
+    expect(entry.resource.meta.claims[SchemaOrgOfferClaim.Identifier]).toBeDefined();
 
     const claims = job.content!.body!.data[0]!.resource!.meta!.claims;
     // BUSINESS sector is used for vaultId (never network sector)
     const tenantAlternateName =
-      claims[ClaimsOrganizationSchemaorg.alternateName]
-      || claims[ClaimsOrganizationSchemaorg.identifierValue];
+      claims[SchemaOrgOrganizationClaim.AlternateName]
+      || claims[SchemaOrgOrganizationClaim.IdentifierValue];
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      claims[ClaimsServiceSchemaorg.category] as Sector,
+      claims[SchemaOrgServiceClaim.Category] as GatewaySector,
       tenantAlternateName,
     );
 
@@ -199,7 +196,7 @@ describe('HostingManager - Offer/Order Flow', () => {
     expect(provisionalDoc.content).toBeDefined();
     expect(provisionalDoc.content!.status).toBe('pending');
     expect(
-      provisionalDoc.content!.claims[ClaimsOrganizationSchemaorg.legalName],
+      provisionalDoc.content!.claims[SchemaOrgOrganizationClaim.LegalName],
     ).toBe(testTenant1LegalName);
   });
 
@@ -208,14 +205,14 @@ describe('HostingManager - Offer/Order Flow', () => {
     const registrationJob = structuredClone(ORGANIZATION_REGISTRATION_JOB);
     const offerResponse = await hostingManager.process(registrationJob);
     const offerId = offerResponse.body.data[0].resource.meta.claims[
-      ClaimsOfferSchemaorg.identifier
+      SchemaOrgOfferClaim.Identifier
     ] as string;
     expect(offerId).toBeDefined();
 
     // Step 2: Create and process the Order
     const orderJob = structuredClone(ORGANIZATION_ORDER_JOB);
     orderJob.content!.body!.data[0]!.resource!.meta!.claims[
-      ClaimsOrderSchemaorg.acceptedOfferIdentifier
+      SchemaOrgOrderClaim.AcceptedOfferIdentifier
     ] = offerId;
 
     const finalResponse = await hostingManager.process(orderJob);
@@ -225,21 +222,21 @@ describe('HostingManager - Offer/Order Flow', () => {
     expect(finalEntry.response.status).toBe('201');
     expect(['Organization-order-response-v1.0', 'Organization-order-request-v1.0']).toContain(finalEntry.type);
     expect(
-      finalEntry.resource.meta.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier],
+      finalEntry.resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier],
     ).toBe(offerId);
     // `networkKind=test` has no blockchain, but Order must still return the
     // controller activation licence needed by Token/_exchange and DCR.
-    expect(finalEntry.resource.meta.claims[ClaimsIndividualProductSchemaorg.serialNumber])
+    expect(finalEntry.resource.meta.claims[SchemaOrgIndividualProductClaim.SerialNumber])
       .toEqual(expect.any(String));
 
     // Assert the state of the finalized tenant record in the host's vault
     const regClaims = registrationJob.content!.body!.data[0]!.resource!.meta!.claims;
     // BUSINESS sector is used for vaultId (never network sector)
     const tenantAlternateName =
-      regClaims[ClaimsOrganizationSchemaorg.alternateName]
-      || regClaims[ClaimsOrganizationSchemaorg.identifierValue];
+      regClaims[SchemaOrgOrganizationClaim.AlternateName]
+      || regClaims[SchemaOrgOrganizationClaim.IdentifierValue];
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      regClaims[ClaimsServiceSchemaorg.category] as Sector,
+      regClaims[SchemaOrgServiceClaim.Category] as GatewaySector,
       tenantAlternateName,
     );
     const finalDoc = (await vaultRepository.get(
@@ -282,6 +279,40 @@ describe('HostingManager - Offer/Order Flow', () => {
     expect(communications.length).toBeGreaterThan(0);
   });
 
+  it('issues a telephone-only Organization controller licence without inventing an email', async () => {
+    // Trusted memory-manager fixture: real online bearer/VC admission is tested
+    // separately; this case exercises the actual pending Offer -> Order state.
+    const registrationJob = structuredClone(ORGANIZATION_REGISTRATION_JOB);
+    const claims = registrationJob.content!.body!.data[0]!.resource!.meta!.claims;
+    delete claims[SchemaOrgPersonClaim.Email];
+    claims[SchemaOrgPersonClaim.Telephone] = safe.phoneE164;
+    expect(claims).not.toHaveProperty(SchemaOrgPersonClaim.Email);
+    const offerResponse = await hostingManager.process(registrationJob);
+    const offerId = offerResponse.body.data[0].resource.meta.claims[SchemaOrgOfferClaim.Identifier];
+    expect(offerId).toEqual(expect.any(String));
+    const orderJob = structuredClone(ORGANIZATION_ORDER_JOB);
+    orderJob.content!.body!.data[0]!.resource!.meta!.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] = offerId;
+    const response = await hostingManager.process(orderJob);
+    if (response.body.data[0].response.status !== '201') {
+      throw new Error(`telephone_order_rejected:${JSON.stringify(response.body.data[0])}`);
+    }
+    expect(response.body.data[0].response.status).toBe('201');
+    const activationCode = response.body.data[0].resource.meta.claims[SchemaOrgIndividualProductClaim.SerialNumber];
+    expect(activationCode).toEqual(expect.any(String));
+    const sector = claims[SchemaOrgServiceClaim.Category];
+    if (sector !== GatewaySector.HEALTH_CARE) throw new Error('Fixture requires its governed health-care sector');
+    const tenantVaultId = tenantUtils.getTenantVaultId(
+      sector,
+      claims[SchemaOrgOrganizationClaim.AlternateName] || claims[SchemaOrgOrganizationClaim.IdentifierValue],
+    );
+    const licences = await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(tenantVaultId, getEnvSectionId('device-licenses'));
+    expect(licences.map(doc => doc.content)).toContainEqual(expect.objectContaining({
+      activationCode, issuedToPhone: safe.phoneE164,
+      activatedBy: buildStableActorIdentifier({ contactKind: 'phone', contact: safe.phoneE164 }),
+    }));
+    expect(licences.map(doc => doc.content)).not.toContainEqual(expect.objectContaining({ issuedToEmail: expect.any(String) }));
+  });
+
   it('assigns the exact delivered postal code when the pending record has a server-owned VC binding', async () => {
     const code = 'UNID-ABC1234567';
     const pepper = 'test-host-postal-pepper';
@@ -289,12 +320,12 @@ describe('HostingManager - Offer/Order Flow', () => {
     process.env.HOST_POSTAL_ACTIVATION_PEPPER = pepper;
     const registrationJob = structuredClone(ORGANIZATION_REGISTRATION_JOB);
     const offerResponse = await hostingManager.process(registrationJob);
-    const offerId = offerResponse.body.data[0].resource.meta.claims[ClaimsOfferSchemaorg.identifier] as string;
+    const offerId = offerResponse.body.data[0].resource.meta.claims[SchemaOrgOfferClaim.Identifier] as string;
     const regClaims = registrationJob.content!.body!.data[0]!.resource!.meta!.claims;
-    const alternateName = regClaims[ClaimsOrganizationSchemaorg.alternateName]
-      || regClaims[ClaimsOrganizationSchemaorg.identifierValue];
+    const alternateName = regClaims[SchemaOrgOrganizationClaim.AlternateName]
+      || regClaims[SchemaOrgOrganizationClaim.IdentifierValue];
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      regClaims[ClaimsServiceSchemaorg.category] as Sector, alternateName,
+      regClaims[SchemaOrgServiceClaim.Category] as GatewaySector, alternateName,
     );
     const pending = await vaultRepository.get(hostCollectionName, tenantVaultId, getEnvSectionId('tenants')) as ConfidentialStorageDoc;
     (pending.content as any).postalActivationCodeBinding = {
@@ -307,12 +338,12 @@ describe('HostingManager - Offer/Order Flow', () => {
     expect(process.env.HOST_POSTAL_ACTIVATION_PEPPER).toBe(pepper);
 
     const orderJob = structuredClone(ORGANIZATION_ORDER_JOB);
-    orderJob.content!.body!.data[0]!.resource!.meta!.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier] = offerId;
-    orderJob.content!.body!.data[0]!.resource!.meta!.claims[ClaimsOrderSchemaorg.confirmationNumber] = code;
+    orderJob.content!.body!.data[0]!.resource!.meta!.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] = offerId;
+    orderJob.content!.body!.data[0]!.resource!.meta!.claims[SchemaOrgOrderClaim.ConfirmationNumber] = code;
     const response = await hostingManager.process(orderJob);
 
     expect(response.body.data[0].response.status).toBe('201');
-    expect(response.body.data[0].resource.meta.claims[ClaimsIndividualProductSchemaorg.serialNumber]).toBe(code);
+    expect(response.body.data[0].resource.meta.claims[SchemaOrgIndividualProductClaim.SerialNumber]).toBe(code);
     const licenses = await vaultRepository.getContainersInSection(tenantVaultId, getEnvSectionId('device-licenses'));
     expect(licenses.some(doc => ((doc as ConfidentialStorageDoc).content as any)?.activationCode === code)).toBe(true);
     delete process.env.HOST_POSTAL_ACTIVATION_PEPPER;
@@ -325,21 +356,21 @@ describe('HostingManager - Offer/Order Flow', () => {
     const registrationJob = structuredClone(ORGANIZATION_REGISTRATION_JOB);
     const offerResponse = await hostingManager.process(registrationJob);
     const registrationOfferId = offerResponse.body.data[0].resource.meta.claims[
-      ClaimsOfferSchemaorg.identifier
+      SchemaOrgOfferClaim.Identifier
     ] as string;
 
     const registrationOrder = structuredClone(ORGANIZATION_ORDER_JOB);
     registrationOrder.content!.body!.data[0]!.resource!.meta!.claims[
-      ClaimsOrderSchemaorg.acceptedOfferIdentifier
+      SchemaOrgOrderClaim.AcceptedOfferIdentifier
     ] = registrationOfferId;
     await hostingManager.process(registrationOrder);
 
     const regClaims = registrationJob.content!.body!.data[0]!.resource!.meta!.claims;
     const tenantAlternateName =
-      regClaims[ClaimsOrganizationSchemaorg.alternateName]
-      || regClaims[ClaimsOrganizationSchemaorg.identifierValue];
+      regClaims[SchemaOrgOrganizationClaim.AlternateName]
+      || regClaims[SchemaOrgOrganizationClaim.IdentifierValue];
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      regClaims[ClaimsServiceSchemaorg.category] as Sector,
+      regClaims[SchemaOrgServiceClaim.Category] as GatewaySector,
       tenantAlternateName,
     );
 
@@ -347,13 +378,13 @@ describe('HostingManager - Offer/Order Flow', () => {
       2,
       'did:web:testhost.com',
       'us',
-      Sector.HEALTH_CARE,
+      GatewaySector.HEALTH_CARE,
       ['Stripe'],
     );
-    extraOfferClaims[ClaimsOrganizationSchemaorg.alternateName] = tenantAlternateName;
+    extraOfferClaims[SchemaOrgOrganizationClaim.AlternateName] = tenantAlternateName;
 
     const secureOfferDoc = await mockKmsService.protectConfidentialData({
-      id: String(extraOfferClaims[ClaimsOfferSchemaorg.identifier]),
+      id: String(extraOfferClaims[SchemaOrgOfferClaim.Identifier]),
       status: 'active',
       sequence: 0,
       meta: { claims: extraOfferClaims },
@@ -372,13 +403,13 @@ describe('HostingManager - Offer/Order Flow', () => {
 
     const orderJob = structuredClone(ORGANIZATION_ORDER_JOB);
     orderJob.content!.body!.data[0]!.resource!.meta!.claims[
-      ClaimsOrderSchemaorg.acceptedOfferIdentifier
-    ] = String(extraOfferClaims[ClaimsOfferSchemaorg.identifier]);
+      SchemaOrgOrderClaim.AcceptedOfferIdentifier
+    ] = String(extraOfferClaims[SchemaOrgOfferClaim.Identifier]);
     orderJob.content!.body!.data[0]!.resource!.meta!.claims[
-      ClaimsOrderSchemaorg.paymentMethod
+      SchemaOrgOrderClaim.PaymentMethod
     ] = 'Stripe';
     orderJob.content!.body!.data[0]!.resource!.meta!.claims[
-      ClaimsOrderSchemaorg.partOfInvoice
+      SchemaOrgOrderClaim.PartOfInvoice
     ] = 'in_test_001';
 
     const responsePayload = await hostingManager.process(orderJob);
@@ -386,10 +417,10 @@ describe('HostingManager - Offer/Order Flow', () => {
 
     expect(finalEntry.response.status).toBe('201');
     expect(finalEntry.type).toBe('Organization-order-response-v1.0');
-    expect(finalEntry.resource.meta.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier]).toBe(
-      extraOfferClaims[ClaimsOfferSchemaorg.identifier],
+    expect(finalEntry.resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier]).toBe(
+      extraOfferClaims[SchemaOrgOfferClaim.Identifier],
     );
-    expect(finalEntry.resource.meta.claims[ClaimsOrderSchemaorg.partOfInvoice]).toBe('in_test_001');
+    expect(finalEntry.resource.meta.claims[SchemaOrgOrderClaim.PartOfInvoice]).toBe('in_test_001');
     expect(finalEntry.resource?.resourceType).toBe('Bundle');
     expect(
       finalEntry.resource?.entry?.some?.((bundleEntry: any) => bundleEntry?.resource?.resourceType === 'Invoice'),
@@ -405,7 +436,7 @@ describe('HostingManager - Offer/Order Flow', () => {
   it('should return a 404 Not Found for an Order with an invalid offerId', async () => {
     const orderJob = structuredClone(ORGANIZATION_ORDER_JOB);
     orderJob.content!.body!.data[0]!.resource!.meta!.claims[
-      ClaimsOrderSchemaorg.acceptedOfferIdentifier
+      SchemaOrgOrderClaim.AcceptedOfferIdentifier
     ] = EXAMPLE_LICENSE_INVALID_OFFER_ID;
 
     const responsePayload = await hostingManager.process(orderJob);
@@ -430,7 +461,7 @@ describe('HostingManager - Offer/Order Flow', () => {
     const orderJob = structuredClone(ORGANIZATION_ORDER_JOB);
     delete orderJob.content!.body!.data[0]!.resource!.meta!.claims.Order?.acceptedOffer;
     delete orderJob.content!.body!.data[0]!.resource!.meta!.claims[HOST_ORDER_REQUIRED_INPUT_DISPLAY_CLAIMS[0]];
-    delete orderJob.content!.body!.data[0]!.resource!.meta!.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier];
+    delete orderJob.content!.body!.data[0]!.resource!.meta!.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier];
 
     const responsePayload = await hostingManager.process(orderJob);
 
@@ -450,29 +481,29 @@ describe('HostingManager - Offer/Order Flow', () => {
     const registrationJob = structuredClone(ORGANIZATION_REGISTRATION_JOB);
     const registrationOfferResponse = await hostingManager.process(registrationJob);
     const registrationOfferId = registrationOfferResponse.body.data[0].resource.meta.claims[
-      ClaimsOfferSchemaorg.identifier
+      SchemaOrgOfferClaim.Identifier
     ] as string;
 
     const registrationOrder = structuredClone(ORGANIZATION_ORDER_JOB);
     registrationOrder.content!.body!.data[0]!.resource!.meta!.claims[
-      ClaimsOrderSchemaorg.acceptedOfferIdentifier
+      SchemaOrgOrderClaim.AcceptedOfferIdentifier
     ] = registrationOfferId;
     await hostingManager.process(registrationOrder);
 
     const regClaims = registrationJob.content!.body!.data[0]!.resource!.meta!.claims;
     const tenantAlternateName =
-      regClaims[ClaimsOrganizationSchemaorg.alternateName]
-      || regClaims[ClaimsOrganizationSchemaorg.identifierValue];
+      regClaims[SchemaOrgOrganizationClaim.AlternateName]
+      || regClaims[SchemaOrgOrganizationClaim.IdentifierValue];
 
     const extraOfferClaims = generateLicenseOffer(
       2,
       'did:web:testhost.com',
       'us',
-      Sector.HEALTH_CARE,
+      GatewaySector.HEALTH_CARE,
       ['Stripe'],
     );
-    extraOfferClaims[ClaimsOrganizationSchemaorg.alternateName] = tenantAlternateName;
-    const offerId = String(extraOfferClaims[ClaimsOfferSchemaorg.identifier]);
+    extraOfferClaims[SchemaOrgOrganizationClaim.AlternateName] = tenantAlternateName;
+    const offerId = String(extraOfferClaims[SchemaOrgOfferClaim.Identifier]);
 
     const secureOfferDoc = await mockKmsService.protectConfidentialData({
       id: offerId,
@@ -489,13 +520,13 @@ describe('HostingManager - Offer/Order Flow', () => {
 
     const commercialOrder = structuredClone(ORGANIZATION_ORDER_JOB);
     commercialOrder.content!.body!.data[0]!.resource!.meta!.claims[
-      ClaimsOrderSchemaorg.acceptedOfferIdentifier
+      SchemaOrgOrderClaim.AcceptedOfferIdentifier
     ] = offerId;
     commercialOrder.content!.body!.data[0]!.resource!.meta!.claims[
-      ClaimsOrderSchemaorg.paymentMethod
+      SchemaOrgOrderClaim.PaymentMethod
     ] = 'Stripe';
     commercialOrder.content!.body!.data[0]!.resource!.meta!.claims[
-      ClaimsOrderSchemaorg.partOfInvoice
+      SchemaOrgOrderClaim.PartOfInvoice
     ] = 'in_test_search_001';
     await hostingManager.process(commercialOrder);
 
@@ -505,7 +536,7 @@ describe('HostingManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId: tenantAlternateName,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'entity',
       format: 'org.schema',
       action: '_search',
@@ -514,8 +545,8 @@ describe('HostingManager - Offer/Order Flow', () => {
         body: {
           data: [{
             type: 'Offer-search-request-v1.0',
-            meta: { claims: { [ClaimsOfferSchemaorg.identifier]: offerId } },
-            resource: { meta: { claims: { [ClaimsOfferSchemaorg.identifier]: offerId } } },
+            meta: { claims: { [SchemaOrgOfferClaim.Identifier]: offerId } },
+            resource: { meta: { claims: { [SchemaOrgOfferClaim.Identifier]: offerId } } },
           }],
         },
       } as any,
@@ -530,7 +561,7 @@ describe('HostingManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId: tenantAlternateName,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'entity',
       format: 'org.schema',
       action: '_search',
@@ -539,8 +570,8 @@ describe('HostingManager - Offer/Order Flow', () => {
         body: {
           data: [{
             type: 'Order-search-request-v1.0',
-            meta: { claims: { [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId } },
-            resource: { meta: { claims: { [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId } } },
+            meta: { claims: { [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId } },
+            resource: { meta: { claims: { [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId } } },
           }],
         },
       } as any,

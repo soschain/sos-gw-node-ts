@@ -1,5 +1,5 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: gdc-backend-utils-node/models/jwk.ts
 
-export type { JWK, JwkSet } from 'gdc-common-utils-ts/models/jwk';
+export type { JWK, JwkSet } from 'antifraud-data-utils-ts/cryptography';
 

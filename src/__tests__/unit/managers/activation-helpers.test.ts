@@ -1,6 +1,6 @@
 // Flow contract: validated ICA legal identity is reused during legacy activation without requiring duplicate caller claims.
 import { describe, expect, it } from '@jest/globals';
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { applyLegalOrganizationIdentityCompatibility } from '../../../managers/hosting/activation-helpers';
 
 const LEGAL_NAME = 'Example Veterinary Organization';
@@ -18,9 +18,9 @@ describe('legacy activation legal identity compatibility', () => {
     });
 
     expect(normalizedClaims).toEqual(expect.objectContaining({
-      [ClaimsOrganizationSchemaorg.legalName]: LEGAL_NAME,
-      [ClaimsOrganizationSchemaorg.identifierValue]: OFFICIAL_LEGAL_ID,
-      [ClaimsOrganizationSchemaorg.addressCountry]: ADDRESS_COUNTRY,
+      [SchemaOrgOrganizationClaim.LegalName]: LEGAL_NAME,
+      [SchemaOrgOrganizationClaim.IdentifierValue]: OFFICIAL_LEGAL_ID,
+      [SchemaOrgOrganizationClaim.AddressCountry]: ADDRESS_COUNTRY,
     }));
   });
 });

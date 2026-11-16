@@ -1,20 +1,21 @@
 import { randomUUID } from 'node:crypto';
-import { normalizeUuid } from 'gdc-common-utils-ts';
-import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import type { ClinicalCreatorBinding } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'fhir-data-utils-ts';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import type { ClinicalCreatorBinding } from 'sos-data-utils-ts/clinical-creator-contract';
 import { OrganizationWorkflowCapabilities } from 'sos-data-utils-ts/organization-workflow-access';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { getClinicalCreatorBindingsSectionId } from '../utils/clinical-creator-binding';
 import { createOperationOutcome } from '../utils/outcome';
 import { getTenantVaultId } from '../utils/tenant';
+import { isVerifiedBearerBoundToActorDid } from '../utils/authenticated-job-actor';
 import {
   buildClaimsOnlyResource,
   claimsOnlyContent,
@@ -98,8 +99,8 @@ export interface ResearchStudyConsentManagerDeps {
  * associated-party projection for this study. The projection remains
  * descriptive: it is a mandatory eligibility check, never the grant itself.
  * Group membership is never consulted as a grant. Deterministic POST replay is
- * idempotent, PATCH with only `Consent.status=inactive` revokes the stored
- * decision, and controller-only search exposes lifecycle state without minting
+ * idempotent, PATCH with only `Consent.status=inactive` or full PUT matching
+ * all stored claims except inactive status revokes the stored decision, and controller-only search exposes lifecycle state without minting
  * a SMART token.
  *
  * The only admitted SMART action is
@@ -149,7 +150,8 @@ export class ResearchStudyConsentManager implements IJobProcessor {
     const method = String(entry.request?.method || '').toUpperCase();
     if (method === 'POST') return this.activate(entry, vaultId, collectionName, tenantId);
     if (method === 'PATCH') return this.revoke(entry, vaultId, collectionName);
-    throw new ManagerError('ResearchStudy Consent accepts POST activation or PATCH revocation only.', IssueType.NotSupported);
+    if (method === 'PUT') return this.revoke(entry, vaultId, collectionName, true);
+    throw new ManagerError('ResearchStudy Consent accepts POST activation, full inactive PUT or status-only PATCH revocation.', IssueType.NotSupported);
   }
 
   private async resolveTenant(job: JobRequest): Promise<{ vaultId: string; collectionName: string }> {
@@ -170,8 +172,9 @@ export class ResearchStudyConsentManager implements IJobProcessor {
     const issuer = String(job.content?.iss || '').trim();
     const didDocument = await this.deps.tenantManager.getDidDocument(vaultId);
     const controllers = normalizeReferences(didDocument?.controller);
-    if (!issuer || !controllers.includes(issuer)) {
-      throw new ManagerError('ResearchStudy Consent activation requires a current tenant controller.', IssueType.Forbidden);
+    const principal=job.content?.meta?.bearer?.jwt?.payload;
+    if (!issuer || !controllers.includes(issuer) || !isVerifiedBearerBoundToActorDid(principal,issuer)) {
+      throw new ManagerError('ResearchStudy Consent activation requires the authenticated current tenant controller.', IssueType.Forbidden);
     }
   }
 
@@ -383,13 +386,13 @@ export class ResearchStudyConsentManager implements IJobProcessor {
     }
   }
 
-  private async revoke(entry: ConsentEntry, vaultId: string, collectionName: string) {
+  private async revoke(entry: ConsentEntry, vaultId: string, collectionName: string, fullReplacement=false) {
     requireClaimsOnlyResourceShape(entry.resource, 'Consent', 'ResearchStudy Consent revocation');
     const id = boundedId(entry.resource?.id);
     requireMatchingRequestId(entry, id);
     const patch = normalizeGovernedFlatClaims(entry.resource?.meta?.claims, CONSENT_CLAIMS, 'ResearchStudy Consent revocation');
-    if (Object.keys(patch).length !== 1 || singleClaim(patch, ClaimConsent.status) !== ConsentStatuses.Inactive) {
-      throw new ManagerError('ResearchStudy Consent revocation PATCH accepts only Consent.status=inactive.', IssueType.Invalid);
+    if ((!fullReplacement && Object.keys(patch).length !== 1) || singleClaim(patch, ClaimConsent.status) !== ConsentStatuses.Inactive) {
+      throw new ManagerError('ResearchStudy Consent revocation requires inactive status; PATCH accepts only that claim.', IssueType.Invalid);
     }
     let section = RESEARCH_STUDY_CONSENT_SECTION;
     let current = await this.deps.vaultRepository.get<ConfidentialStorageDoc>(
@@ -413,6 +416,13 @@ export class ResearchStudyConsentManager implements IJobProcessor {
       CONSENT_CLAIMS,
       'ResearchStudy Consent revocation',
     );
+    if(fullReplacement){
+      // Full revocation cannot change a prior target, scope, role or provenance.
+      // Current membership/licence may already be stale: the current controller
+      // may revoke that original grant without re-authorizing the stale member.
+      if(!flatClaimsEqual(patch,claims))throw new ManagerError('Consent revocation PUT must preserve every stored claim except status.',IssueType.Invalid);
+      if(flatClaimsEqual(currentClaims,claims))return successEntry(id,currentClaims,HttpStatusCodes.Ok);
+    }
     await this.persist(id, claims, Number(current.sequence ?? 0) + 1, vaultId, collectionName, section);
     return successEntry(id, claims, HttpStatusCodes.Ok);
   }

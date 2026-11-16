@@ -1,7 +1,7 @@
 // src/__tests__/data/ping.data.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 
 // A generic, encrypted JWE for use in form bodies during integration tests.
 export const testEncryptedJwePing = 'eyJhbGciOiJSU0EtT0FFUC0yNTYiLCJlbmMiOiJBMjU2R0NNIn0...';

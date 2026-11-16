@@ -1,5 +1,1 @@
-export {
-  DataCollectionIds,
-  FhirResourceTypeDataCollections,
-  HealthcareSummarySectionDataCollections,
-} from 'gdc-common-utils-ts/constants/index';
+export { DataCollectionIds, FhirResourceTypeDataCollections, HealthcareSummarySectionDataCollections } from 'sos-data-utils-ts/gateway-data-collections';

@@ -3,11 +3,11 @@
 
 import { randomUUID } from 'crypto';
 import { IJobProcessor } from './registry';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { createOperationOutcome } from '../utils/outcome';
 import { getClaimValue, normalizeContextualizedClaims } from '../utils/claims';
 import { determineResourceId } from '../utils/resource';
@@ -22,13 +22,13 @@ import { applyFhirCidVersioningToEntry, FhirCidVersionMapping, registerFhirCidMa
 import type { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
 import { ACTION_PURGE, SUBJECT_SECTION_DIGITAL_TWIN, SUBJECT_SECTION_INDIVIDUAL } from '../constants/domain';
 import { EntityLifecycleStatus } from '../gdc-backend-utils-node/models/enums';
-import { InteroperableLifecycleStatuses } from 'gdc-common-utils-ts/utils/interoperable-resource-operation';
+import { GatewayResourceLifecycleStatuses } from 'sos-data-utils-ts/gateway-response-contract';
 import type { ITenantsManager } from './ITenantsManager';
 import { extractSearchFiltersFromEntry, extractSearchFiltersFromParametersResource } from '../utils/search-request';
 import { buildSearchResponseEntries } from '../utils/didcomm-response';
 import { GatewayResponseEntryTypes } from '../shared/gateway-response-types';
 import { BundleType } from '../utils/bundle';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { requireExplicitLifecycleResourceId } from '../utils/lifecycle-resource-id';
 
 type FhirBundleEntryLike = {
@@ -229,7 +229,7 @@ export class RelatedPersonManager implements IJobProcessor {
           }
           const updatedRecord: Record<string, any> = {
             ...existingRecord,
-            status: InteroperableLifecycleStatuses.Purged,
+            status: GatewayResourceLifecycleStatuses.Purged,
             meta: {
               ...(existingRecord.meta || {}),
               lifecycleDisposition: 'purged',
@@ -368,6 +368,6 @@ export class RelatedPersonManager implements IJobProcessor {
 }
 
 function isPurgedRelatedPersonRecord(record: StoredRelatedPersonRecord): boolean {
-  return record.status === InteroperableLifecycleStatuses.Purged
+  return record.status === GatewayResourceLifecycleStatuses.Purged
     || record.meta?.lifecycleDisposition === 'purged';
 }

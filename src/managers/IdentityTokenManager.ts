@@ -3,14 +3,14 @@
 
 import { randomUUID } from 'crypto';
 import { IJobProcessor } from './registry';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { AppAuthorizationManager } from './AppAuthorizationManager';
 import { TokenManager } from './TokenManager';
 import { federateOidcIdTokenToFirebaseCustomToken } from '../auth/OidcFederationService';
-import { IdentityAuthRequestFields } from 'gdc-common-utils-ts/constants/identity-auth';
+import { IdentityAuthRequestFields } from 'sos-data-utils-ts/identity-auth-wire-contract';
 
 type TokenExchangeBody = {
   [IdentityAuthRequestFields.SubjectToken]?: string;

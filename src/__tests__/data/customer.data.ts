@@ -1,7 +1,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/__tests__/data/customer.data.ts
 
-import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { testTenant1DidWebExternal, testTenant1IdentifierUrn } from './organization.data';
 
 // ===================================================================================
@@ -41,17 +41,17 @@ export const testCustomer1DidWeb = `${testTenant1DidWebExternal}:individual:mult
 export const testClaimsCustomer1 = {
     // IMPORTANT: The 'identifier' claim passed into the manager is the semantic URN.
     // The manager then uses `determineResourceId` to get the UUID part for internal use.
-    [ClaimsPersonSchemaorg.identifier]: `urn:uuid:${testCustomer1Uuid}`,
-    [ClaimsPersonSchemaorg.email]: testCustomer1Data.email,
-    [ClaimsPersonSchemaorg.givenName]: testCustomer1Data.givenName,
-    [ClaimsPersonSchemaorg.familyName]: testCustomer1Data.familyName,
+    [SchemaOrgPersonClaim.Identifier]: `urn:uuid:${testCustomer1Uuid}`,
+    [SchemaOrgPersonClaim.Email]: testCustomer1Data.email,
+    [SchemaOrgPersonClaim.GivenName]: testCustomer1Data.givenName,
+    [SchemaOrgPersonClaim.FamilyName]: testCustomer1Data.familyName,
 };
 
 export const testDiscoveryCustomer1 = {
     // IMPORTANT: The 'identifier' claim passed into the manager is the semantic URN.
     // The manager then uses `determineResourceId` to get the UUID part for internal use.
-    [ClaimsPersonSchemaorg.identifier]: `urn:uuid:${testCustomer1Uuid}`,
-    [ClaimsPersonSchemaorg.email]: testCustomer1Data.email,
-    [ClaimsPersonSchemaorg.givenName]: testCustomer1Data.givenName,
-    [ClaimsPersonSchemaorg.familyName]: testCustomer1Data.familyName,
+    [SchemaOrgPersonClaim.Identifier]: `urn:uuid:${testCustomer1Uuid}`,
+    [SchemaOrgPersonClaim.Email]: testCustomer1Data.email,
+    [SchemaOrgPersonClaim.GivenName]: testCustomer1Data.givenName,
+    [SchemaOrgPersonClaim.FamilyName]: testCustomer1Data.familyName,
 };

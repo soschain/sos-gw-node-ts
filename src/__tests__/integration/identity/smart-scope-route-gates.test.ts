@@ -3,11 +3,11 @@ import { resolveHostPhysicalCollectionName } from '../../../config/storage-layou
 // Flow contract: individual and digital-twin routes reject SMART root scopes from the other authorization boundary.
 import { invokeExpress } from '../helpers/invokeExpress';
 import { getTenantVaultId } from '../../../utils/tenant';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { testPayloadCreateTenant1 } from '../../data/end-to-end.data';
 import { generateTenantCollectionNameFromClaims } from '../../../utils/tenant';
 import { initializeTenantServicesConfig } from '../../../utils/services';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { startServer, resetServerConfig } from '../../../server';
 import { getEnvSectionId } from '../../../utils/section-env';
 import { testTenant1AlternateName } from '../../data/organization.data';
@@ -44,20 +44,20 @@ describe('SMART scope route gates (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
 
     const hostBootstrapClaims = {
-      [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-      [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-      [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-      [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+      [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+      [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+      [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+      [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
     };
     const hostCollectionName = resolveHostPhysicalCollectionName();
 
     const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
     const tenantVaultId = getTenantVaultId(
-      tenantClaims[ClaimsServiceSchemaorg.category],
+      tenantClaims[SchemaOrgServiceClaim.Category],
       tenantClaims['org.schema.Organization.alternateName'],
     );
 
-    const currentTenantServices = initializeTenantServicesConfig(Sector.HEALTH_CARE);
+    const currentTenantServices = initializeTenantServicesConfig(GatewaySector.HEALTH_CARE);
     const tenantServices = options.legacyDigitalTwinServices
       ? [
         ...currentTenantServices.filter((service: any) => service.selector?.section !== 'digitaltwin'),
@@ -66,7 +66,7 @@ describe('SMART scope route gates (integration)', () => {
           type: 'ApiService',
           serviceEndpoint: 'Composition',
           actions: ['_search'],
-          selector: { sector: Sector.HEALTH_CARE, section: 'digitaltwin', format: 'org.hl7.fhir.r4' },
+          selector: { sector: GatewaySector.HEALTH_CARE, section: 'digitaltwin', format: 'org.hl7.fhir.r4' },
         },
       ]
       : currentTenantServices;

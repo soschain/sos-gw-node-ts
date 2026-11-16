@@ -1,24 +1,17 @@
-import { DeviceBindingStatuses, DeviceUserClasses } from 'gdc-common-utils-ts/constants/device';
-import {
-  getHealthcareRoleByClaim,
-  HealthcareActorRoleCodes,
-  HealthcareActorRoles,
-} from 'gdc-common-utils-ts/constants/healthcare';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import { DeviceBindingStatuses, DeviceUserClasses } from 'sos-data-utils-ts/device-license-contract';
+import { getHealthcareRoleByClaim, HealthcareActorRoleCodes, HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { parseActorFromSub } from 'gdc-common-utils-ts/utils/actor';
-import {
-  FhirIpsCreatorKinds,
-  normalizeClinicalCreatorBinding,
-  type ClinicalCreatorBinding,
-} from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
-import { normalizeUuid } from 'gdc-common-utils-ts/utils/normalize-uuid';
+import { FhirIpsCreatorKinds, type ClinicalCreatorBinding } from 'sos-data-utils-ts/clinical-creator-contract';
+import { normalizeClinicalCreatorBinding } from 'sos-sdk-core-ts/clinical-creator';
+import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { getEnvSectionId } from '../../utils/section-env';
 import { normalizeIndexedEmail, normalizeIndexedPhone } from '../../utils/indexed-contact';
 import { getTenantVaultId } from '../../utils/tenant';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import type { IJobProcessor } from '../../managers/registry';
 import type { ITenantsManager } from '../../managers/ITenantsManager';
 import type { IClearingHouseService } from '../../services/ClearingHouseService';

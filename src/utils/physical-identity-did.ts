@@ -1,6 +1,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
-import type { DidDocument, DidService, VerificationMethod } from 'gdc-common-utils-ts/models/did';
+import type { GatewayDidDocument as DidDocument, GatewayDidService as DidService } from 'sos-data-utils-ts/gateway-did-profile';
+import type { VerificationMethod } from 'antifraud-data-utils-ts/did-document';
 
 export type PhysicalIdentityDocumentKind = 'uhc-card' | 'petd';
 

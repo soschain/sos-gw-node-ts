@@ -1,16 +1,17 @@
 import { createHash } from 'crypto';
-import { ConsentRule, ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
-import { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
+import type { ConsentRule } from 'fhir-data-utils-ts';
+import { ClaimConsent } from 'fhir-data-utils-ts';
+import { RecordBase } from 'sos-data-utils-ts/confidential-storage';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { getClaimValue } from './claims';
 import { buildConsentRuleStorageKey, expandConsentActorRoles, hashConsentRuleId } from './consent';
 import { getIndividualSectionId, getSubjectScopedSectionId } from './individual-sections';
 import { applyDigitalTwinSecondaryUseDecision } from './digital-twin-secondary-use';
 import type { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
-import type { OperationOutcome } from 'gdc-common-utils-ts/models/operation-outcome';
-import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
-import { DataspaceSectors } from 'gdc-common-utils-ts/constants/sectors';
+import type { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import {
   ClaimsFirstAnimalInsuranceConsent,
   validateAnimalInsuranceConsentOdrlParity,

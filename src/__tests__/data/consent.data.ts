@@ -2,7 +2,7 @@
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
 
 import { testUserEmail, testUserFullNameICAO } from "./common.data";
-import { HealthcareConsentPurposes } from "gdc-common-utils-ts/constants/healthcare";
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 
 /*
     "givenName": "Given Name(s)", // local given name(s) and middle name (s) with special characters

@@ -1,5 +1,232 @@
 ## Unreleased
 
+- Persist a bound pending state while reconciling the configured host DID.
+  Restart retries publish the exact stored self-credentials before clearing
+  that state; inconsistent targets fail closed. Keys, claims and tenants stay
+  unchanged. This recovery protocol requires one migration writer.
+
+- Resolve Communication composition conversion from the canonical FHIR owner
+  and host Offer/Order request types from SOS Data. Preserve conversion output
+  and the existing confidential-job boundary.
+
+- Use neutral Antifraud credential/proof models and W3C context, and resolve
+  organization review transcripts and type markers from their owned runtime.
+  Preserve signed JSON bytes, issuer/key/party bindings and existing denial
+  behavior while checking nested owner fields without an untyped assumption.
+
+- Use owned SOS Data parameter types, gateway response envelopes and complete
+  logical collection mappings in KMS, employee/controller indexing and clinical
+  fan-out. Preserve required scalar values, configured parameter extensions,
+  response discriminators and every existing collection wire value.
+
+- Resolve operational IPS core and permission-summary sections from the
+  published SOS Data owner in Communication, Composition and IPS assembly.
+  Preserve all wire descriptors, non-enumerable compatibility keys and the
+  distinct native URI-valued summary profile.
+
+- Use published SOS operational search/lifecycle constants and DSP metadata in
+  Communication search, RelatedPerson purge/readback and discovery. Preserve
+  existing wire values and authorization; pin AF 0.3.2, SOS Data 0.8.1 and the
+  development-only Node SDK 0.5.1 with all other direct versions retained.
+
+- Resolve queued actor DID identifier extraction from the neutral Antifraud
+  identity owner, preserving existing contact binding and rejection behavior.
+
+- Bind routed Organization R5 Consent operations to the verified current
+  controller. Support full inactive PUT against the exact stored grant while
+  preserving status-only PATCH, independent Group grants and stale-grant
+  revocation. Keep ordinary Consent evidence requirements unchanged.
+
+- Issue hosted Organization controller identities and activation licences for
+  telephone-only Person contacts using the owned actor DID/hash and existing
+  licence pool. Preserve primary-email behavior, role/key checks and seats.
+
+- Address Employee search replies to the authenticated original caller rather
+  than the provider. Retain exact phone registration installation, role and
+  seat bindings when a completed device request is retried with a new thread.
+
+- Verify reviewed Test Network Organization controller and representative
+  contacts as exactly one email or telephone channel. Preserve signer, key,
+  PDF evidence and deployment-scope checks, including real detached PQC proofs.
+
+- Read public JWK thumbprint URI identifiers from neutral Antifraud operations
+  in five ledger, DID and controller-credential consumers; preserve existing
+  SHA-256 member transcripts and key-alias-independent identities.
+
+- Format existing DSP route and advertisement paths with SOS Data builders.
+  Preserve tenant/host selector precedence, explicit dataset IDs and unscoped
+  fallbacks; keep metadata-payload construction and access checks unchanged.
+
+- Use neutral Antifraud public/controller/telephone alias operations in seven
+  production consumers. Preserve opaque CID lists, contact-hash bytes, licensed
+  employee/controller binding and SMART authorization behavior.
+
+- Read complete DID-service fragment/type and DSP metadata-path wire catalogs
+  from the SOS gateway DID profile in existing discovery/service consumers.
+  Preserve advertisement values, endpoint construction and authorization.
+
+- Read six identity/auth wire catalogs from their SOS Data owner across eleven
+  consumers. Preserve all thirty members, DCR replay and bearer checks, and
+  SMART polling compatibility without changing routes or admission behavior.
+
+- Use the existing canonical FHIR ResearchStudy catalog and normalizer at the
+  study manager and retained fixture projector. Preserve all 31 flat claims, 25
+  standard search definitions, 12 party-role codes and correlated-party behavior.
+
+- Exercise KMS restart and provisioning replay with the actual stored tenant
+  controller's verified HTTP principal; retain successful employee readback
+  and prove a verified foreign controller cannot change employee records.
+
+- Read existing ConsentRule contracts from FHIR in eight consumers, retaining all
+  thirty-two members and exact decision/status/claim catalogs. Preserve mixed
+  test value imports, draft/active authorization boundaries and runtime policy.
+
+- Preserve credential JSON/UTF-8 signing transcripts with Antifraud Content and
+  keep stored index HMAC-SHA3-256 bytes with the native Node implementation,
+  removing two legacy primitive imports without changing key purposes.
+
+- Compose operational content versions from the SOS flat-claim projection and
+  Antifraud DAG-JSON/SHA2-256 CID primitive. Preserve eight actual original byte/CID
+  vectors across six manager calls; canonical fields and distinct SHA3 ledger
+  reference profiles remain unchanged. Unsafe prototype-control input fails closed.
+
+- Own licence pool-family selection and issued-seat allowance projection in GW,
+  consuming the existing Antifraud/FHIR coding identifiers. Keep issuance's
+  two-device fallback distinct from the historical five-device runtime fallback;
+  role classification does not grant professional authority.
+
+- Project clinical document search attributes through the GW-owned index profile
+  in Communication and Medication persistence. Retain twelve supported Composition
+  claims, CSV aliases, audit order and identifier uniqueness without changing
+  signed/stored Status or Entry fields, canonical content or CIDs.
+
+- Own hosted-service activation scope admission in GW while reusing canonical
+  SOS capability parsing. Preserve category/service error order, category-only
+  wildcards, first-subject and makesOffer precedence after existing VC trust
+  verification; unknown additionalType labels never authorize capabilities.
+
+- Keep tenant lifecycle representative identifier projection and typed equality
+  in the owning GW admission helper, preserving first-subject, tax aliases and
+  punctuation-sensitive matching after existing credential verification.
+
+- Recover an existing active DCR installation only for the same current verified
+  account, licence context, complete public-key set and canonical request. Return
+  its original client receipt without vault or ledger writes; retain deliberate
+  changed-key rotation and reject stale or mismatched replay authority. Persist
+  only a request digest, not a duplicate arbitrary registration body.
+
+- Link the existing professional clinical assignment during device enrollment
+  using normalized valid Employee UUIDs, preserving role/ambiguity checks and
+  preventing successful DCR from leaving the assignment's device channels empty.
+- Address Employee mutation replies to the original caller so verified
+  encrypted clients can enforce response audience binding.
+- Restrict Employee create, disable and purge writes to the current tenant
+  controller bound to the verified bearer. A professional licence or forged
+  controller issuer cannot administer staff. Registered employee-key transport
+  applies the same bearer/issuer binding as registered profile transport;
+  employee-directory search keeps its separate read path.
+- Support phone-only employee creation and idempotent role lookup with canonical
+  stable contact identifiers and phone-bound licences, preserving existing email
+  URNs and employee instances. Purge releases matching phone invitation seats
+  without manufacturing an email or treating another contact kind as equivalent.
+- Require verified controller contact or a DCR-bound, currently licensed
+  professional with the routed organization's registration Group and active
+  Subject registration Consent before retrieving onboarding documents or writing
+  an individual. Keep the creating professional separate from proposed controller
+  contacts, and recheck controller binding after document claims are merged.
+  Professional authority also requires server-authored queued provenance from
+  registered-key signature verification; bootstrap JSON and decrypted payload
+  flags cannot supply that proof.
+- Derive hosted Individual Organization DIDs from the configured provider and
+  persisted UUID on new registration and replay, preserving public card aliases.
+  Reject non-UUID historical rows that need identity migration. Focused manager
+  and API provenance tests pass; cumulative backend and network gates remain pending.
+- Require the verified proposed controller to confirm an individual Offer before
+  initial activation or controller-seat issuance, including active Order replay.
+  A professional's registration capability does not accept responsibility for
+  the proposed controller.
+- Use independent SOS response/routing catalogs and included-resource contracts
+  without changing entry discriminators or terminal response correlation.
+- Consume clinical creator profile data from SOS Data and portable binding,
+  provenance and document-successor behavior from SDK Core. Keep Gateway actor,
+  tenant/subject and delete admission checks in their existing paths.
+- Use Antifraud's client-bound OpenID registration/token/device contracts and
+  neutral DIDComm envelope contracts, SOS message entries and wire formats, and
+  FHIR's native Communication projection and claim-key normalization. Preserve
+  existing field spellings and require verification independently of data shapes.
+- Validate these response/clinical/OpenID/message slices with the type check,
+  14 scoped ownership guards and 22 backend consumer suites (399 assertions,
+  no pending cases). The full project dependency guard remains red; browser and
+  configured network journeys still require cumulative acceptance.
+- Use neutral Antifraud person, organization, service, action and commerce claim
+  catalogs across onboarding, identity, indexed search and order flows. Preserve
+  each stored wire key, including identifier references versus identifier values,
+  and keep product licensing policy in its existing owning services.
+- Use SOS Data's service-capability parsing and compatibility tokens in discovery,
+  hosting and claim validation, preserving extension filtering at the gateway.
+- Use the explicit SOS DID routing profile and neutral Antifraud verification
+  methods in tenant discovery, onboarding and identity utilities. Keep selectors
+  and action lists typed without widening the generic DID extension model.
+- Use SOS Data's JSON projection/media type and SDK Core's encrypted-blob
+  hydration port in repository adapters. Reuse the shared blob-store contract
+  while retaining gateway-specific inline-size thresholds.
+- Link compatibility notes to the original GitHub repositories and reviewed
+  source files instead of using package-version or change-control labels as attribution.
+- Use SOS-owned confidential record/job/batch contracts and HTTP descriptors,
+  and Antifraud's encoded JWS types, across Gateway runtime and consuming tests.
+  Keep existing serialized job states, headers and adapter behavior.
+- Consume shared contact identity, jurisdiction-bound organization identifiers,
+  routing taxonomy and clinical purpose/category vocabulary from their independent
+  Antifraud, SOS Data and FHIR owners. Preserve existing wire values and hashes.
+- Accept WHO/HL7 ISCO identifiers and compact/reverse-DNS equivalents in
+  employee occupation search and Consent matching. Search compares exact codes
+  without rewriting stored claims or granting a different occupation access.
+- Consume SOS-owned healthcare role lookup and Consent scope projection. Include
+  Dentistry in clinical creator metadata while excluding Controller authority
+  and preserving reverse-DNS occupation values and persisted Consent identifiers.
+
+- Remove the unused frozen SDK client dependency and its Jest, TypeScript and
+  emitted-import resolution entries. Remaining GDC imports and transitive paths
+  are still tracked separately; this is not complete dependency independence.
+- Add the complete declaration/source/registry independence gate. It remains
+  red during migration and must pass before service promotion.
+
+- Use the neutral Antifraud cryptography engine and key/byte contracts for
+  Gateway bootstrap, KMS, key handling and consuming tests. Preserve caller-
+  owned key custody and the existing confidential envelope profiles.
+- Normalize encoded and decoded nested JWS fields at the KMS adapter boundary;
+  reject malformed encodings and non-object request payloads before projecting
+  the job. This decoding step does not verify or authorize the nested signature.
+- Make the memory queue's drain helper wait for active workers and their final
+  response writes, including failures, rather than resolving when a job has
+  merely been dequeued. Keep existing processing concurrency unchanged.
+
+- Consume standard OperationOutcome issue codes from FHIR utilities and the
+  runtime ManagerError/status policy from SOS SDK Core in production and tests.
+  Unknown runtime issue codes now fail with exception/500 rather than reading
+  inherited mapping properties. Corrected registry pins remain pending.
+- Resolve the Fabric submit test's module URL with `fileURLToPath` so its commit
+  success/failure checks run on Windows as well as Unix.
+- Refresh stale source-manifest pin assertions. Document that this assertion
+  does not prove unpublished API availability or a GDC-free registry graph.
+
+- Import canonical FHIR resource names and Consent, Composition, Communication,
+  RelatedPerson and Task claim vocabularies from FHIR data utilities. Read-only
+  compatibility checks confirm unchanged values for existing claim keys.
+- Regenerate inconsistent lock metadata for `error-ex`: its recorded version
+  now matches the already-resolved 1.3.4 archive and unchanged integrity.
+
+- Consume neutral UUID normalization and base58 encoding directly from
+  Antifraud data utilities in Gateway storage, versioning and identity flows.
+  Reject encoded employee identities unless they contain exactly 16 bytes.
+  Replacement registry pins and full dependency removal remain pending.
+
+- Retire the inherited release-chain command, which could mutate and publish
+  sibling libraries. The command now stops without changing packages; shared
+  releases follow the local-first contract and this gateway remains private.
+- Add a regression check preventing package mutation commands from returning
+  to that retired entry point.
+
 - Keep shell scripts checked out with LF endings on Windows and Unix. The
   host bootstrap and its sourced payload helper previously failed before
   authority/network work when Git converted `set -euo pipefail` to CRLF.
@@ -4561,6 +4788,8 @@
 -   **Docs:** Updated `docs/API_INTEGRATORS_GUIDE.md` with contextualized claims normalization rules and license gating notes.
 
 ## [Unreleased]
+
+- Replace selected FHIR resource/Group and route-sector catalogs plus persisted device/licence contracts with their independent FHIR/SOS owners; preserve wire values and authorization behavior. Align the six public utility/SDK pins while keeping the tested root Express version.
 
 ### Added
 - Integration coverage for `Bundle/_search` DocumentReference retrieval by canonical hash claim:

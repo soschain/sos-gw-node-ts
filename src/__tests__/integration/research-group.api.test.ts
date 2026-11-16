@@ -18,12 +18,9 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
  * retained and each batch entry succeeds or fails independently.
  */
 import { afterEach, expect, it } from '@jest/globals';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
-import {
-  projectGroupPractitionerRoleMemberFlatClaimResources,
-  projectGroupR5FlatClaimsResource,
-} from 'vet-data-utils-ts';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
+import { projectGroupPractitionerRoleMemberFlatClaimResources, projectGroupR5FlatClaimsResource } from 'fhir-data-utils-ts';
 import { buildGroupMemberSectionId } from '../../managers/GroupManager';
 import { startServer, resetServerConfig } from '../../server';
 import { getEnvSectionId } from '../../utils/section-env';
@@ -359,17 +356,17 @@ async function provisionTenant(input: {
   controllerDid: string;
 }) {
   const hostClaims = {
-    [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-    [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-    [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-    [ClaimsServiceSchemaorg.category]: 'system',
+    [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+    [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+    [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+    [SchemaOrgServiceClaim.Category]: 'system',
   };
   const tenantClaims = {
     ...(testPayloadCreateTenant1.body.data[0].resource.meta.claims as any),
-    [ClaimsOrganizationSchemaorg.alternateName]: researchGroupRouteFixture.tenantId,
-    [ClaimsOrganizationSchemaorg.addressCountry]: 'CA',
-    [ClaimsOrganizationSchemaorg.addressRegion]: researchGroupRouteFixture.jurisdiction,
-    [ClaimsServiceSchemaorg.category]: researchGroupRouteFixture.sector,
+    [SchemaOrgOrganizationClaim.AlternateName]: researchGroupRouteFixture.tenantId,
+    [SchemaOrgOrganizationClaim.AddressCountry]: 'CA',
+    [SchemaOrgOrganizationClaim.AddressRegion]: researchGroupRouteFixture.jurisdiction,
+    [SchemaOrgServiceClaim.Category]: researchGroupRouteFixture.sector,
   };
   const tenantVaultId = getTenantVaultId(researchGroupRouteFixture.sector, researchGroupRouteFixture.tenantId);
   await input.kmsService.provisionKeys(tenantVaultId);
@@ -379,7 +376,7 @@ async function provisionTenant(input: {
     sequence: 0,
     content: {
       claims: tenantClaims,
-      didConfig: { service: initializeTenantServicesConfig(researchGroupRouteFixture.sector as Sector) },
+      didConfig: { service: initializeTenantServicesConfig(researchGroupRouteFixture.sector as GatewaySector) },
       didDocument: {
         '@context': 'https://www.w3.org/ns/did/v1',
         id: 'did:web:tenant.integration.example',

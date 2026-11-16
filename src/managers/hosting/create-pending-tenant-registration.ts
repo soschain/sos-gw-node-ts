@@ -1,14 +1,10 @@
-import type { DidCommDecodedMetadata } from 'gdc-common-utils-ts/models/confidential-message';
-import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
-import {
-  ClaimsOfferSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { DidCommDecodedMetadata } from 'sos-data-utils-ts/confidential-job';
+import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
+import { SchemaOrgOfferClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { EntityLifecycleStatus } from '../../gdc-backend-utils-node/models/enums';
 import type { IServerConfig } from '../../config';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
@@ -17,7 +13,7 @@ import type { IHostRuntime } from '../IHostRuntime';
 import { getEnvSectionId } from '../../utils/section-env';
 import { getTenantVaultId, isValidTenantAlternateName, resolveOrganizationRouteJurisdiction } from '../../utils/tenant';
 import { createOrganizationUrn } from '../../utils/urn';
-import type { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { PostalActivationCodeBinding } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
 import { isDeepStrictEqual } from 'node:util';
 import {
@@ -42,7 +38,7 @@ type CreatePendingTenantRegistrationDeps = Readonly<{
   handleServiceAttachment: (service: any) => Promise<any>;
   withHostedOrganizationOfferClaims: (
     claims: ClaimsRecord,
-    requestedSector: Sector,
+    requestedSector: GatewaySector,
   ) => ClaimsRecord;
   extractRegistrationKeys: (
     meta?: DidCommDecodedMetadata,
@@ -66,13 +62,13 @@ export async function createPendingTenantRegistration(
 ): Promise<ClaimsRecord> {
   const normalizedClaims = deps.applyLegalOrganizationIdentityCompatibility(deps.claims);
   const alternateName = String(
-    normalizedClaims[ClaimsOrganizationSchemaorg.alternateName]
+    normalizedClaims[SchemaOrgOrganizationClaim.AlternateName]
     || deps.fallbackAlternateName
     || '',
   ).trim();
   const enrichedClaims: ClaimsRecord = {
     ...normalizedClaims,
-    ...(alternateName ? { [ClaimsOrganizationSchemaorg.alternateName]: alternateName } : {}),
+    ...(alternateName ? { [SchemaOrgOrganizationClaim.AlternateName]: alternateName } : {}),
   };
 
   if (!alternateName) {
@@ -82,11 +78,11 @@ export async function createPendingTenantRegistration(
     throw new ManagerError(`Invalid alternateName format: '${alternateName}'`, IssueType.Value);
   }
 
-  const requestedSector = enrichedClaims[ClaimsServiceSchemaorg.category] as Sector;
+  const requestedSector = enrichedClaims[SchemaOrgServiceClaim.Category] as GatewaySector;
   if (!requestedSector) {
     throw new ManagerError(`Missing required claim for new tenant: '${HOST_TRANSACTION_REQUIRED_INPUT_CLAIMS[1]}'`, IssueType.Required);
   }
-  if (requestedSector === Sector.SYSTEM) {
+  if (requestedSector === GatewaySector.SYSTEM) {
     throw new ManagerError("The 'system' sector is a reserved keyword and cannot be used by tenants.", IssueType.Forbidden);
   }
   if (!deps.config.sectorsAllowed.includes(requestedSector)) {
@@ -110,13 +106,13 @@ export async function createPendingTenantRegistration(
 
     const existingClaims = existingContent.claims as ClaimsRecord | undefined;
     const stableClaimNames = [
-      ClaimsOrganizationSchemaorg.alternateName,
-      ClaimsOrganizationSchemaorg.identifierType,
-      ClaimsOrganizationSchemaorg.identifierValue,
-      ClaimsOrganizationSchemaorg.addressCountry,
-      ClaimsOrganizationSchemaorg.addressRegion,
-      ClaimsOrganizationSchemaorg.legalName,
-      ClaimsServiceSchemaorg.category,
+      SchemaOrgOrganizationClaim.AlternateName,
+      SchemaOrgOrganizationClaim.IdentifierType,
+      SchemaOrgOrganizationClaim.IdentifierValue,
+      SchemaOrgOrganizationClaim.AddressCountry,
+      SchemaOrgOrganizationClaim.AddressRegion,
+      SchemaOrgOrganizationClaim.LegalName,
+      SchemaOrgServiceClaim.Category,
     ];
     const identityMatches = existingClaims && stableClaimNames.every((claimName) => (
       isDeepStrictEqual(existingClaims[claimName], enrichedClaims[claimName])
@@ -169,16 +165,16 @@ export async function createPendingTenantRegistration(
     || processedClaims['org.schema.Organization.owner.email']
   );
   if (!isIndividualOrg) {
-    (processedClaims as any)[ClaimsOrganizationSchemaorg.identifier] = createOrganizationUrn({
+    (processedClaims as any)[SchemaOrgOrganizationClaim.IdentifierReference] = createOrganizationUrn({
       namespace: deps.config.namespace,
       network: deps.getCurrentUrnNetwork(),
       jurisdiction,
       sector: requestedSector,
-      idType: processedClaims[ClaimsOrganizationSchemaorg.identifierType] as string,
-      idValue: processedClaims[ClaimsOrganizationSchemaorg.identifierValue] as string,
+      idType: processedClaims[SchemaOrgOrganizationClaim.IdentifierType] as string,
+      idValue: processedClaims[SchemaOrgOrganizationClaim.IdentifierValue] as string,
     });
   } else {
-    (processedClaims as any)[ClaimsOrganizationSchemaorg.identifier] = alternateName || organization.id;
+    (processedClaims as any)[SchemaOrgOrganizationClaim.IdentifierReference] = alternateName || organization.id;
   }
 
   processedClaims = deps.withHostedOrganizationOfferClaims(
@@ -199,7 +195,7 @@ export async function createPendingTenantRegistration(
     indexed: {
       attributes: [
         { name: 'status', value: EntityLifecycleStatus.Pending },
-        { name: ClaimsOfferSchemaorg.identifier, value: processedClaims[ClaimsOfferSchemaorg.identifier] as string, unique: true },
+        { name: SchemaOrgOfferClaim.Identifier, value: processedClaims[SchemaOrgOfferClaim.Identifier] as string, unique: true },
       ],
       hmac: { id: 'urn:unsupported', type: 'Sha256HmacKey2019' },
     },

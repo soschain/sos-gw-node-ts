@@ -1,15 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import type { BundleEntry } from 'gdc-common-utils-ts/models/bundle';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import {
   buildSubjectIdentifierAssetId,
   readSubjectIdentityBundleEntry,
 } from 'gdc-common-utils-ts/utils/subject-identity';
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import type { ITenantsManager } from './ITenantsManager';
@@ -451,14 +451,14 @@ export class SubjectIdentityManager implements IJobProcessor {
     const email = normalizeIndexedEmail(bearer.email);
     const phone = normalizeIndexedPhone(bearer.phone_number || bearer.phone);
     const contacts = [
-      ...(email ? [{ name: ClaimsOrganizationSchemaorg.ownerEmail, value: email }] : []),
-      ...(phone ? [{ name: ClaimsOrganizationSchemaorg.ownerTelephone, value: phone }] : []),
+      ...(email ? [{ name: SchemaOrgOrganizationClaim.OwnerEmail, value: email }] : []),
+      ...(phone ? [{ name: SchemaOrgOrganizationClaim.OwnerTelephone, value: phone }] : []),
     ];
     for (const contact of contacts) {
       const matches = await this.vaultRepository.query(collectionName, {
         sectionId: INDIVIDUAL_DIRECTORY_SECTION,
         where: [
-          { name: ClaimsOrganizationSchemaorg.sameAs, value: cardId },
+          { name: SchemaOrgOrganizationClaim.SameAs, value: cardId },
           contact,
         ],
       }, { hydrate: false });

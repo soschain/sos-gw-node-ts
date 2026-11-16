@@ -1,5 +1,9 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { randomUUID } from 'node:crypto';
+import { Isco08CodingSystem, Isco08Hl7CodingSystem, Isco08Occupations, readIsco08Code } from 'antifraud-data-utils-ts/isco-08';
+import { SchemaOrgPersonClaim as Person } from 'sos-data-utils-ts/schema-org-claims';
+import { getPersonOccupationClaim } from '../../utils/occupation';
 import type { StoryHarness } from './helpers/story-flow';
 import {
   installBasicJsonFetchMock,
@@ -15,7 +19,7 @@ import {
   EMPLOYEE_REGISTRATION_REQUEST,
 } from '../data/example-payloads';
 import { ORGANIZATION_ORDER_REQUEST } from '../data/example-payloads';
-import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { EXAMPLE_LICENSE_INVOICE_ID, EXAMPLE_LICENSE_PAYMENT_METHOD_STRIPE } from 'gdc-common-utils-ts/examples/shared';
 import { withCanonicalEntryClaims } from '../helpers/canonical-bundle-entry';
 
@@ -59,18 +63,18 @@ describe('Employee create/disable/re-enable route story', () => {
     const poll = await pollJsonBody(harness.app, submit.headers.location, payload.thid);
     expect(poll.status).toBe(200);
     expect(poll.body.data[0].type).toBe('Employee-license-offer-v1.0');
-    expect(poll.body.data[0].resource?.meta?.claims?.[ClaimsOfferSchemaorg.identifier]).toBeTruthy();
+    expect(poll.body.data[0].resource?.meta?.claims?.[SchemaOrgOfferClaim.Identifier]).toBeTruthy();
     expect(poll.body.data[0].resource?.id).toBeUndefined();
 
     // Confirm the exact Offer through the same auditable zero-price Order path
     // used by staging; the following lifecycle tests then consume that seat.
-    const offerId = poll.body.data[0].resource.meta.claims[ClaimsOfferSchemaorg.identifier];
+    const offerId = poll.body.data[0].resource.meta.claims[SchemaOrgOfferClaim.Identifier];
     const orderPayload = structuredClone(ORGANIZATION_ORDER_REQUEST) as any;
     orderPayload.body.data[0].meta = {};
     orderPayload.body.data[0].resource = { meta: { claims: {
-      [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
-      [ClaimsOrderSchemaorg.paymentMethod]: EXAMPLE_LICENSE_PAYMENT_METHOD_STRIPE,
-      [ClaimsOrderSchemaorg.partOfInvoice]: EXAMPLE_LICENSE_INVOICE_ID,
+      [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
+      [SchemaOrgOrderClaim.PaymentMethod]: EXAMPLE_LICENSE_PAYMENT_METHOD_STRIPE,
+      [SchemaOrgOrderClaim.PartOfInvoice]: EXAMPLE_LICENSE_INVOICE_ID,
     } } };
     const orderSubmit = await invokeExpress(harness.app, {
       method: 'POST',
@@ -142,6 +146,41 @@ describe('Employee create/disable/re-enable route story', () => {
       type: 'Occupation',
       employeeId,
     })]);
+
+    // The same stored occupation is searchable through token and native Coding
+    // systems. Search must neither rewrite that claim nor broaden its code.
+    const storedRole = getPersonOccupationClaim(createdEntry.resource?.meta?.claims);
+    const occupationCode = readIsco08Code(storedRole);
+    expect(occupationCode).toBeDefined();
+    const otherCode = occupationCode === Isco08Occupations.Dentist.code
+      ? Isco08Occupations.Veterinarian.code : Isco08Occupations.Dentist.code;
+    for (const [system, code, expectedMatch] of [
+      ['ISCO-08', occupationCode, true],
+      ['org.ilo.isco', occupationCode, true],
+      ['org.ilo.isco-08', occupationCode, true],
+      [Isco08CodingSystem, occupationCode, true],
+      [Isco08Hl7CodingSystem, occupationCode, true],
+      [Isco08Hl7CodingSystem, otherCode, false],
+      ['unknown', occupationCode, false],
+    ] as const) {
+      const filtered = structuredClone(searchPayload);
+      filtered.thid = randomUUID();
+      filtered.jti = randomUUID();
+      filtered.body.entry[0].resource.parameter = [{ name: Person.HasOccupation, valueCoding: { system, code } }];
+      const submitted = await invokeExpress(harness.app, {
+        method: 'POST', url: employeeUrl.replace('/_batch', '/_search'),
+        headers: { 'content-type': 'application/json' }, body: filtered,
+      });
+      expect(submitted.status).toBe(202);
+      await harness.queueAdapter.waitForEmptyQueue();
+      const polled = await pollJsonBody(harness.app, submitted.headers.location, filtered.thid);
+      expect(polled.status).toBe(200);
+      const found = polled.body.data
+        .flatMap((entry: any) => Array.isArray(entry.resource?.data) ? entry.resource.data : [entry.resource])
+        .find((resource: any) => resource?.id === employeeId);
+      expect(Boolean(found)).toBe(expectedMatch);
+      if (found) expect(getPersonOccupationClaim(found.claims)).toBe(storedRole);
+    }
 
     const disablePayload = structuredClone(EMPLOYEE_DISABLE_REQUEST) as any;
     disablePayload.thid = 'employee-disable-story-thid';

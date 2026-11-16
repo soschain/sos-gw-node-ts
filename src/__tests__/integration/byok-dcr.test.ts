@@ -2,9 +2,9 @@
 // src/__tests__/integration/end-to-end-flow.test.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 import { GatewayRequestEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 process.env.DEV_SEED = 'true';
 process.env.NODE_ENV = 'test';
@@ -18,25 +18,21 @@ process.env.HOST_EXTERNAL_DOMAIN = 'provider.com';
 import { jest } from '@jest/globals';
 import type * as express from 'express';
 import type { Server } from 'http';
-import type { MldsaPrivateJwk, MlkemPrivateJwk, MlkemPublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import type { MldsaPrivateJwk, MlkemPrivateJwk, MlkemPublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { QueueAdapter } from '../../adapters/queue';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { TenantsCacheManager } from '../../managers/TenantsCacheManager';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { startServer } from '../../server';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { Content } from 'gdc-common-utils-ts/utils/content';
 import { QueueAdapterMem } from '../../adapters/queue-mem';
 import { testPayloadCreateTenant1, testTenant1Data } from '../data/end-to-end.data';
 import { testTenant1AlternateName, testTenant1VaultId } from '../data/organization.data';
-import {
-  ClaimsIndividualProductSchemaorg,
-  ClaimsOfferSchemaorg,
-  ClaimsOrderSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { createHash } from 'crypto';
 import { invokeExpress } from './helpers/invokeExpress';
 import { getEnvSectionId } from '../../utils/section-env';
@@ -223,13 +219,13 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
     const claims = responseEntry.resource.meta.claims;
 
     expect(responseEntry.type).toBe('Organization-registration-offer-v1.0');
-    expect(claims[ClaimsOfferSchemaorg.eligibleQuantityValue]).toBe(2);
-    expect(claims[ClaimsOfferSchemaorg.identifier]).toBeDefined();
-    expect(claims[ClaimsOfferSchemaorg.price]).toBe('0.00'); // Or the calculated price
-    expect(claims[ClaimsOfferSchemaorg.offeredBy]).toBe('did:web:provider.com');
+    expect(claims[SchemaOrgOfferClaim.EligibleQuantityValue]).toBe(2);
+    expect(claims[SchemaOrgOfferClaim.Identifier]).toBeDefined();
+    expect(claims[SchemaOrgOfferClaim.Price]).toBe('0.00'); // Or the calculated price
+    expect(claims[SchemaOrgOfferClaim.OfferedBy]).toBe('did:web:provider.com');
 
     // --- ACT (Phase 4): Accept the Offer by submitting an Order ---
-    const offerId = claims[ClaimsOfferSchemaorg.identifier] as string;
+    const offerId = claims[SchemaOrgOfferClaim.Identifier] as string;
     const orderThid = `${thid}-order`;
     const orderPayload = {
       thid: orderThid,
@@ -241,7 +237,7 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
         data: [
           {
             type: GatewayRequestEntryTypes.OrganizationOrder,
-            resource: { meta: { claims: { [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId } } },
+            resource: { meta: { claims: { [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId } } },
           },
         ],
       },
@@ -318,7 +314,7 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
     expect(orderFinalResponse.thid).toBe(orderThid);
     expect(orderFinalResponse.body?.data?.[0]).toMatchObject({ response: { status: String(HttpStatusCodes.Created) } });
     controllerActivationCode = String(orderFinalResponse.body.data[0]?.resource?.meta?.claims?.[
-      ClaimsIndividualProductSchemaorg.serialNumber
+      SchemaOrgIndividualProductClaim.SerialNumber
     ] || '');
     expect(controllerActivationCode).toMatch(/^lic-[A-Za-z0-9_-]+$/);
 

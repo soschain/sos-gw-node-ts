@@ -1,11 +1,12 @@
 // src/api-examples/communication.examples.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
-import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
-import { CommunicationCategoryCodes, HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
-import { Format } from 'gdc-common-utils-ts/constants/Schemas';
+import { CommunicationCategoryCodes } from 'fhir-data-utils-ts';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
+import { Format } from 'sos-data-utils-ts/bff-wire-contract';
 
 const IPS_BUNDLE_LIGHT_EXAMPLE = {
   resourceType: ResourceTypesFhirR4.Bundle,
@@ -17,8 +18,8 @@ const IPS_BUNDLE_LIGHT_EXAMPLE = {
         status: 'final',
         type: {
           coding: [{
-            system: HealthcareBasicSections.PatientSummaryDocument.system,
-            code: HealthcareBasicSections.PatientSummaryDocument.code,
+            system: HealthcareCoreSections.PatientSummaryDocument.system,
+            code: HealthcareCoreSections.PatientSummaryDocument.code,
           }],
         },
       },

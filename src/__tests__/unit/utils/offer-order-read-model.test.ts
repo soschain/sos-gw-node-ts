@@ -1,14 +1,9 @@
+// Flow contract: independent identity and commerce claim catalogs preserve exact stored keys and authorization boundaries.
 // Copyright 2026 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { describe, expect, it } from '@jest/globals';
-import {
-  ClaimsOfferSchemaorg,
-  EXAMPLE_LICENSE_OFFER_ID,
-  LicenseCommercialSearchOperation,
-  LicenseCategories,
-  LicenseClaimContext,
-  LicenseStatuses,
-} from 'gdc-common-utils-ts';
+import { EXAMPLE_LICENSE_OFFER_ID, LicenseCommercialSearchOperation, LicenseCategories, LicenseClaimContext, LicenseStatuses } from 'gdc-common-utils-ts';
+import { SchemaOrgOfferClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   buildOfferOrderSearchRow,
   extractOfferOrderSearchClaims,
@@ -22,24 +17,24 @@ describe('offer-order-read-model utils', () => {
         meta: {
           claims: {
             '@context': LicenseClaimContext.SchemaOrg,
-            [ClaimsOfferSchemaorg.identifier]: EXAMPLE_LICENSE_OFFER_ID,
+            [SchemaOrgOfferClaim.Identifier]: EXAMPLE_LICENSE_OFFER_ID,
           },
         },
       },
     } as any);
 
-    expect(claims[ClaimsOfferSchemaorg.identifier]).toBe(EXAMPLE_LICENSE_OFFER_ID);
+    expect(claims[SchemaOrgOfferClaim.Identifier]).toBe(EXAMPLE_LICENSE_OFFER_ID);
   });
 
   it('matches only exact non-empty business filters and ignores @-prefixed vocab keys', () => {
     const matches = matchOfferOrderSearchClaims(
       {
-        [ClaimsOfferSchemaorg.identifier]: EXAMPLE_LICENSE_OFFER_ID,
-        [ClaimsOfferSchemaorg.category]: LicenseCategories.Professional,
+        [SchemaOrgOfferClaim.Identifier]: EXAMPLE_LICENSE_OFFER_ID,
+        [SchemaOrgOfferClaim.Category]: LicenseCategories.Professional,
       },
       {
         '@type': LicenseCommercialSearchOperation.Offer,
-        [ClaimsOfferSchemaorg.identifier]: EXAMPLE_LICENSE_OFFER_ID,
+        [SchemaOrgOfferClaim.Identifier]: EXAMPLE_LICENSE_OFFER_ID,
       },
     );
 
@@ -53,9 +48,9 @@ describe('offer-order-read-model utils', () => {
         status: LicenseStatuses.Active,
       } as any,
       {
-        [ClaimsOfferSchemaorg.identifier]: EXAMPLE_LICENSE_OFFER_ID,
+        [SchemaOrgOfferClaim.Identifier]: EXAMPLE_LICENSE_OFFER_ID,
       },
-      ClaimsOfferSchemaorg.identifier,
+      SchemaOrgOfferClaim.Identifier,
     );
 
     expect(row).toEqual({
@@ -63,7 +58,7 @@ describe('offer-order-read-model utils', () => {
       meta: {
         status: LicenseStatuses.Active,
         claims: {
-          [ClaimsOfferSchemaorg.identifier]: EXAMPLE_LICENSE_OFFER_ID,
+          [SchemaOrgOfferClaim.Identifier]: EXAMPLE_LICENSE_OFFER_ID,
         },
       },
     });

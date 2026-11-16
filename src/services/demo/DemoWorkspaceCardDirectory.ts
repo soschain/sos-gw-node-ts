@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
+import type { RecordBase } from 'sos-data-utils-ts/confidential-storage';
 import { buildDemoWorkspaceScope, type DemoWorkspaceScope } from 'sos-data-utils-ts/demo-workspace-scope';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 

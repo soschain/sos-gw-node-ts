@@ -8,11 +8,8 @@ import {
   IdentityAuthActions,
   IdentityAuthResourceTypes,
   SmartPostDcrActions,
-} from 'gdc-common-utils-ts/constants/identity-auth';
-import {
-  GatewayRouteFormats,
-  GatewayRouteSections,
-} from 'gdc-common-utils-ts/constants/gateway-response';
+} from 'sos-data-utils-ts/identity-auth-wire-contract';
+import { GatewayRouteFormats, GatewayRouteSections } from 'sos-data-utils-ts/gateway-response-contract';
 import { SecureIdTypesIndividual } from 'gdc-common-utils-ts/constants/identity-identifiers';
 import {
   EXAMPLE_ACCOUNT_OWNER_ID,

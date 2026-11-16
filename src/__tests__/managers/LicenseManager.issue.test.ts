@@ -1,9 +1,10 @@
+// Flow contract: independent SOS record and job contracts preserve payload, route and lifecycle boundaries.
 import { mock, MockProxy } from 'jest-mock-extended';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { LicenseManager } from '../../managers/LicenseManager';
 
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { ITenantsManager } from '../../managers/ITenantsManager';
 
 // Flow contract: an employee invitation reserves one private device seat; the

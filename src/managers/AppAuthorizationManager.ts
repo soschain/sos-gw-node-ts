@@ -4,20 +4,20 @@
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { ITokenVerifier, VerificationResult } from '../auth/ITokenVerifier';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
-import { ICryptography } from 'gdc-common-utils-ts/interfaces/ICryptography';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { getTenantVaultId } from '../utils/tenant';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { Content } from 'antifraud-data-utils-ts/cryptography';
 import { getEnvSectionId } from '../utils/section-env';
 import { compactVerify, decodeProtectedHeader, importJWK, type JWK } from 'jose';
-import { normalizeSameAsHash, normalizeTelephoneHash } from 'gdc-common-utils-ts/utils/same-as';
+import { normalizeControllerAlias, normalizeTelephoneAlias } from 'antifraud-data-utils-ts/public-aliases';
 import { normalizeIndexedEmail, normalizeIndexedPhone } from '../utils/indexed-contact';
 import { DEFAULT_LICENSE_DEVICE_ALLOWANCE } from '../constants/domain';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
-import { decodeMultibase58btcToUUID } from 'gdc-common-utils-ts/utils/multibase58';
+import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import { normalizeCodeSystemAndValue } from '../utils/normalize-codeAndSystem';
 import { randomBytes } from 'node:crypto';
 import {
@@ -118,7 +118,9 @@ export class AppAuthorizationManager {
     }
     let employeeUuid: string;
     try {
-      employeeUuid = decodeMultibase58btcToUUID(employeeMemberId);
+      const hex = normalizeUuid(employeeMemberId);
+      if (!hex) throw new TypeError('employee_uuid_invalid');
+      employeeUuid = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
     } catch {
       throw new ManagerError('Professional licence not found for the supplied employee authorization.', IssueType.NotFound);
     }
@@ -368,8 +370,8 @@ export class AppAuthorizationManager {
       throw new ManagerError('Activation identity does not match the licensed phone.', IssueType.Forbidden);
     }
     const actor = issuedEmail
-      ? normalizeSameAsHash(issuedEmail)
-      : normalizeTelephoneHash(issuedPhone!);
+      ? normalizeControllerAlias(issuedEmail)
+      : normalizeTelephoneAlias(issuedPhone!);
     if (license.status === 'active') {
       const legacyActor = Boolean(license.activatedBy
         && !/^urn:multibase:z[^:]+$/.test(String(license.activatedBy)));

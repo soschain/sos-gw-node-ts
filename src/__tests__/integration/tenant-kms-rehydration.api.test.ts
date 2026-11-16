@@ -1,4 +1,4 @@
-// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+// Flow contract: 1. Activate/order the tenant and purchase its seat. 2. Restart KMS over persisted vault records. 3. Read the current controller from that tenant's DID document and authenticate a genuinely signed OIDC principal for it. 4. Retain successful employee readback after restart and provisioning replay without changing the published encryption key. 5. Reject a verified foreign controller and leave the tenant's employee records unchanged. Production admission and custody checks remain enabled.
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 /**
  * Flow contract: activate a tenant, purchase a professional seat through the
@@ -7,7 +7,7 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
  */
 import * as express from 'express';
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { AdapterCryptoSdkNode } from '../../gdc-backend-utils-node/adapters/node/crypto';
 import { AsyncResponseStoreMem } from '../../adapters/async-response-store.mem';
 import { QueueAdapterMem } from '../../adapters/queue-mem';
@@ -25,18 +25,23 @@ import { InMemoryEnvelopeAdapter } from '../../services/kms-envelope-adapter';
 import { VaultWrappedKeyRepository } from '../../services/wrapped-key-repository';
 import { Worker } from '../../worker';
 import type { IServerConfig } from '../../config';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { generateTenantCollectionNameFromClaims } from '../../utils/tenant';
-import { ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { invokeExpress } from './helpers/invokeExpress';
 import { buildActivationPayload, pollJsonBody } from './helpers/story-flow';
 import { ORGANIZATION_ORDER_REQUEST, EMPLOYEE_REGISTRATION_REQUEST } from '../data/example-payloads';
-import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { IHostRuntime } from '../../managers/IHostRuntime';
 import { testClaimsHostInitialization } from '../data/end-to-end.data';
 import { buildLicensePurchaseEntry } from 'gdc-common-utils-ts';
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { getTenantVaultId } from '../../utils/tenant';
+import { AppAuthorizationManager } from '../../managers/AppAuthorizationManager';
+import type { ITokenVerifier } from '../../auth/ITokenVerifier';
+import { generateKeyPair, jwtVerify, SignJWT } from 'jose';
+import { REPOSITORY_SAFE_EXAMPLES as safe } from 'sos-data-utils-ts/repository-privacy';
+import { getEnvSectionId } from '../../utils/section-env';
 
 const hostBootstrapClaims = testClaimsHostInitialization;
 
@@ -49,6 +54,11 @@ describe('Tenant KMS rehydration after activate route story', () => {
   let initialHarness: Awaited<ReturnType<typeof buildHarness>>;
   let restartedHarness: Awaited<ReturnType<typeof buildHarness>>;
   let tenantId: string;
+  let controllerDid: string;
+  let controllerAuthorization: string;
+  let foreignDid: string;
+  let foreignAuthorization: string;
+  const originalInsecureBearer = process.env.DEMO_ALLOW_INSECURE_BEARER;
 
   beforeAll(async () => {
     process.env.DEV_SEED = 'true';
@@ -59,18 +69,45 @@ describe('Tenant KMS rehydration after activate route story', () => {
     process.env.DIDCOMM_PLAIN = 'true';
     process.env.DEMO_ALLOW_INSECURE_BEARER = 'true';
 
-    initialHarness = await buildHarness(vaultRepository, hostCollectionName, cryptographyService, logger);
+    const fixtureKeys = await generateKeyPair('ES384');
+    const tokenVerifier: ITokenVerifier = {
+      async verify(token) {
+        try {
+          const { payload } = await jwtVerify(token, fixtureKeys.publicKey, {
+            issuer: safe.didWeb, audience: safe.httpsBaseUrl, algorithms: ['ES384'],
+          });
+          return { valid: true, payload };
+        } catch {
+          return { valid: false, error: 'Signed fixture principal rejected' };
+        }
+      },
+    };
+    initialHarness = await buildHarness(vaultRepository, hostCollectionName, cryptographyService, logger, tokenVerifier);
     tenantId = await onboardViaActivateAndOrder(initialHarness.app, initialHarness.queueAdapter);
     await purchaseEmployeeSeat(initialHarness.app, initialHarness.queueAdapter, tenantId);
     await initialHarness.queueAdapter.waitForEmptyQueue();
     initialHarness.queueAdapter.stop();
 
-    restartedHarness = await buildHarness(vaultRepository, hostCollectionName, cryptographyService, logger);
+    process.env.DEMO_ALLOW_INSECURE_BEARER = 'false';
+    restartedHarness = await buildHarness(vaultRepository, hostCollectionName, cryptographyService, logger, tokenVerifier);
+    const tenantDocument = await restartedHarness.tenantManager.getDidDocument(getTenantVaultId(GatewaySector.HEALTH_CARE, tenantId));
+    const controllers = Array.isArray(tenantDocument?.controller) ? tenantDocument.controller : tenantDocument?.controller ? [tenantDocument.controller] : [];
+    controllerDid = controllers.find((value): value is string => typeof value === 'string' && value.startsWith('did:')) || '';
+    expect(controllerDid).not.toBe('');
+    foreignDid = `${safe.didWeb}:foreign-controller`;
+    expect(controllers).not.toContain(foreignDid);
+    const signPrincipal = (subject: string) => new SignJWT({}).setProtectedHeader({ alg: 'ES384' })
+      .setIssuer(safe.didWeb).setAudience(safe.httpsBaseUrl).setSubject(subject)
+      .setIssuedAt().setExpirationTime('10m').sign(fixtureKeys.privateKey);
+    controllerAuthorization = `Bearer ${await signPrincipal(controllerDid)}`;
+    foreignAuthorization = `Bearer ${await signPrincipal(foreignDid)}`;
   });
 
   afterAll(() => {
     initialHarness?.queueAdapter.stop();
     restartedHarness?.queueAdapter.stop();
+    if (originalInsecureBearer === undefined) delete process.env.DEMO_ALLOW_INSECURE_BEARER;
+    else process.env.DEMO_ALLOW_INSECURE_BEARER = originalInsecureBearer;
   });
 
   it('keeps tenant encrypt-to-self plaintext flows working after a KMS restart', async () => {
@@ -78,6 +115,7 @@ describe('Tenant KMS rehydration after activate route story', () => {
     const createPayload = structuredClone(EMPLOYEE_REGISTRATION_REQUEST) as any;
     createPayload.thid = 'employee-kms-rehydration-thid';
     createPayload.jti = 'employee-kms-rehydration-jti';
+    createPayload.iss = controllerDid;
     createPayload.body.data[0].resource = {
       meta: {
         claims: {
@@ -91,7 +129,7 @@ describe('Tenant KMS rehydration after activate route story', () => {
     const submit = await invokeExpress(restartedHarness.app, {
       method: 'POST',
       url: employeeUrl,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: controllerAuthorization },
       body: createPayload,
     });
 
@@ -107,7 +145,7 @@ describe('Tenant KMS rehydration after activate route story', () => {
   it('keeps the published tenant key and employee flow working when provisioning is replayed after restart', async () => {
     const replayEmployeeIdentifier = 'urn:uuid:71f84db2-dd41-4d99-a2d6-31a075319a86';
     const replayEmployeeEmail = 'receptionist-replayed-provisioning@acme.example';
-    const tenantVaultId = getTenantVaultId(Sector.HEALTH_CARE, tenantId);
+    const tenantVaultId = getTenantVaultId(GatewaySector.HEALTH_CARE, tenantId);
     const publishedDid = await restartedHarness.tenantManager.getDidDocument(tenantVaultId);
     const publishedEncryptionKid = (publishedDid?.verificationMethod || [])
       .find((method) => (method.publicKeyJwk as any)?.use === 'enc')?.publicKeyJwk?.kid;
@@ -119,12 +157,13 @@ describe('Tenant KMS rehydration after activate route story', () => {
     const createPayload = structuredClone(EMPLOYEE_REGISTRATION_REQUEST) as any;
     createPayload.thid = 'employee-kms-rehydration-replayed-provisioning-thid';
     createPayload.jti = 'employee-kms-rehydration-replayed-provisioning-jti';
+    createPayload.iss = controllerDid;
     createPayload.body.data[0].resource = {
       meta: {
         claims: {
           ...(createPayload.body.data[0].resource?.meta?.claims || {}),
-          [ClaimsPersonSchemaorg.identifier]: replayEmployeeIdentifier,
-          [ClaimsPersonSchemaorg.email]: replayEmployeeEmail,
+          [SchemaOrgPersonClaim.Identifier]: replayEmployeeIdentifier,
+          [SchemaOrgPersonClaim.Email]: replayEmployeeEmail,
         },
       },
     };
@@ -134,7 +173,7 @@ describe('Tenant KMS rehydration after activate route story', () => {
     const submit = await invokeExpress(restartedHarness.app, {
       method: HttpRequestMethods.Post,
       url: employeeUrl,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: controllerAuthorization },
       body: createPayload,
     });
 
@@ -147,6 +186,34 @@ describe('Tenant KMS rehydration after activate route story', () => {
     expect(String(poll.body.data[0].resource?.id || '')).toBeTruthy();
   });
 
+  it('denies a genuinely verified foreign controller after restart without changing employee records', async () => {
+    const tenantVaultId = getTenantVaultId(GatewaySector.HEALTH_CARE, tenantId);
+    const collection = await restartedHarness.tenantManager.getCollectionName(tenantVaultId);
+    if (!collection) throw new Error('Authoritative tenant collection unavailable');
+    const before = structuredClone(await vaultRepository.getContainersInSection(collection, getEnvSectionId('employees')) || []);
+    const template = structuredClone(EMPLOYEE_REGISTRATION_REQUEST);
+    const entry = template.body.data[0];
+    const payload = {
+      ...template, thid: 'employee-kms-foreign-controller-thread',
+      jti: 'employee-kms-foreign-controller-request', iss: foreignDid,
+      body: { ...template.body, data: [{
+        ...entry, meta: {}, request: { method: HttpRequestMethods.Post },
+        resource: { meta: { claims: { ...(entry.resource?.meta?.claims || {}) } } },
+      }] },
+    };
+    const submit = await invokeExpress(restartedHarness.app, {
+      method: HttpRequestMethods.Post,
+      url: `/${tenantId}/cds-es/v1/health-care/entity/org.schema/Employee/_batch`,
+      headers: { 'content-type': 'application/json', authorization: foreignAuthorization },
+      body: payload,
+    });
+    expect(submit.status).toBe(202);
+    await restartedHarness.queueAdapter.waitForEmptyQueue();
+    const poll = await pollJsonBody(restartedHarness.app, submit.headers.location, payload.thid);
+    expect(poll.status).toBe(200);
+    expect(poll.body.data[0].response.status).toBe('403');
+    expect(await vaultRepository.getContainersInSection(collection, getEnvSectionId('employees')) || []).toEqual(before);
+  });
 });
 
 async function purchaseEmployeeSeat(
@@ -176,7 +243,7 @@ async function purchaseEmployeeSeat(
   expect(offerSubmit.status).toBe(202);
   await queueAdapter.waitForEmptyQueue();
   const offerPoll = await pollJsonBody(app, offerSubmit.headers.location, offerPayload.thid);
-  const offerId = String(offerPoll.body.data[0].resource?.meta?.claims?.[ClaimsOfferSchemaorg.identifier] || '');
+  const offerId = String(offerPoll.body.data[0].resource?.meta?.claims?.[SchemaOrgOfferClaim.Identifier] || '');
   expect(offerPoll.body.data[0].response.status).toBe('201');
   expect(offerId).toBeTruthy();
 
@@ -185,9 +252,9 @@ async function purchaseEmployeeSeat(
   orderPayload.jti = 'employee-kms-seat-order-jti';
   orderPayload.body.data[0].meta = {};
   orderPayload.body.data[0].resource = { meta: { claims: {
-    [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
-    [ClaimsOrderSchemaorg.paymentMethod]: 'Stripe',
-    [ClaimsOrderSchemaorg.partOfInvoice]: 'employee-kms-seat-invoice',
+    [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
+    [SchemaOrgOrderClaim.PaymentMethod]: 'Stripe',
+    [SchemaOrgOrderClaim.PartOfInvoice]: 'employee-kms-seat-invoice',
   } } };
   const orderSubmit = await invokeExpress(app, {
     method: 'POST',
@@ -206,6 +273,7 @@ async function buildHarness(
   hostCollectionName: string,
   cryptographyService: CryptographyService,
   logger: ConsoleLogger,
+  tokenVerifier: ITokenVerifier,
 ): Promise<{
   app: express.Express;
   queueAdapter: QueueAdapterMem;
@@ -227,7 +295,7 @@ async function buildHarness(
     fhirLegacy: true,
     jsonLegacy: true,
     didcommPlainEnabled: true,
-    demoAllowInsecureBearer: true,
+    demoAllowInsecureBearer: process.env.DEMO_ALLOW_INSECURE_BEARER === 'true',
     nodeEnv: 'test',
     port: 3000,
     maxHeaderSize: 131072,
@@ -235,7 +303,7 @@ async function buildHarness(
     hostExternalDomain: 'testhost.com',
     apiBaseUrl: 'http://testhost:3000',
     namespace: 'test-namespace',
-    sectorsAllowed: [Sector.HEALTH_CARE, Sector.TEST],
+    sectorsAllowed: [GatewaySector.HEALTH_CARE, GatewaySector.TEST],
     allowedPaymentMethods: ['Stripe'],
     dbProvider: 'mem',
     queueProvider: 'mem',
@@ -274,7 +342,8 @@ async function buildHarness(
   const app = express.default();
   app.use(express.json({ type: ['application/json', 'application/fhir+json'] }));
   app.use(express.urlencoded({ extended: false }));
-  app.use('/', createApiRouter(queueAdapter, tenantManager, kmsService, asyncResponseStore, sharedVaultRepository, cryptographyService, mockConfig.apiBaseUrl));
+  const appAuthorization = new AppAuthorizationManager(sharedVaultRepository, tokenVerifier, kmsService, cryptographyService);
+  app.use('/', createApiRouter(queueAdapter, tenantManager, kmsService, asyncResponseStore, sharedVaultRepository, cryptographyService, mockConfig.apiBaseUrl, appAuthorization));
 
   return { app, queueAdapter, tenantManager, kmsService };
 }
@@ -294,7 +363,7 @@ async function onboardViaActivateAndOrder(app: express.Express, queueAdapter: Qu
   expect(activationPoll.status).toBe(200);
 
   const activationEntry = activationPoll.body.data[0];
-  const offerId = String(activationEntry.resource?.meta?.claims?.[ClaimsOfferSchemaorg.identifier] || '');
+  const offerId = String(activationEntry.resource?.meta?.claims?.[SchemaOrgOfferClaim.Identifier] || '');
   expect(offerId).toBeTruthy();
 
   const orderPayload = structuredClone(ORGANIZATION_ORDER_REQUEST) as any;
@@ -304,9 +373,9 @@ async function onboardViaActivateAndOrder(app: express.Express, queueAdapter: Qu
   orderPayload.body.data[0].resource = {
     meta: {
       claims: {
-        [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
-        [ClaimsOrderSchemaorg.paymentMethod]: 'Stripe',
-        [ClaimsOrderSchemaorg.partOfInvoice]: 'tenant-kms-order-invoice',
+        [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
+        [SchemaOrgOrderClaim.PaymentMethod]: 'Stripe',
+        [SchemaOrgOrderClaim.PartOfInvoice]: 'tenant-kms-order-invoice',
       },
     },
   };
@@ -323,5 +392,5 @@ async function onboardViaActivateAndOrder(app: express.Express, queueAdapter: Qu
   const orderPoll = await pollJsonBody(app, orderSubmit.headers.location, orderPayload.thid);
   expect(orderPoll.status).toBe(200);
 
-  return String(activationEntry.resource?.meta?.claims?.[ClaimsOrganizationSchemaorg.alternateName] || '');
+  return String(activationEntry.resource?.meta?.claims?.[SchemaOrgOrganizationClaim.AlternateName] || '');
 }

@@ -1,37 +1,33 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/managers/DeviceRegistrationManager.ts
-import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
 import { v4 as uuidv4 } from 'uuid';
+import { createHash } from 'node:crypto';
 import { IJobProcessor } from './registry';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { BundleJsonApi, BundleEntry, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { BundleJsonApi, BundleEntry, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { composeHostDidWebId } from '../utils/did-backend';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueType, IssueLevel } from 'gdc-common-utils-ts/models/issue';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueType, IssueLevel } from 'fhir-data-utils-ts/operation-outcome';
 import { createOperationOutcome } from '../utils/outcome';
-import { DcrRegistrationRequest, DcrRegistrationResponse, OpenIdDeviceInfo } from 'gdc-common-utils-ts/models/openid-device';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { DeviceClientRegistrationRequest as DcrRegistrationRequest, DeviceClientRegistrationResponse as DcrRegistrationResponse, RegisteredDeviceInfo as OpenIdDeviceInfo } from 'antifraud-data-utils-ts/openid-contracts';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { getTenantVaultId } from '../utils/tenant';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { DeviceLicense, DeviceInfo } from 'gdc-common-utils-ts/models/device-license';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import { DeviceLicense, DeviceInfo } from 'sos-data-utils-ts/device-license-contract';
 import { getEnvSectionId } from '../utils/section-env';
-import { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import { DidDocument, VerificationMethod } from '../gdc-backend-utils-node/models/did';
 import { registerSubjectKeysOnLedger, revokeSubjectKeysOnLedger } from '../utils/ledger-device-registration';
-import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
-import {
-  IdentityAuthActions,
-  IdentityAuthRequestFields,
-  IdentityAuthResponseEntryTypes,
-  IdentityAuthResponseTypes,
-  IdentityDcrMetadataFields,
-} from 'gdc-common-utils-ts/constants/identity-auth';
+import { DeviceBindingStatuses } from 'sos-data-utils-ts/device-license-contract';
+import { IdentityAuthActions, IdentityAuthRequestFields, IdentityAuthResponseTypes, IdentityDcrMetadataFields } from 'sos-data-utils-ts/identity-auth-wire-contract';
+import { IdentityAuthResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { DEFAULT_LICENSE_DEVICE_ALLOWANCE, LICENSE_USER_CLASS_EMPLOYEE, LICENSE_USER_CLASS_INDIVIDUAL } from '../constants/domain';
 import type { ITenantsManager } from './ITenantsManager';
 import { hasRoleCode } from 'gdc-common-utils-ts/utils/activation-policy';
@@ -49,14 +45,11 @@ import {
   parseTenantUrn,
   resolveRoleBearingEmployeeUrn,
 } from '../utils/urn';
-import {
-  FhirIpsCreatorKinds,
-  type ClinicalCreatorBinding,
-} from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
-import { normalizeUuid } from 'gdc-common-utils-ts/utils/normalize-uuid';
-import { getHealthcareRoleByClaim } from 'gdc-common-utils-ts/constants/healthcare';
+import { FhirIpsCreatorKinds, type ClinicalCreatorBinding } from 'sos-data-utils-ts/clinical-creator-contract';
+import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
+import { getHealthcareRoleByClaim } from 'sos-data-utils-ts/healthcare-roles';
 import { getClinicalCreatorBindingsSectionId } from '../utils/clinical-creator-binding';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 
 /**
  * Manages the business logic for a single device registration (DCR) request,
@@ -130,8 +123,8 @@ export class DeviceRegistrationManager implements IJobProcessor {
       }
 
       // --- Client Creation Step ---
-      const clientId = uuidv4();
-      const clientIdIssuedAt = Math.floor(Date.now() / 1000);
+      let clientId = uuidv4();
+      let clientIdIssuedAt = Math.floor(Date.now() / 1000);
       
       const registrationResponse: DcrRegistrationResponse = {
         client_id: clientId,
@@ -215,8 +208,36 @@ export class DeviceRegistrationManager implements IJobProcessor {
         clientId,
         clientInstanceId: fingerprint.clientInstanceId,
       });
+      const bearer = (job.content as any)?.meta?.bearer?.jwt?.payload;
+      const replayContext = licenseDoc && license && typeof bearer?.sub === 'string'
+        && bearer.sub.trim() && bearer.scope === 'dcr:register' && bearer.act_code === code
+        ? {
+          authenticatedSubject: bearer.sub.trim(),
+          licenseId: licenseDoc.id, tenantId, sector,
+          userClass: license.userClass, subjectId: license.subjectId,
+          ownerOrganizationId: license.ownerOrganizationId,
+          issuedToRole: license.issuedToRole,
+          issuedToEmail: license.issuedToEmail,
+          issuedToPhone: license.issuedToPhone,
+          individualAuthorization,
+        } : undefined;
+      const replayProfile = license && await this.findRegistrationReplay({
+        vaultId, license, clientInstanceId: fingerprint.clientInstanceId,
+        request: registrationRequest, context: replayContext,
+      });
+      if (replayProfile) {
+        clientId = replayProfile.clientId;
+        clientIdIssuedAt = replayProfile.clientIdIssuedAt;
+        Object.assign(registrationResponse, {
+          client_id: clientId, client_id_issued_at: clientIdIssuedAt,
+          registration_client_uri: replayProfile.registrationClientUri,
+        });
+        softwareClaims['org.schema.SoftwareApplication.identifier'] = clientId;
+      }
+      if (!replayProfile) {
       const deviceProfile = {
         type: 'DeviceProfile',
+        ...(replayContext ? { registrationReplay: { context: replayContext, requestDigest: dcrRequestDigest(registrationRequest) } } : {}),
         clientId,
         clientIdIssuedAt,
         registrationClientUri: registrationResponse.registration_client_uri,
@@ -301,6 +322,8 @@ export class DeviceRegistrationManager implements IJobProcessor {
         });
       }
 
+      }
+
       // --- Response Formatting Step ---
       responseEntry = {
         type: entryType,
@@ -336,6 +359,54 @@ export class DeviceRegistrationManager implements IJobProcessor {
       exp: Math.floor(Date.now() / 1000) + 300,
       body: responseBundle,
     };
+  }
+
+  /** Exact active installation replay is recovery, never a new authority source. */
+  private async findRegistrationReplay(params: {
+    vaultId: string;
+    license: DeviceLicense & Record<string, any>;
+    clientInstanceId: string;
+    request: DcrRegistrationRequest;
+    context: unknown;
+  }): Promise<any | undefined> {
+    // A mutable remote JWKS URI alone cannot prove unchanged key material.
+    if (!Array.isArray(params.request.jwks?.keys) || params.request.jwks.keys.length === 0) return undefined;
+    const matches = this.getDeviceBindings(params.license).filter(binding =>
+      binding.status === DeviceBindingStatuses.Active
+      && binding.clientInstanceId === params.clientInstanceId);
+    if (!matches.length) return undefined;
+    if (matches.length !== 1) throw new ManagerError('DCR installation has ambiguous active bindings.', IssueType.Conflict);
+    const document = await this.vaultRepository.get<ConfidentialStorageDoc>(
+      params.vaultId, matches[0].clientId, getEnvSectionId('device-profiles'));
+    if (!document || document.status !== DeviceBindingStatuses.Active) {
+      throw new ManagerError('DCR installation has no active registered profile.', IssueType.Conflict);
+    }
+    const profile = this.kmsService
+      ? await this.kmsService.unprotectConfidentialData<any>(document, params.vaultId)
+      : document.content as any;
+    // A stored account binding cannot be bypassed by also changing key material.
+    // Historical profiles without this evidence retain their existing rotation policy.
+    if (profile?.registrationReplay && (!params.context
+      || !sameDcrData(profile.registrationReplay.context, params.context))) {
+      throw new ManagerError('DCR replacement does not match its authenticated licence context.', IssueType.Forbidden);
+    }
+    // Different complete key material remains the existing deliberate rotation path.
+    if (!sameDcrData({ jwks: profile?.jwks }, { jwks: params.request.jwks })) return undefined;
+    if (!params.context || !profile?.registrationReplay
+      || !sameDcrData(profile.registrationReplay.context, params.context)) {
+      throw new ManagerError('DCR replay does not match its authenticated licence context.', IssueType.Forbidden);
+    }
+    if (params.license.status !== 'active' || !Number.isFinite(params.license.exp)
+      || Number(params.license.exp) <= Math.floor(Date.now() / 1000)) {
+      throw new ManagerError('DCR replay requires a current active licence.', IssueType.Forbidden);
+    }
+    if (profile.registrationReplay.requestDigest !== dcrRequestDigest(params.request)
+      || profile.clientId !== document.id || profile.clientId !== matches[0].clientId
+      || !Number.isInteger(profile.clientIdIssuedAt) || profile.clientIdIssuedAt <= 0
+      || profile.registrationClientUri !== `${this.apiBaseUrl}/clients/${profile.clientId}`) {
+      throw new ManagerError('DCR replay conflicts with its registered request or receipt.', IssueType.Conflict);
+    }
+    return profile;
   }
 
   /**
@@ -469,11 +540,11 @@ export class DeviceRegistrationManager implements IJobProcessor {
       params.license?.userClass === LICENSE_USER_CLASS_EMPLOYEE
       && String(params.license.subjectId || '').trim()
     ) {
-      const subjectId = String(params.license.subjectId).trim().toLowerCase();
+      const subjectId = normalizeUuid(String(params.license.subjectId).trim());
       const issuedRole = String(params.license.issuedToRole || '').trim();
       const matches = (await this.vaultRepository.listContainersInSection<any>(params.vaultId, sectionId))
         .filter(isClinicalCreatorBinding)
-        .filter((binding) => binding.actorIdentifier.toLowerCase() === subjectId)
+        .filter((binding) => Boolean(subjectId) && normalizeUuid(binding.actorIdentifier) === subjectId)
         .filter((binding) => !issuedRole || binding.role === issuedRole);
       if (matches.length > 1) {
         throw new ManagerError(
@@ -1277,4 +1348,23 @@ function sameGovernedClinicalRole(left: string, right: string): boolean {
 
 function uniqueText(values: readonly string[]): string[] {
   return Array.from(new Set(values.map((value) => String(value || '').trim()).filter(Boolean)));
+}
+
+/** Only the JWKS set is unordered; all other arrays retain request semantics. */
+function canonicalDcrRequest(value: unknown, path = ''): unknown {
+  if (Array.isArray(value)) return value.map(entry => canonicalDcrRequest(entry, path));
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.entries(value).filter(([, child]) => child !== undefined)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([name, child]) => [name, path === 'jwks' && name === 'keys' && Array.isArray(child)
+      ? child.map(entry => canonicalDcrRequest(entry)).sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)))
+      : canonicalDcrRequest(child, path ? `${path}.${name}` : name)]));
+}
+
+function sameDcrData(left: unknown, right: unknown): boolean {
+  return JSON.stringify(canonicalDcrRequest(left)) === JSON.stringify(canonicalDcrRequest(right));
+}
+
+function dcrRequestDigest(request: unknown): string {
+  return createHash('sha256').update(JSON.stringify(canonicalDcrRequest(request))).digest('hex');
 }

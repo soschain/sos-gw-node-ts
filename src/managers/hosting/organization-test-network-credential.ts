@@ -1,23 +1,18 @@
-import type { ICryptography } from 'gdc-common-utils-ts/interfaces/ICryptography';
-import type { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
-import type { DidDocument, VerificationMethod } from 'gdc-common-utils-ts/models/did';
-import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
+import type { ICryptography } from 'antifraud-data-utils-ts/cryptography';
+import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
+import type { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
+import type { VerificationMethod } from 'antifraud-data-utils-ts/did-document';
+import type { VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
 import {
-  ActivationCredentialTypes,
-  ContractCredentialTypes,
-  EnvironmentCredentialTypes,
-} from 'gdc-common-utils-ts/constants/verifiable-credentials';
-import {
+  ReviewedOrganizationCredentialTypes,
   canonicalizeOrganizationTestNetworkCredential,
-} from 'gdc-common-utils-ts/utils/organization-test-network-credential';
-import {
   canonicalizeTestNetworkOrganizationCredential,
-} from 'gdc-common-utils-ts/utils/test-network-organization-credentials';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
-import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+} from 'antifraud-data-utils-ts/organization-credentials';
+import { buildStableActorIdentifier, normalizeActorContact, type ActorContactInput } from 'antifraud-data-utils-ts/organization-identity';
+import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprints';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 
 type VerificationInput = Readonly<{
   credential: VerifiableCredentialV2;
@@ -25,7 +20,9 @@ type VerificationInput = Readonly<{
   controller?: Record<string, unknown>;
   organization?: Record<string, unknown>;
   controllerEmail?: string;
+  controllerTelephone?: string;
   legalRepresentativeEmail?: string;
+  legalRepresentativeTelephone?: string;
   testNetworkCredentials?: readonly VerifiableCredentialV2[];
   cryptography: ICryptography;
   trustedIssuers: string[];
@@ -68,7 +65,7 @@ export async function verifyOrganizationTestNetworkCredential(
   const issuer = typeof credential.issuer === 'string'
     ? credential.issuer
     : String((credential.issuer as { id?: string } | undefined)?.id || '');
-  if (!credential.type.includes(ContractCredentialTypes.OrganizationTestNetworkCredential)) {
+  if (!credential.type.includes(ReviewedOrganizationCredentialTypes.Admission)) {
     fail('Unexpected organization Test Network credential type.');
   }
   if (!input.trustedIssuers.includes(issuer)) fail('Organization Test Network admission issuer is not trusted.');
@@ -78,8 +75,8 @@ export async function verifyOrganizationTestNetworkCredential(
 
   const subject = credential.credentialSubject as Record<string, any>;
   const organizationIdentifier = String(
-    input.claims[ClaimsOrganizationSchemaorg.identifierValue]
-      || input.claims[ClaimsOrganizationSchemaorg.taxId]
+    input.claims[SchemaOrgOrganizationClaim.IdentifierValue]
+      || input.claims[SchemaOrgOrganizationClaim.TaxId]
       || '',
   ).trim();
   if (!organizationIdentifier || subject.organization?.identifier !== organizationIdentifier) {
@@ -88,9 +85,11 @@ export async function verifyOrganizationTestNetworkCredential(
   if (String(input.organization?.did || '') !== String(subject.id || '')) {
     fail('Admission subject DID does not match the requested organization DID.');
   }
-  if (String(input.controllerEmail || '').trim().toLowerCase()
-    !== String(subject.controller?.email || '').trim().toLowerCase()) {
-    fail('Admission controller email does not match the transaction.');
+  const controllerContact = reviewedPartyContact(input.controllerEmail, input.controllerTelephone, 'controller');
+  const admissionControllerContact = reviewedPartyContact(subject.controller?.email, subject.controller?.telephone, 'reviewed controller');
+  if (controllerContact.contactKind !== admissionControllerContact.contactKind
+    || controllerContact.contact !== admissionControllerContact.contact) {
+    fail('Admission controller contact does not match the transaction.');
   }
   const controllerJwk = input.controller?.publicKeyJwk as PublicJwk | undefined;
   if (!controllerJwk
@@ -151,8 +150,9 @@ export async function verifyOrganizationTestNetworkCredential(
     organizationTestNetworkCredential: credential,
     signerJwk,
     verificationMethod,
-    controllerEmail: input.controllerEmail,
+    controllerContact,
     legalRepresentativeEmail: input.legalRepresentativeEmail,
+    legalRepresentativeTelephone: input.legalRepresentativeTelephone,
     cryptography: input.cryptography,
   });
 
@@ -172,32 +172,49 @@ export async function verifyOrganizationTestNetworkCredential(
   };
 }
 
+function reviewedPartyContact(email: unknown, telephone: unknown, party: string): ActorContactInput {
+  if ((email !== undefined && typeof email !== 'string')
+    || (telephone !== undefined && typeof telephone !== 'string')) {
+    fail(`Admission ${party} contact must be a string.`);
+  }
+  const hasEmail = typeof email === 'string' && Boolean(email.trim());
+  const hasTelephone = typeof telephone === 'string' && Boolean(telephone.trim());
+  if (hasEmail === hasTelephone) fail(`Admission ${party} requires exactly one email or telephone.`);
+  const contactKind = hasEmail ? 'email' : 'phone';
+  const contact = hasEmail ? email : telephone;
+  if (typeof contact !== 'string') fail(`Admission ${party} contact is missing.`);
+  try {
+    return { contactKind, contact: normalizeActorContact({ contactKind, contact }) };
+  } catch {
+    return fail(`Admission ${party} contact is invalid.`);
+  }
+}
+
 async function verifyTestNetworkDomainCredentials(input: Readonly<{
   credentials?: readonly VerifiableCredentialV2[];
   organizationTestNetworkCredential: VerifiableCredentialV2;
   signerJwk: PublicJwk;
   verificationMethod: string;
-  controllerEmail?: string;
+  controllerContact: ActorContactInput;
   legalRepresentativeEmail?: string;
+  legalRepresentativeTelephone?: string;
   cryptography: ICryptography;
 }>): Promise<readonly VerifiableCredentialV2[]> {
   const credentials = input.credentials || [];
   if (credentials.length !== 3) fail('Test Network admission requires exactly three domain credentials.');
   const find = (type: string) => credentials.filter(credential => credential.type.includes(type));
-  const organization = find(ActivationCredentialTypes.OrganizationCredential);
-  const representative = find(ActivationCredentialTypes.LegalRepresentativeCredential);
-  const controller = find(ActivationCredentialTypes.ServiceControllerCredential);
+  const organization = find(ReviewedOrganizationCredentialTypes.Organization);
+  const representative = find(ReviewedOrganizationCredentialTypes.LegalRepresentative);
+  const controller = find(ReviewedOrganizationCredentialTypes.ServiceController);
   if (organization.length !== 1 || representative.length !== 1 || controller.length !== 1) {
     fail('Test Network admission requires Organization, LegalRepresentative and ServiceController credentials.');
   }
   const admissionSubject = input.organizationTestNetworkCredential.credentialSubject as Record<string, any>;
   const pdfEvidenceId = `urn:sha256:${String(admissionSubject.applicationEvidence?.pdfSha256 || '')}`;
-  const controllerActor = buildStableActorIdentifier({
-    contactKind: 'email', contact: String(input.controllerEmail || ''),
-  });
-  const representativeActor = buildStableActorIdentifier({
-    contactKind: 'email', contact: String(input.legalRepresentativeEmail || ''),
-  });
+  const controllerActor = buildStableActorIdentifier(input.controllerContact);
+  const representativeActor = buildStableActorIdentifier(reviewedPartyContact(
+    input.legalRepresentativeEmail, input.legalRepresentativeTelephone, 'legal representative',
+  ));
   if (organization[0].credentialSubject.id !== admissionSubject.id
     || String(organization[0].credentialSubject.legalName || '') !== String(admissionSubject.organization?.legalName || '')) {
     fail('Test Network OrganizationCredential does not match the admission VC.');
@@ -205,14 +222,20 @@ async function verifyTestNetworkDomainCredentials(input: Readonly<{
   if (representative[0].credentialSubject.sameAs !== representativeActor) {
     fail('Test Network LegalRepresentativeCredential does not match the reviewed representative.');
   }
-  if (controller[0].credentialSubject.owner?.sameAs !== controllerActor
-    || controller[0].credentialSubject.owner?.additionalType !== 'RESPRSN'
-    || controller[0].credentialSubject.owner?.hasCredential?.material
-      !== admissionSubject.controller?.hasCredential?.material) {
+  const owner = controller[0].credentialSubject.owner;
+  const ownerObject = owner !== null && typeof owner === 'object' ? owner : undefined;
+  const ownerSameAs = ownerObject && 'sameAs' in ownerObject ? ownerObject.sameAs : undefined;
+  const ownerRole = ownerObject && 'additionalType' in ownerObject ? ownerObject.additionalType : undefined;
+  const ownerCredential = ownerObject && 'hasCredential' in ownerObject ? ownerObject.hasCredential : undefined;
+  const ownerKeyMaterial = ownerCredential !== null && typeof ownerCredential === 'object' && 'material' in ownerCredential
+    ? ownerCredential.material : undefined;
+  if (ownerSameAs !== controllerActor
+    || ownerRole !== 'RESPRSN'
+    || ownerKeyMaterial !== admissionSubject.controller?.hasCredential?.material) {
     fail('Test Network ServiceControllerCredential does not match controller authority and key.');
   }
   for (const domainCredential of credentials) {
-    if (!domainCredential.type.includes(EnvironmentCredentialTypes.TestNetworkCredential)
+    if (!domainCredential.type.includes(ReviewedOrganizationCredentialTypes.TestNetwork)
       || domainCredential.issuer !== input.organizationTestNetworkCredential.issuer
       || !Array.isArray(domainCredential.evidence)
       || !(domainCredential.evidence as any[]).some(item => item?.id === pdfEvidenceId)) {

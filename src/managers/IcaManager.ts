@@ -1,23 +1,23 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/managers/IcaManager.ts
-import { GatewayInternalResourceTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { GatewayInternalResourceTypes } from 'sos-data-utils-ts/gateway-response-contract';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import https from 'https';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { BundleJsonApi, BundleEntry, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import { BundleJsonApi, BundleEntry, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { createOperationOutcome } from '../utils/outcome';
 import { getBundleResponseTypeForAction } from '../utils/bundle';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { bufferToPem } from '../utils/pki';
 import { getEnvSectionId } from '../utils/section-env';
 

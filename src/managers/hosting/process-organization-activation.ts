@@ -1,19 +1,16 @@
 import { v4 as uuidv4 } from 'uuid';
-import type { BundleEntry, BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import type { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
-import type { DidDocument } from 'gdc-common-utils-ts/models/did';
+import type { BundleEntry, BundleJsonApi, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
+import type { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
 import type { EntityConfig, OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
-import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
-import {
-  ClaimsOrganizationSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import type { VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { getBundleResponseTypeForAction } from '../../utils/bundle';
 import { normalizeContextualizedClaims } from '../../utils/claims';
 import { validateNewOrganizationClaims } from '../../utils/claims-validator';
@@ -22,9 +19,9 @@ import { getEnvSectionId } from '../../utils/section-env';
 import { buildOfferOrderIndexedAttributes } from '../../utils/offer-order-read-model';
 import { createOrganizationUrn } from '../../utils/urn';
 import { registerOrganizationOnLedger } from '../../utils/ledger-organization-registration';
-import { parseServiceCapabilityTokens } from 'gdc-common-utils-ts/constants/service-capabilities';
-import { validateActivationServiceAuthorizationPolicy } from 'gdc-common-utils-ts/utils/activation-policy';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { parseServiceCapabilityTokens } from 'sos-data-utils-ts/service-capabilities';
+import { validateHostedServiceAuthorization } from '../../utils/hosted-service-authorization';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import type { NetworkName } from '../../gdc-backend-utils-node/models/enums';
 import { composeHostDidWebId, createHostedDidWeb } from '../../utils/did-backend';
 import {
@@ -32,8 +29,8 @@ import {
   HOST_ACTIVATE_REQUIRED_OUTPUT_CLAIMS,
 } from './hosting-claim-contracts';
 import { allowsLegacyRepresentativeBootstrap } from './legacy-representative-bootstrap-policy';
-import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { GatewayClaim } from '../../shared/gateway-claim-contract';
 
 type ActivationParticipantMaterial = {
@@ -76,8 +73,8 @@ type ActivationDeps = Readonly<{
   applyLegalOrganizationIdentityCompatibility: (claims: ClaimsRecord, organizationCredential?: unknown) => ClaimsRecord;
   logActivationIdentityDiagnostics: (stage: string, claims: ClaimsRecord, routeJurisdiction?: string) => void;
   normalizeTenantPublicUrl: (urlOrDomain?: string) => string | undefined;
-  createOrganizationUrnSafely: (claims: ClaimsRecord, requestedSector: Sector) => string;
-  withHostedOrganizationOfferClaims: (claims: ClaimsRecord, requestedSector: Sector) => ClaimsRecord;
+  createOrganizationUrnSafely: (claims: ClaimsRecord, requestedSector: GatewaySector) => string;
+  withHostedOrganizationOfferClaims: (claims: ClaimsRecord, requestedSector: GatewaySector) => ClaimsRecord;
   mapHostRegistrySectorToNetworkName: (hostSector?: string) => NetworkName;
   extractResources: (claims: ClaimsRecord, environment?: string) => { organization: any; person?: any; service: any };
   handleServiceAttachment: (service?: any) => Promise<any>;
@@ -85,7 +82,7 @@ type ActivationDeps = Readonly<{
     org: any,
     altName: string,
     allClaims: ClaimsRecord,
-    sector: Sector,
+    sector: GatewaySector,
     vaultId: string,
     options?: {
       primaryDid?: string;
@@ -218,7 +215,7 @@ async function processActivationEntry(
   );
   deps.logActivationIdentityDiagnostics('normalized-claims', normalizedClaims, deps.routeJurisdiction);
   validateNewOrganizationClaims(normalizedClaims);
-  const alternateName = normalizedClaims[ClaimsOrganizationSchemaorg.alternateName] as string;
+  const alternateName = normalizedClaims[SchemaOrgOrganizationClaim.AlternateName] as string;
   if (!alternateName) {
     throw new ManagerError(`Missing required claim: '${HOST_ACTIVATE_REQUIRED_INPUT_CLAIMS[0]}'`, IssueType.Required);
   }
@@ -226,7 +223,7 @@ async function processActivationEntry(
     throw new ManagerError(`Invalid alternateName format: '${alternateName}'`, IssueType.Value);
   }
 
-  const requestedSector = normalizedClaims[ClaimsServiceSchemaorg.category] as Sector;
+  const requestedSector = normalizedClaims[SchemaOrgServiceClaim.Category] as GatewaySector;
   if (!requestedSector) {
     throw new ManagerError(`Missing required claim for activation: '${HOST_ACTIVATE_REQUIRED_INPUT_CLAIMS[1]}'`, IssueType.Required);
   }
@@ -237,8 +234,8 @@ async function processActivationEntry(
     throw new ManagerError(`The requested sector '${requestedSector}' is not supported by this gateway.`, IssueType.Value);
   }
 
-  const requestedServiceTypes = parseServiceCapabilityTokens(normalizedClaims[ClaimsServiceSchemaorg.serviceType]);
-  const serviceAuthorizationErrors = validateActivationServiceAuthorizationPolicy({
+  const requestedServiceTypes = parseServiceCapabilityTokens(normalizedClaims[SchemaOrgServiceClaim.ServiceType]);
+  const serviceAuthorizationErrors = validateHostedServiceAuthorization({
     organizationCredential: activation.organizationCredential,
     requiredCategory: requestedSector,
     requiredServiceTypes: requestedServiceTypes,
@@ -281,18 +278,18 @@ async function processActivationEntry(
   );
   deps.logActivationIdentityDiagnostics('processed-claims', processedClaims, deps.routeJurisdiction);
   const normalizedPublicUrl = deps.normalizeTenantPublicUrl(
-    activation.publicTenantUrl || (processedClaims[ClaimsOrganizationSchemaorg.url] as string | undefined),
+    activation.publicTenantUrl || (processedClaims[SchemaOrgOrganizationClaim.Url] as string | undefined),
   );
-  if (normalizedPublicUrl) (processedClaims as any)[ClaimsOrganizationSchemaorg.url] = normalizedPublicUrl;
-  if (!String(processedClaims[ClaimsOrganizationSchemaorg.addressCountry] || '').trim()) {
+  if (normalizedPublicUrl) (processedClaims as any)[SchemaOrgOrganizationClaim.Url] = normalizedPublicUrl;
+  if (!String(processedClaims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim()) {
     const fallbackCountry = String(deps.config.host.jurisdiction || '').trim();
-    if (fallbackCountry) (processedClaims as any)[ClaimsOrganizationSchemaorg.addressCountry] = fallbackCountry;
+    if (fallbackCountry) (processedClaims as any)[SchemaOrgOrganizationClaim.AddressCountry] = fallbackCountry;
   }
-  if (!String(processedClaims[ClaimsOrganizationSchemaorg.addressCountry] || '').trim()) {
+  if (!String(processedClaims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim()) {
     throw new ManagerError(`Missing required claim for activation: '${HOST_ACTIVATE_REQUIRED_INPUT_CLAIMS[2]}'`, IssueType.Required);
   }
-  if (!(processedClaims as any)[ClaimsOrganizationSchemaorg.identifier]) {
-    (processedClaims as any)[ClaimsOrganizationSchemaorg.identifier] = deps.createOrganizationUrnSafely(processedClaims, requestedSector);
+  if (!(processedClaims as any)[SchemaOrgOrganizationClaim.IdentifierReference]) {
+    (processedClaims as any)[SchemaOrgOrganizationClaim.IdentifierReference] = deps.createOrganizationUrnSafely(processedClaims, requestedSector);
   }
   Object.assign(
     processedClaims,
@@ -315,16 +312,16 @@ async function processActivationEntry(
   const tenantUrn = createOrganizationUrn({
     namespace: deps.config.namespace,
     network: deps.getCurrentUrnNetwork(),
-    jurisdiction: processedClaims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+    jurisdiction: processedClaims[SchemaOrgOrganizationClaim.AddressCountry] as string,
     sector: requestedSector,
-    idType: processedClaims[ClaimsOrganizationSchemaorg.identifierType] as string,
-    idValue: processedClaims[ClaimsOrganizationSchemaorg.identifierValue] as string,
+    idType: processedClaims[SchemaOrgOrganizationClaim.IdentifierType] as string,
+    idValue: processedClaims[SchemaOrgOrganizationClaim.IdentifierValue] as string,
   });
   const hostedTenantDid = createHostedDidWeb(
     composeHostDidWebId(deps.config.apiBaseUrl, deps.config.hostExternalDomain),
     alternateName,
     {
-      jurisdiction: processedClaims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+      jurisdiction: processedClaims[SchemaOrgOrganizationClaim.AddressCountry] as string,
       version: 'v1',
       sector: requestedSector,
     },
@@ -396,7 +393,7 @@ async function processActivationEntry(
   const icaDidRegistration = await deps.registerDidDocumentWithIca({
     vpToken: activation.vpToken,
     presentationSubmission: activation.presentationSubmission,
-    jurisdiction: processedClaims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+    jurisdiction: processedClaims[SchemaOrgOrganizationClaim.AddressCountry] as string,
     sector: requestedSector,
     organizationCredential: activation.organizationCredential,
     representativeCredential: activation.representativeCredential,
@@ -439,13 +436,13 @@ async function processActivationEntry(
       namespace: deps.config.namespace,
       hostExternalDomain: deps.config.hostExternalDomain,
       logger: deps.logger,
-      orgId: (processedClaims as any)[ClaimsOrganizationSchemaorg.identifier] || tenantUrn,
+      orgId: (processedClaims as any)[SchemaOrgOrganizationClaim.IdentifierReference] || tenantUrn,
       organization,
       config: finalTenantConfig,
       evidence: serviceEvidence,
       role: 'tenant',
       sector: requestedSector,
-      jurisdiction: processedClaims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+      jurisdiction: processedClaims[SchemaOrgOrganizationClaim.AddressCountry] as string,
     });
   }
 

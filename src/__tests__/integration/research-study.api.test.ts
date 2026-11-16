@@ -19,9 +19,9 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
  * only official ResearchStudy SearchParameters are HMAC-indexed.
  */
 import { afterEach, expect, it } from '@jest/globals';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
-import { projectResearchStudyR5SearchClaims } from 'vet-data-utils-ts';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
+import { projectResearchStudyR5SearchClaims } from 'fhir-data-utils-ts';
 import {
   buildResearchStudyPartySectionId,
 } from '../../managers/ResearchStudyManager';
@@ -48,23 +48,23 @@ it('executes controller create, correlated party PATCH and official-claim search
 
   try {
     const hostClaims = {
-      [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-      [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-      [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-      [ClaimsServiceSchemaorg.category]: 'system',
+      [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+      [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+      [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+      [SchemaOrgServiceClaim.Category]: 'system',
     };
     const hostCollection = resolveHostPhysicalCollectionName();
     const tenantClaims = {
       ...(testPayloadCreateTenant1.body.data[0].resource.meta.claims as any),
-      [ClaimsOrganizationSchemaorg.alternateName]: tenantId,
-      [ClaimsOrganizationSchemaorg.addressCountry]: 'CA',
-      [ClaimsOrganizationSchemaorg.addressRegion]: jurisdiction,
-      [ClaimsServiceSchemaorg.category]: sector,
+      [SchemaOrgOrganizationClaim.AlternateName]: tenantId,
+      [SchemaOrgOrganizationClaim.AddressCountry]: 'CA',
+      [SchemaOrgOrganizationClaim.AddressRegion]: jurisdiction,
+      [SchemaOrgServiceClaim.Category]: sector,
     };
     const tenantVaultId = getTenantVaultId(sector, tenantId);
     const tenantConfig = {
       claims: tenantClaims,
-      didConfig: { service: initializeTenantServicesConfig(sector as Sector) },
+      didConfig: { service: initializeTenantServicesConfig(sector as GatewaySector) },
       didDocument: {
         '@context': 'https://www.w3.org/ns/did/v1',
         id: 'did:web:tenant.integration.example',

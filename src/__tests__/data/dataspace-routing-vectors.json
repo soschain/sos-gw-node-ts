@@ -1,0 +1,1083 @@
+{
+  "sourceUrl": "https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/utils/dataspace-protocol.ts",
+  "sourceSha256": "81507b06bdc87c4255041aae982b2ef8a2333094c42aacc3f68363d8abc3b6d9",
+  "vectors": [
+    {
+      "input": {},
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/dsp"
+    },
+    {
+      "input": {},
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/.well-known/dspace-version"
+    },
+    {
+      "input": {},
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/dsp/catalog/request"
+    },
+    {
+      "input": {},
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/dsp/catalog"
+    },
+    {
+      "input": {},
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {},
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/dsp"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/dsp/catalog"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "participantId": "host",
+        "hostCoverageScope": "EU",
+        "version": "v1",
+        "hostNetwork": "test-network"
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/host/cds-EU/v1/test-network/dsp"
+    },
+    {
+      "input": {
+        "participantId": "host",
+        "hostCoverageScope": "EU",
+        "version": "v1",
+        "hostNetwork": "test-network"
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/host/cds-EU/v1/test-network/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "participantId": "host",
+        "hostCoverageScope": "EU",
+        "version": "v1",
+        "hostNetwork": "test-network"
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/host/cds-EU/v1/test-network/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "participantId": "host",
+        "hostCoverageScope": "EU",
+        "version": "v1",
+        "hostNetwork": "test-network"
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/host/cds-EU/v1/test-network/dsp/catalog"
+    },
+    {
+      "input": {
+        "participantId": "host",
+        "hostCoverageScope": "EU",
+        "version": "v1",
+        "hostNetwork": "test-network"
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/host/cds-EU/v1/test-network/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "participantId": "host",
+        "hostCoverageScope": "EU",
+        "version": "v1",
+        "hostNetwork": "test-network"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/host/cds-EU/v1/test-network/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "participantId": "host",
+        "hostCoverageScope": "EU",
+        "hostNetwork": "test-network"
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/host/cds-ES-MD/v1/test-network/dsp"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "participantId": "host",
+        "hostCoverageScope": "EU",
+        "hostNetwork": "test-network"
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/host/cds-ES-MD/v1/test-network/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "participantId": "host",
+        "hostCoverageScope": "EU",
+        "hostNetwork": "test-network"
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/host/cds-ES-MD/v1/test-network/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "participantId": "host",
+        "hostCoverageScope": "EU",
+        "hostNetwork": "test-network"
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/host/cds-ES-MD/v1/test-network/dsp/catalog"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "participantId": "host",
+        "hostCoverageScope": "EU",
+        "hostNetwork": "test-network"
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/host/cds-ES-MD/v1/test-network/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "participantId": "host",
+        "hostCoverageScope": "EU",
+        "hostNetwork": "test-network"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/host/cds-ES-MD/v1/test-network/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "hostNetworkOrBusinessSector": "local-network"
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/example-tenant/cds-ES-MD/v1/local-network/dsp"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "hostNetworkOrBusinessSector": "local-network"
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/example-tenant/cds-ES-MD/v1/local-network/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "hostNetworkOrBusinessSector": "local-network"
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/example-tenant/cds-ES-MD/v1/local-network/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "hostNetworkOrBusinessSector": "local-network"
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/example-tenant/cds-ES-MD/v1/local-network/dsp/catalog"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "hostNetworkOrBusinessSector": "local-network"
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/example-tenant/cds-ES-MD/v1/local-network/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "hostNetworkOrBusinessSector": "local-network"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/example-tenant/cds-ES-MD/v1/local-network/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "",
+        "sector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/dsp"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "",
+        "sector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "",
+        "sector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "",
+        "sector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/dsp/catalog"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "",
+        "sector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "",
+        "sector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "participantId": "host",
+        "jurisdiction": "EU",
+        "version": "v1",
+        "sector": "test-network"
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/host/cds-EU/v1/test-network/dsp"
+    },
+    {
+      "input": {
+        "participantId": "host",
+        "jurisdiction": "EU",
+        "version": "v1",
+        "sector": "test-network"
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/host/cds-EU/v1/test-network/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "participantId": "host",
+        "jurisdiction": "EU",
+        "version": "v1",
+        "sector": "test-network"
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/host/cds-EU/v1/test-network/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "participantId": "host",
+        "jurisdiction": "EU",
+        "version": "v1",
+        "sector": "test-network"
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/host/cds-EU/v1/test-network/dsp/catalog"
+    },
+    {
+      "input": {
+        "participantId": "host",
+        "jurisdiction": "EU",
+        "version": "v1",
+        "sector": "test-network"
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/host/cds-EU/v1/test-network/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "participantId": "host",
+        "jurisdiction": "EU",
+        "version": "v1",
+        "sector": "test-network"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/host/cds-EU/v1/test-network/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": " /participant/ ",
+        "jurisdiction": " ES/MD ",
+        "version": " v1 ",
+        "sector": " health-care "
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "//participant//cds-ES/MD/v1/health-care/dsp"
+    },
+    {
+      "input": {
+        "tenantId": " /participant/ ",
+        "jurisdiction": " ES/MD ",
+        "version": " v1 ",
+        "sector": " health-care "
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "//participant//cds-ES/MD/v1/health-care/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "tenantId": " /participant/ ",
+        "jurisdiction": " ES/MD ",
+        "version": " v1 ",
+        "sector": " health-care "
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "//participant//cds-ES/MD/v1/health-care/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "tenantId": " /participant/ ",
+        "jurisdiction": " ES/MD ",
+        "version": " v1 ",
+        "sector": " health-care "
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "//participant//cds-ES/MD/v1/health-care/dsp/catalog"
+    },
+    {
+      "input": {
+        "tenantId": " /participant/ ",
+        "jurisdiction": " ES/MD ",
+        "version": " v1 ",
+        "sector": " health-care "
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "//participant//cds-ES/MD/v1/health-care/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "tenantId": " /participant/ ",
+        "jurisdiction": " ES/MD ",
+        "version": " v1 ",
+        "sector": " health-care "
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "//participant//cds-ES/MD/v1/health-care/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "hostNetwork": " ",
+        "sector": "fallback"
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/dsp"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "hostNetwork": " ",
+        "sector": "fallback"
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "hostNetwork": " ",
+        "sector": "fallback"
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "hostNetwork": " ",
+        "sector": "fallback"
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/dsp/catalog"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "hostNetwork": " ",
+        "sector": "fallback"
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care",
+        "hostNetwork": " ",
+        "sector": "fallback"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": "",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/dsp"
+    },
+    {
+      "input": {
+        "tenantId": "",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "tenantId": "",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "tenantId": "",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/dsp/catalog"
+    },
+    {
+      "input": {
+        "tenantId": "",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "tenantId": "",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": " ",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/dsp"
+    },
+    {
+      "input": {
+        "tenantId": " ",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "tenantId": " ",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "tenantId": " ",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/dsp/catalog"
+    },
+    {
+      "input": {
+        "tenantId": " ",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "tenantId": " ",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/dsp"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/dsp/catalog"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": " ",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/dsp"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": " ",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": " ",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": " ",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/dsp/catalog"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": " ",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": " ",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/dsp"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/dsp/catalog"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": " ",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/dsp"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": " ",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": " ",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": " ",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/dsp/catalog"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": " ",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": " ",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": ""
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/dsp"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": ""
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": ""
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": ""
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/dsp/catalog"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": ""
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": ""
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": " "
+      },
+      "name": "buildGatewayDataspaceBasePath",
+      "expected": "/dsp"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": " "
+      },
+      "name": "buildGatewayDataspaceVersionPath",
+      "expected": "/.well-known/dspace-version"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": " "
+      },
+      "name": "buildGatewayDataspaceCatalogRequestPath",
+      "expected": "/dsp/catalog/request"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": " "
+      },
+      "name": "buildGatewayDataspaceCatalogCollectionPath",
+      "expected": "/dsp/catalog"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": " "
+      },
+      "name": "buildGatewayDataspaceCatalogArtifactPath",
+      "expected": "/dsp/catalog/dcat.json"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": " "
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "expected": "/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "datasetId": "",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/dsp/catalog/datasets/"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "datasetId": ":id",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/dsp/catalog/datasets/:id"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "datasetId": "dataset/part",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/dsp/catalog/datasets/dataset/part"
+    },
+    {
+      "input": {
+        "tenantId": "example-tenant",
+        "jurisdiction": "ES-MD",
+        "version": "v1",
+        "businessSector": "animal-care"
+      },
+      "name": "buildGatewayDataspaceCatalogDatasetPath",
+      "datasetId": "dataset ?query#fragment",
+      "expected": "/example-tenant/cds-ES-MD/v1/animal-care/dsp/catalog/datasets/dataset ?query#fragment"
+    }
+  ],
+  "allExact": true
+}

@@ -1,8 +1,8 @@
-// TDD contract: ping routing fixtures make no JWS claim unless a complete signature is under test.
+// Flow contract: ping routing fixtures make no JWS claim unless a complete signature is under test.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import express from 'express';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { createApiRouter } from '../../routes/api';
 import { QueueAdapter } from '../../adapters/queue';
 import { TenantsCacheManager } from '../../managers/TenantsCacheManager';
@@ -12,8 +12,8 @@ import { AsyncResponseStoreMem, IAsyncResponseStore } from '../../adapters/async
 import { StoredJob } from '../../adapters/async-response-store.mem';
 import { decodedPingMessage, testEncryptedJwePing, decodedTenantPingMessage } from '../data/ping.data';
 import { testCompletedJob, testPendingJob } from '../data/async-response.data';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { DidService } from '../../gdc-backend-utils-node/models/did';
 import { Content } from 'gdc-common-utils-ts/utils/content';
 import { invokeExpress } from './helpers/invokeExpress';

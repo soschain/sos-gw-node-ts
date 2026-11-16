@@ -1,9 +1,10 @@
+// Flow contract: independent SOS record and job contracts preserve payload, route and lifecycle boundaries.
 // File: src/__tests__/unit/managers/PingManager.test.ts
 
 import { PingManager } from '../../../managers/PingManager';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
-import { BundleEntryResponse, BundleJsonApi } from 'gdc-common-utils-ts/models/bundle';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { BundleEntryResponse, BundleJsonApi } from 'sos-data-utils-ts/bundle-contract';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { getBundleResponseTypeForAction } from '../../../utils/bundle';
 
 describe('PingManager', () => {

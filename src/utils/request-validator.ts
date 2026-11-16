@@ -1,7 +1,7 @@
 // src/utils/request-validator.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
-import { DidService } from 'gdc-common-utils-ts/models/did';
+import { GatewayDidService as DidService } from 'sos-data-utils-ts/gateway-did-profile';
 
 /**
  * Validates a request against a tenant's service configurations by checking if the requested

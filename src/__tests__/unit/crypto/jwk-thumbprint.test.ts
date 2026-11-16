@@ -1,11 +1,11 @@
-// src/__tests__/unit/crypto/jwk-thumbprint.test.ts
+// Flow contract: public key thumbprints use canonical required parameters and preserve the existing key identifiers.
 
 // WebCrypto is available in Node 18+. This line makes it available to the test runner.
 import { webcrypto } from 'node:crypto';
 
 globalThis.crypto = webcrypto as any;
 
-import { MlkemPublicJwk, MldsaPublicJwk } from "gdc-common-utils-ts/interfaces/Cryptography.types";
+import { MlkemPublicJwk, MldsaPublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import {
     toBaseJwk,
     computeJwkThumbprint,

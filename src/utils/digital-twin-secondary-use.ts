@@ -1,9 +1,10 @@
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { createHash } from 'crypto';
-import { FhirResourceTypeDataCollections, HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/index';
-import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
-import type { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
+import { FhirResourceTypeDataCollections } from 'sos-data-utils-ts/gateway-data-collections';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
+import { ClaimConsent } from 'fhir-data-utils-ts';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
+import type { RecordBase } from 'sos-data-utils-ts/confidential-storage';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { SUBJECT_SECTION_DIGITAL_TWIN, SUBJECT_SECTION_INDIVIDUAL } from '../constants/domain';
 import { getClaimValue } from './claims';
@@ -24,8 +25,8 @@ import {
   type ResearchAssetVersionMapping,
 } from './research-asset-versioning';
 import type { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
-import type { OperationOutcome } from 'gdc-common-utils-ts/models/operation-outcome';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import type { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { createOperationOutcome } from './outcome';
 import { ClinicalEvidenceChaincode } from './ledger';
 

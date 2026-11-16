@@ -15,22 +15,16 @@ import { resolveHostPhysicalCollectionName } from '../../../config/storage-layou
 import { afterAll, beforeAll, jest } from '@jest/globals';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
 import { IServerConfig } from '../../../config';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { IStorageAdapter } from '../../../database/storage/IStorageAdapter';
 import { ILogger } from '../../../loggers/ILogger';
 import type { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { FAMILY_ORDER_REQUEST, FAMILY_REGISTRATION_REQUEST } from '../../data/example-payloads';
 import * as tenantUtils from '../../../utils/tenant';
-import {
-  ClaimsIndividualProductSchemaorg,
-  ClaimsOfferSchemaorg,
-  ClaimsOrderSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
+import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { getEnvSectionId } from '../../../utils/section-env';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
 import { FamilyManager } from '../../../managers/FamilyManager';
@@ -51,8 +45,8 @@ import {
   EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME,
 } from 'gdc-common-utils-ts/examples/shared';
 import { SearchResponseProfileEnvironment, SearchResponseProfiles } from '../../../utils/didcomm-response';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
-import { Format } from 'gdc-common-utils-ts/constants/Schemas';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
+import { Format } from 'sos-data-utils-ts/bff-wire-contract';
 import { RelatedPersonClaim } from 'gdc-common-utils-ts/models/interoperable-claims/related-person-claims';
 import { testExamplesDidWeb } from '../../data/identity.data';
 import { SecureIdTypesIndividual } from 'gdc-common-utils-ts/constants/identity-identifiers';
@@ -114,19 +108,19 @@ describe('FamilyManager - Offer/Order Flow', () => {
     for (const entry of payload.body.data) {
       const claimBlocks = [entry.resource?.meta?.claims].filter(Boolean);
       for (const claims of claimBlocks) {
-        claims[ClaimsOrganizationSchemaorg.alternateName] = EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME;
-        claims[ClaimsOrganizationSchemaorg.identifierValue] = EXAMPLE_PRIVATE_INDIVIDUAL_UUID;
-        claims[ClaimsOrganizationSchemaorg.identifierValue.replace('org.schema.', '')] = EXAMPLE_PRIVATE_INDIVIDUAL_UUID;
+        claims[SchemaOrgOrganizationClaim.AlternateName] = EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME;
+        claims[SchemaOrgOrganizationClaim.IdentifierValue] = EXAMPLE_PRIVATE_INDIVIDUAL_UUID;
+        claims[SchemaOrgOrganizationClaim.IdentifierValue.replace('org.schema.', '')] = EXAMPLE_PRIVATE_INDIVIDUAL_UUID;
         if (includeOwnerIdentifier) {
-          claims[ClaimsOrganizationSchemaorg.ownerIdentifierValue] = EXAMPLE_KYC_CONTROLLER_UUID;
+          claims[SchemaOrgOrganizationClaim.OwnerIdentifierValue] = EXAMPLE_KYC_CONTROLLER_UUID;
         } else {
-          delete claims[ClaimsOrganizationSchemaorg.ownerIdentifierValue];
-          delete claims[ClaimsOrganizationSchemaorg.ownerIdentifierValue.replace('org.schema.', '')];
+          delete claims[SchemaOrgOrganizationClaim.OwnerIdentifierValue];
+          delete claims[SchemaOrgOrganizationClaim.OwnerIdentifierValue.replace('org.schema.', '')];
         }
         if (addressCountry) {
-          claims[ClaimsOrganizationSchemaorg.addressCountry] = addressCountry;
+          claims[SchemaOrgOrganizationClaim.AddressCountry] = addressCountry;
         } else {
-          delete claims[ClaimsOrganizationSchemaorg.addressCountry];
+          delete claims[SchemaOrgOrganizationClaim.AddressCountry];
         }
       }
     }
@@ -156,7 +150,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       hostExternalDomain: 'host.example.com',
       apiBaseUrl: 'http://host.example.com',
       namespace: 'test-namespace',
-      sectorsAllowed: [Sector.HEALTH_CARE, Sector.SYSTEM, Sector.TEST],
+      sectorsAllowed: [GatewaySector.HEALTH_CARE, GatewaySector.SYSTEM, GatewaySector.TEST],
       dbProvider: 'mem',
       queueProvider: 'mem',
       storageProvider: 'mem',
@@ -178,9 +172,9 @@ describe('FamilyManager - Offer/Order Flow', () => {
     // FamilyManager is the unit under test. Seed one verified active tenant
     // directly from the shared organization fixture; HostingManager's own
     // activation/Order lifecycle is covered by route integration tests.
-    const expectedTenantVaultId = tenantUtils.getTenantVaultId(Sector.HEALTH_CARE, testTenant1TenantId);
+    const expectedTenantVaultId = tenantUtils.getTenantVaultId(GatewaySector.HEALTH_CARE, testTenant1TenantId);
     const tenantConfig = structuredClone(testConfigTenant1) as any;
-    tenantConfig.claims[ClaimsServiceSchemaorg.category] = Sector.HEALTH_CARE;
+    tenantConfig.claims[SchemaOrgServiceClaim.Category] = GatewaySector.HEALTH_CARE;
     tenantConfig.didDocument = {
       ...(tenantConfig.didDocument || {}),
       id: testTenant1DidWebExternal,
@@ -223,7 +217,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId,
       jurisdiction: 'ES',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -236,10 +230,10 @@ describe('FamilyManager - Offer/Order Flow', () => {
 
     expect(entry.response.status).toBe('201');
     expect(entry.type).toBe('Family-registration-offer-v1.0');
-    expect(entry.resource.meta.claims[ClaimsOfferSchemaorg.identifier]).toMatch(
+    expect(entry.resource.meta.claims[SchemaOrgOfferClaim.Identifier]).toMatch(
       /^urn:cds:ES:v1:health-care:product:org\.schema:Offer:/,
     );
-    expect(entry.resource.meta.claims[ClaimsOfferSchemaorg.identifier]).not.toContain('undefined');
+    expect(entry.resource.meta.claims[SchemaOrgOfferClaim.Identifier]).not.toContain('undefined');
   });
 
   it('creates one UUID controller assignment when a legacy registration omitted it', async () => {
@@ -250,7 +244,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId: testTenant1TenantId,
       jurisdiction: 'ES',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -259,7 +253,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
     });
 
     expect(responsePayload.body.data[0].resource.meta.claims[
-      ClaimsOrganizationSchemaorg.ownerIdentifierValue
+      SchemaOrgOrganizationClaim.OwnerIdentifierValue
     ]).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
   });
 
@@ -268,8 +262,8 @@ describe('FamilyManager - Offer/Order Flow', () => {
     const registrationWithoutOfficialIdentifier = buildFamilyRegistrationRequestWithoutPdfAttachment();
     for (const registrationEntry of registrationWithoutOfficialIdentifier.body.data) {
       if (registrationEntry.resource?.meta?.claims) {
-        delete registrationEntry.resource.meta.claims[ClaimsOrganizationSchemaorg.identifierValue];
-        delete registrationEntry.resource.meta.claims[ClaimsOrganizationSchemaorg.identifierValue.replace('org.schema.', '')];
+        delete registrationEntry.resource.meta.claims[SchemaOrgOrganizationClaim.IdentifierValue];
+        delete registrationEntry.resource.meta.claims[SchemaOrgOrganizationClaim.IdentifierValue.replace('org.schema.', '')];
       }
       if (registrationEntry.resource?.meta) {
         delete registrationEntry.resource.meta.kyc;
@@ -277,7 +271,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       }
     }
     expect(registrationWithoutOfficialIdentifier.body.data.every((registrationEntry: any) => (
-      registrationEntry.resource?.meta?.claims?.[ClaimsOrganizationSchemaorg.identifierValue] === undefined
+      registrationEntry.resource?.meta?.claims?.[SchemaOrgOrganizationClaim.IdentifierValue] === undefined
     ))).toBe(true);
     const familyRegistrationJob: JobRequest = {
       id: 'job-family-1',
@@ -286,7 +280,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId,
       jurisdiction: 'ES',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -297,10 +291,10 @@ describe('FamilyManager - Offer/Order Flow', () => {
     const offerPayload = await familyManager.process(familyRegistrationJob);
     const firstEntry = offerPayload.body.data[0];
     expect(firstEntry.response.status).toBe('201');
-    const offerId = firstEntry.resource.meta.claims[ClaimsOfferSchemaorg.identifier] as string;
+    const offerId = firstEntry.resource.meta.claims[SchemaOrgOfferClaim.Identifier] as string;
 
     const orderContent = structuredClone(FAMILY_ORDER_REQUEST) as any;
-    orderContent.body.data[0].resource.meta.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier] = offerId;
+    orderContent.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] = offerId;
 
     const familyOrderJob: JobRequest = {
       id: 'job-family-order-1',
@@ -308,7 +302,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -320,10 +314,10 @@ describe('FamilyManager - Offer/Order Flow', () => {
     const entry = finalPayload.body.data[0];
     expect(entry.response.status).toBe('201');
     expect(entry.type).toBe('Family-order-response-v1.0');
-    expect(entry.resource.meta.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier]).toBe(offerId);
-    expect(entry.resource.meta.claims[ClaimsIndividualProductSchemaorg.serialNumber]).toEqual(expect.any(String));
+    expect(entry.resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier]).toBe(offerId);
+    expect(entry.resource.meta.claims[SchemaOrgIndividualProductClaim.SerialNumber]).toEqual(expect.any(String));
 
-    const tenantVaultId = tenantUtils.getTenantVaultId(Sector.HEALTH_CARE, tenantId);
+    const tenantVaultId = tenantUtils.getTenantVaultId(GatewaySector.HEALTH_CARE, tenantId);
     const tenantCollectionName = await tenantsCacheManager.getCollectionName(tenantVaultId);
     expect(tenantCollectionName).toBeDefined();
     const communications = await vaultRepository.getContainersInSection(
@@ -347,10 +341,10 @@ describe('FamilyManager - Offer/Order Flow', () => {
 
     const controllerLicense = individualLicenses.find((document) =>
       String(((document as ConfidentialStorageDoc).content as any)?.activationCode || '')
-        === String(entry.resource.meta.claims[ClaimsIndividualProductSchemaorg.serialNumber] || ''));
+        === String(entry.resource.meta.claims[SchemaOrgIndividualProductClaim.SerialNumber] || ''));
     const controllerLicenseContent = (controllerLicense as ConfidentialStorageDoc | undefined)?.content as any;
     const expectedSubjectDid = buildIndividualDidWeb({
-      providerDidWeb: String(firstEntry.resource.meta.claims[ClaimsOfferSchemaorg.offeredBy]),
+      providerDidWeb: String(firstEntry.resource.meta.claims[SchemaOrgOfferClaim.OfferedBy]),
       secureIdTypeIndividual: SecureIdTypesIndividual.Uuid,
       secureIdValueIndividual: buildSecureIdValueIndividual({
         secureIdTypeIndividual: SecureIdTypesIndividual.Uuid,
@@ -361,7 +355,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       subjectId: firstEntry.resource.id,
       issuedToRole: `${EXAMPLE_INDIVIDUAL_CONTROLLER_ROLE_TYPE}|${EXAMPLE_INDIVIDUAL_CONTROLLER_ROLE_VALUE}`,
       relatedPersonId: firstEntry.resource.meta.claims[
-        ClaimsOrganizationSchemaorg.ownerIdentifierValue
+        SchemaOrgOrganizationClaim.OwnerIdentifierValue
       ],
       authorizedSubjectDid: expectedSubjectDid,
     }));
@@ -382,7 +376,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
     expect(controllerAssignment?.resource.meta.claims[
       `${Format.FHIR_API}.${RelatedPersonClaim.Identifier}`
     ]).toBe(firstEntry.resource.meta.claims[
-      ClaimsOrganizationSchemaorg.ownerIdentifierValue
+      SchemaOrgOrganizationClaim.OwnerIdentifierValue
     ]);
 
     const relatedPersonRecords = await vaultRepository.getContainersInSection(
@@ -412,7 +406,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId,
       jurisdiction: 'ES',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -420,9 +414,9 @@ describe('FamilyManager - Offer/Order Flow', () => {
       content: buildFamilyRegistrationRequestWithoutPdfAttachment(),
     });
     const offerEntry = offerPayload.body.data[0];
-    const offerId = offerEntry.resource.meta.claims[ClaimsOfferSchemaorg.identifier] as string;
+    const offerId = offerEntry.resource.meta.claims[SchemaOrgOfferClaim.Identifier] as string;
     const orderContent = structuredClone(FAMILY_ORDER_REQUEST) as any;
-    orderContent.body.data[0].resource.meta.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier] = offerId;
+    orderContent.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] = offerId;
     mockKmsService.protectAttributesNameAndValue.mockRejectedValueOnce(
       new Error('activation-code-index-unavailable'),
     );
@@ -433,7 +427,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -442,7 +436,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
     });
 
     expect(orderPayload.body.data[0].response.status).toBe('500');
-    const tenantVaultId = tenantUtils.getTenantVaultId(Sector.HEALTH_CARE, tenantId);
+    const tenantVaultId = tenantUtils.getTenantVaultId(GatewaySector.HEALTH_CARE, tenantId);
     const tenantCollectionName = await tenantsCacheManager.getCollectionName(tenantVaultId);
     const storedIndividuals = await vaultRepository.getContainersInSection(
       tenantCollectionName!,
@@ -463,16 +457,16 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId,
       jurisdiction: 'ES',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
       resourceType: 'Organization',
       content: registrationContent,
     });
-    const offerId = offerPayload.body.data[0].resource.meta.claims[ClaimsOfferSchemaorg.identifier] as string;
+    const offerId = offerPayload.body.data[0].resource.meta.claims[SchemaOrgOfferClaim.Identifier] as string;
     const orderContent = structuredClone(FAMILY_ORDER_REQUEST) as any;
-    orderContent.body.data[0].resource.meta.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier] = offerId;
+    orderContent.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] = offerId;
     // `email_verified` is the standard OIDC proof exercised by this replay authorization test.
     orderContent.meta = {
       ...orderContent.meta,
@@ -484,7 +478,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -494,11 +488,11 @@ describe('FamilyManager - Offer/Order Flow', () => {
 
     const firstOrder = await familyManager.process(orderJob);
     const activationCode = firstOrder.body.data[0].resource.meta.claims[
-      ClaimsIndividualProductSchemaorg.serialNumber
+      SchemaOrgIndividualProductClaim.SerialNumber
     ] as string;
     expect(activationCode).toBeTruthy();
 
-    const tenantVaultId = tenantUtils.getTenantVaultId(Sector.HEALTH_CARE, tenantId);
+    const tenantVaultId = tenantUtils.getTenantVaultId(GatewaySector.HEALTH_CARE, tenantId);
     const tenantCollectionName = (await tenantsCacheManager.getCollectionName(tenantVaultId))!;
     const individualId = String(offerPayload.body.data[0].resource.id);
     const individualDocument = (await vaultRepository.get<ConfidentialStorageDoc>(
@@ -510,8 +504,8 @@ describe('FamilyManager - Offer/Order Flow', () => {
       individualDocument,
       tenantVaultId,
     );
-    delete individualContent.claims[ClaimsOrganizationSchemaorg.ownerIdentifierValue];
-    delete individualContent.claims[ClaimsIndividualProductSchemaorg.serialNumber];
+    delete individualContent.claims[SchemaOrgOrganizationClaim.OwnerIdentifierValue];
+    delete individualContent.claims[SchemaOrgIndividualProductClaim.SerialNumber];
     const legacyIndividualDocument: ConfidentialStorageDoc & { meta?: Record<string, unknown> } = {
       ...individualDocument,
       sequence: Number(individualDocument.sequence || 0) + 1,
@@ -558,7 +552,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
 
     const replay = await familyManager.process({ ...orderJob, createdAtTimestamp: Date.now() });
     expect(replay.body.data[0].response.status).toBe('200');
-    expect(replay.body.data[0].resource.meta.claims[ClaimsIndividualProductSchemaorg.serialNumber])
+    expect(replay.body.data[0].resource.meta.claims[SchemaOrgIndividualProductClaim.SerialNumber])
       .toBe(activationCode);
     expect(replay.body.data[1].response.status).toBe('201');
     expect(replay.body.data[1].resource.meta.claims[
@@ -575,7 +569,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       repairedIndividualDocument,
       tenantVaultId,
     );
-    expect(repairedIndividualContent.claims[ClaimsIndividualProductSchemaorg.serialNumber])
+    expect(repairedIndividualContent.claims[SchemaOrgIndividualProductClaim.SerialNumber])
       .toBe(activationCode);
 
     const putSpy = jest.spyOn(vaultRepository, 'put');
@@ -598,7 +592,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId,
       jurisdiction: 'ES',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -606,9 +600,9 @@ describe('FamilyManager - Offer/Order Flow', () => {
       content: buildFamilyRegistrationRequestWithoutPdfAttachment(),
     });
     const individualId = String(offerPayload.body.data[0].resource.id);
-    const offerId = offerPayload.body.data[0].resource.meta.claims[ClaimsOfferSchemaorg.identifier] as string;
+    const offerId = offerPayload.body.data[0].resource.meta.claims[SchemaOrgOfferClaim.Identifier] as string;
     const orderContent = structuredClone(FAMILY_ORDER_REQUEST) as any;
-    orderContent.body.data[0].resource.meta.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier] = offerId;
+    orderContent.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] = offerId;
     orderContent.meta = {
       ...orderContent.meta,
       bearer: { jwt: { payload: { email: FAMILY_ORDER_REQUEST.iss, email_verified: true } } },
@@ -619,7 +613,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -628,9 +622,9 @@ describe('FamilyManager - Offer/Order Flow', () => {
     };
     const firstOrder = await familyManager.process(orderJob);
     const firstActivationCode = String(firstOrder.body.data[0].resource.meta.claims[
-      ClaimsIndividualProductSchemaorg.serialNumber
+      SchemaOrgIndividualProductClaim.SerialNumber
     ]);
-    const tenantVaultId = tenantUtils.getTenantVaultId(Sector.HEALTH_CARE, tenantId);
+    const tenantVaultId = tenantUtils.getTenantVaultId(GatewaySector.HEALTH_CARE, tenantId);
     const tenantCollectionName = (await tenantsCacheManager.getCollectionName(tenantVaultId))!;
     const licenses = await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(
       tenantVaultId,
@@ -647,7 +641,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       getEnvSectionId('individual'),
     ))!;
     const activeContent = await mockKmsService.unprotectConfidentialData<any>(activeDocument, tenantVaultId);
-    delete activeContent.claims[ClaimsIndividualProductSchemaorg.serialNumber];
+    delete activeContent.claims[SchemaOrgIndividualProductClaim.SerialNumber];
     const legacyActiveDocument: ConfidentialStorageDoc & { meta?: Record<string, unknown> } = {
       ...activeDocument,
       sequence: Number(activeDocument.sequence || 0) + 1,
@@ -662,7 +656,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
     const replay = await familyManager.process({ ...orderJob, createdAtTimestamp: Date.now() });
     expect(replay.body.data[0].response.status).toBe('200');
     const recoveredActivationCode = String(replay.body.data[0].resource.meta.claims[
-      ClaimsIndividualProductSchemaorg.serialNumber
+      SchemaOrgIndividualProductClaim.SerialNumber
     ]);
     expect(recoveredActivationCode).toBeTruthy();
     const repairedLicenses = await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(
@@ -684,7 +678,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId,
       jurisdiction: 'ES',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -695,17 +689,17 @@ describe('FamilyManager - Offer/Order Flow', () => {
     const offerPayload = await familyManager.process(familyRegistrationJob);
     const firstEntry = offerPayload.body.data[0];
     expect(firstEntry.response.status).toBe('201');
-    const offerId = firstEntry.resource.meta.claims[ClaimsOfferSchemaorg.identifier] as string;
+    const offerId = firstEntry.resource.meta.claims[SchemaOrgOfferClaim.Identifier] as string;
 
     const orderContent = structuredClone(FAMILY_ORDER_REQUEST) as any;
-    orderContent.body.data[0].resource.meta.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier] = offerId;
+    orderContent.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] = offerId;
     await familyManager.process({
       id: 'job-family-search-order-1',
       status: JobStatus.DRAFT,
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -719,7 +713,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_search',
@@ -728,8 +722,8 @@ describe('FamilyManager - Offer/Order Flow', () => {
         body: {
           data: [{
             type: 'Offer-search-request-v1.0',
-            meta: { claims: { [ClaimsOfferSchemaorg.identifier]: offerId } },
-            resource: { meta: { claims: { [ClaimsOfferSchemaorg.identifier]: offerId } } },
+            meta: { claims: { [SchemaOrgOfferClaim.Identifier]: offerId } },
+            resource: { meta: { claims: { [SchemaOrgOfferClaim.Identifier]: offerId } } },
           }],
         },
       } as any,
@@ -745,7 +739,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_search',
@@ -754,8 +748,8 @@ describe('FamilyManager - Offer/Order Flow', () => {
         body: {
           data: [{
             type: 'Order-search-request-v1.0',
-            meta: { claims: { [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId } },
-            resource: { meta: { claims: { [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId } } },
+            meta: { claims: { [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId } },
+            resource: { meta: { claims: { [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId } } },
           }],
         },
       } as any,
@@ -774,7 +768,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId: testTenant1TenantId,
       jurisdiction: 'es',
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -784,8 +778,8 @@ describe('FamilyManager - Offer/Order Flow', () => {
 
     const entry = response.body.data[0];
     expect(entry.response.status).toBe('201');
-    expect(entry.resource.meta.claims[ClaimsOfferSchemaorg.identifier]).toMatch(/^urn:cds:ES:v1:health-care:/);
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.addressCountry]).toBe('ZZ');
+    expect(entry.resource.meta.claims[SchemaOrgOfferClaim.Identifier]).toMatch(/^urn:cds:ES:v1:health-care:/);
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.AddressCountry]).toBe('ZZ');
   });
 
   it('rejects an individual Offer when the route network is absent even if addressCountry exists', async () => {
@@ -795,7 +789,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId: testTenant1TenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -813,7 +807,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
     process.env.PAYMENT_VERIFICATION_MODE = 'mock';
 
     const tenantId = testTenant1TenantId;
-    const tenantVaultId = tenantUtils.getTenantVaultId(Sector.HEALTH_CARE, tenantId);
+    const tenantVaultId = tenantUtils.getTenantVaultId(GatewaySector.HEALTH_CARE, tenantId);
     const tenantCollectionName = await tenantsCacheManager.getCollectionName(tenantVaultId);
     expect(tenantCollectionName).toBeDefined();
 
@@ -821,13 +815,13 @@ describe('FamilyManager - Offer/Order Flow', () => {
       2,
       'did:web:host.example.com',
       'es',
-      Sector.HEALTH_CARE,
+      GatewaySector.HEALTH_CARE,
       ['Stripe'],
       'individual' as any,
     );
 
     const secureOfferDoc = await mockKmsService.protectConfidentialData({
-      id: String(extraOfferClaims[ClaimsOfferSchemaorg.identifier]),
+      id: String(extraOfferClaims[SchemaOrgOfferClaim.Identifier]),
       status: 'active',
       sequence: 0,
       meta: { claims: extraOfferClaims },
@@ -845,10 +839,10 @@ describe('FamilyManager - Offer/Order Flow', () => {
     );
 
     const orderContent = structuredClone(FAMILY_ORDER_REQUEST) as any;
-    orderContent.body.data[0].resource.meta.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier] =
-      String(extraOfferClaims[ClaimsOfferSchemaorg.identifier]);
-    orderContent.body.data[0].resource.meta.claims[ClaimsOrderSchemaorg.paymentMethod] = 'Stripe';
-    orderContent.body.data[0].resource.meta.claims[ClaimsOrderSchemaorg.partOfInvoice] = 'in_family_test_001';
+    orderContent.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] =
+      String(extraOfferClaims[SchemaOrgOfferClaim.Identifier]);
+    orderContent.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.PaymentMethod] = 'Stripe';
+    orderContent.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.PartOfInvoice] = 'in_family_test_001';
 
     const familyOrderJob: JobRequest = {
       id: 'job-family-commercial-order-1',
@@ -856,7 +850,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_batch',
@@ -868,8 +862,8 @@ describe('FamilyManager - Offer/Order Flow', () => {
     const entry = responsePayload.body.data[0];
     expect(entry.response.status).toBe('201');
     expect(entry.type).toBe('Family-order-response-v1.0');
-    expect(entry.resource.meta.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier]).toBe(
-      extraOfferClaims[ClaimsOfferSchemaorg.identifier],
+    expect(entry.resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier]).toBe(
+      extraOfferClaims[SchemaOrgOfferClaim.Identifier],
     );
     expect(entry.resource?.resourceType).toBe('Bundle');
     expect(

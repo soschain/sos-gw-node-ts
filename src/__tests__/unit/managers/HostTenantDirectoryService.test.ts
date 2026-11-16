@@ -1,5 +1,5 @@
 // Flow contract: an authenticated host operator searches the protected host Organization registry through a DIDComm request and receives a privacy-minimized, paginated Bundle; tenant controllers and browser-selected authority fail closed.
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { HostTenantDirectoryService } from '../../../managers/hosting/HostTenantDirectoryService';
 import { GatewayClaim } from '../../../shared/gateway-claim-contract';
 
@@ -15,12 +15,12 @@ const tenant = (input: Readonly<{
   id: input.id,
   secret: input.secret,
   claims: {
-    [ClaimsOrganizationSchemaorg.legalName]: input.legalName,
-    [ClaimsOrganizationSchemaorg.name]: input.legalName,
-    [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-    [ClaimsOrganizationSchemaorg.identifierValue]: input.identifier,
-    [ClaimsOrganizationSchemaorg.addressCountry]: input.jurisdiction,
-    [ClaimsServiceSchemaorg.category]: input.sector,
+    [SchemaOrgOrganizationClaim.LegalName]: input.legalName,
+    [SchemaOrgOrganizationClaim.Name]: input.legalName,
+    [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+    [SchemaOrgOrganizationClaim.IdentifierValue]: input.identifier,
+    [SchemaOrgOrganizationClaim.AddressCountry]: input.jurisdiction,
+    [SchemaOrgServiceClaim.Category]: input.sector,
     [GatewayClaim.TenantAuthorizationStatus]: input.status,
   },
   provider: { service: { sectorCategory: input.sector, privateToken: 'never-return' } },
@@ -77,25 +77,25 @@ describe('HostTenantDirectoryService', () => {
       aud: 'did:web:host-controller.example',
       body: { resourceType: 'Bundle', type: 'searchset', total: 3 },
     });
-    expect(response.body.data.map((entry: any) => entry.resource.meta.claims[ClaimsOrganizationSchemaorg.identifierValue]))
+    expect(response.body.data.map((entry: any) => entry.resource.meta.claims[SchemaOrgOrganizationClaim.IdentifierValue]))
       .toEqual(['A-1', 'B-2']);
     expect(response.body.meta.pagination).toMatchObject({ pageSize: 2, returned: 2, hasNext: true });
     expect(response.body.meta.pagination.nextCursor).toEqual(expect.any(String));
 
     const second = await service.search(request({ pageSize: 2, cursor: response.body.meta.pagination.nextCursor }));
     expect(second.body.data).toHaveLength(1);
-    expect(second.body.data[0].resource.meta.claims[ClaimsOrganizationSchemaorg.identifierValue]).toBe('Z-3');
+    expect(second.body.data[0].resource.meta.claims[SchemaOrgOrganizationClaim.IdentifierValue]).toBe('Z-3');
   });
 
   it('filters by jurisdiction, sector and lifecycle status without returning tenant internals', async () => {
     const response = await service.search(request({ filters: {
-      [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-      [ClaimsServiceSchemaorg.category]: 'education',
+      [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+      [SchemaOrgServiceClaim.Category]: 'education',
       [GatewayClaim.TenantAuthorizationStatus]: 'suspended',
     } }));
 
     expect(response.body.total).toBe(1);
-    expect(response.body.data[0].resource.meta.claims[ClaimsOrganizationSchemaorg.legalName]).toBe('Alpha School');
+    expect(response.body.data[0].resource.meta.claims[SchemaOrgOrganizationClaim.LegalName]).toBe('Alpha School');
     expect(JSON.stringify(response)).not.toContain('privateToken');
     expect(JSON.stringify(response)).not.toContain('privateKeyJwk');
     expect(JSON.stringify(response)).not.toContain('hidden');
@@ -103,7 +103,7 @@ describe('HostTenantDirectoryService', () => {
 
   it('filters by the canonical organization legal name used by the host portal', async () => {
     const response = await service.search(request({ filters: {
-      [ClaimsOrganizationSchemaorg.legalName]: 'Beta Veterinary',
+      [SchemaOrgOrganizationClaim.LegalName]: 'Beta Veterinary',
     } }));
 
     expect(response.body.total).toBe(1);

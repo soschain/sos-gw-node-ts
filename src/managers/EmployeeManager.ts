@@ -1,58 +1,57 @@
 // src/managers/EmployeeManager.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
-import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
-import { getHealthcareRoleByClaim } from 'gdc-common-utils-ts/constants/healthcare';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
+import { getHealthcareRoleByClaim, HealthcareRoleFamilies } from 'sos-data-utils-ts/healthcare-roles';
+import { readIsco08Code } from 'antifraud-data-utils-ts/isco-08';
 
+import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  buildOrganizationAuthorizationUrnCds,
-  buildOrganizationEmployeeAuthorizationUrnCds,
-  FhirIpsCreatorKinds,
-  OrganizationEmployeeSearchResponseEntryTypes,
-  normalizeUuid,
-} from 'gdc-common-utils-ts';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import { buildOrganizationAuthorizationUrnCds, buildOrganizationEmployeeAuthorizationUrnCds } from 'sos-data-utils-ts/organization-authorization-urn';
+import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
+import { OrganizationEmployeeSearchResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
-import { ClaimsOfferSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { determineResourceId } from '../utils/resource';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import { initializeEmployeeServices } from '../utils/services';
 import { createOperationOutcome } from '../utils/outcome';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { getTenantVaultId } from '../utils/tenant';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
-import { BundleEntry, ErrorEntry, BundleEntryRequest, BundleJsonApi } from 'gdc-common-utils-ts/models/bundle';
-import { ClaimsRecord, RecordBase } from 'gdc-common-utils-ts/models/resource-document';
-import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
+import { BundleEntry, ErrorEntry, BundleEntryRequest, BundleJsonApi } from 'sos-data-utils-ts/bundle-contract';
+import { ClaimsRecord, RecordBase } from 'sos-data-utils-ts/confidential-storage';
+import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { getBundleResponseTypeForAction } from '../utils/bundle';
 import { normalizeCodeSystemAndValue } from '../utils/normalize-codeAndSystem';
-import { ParameterData } from 'gdc-common-utils-ts/models/params';
-import { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import type { GatewayParameterData } from 'sos-data-utils-ts/gateway-parameter-contract';
+import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { DidDocument, VerificationMethod } from '../gdc-backend-utils-node/models/did';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { EntityLifecycleStatus, EntityType } from '../gdc-backend-utils-node/models/enums';
-import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { generateLicenseOffer } from '../utils/offer';
 import { getEnvSectionId } from '../utils/section-env';
 import { getPersonOccupationClaim } from '../utils/occupation';
-import { createEmployeeUrn, parseTenantUrn } from '../utils/urn';
-import { normalizeIndexedEmail } from '../utils/indexed-contact';
+import { createEmployeeUrn, createEmployeeUrnFromStableActorIdentifier, parseTenantUrn } from '../utils/urn';
+import { normalizeIndexedEmail, normalizeIndexedPhone } from '../utils/indexed-contact';
 import { extractSearchFiltersFromEntry } from '../utils/search-request';
 import type { ITenantsManager } from './ITenantsManager';
 import type { ITenantDidRegistryMutator } from './ITenantDidRegistryMutator';
 import type { IHostRuntime } from './IHostRuntime';
 import { buildOfferOrderIndexedAttributes } from '../utils/offer-order-read-model';
 import { buildSearchResponseEntries } from '../utils/didcomm-response';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
-import { normalizePublicAliasList } from 'gdc-common-utils-ts/utils/same-as';
-import type { ClinicalCreatorBinding } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
+import { normalizePublicAliasList } from 'antifraud-data-utils-ts/public-aliases';
+import type { ClinicalCreatorBinding } from 'sos-data-utils-ts/clinical-creator-contract';
 import { getClinicalCreatorBindingsSectionId } from '../utils/clinical-creator-binding';
 import { canonicalizeBundleEntryMetadata } from '../utils/canonical-entry-metadata';
 import { requireExplicitLifecycleResourceId } from '../utils/lifecycle-resource-id';
+import { isVerifiedBearerBoundToActorDid } from '../utils/authenticated-job-actor';
 import {
   ACTION_PURGE,
   LICENSE_STATUS_AVAILABLE,
@@ -61,6 +60,7 @@ import {
 
 const EMPLOYEE_SECTION = getEnvSectionId('employees');
 const DEVICE_LICENSE_SECTION = getEnvSectionId('device-licenses');
+type EmployeeContact = Parameters<typeof buildStableActorIdentifier>[0];
 
 function canonicalUuidUrn(value: string): string | undefined {
   const hex = normalizeUuid(value);
@@ -72,7 +72,7 @@ function canonicalUuidUrn(value: string): string | undefined {
 export class EmployeeManager {
   private vaultRepository: IVaultRepository;
   private kmsService: IKmsService;
-  private tenantsManager: Pick<ITenantsManager, 'getTenantIdentifierUrn' | 'getCollectionName'>;
+  private tenantsManager: Pick<ITenantsManager, 'getTenantIdentifierUrn' | 'getCollectionName' | 'getDidDocument'>;
   private tenantDidRegistryMutator: ITenantDidRegistryMutator;
   private hostRuntime: IHostRuntime;
 
@@ -84,6 +84,7 @@ export class EmployeeManager {
    * - this manager must not receive `TenantsCacheManager` directly
    * - it only needs:
    *   - tenant URN resolution for response `iss`
+   *   - public tenant DID document for current controller authority
    *   - a narrow DID-registry mutator to publish child verification methods
    *   - host runtime scalars for host-owned offers
    *
@@ -95,7 +96,7 @@ export class EmployeeManager {
   constructor(
     vaultRepository: IVaultRepository,
     kmsService: IKmsService,
-    tenantsManager: Pick<ITenantsManager, 'getTenantIdentifierUrn' | 'getCollectionName'>,
+    tenantsManager: Pick<ITenantsManager, 'getTenantIdentifierUrn' | 'getCollectionName' | 'getDidDocument'>,
     tenantDidRegistryMutator: ITenantDidRegistryMutator,
     hostRuntime: IHostRuntime,
   ) {
@@ -138,6 +139,7 @@ export class EmployeeManager {
 
     for (const entry of entries) {
       try {
+        await this.requireController(job, vaultId);
         // Pass the fetched URN and the job metadata down to the entry processor.
         const resultEntry = await this.processEntry(
           entry,
@@ -170,12 +172,24 @@ export class EmployeeManager {
       jti: uuidv4(),
       thid: job.content.thid as string,
       iss: issuerUrn, // Use the tenant's URN as the issuer
-      aud: job.content.aud as string,
+      aud: job.content.iss as string,
       exp: Math.floor(Date.now() / 1000) + 300,
       type: 'batch-response',
       body: responseBundle,
     };
     return result;
+  }
+
+  private async requireController(job: JobRequest, vaultId: string): Promise<void> {
+    const issuer = String(job.content?.iss || '').trim();
+    const principal = job.content?.meta?.bearer?.jwt?.payload;
+    const did = await this.tenantsManager.getDidDocument(vaultId);
+    const controllers = (Array.isArray(did?.controller) ? did.controller : did?.controller ? [did.controller] : [])
+      .filter((controller): controller is string => typeof controller === 'string')
+      .map(controller => controller.trim());
+    if (!issuer || !controllers.includes(issuer) || !isVerifiedBearerBoundToActorDid(principal, issuer)) {
+      throw new ManagerError('Employee writes require the authenticated current tenant controller.', IssueType.Forbidden);
+    }
   }
 
   private async processSearch(
@@ -204,7 +218,7 @@ export class EmployeeManager {
       jti: uuidv4(),
       thid: job.content?.thid as string,
       iss: issuerUrn,
-      aud: job.content?.aud as string,
+      aud: job.content?.iss as string,
       exp: Math.floor(Date.now() / 1000) + 300,
       type: 'search-response',
       body: {
@@ -285,12 +299,16 @@ export class EmployeeManager {
     return entries.every(([key, expectedValues]) => {
       const actualValue = this.resolveEmployeeSearchValue(claims, key);
       if (!actualValue) return false;
+      if (key === SchemaOrgPersonClaim.HasOccupation || key === SchemaOrgPersonClaim.OccupationIdentifierValue) {
+        const actualCode = readIsco08Code(actualValue);
+        return expectedValues.some(value => value === actualValue || (actualCode !== undefined && readIsco08Code(value) === actualCode));
+      }
       return expectedValues.includes(actualValue);
     });
   }
 
   private resolveEmployeeSearchValue(claims: ClaimsRecord, key: string): string | undefined {
-    if (key === ClaimsPersonSchemaorg.hasOccupation || key === ClaimsPersonSchemaorg.hasOccupationalRoleValue) {
+    if (key === SchemaOrgPersonClaim.HasOccupation || key === SchemaOrgPersonClaim.OccupationIdentifierValue) {
       return getPersonOccupationClaim(claims) || undefined;
     }
 
@@ -356,7 +374,7 @@ export class EmployeeManager {
     const explicitResourceId = String((entry as any)?.resource?.id || '').trim();
     if (explicitResourceId) return explicitResourceId;
 
-    const identifierClaim = entry.resource?.meta?.claims?.[ClaimsPersonSchemaorg.identifier];
+    const identifierClaim = entry.resource?.meta?.claims?.[SchemaOrgPersonClaim.Identifier];
     if (typeof identifierClaim !== 'string' || !identifierClaim.trim()) {
       return undefined;
     }
@@ -378,17 +396,18 @@ export class EmployeeManager {
     let signerJwk: PublicJwk | undefined;
     let encrypterJwk: PublicJwk | undefined;
 
-    const email = normalizeIndexedEmail(claims[ClaimsPersonSchemaorg.email]);
-    if (!email) {
-      throw new ManagerError('Missing or invalid email claim.', IssueType.Required);
-    }
+    const email = normalizeIndexedEmail(claims[SchemaOrgPersonClaim.Email]);
+    const phone = normalizeIndexedPhone(claims[SchemaOrgPersonClaim.Telephone]);
+    const contact: EmployeeContact | undefined = email
+      ? { contactKind: 'email', contact: email } : phone ? { contactKind: 'phone', contact: phone } : undefined;
+    if (!contact) throw new ManagerError('A valid employee email or telephone is required.', IssueType.Required);
 
     const roleCode = getPersonOccupationClaim(claims); // canonical: hasOccupation.identifier.value (+ optional system)
     if (!roleCode) {
       throw new ManagerError('Missing or invalid hasOccupation claim.', IssueType.Required);
     }
 
-    const existingEmployee = await this.findEmployeeByEmailAndRole(employeeCollectionName, tenantVaultId, email, roleCode);
+    const existingEmployee = await this.findEmployeeByContactAndRole(employeeCollectionName, tenantVaultId, contact, roleCode);
     if (existingEmployee) {
       return this.upsertExistingEmployee(existingEmployee, employeeCollectionName, tenantVaultId, claims, entryType);
     }
@@ -409,7 +428,7 @@ export class EmployeeManager {
     });
     if (licenseOffer) return licenseOffer;
 
-    const employeeUrnForKeys = createEmployeeUrn({
+    const employeeUrnForKeys = email ? createEmployeeUrn({
       namespace: parsedTenantUrn.namespace,
       network: parsedTenantUrn.network,
       jurisdiction: parsedTenantUrn.jurisdiction,
@@ -418,6 +437,11 @@ export class EmployeeManager {
       idType: parsedTenantUrn.idType,
       idValue: parsedTenantUrn.idValue,
       email,
+      role: roleCode,
+      instanceId: employeeId,
+    }) : createEmployeeUrnFromStableActorIdentifier({
+      organizationUrn: tenantUrn,
+      stableActorIdentifier: buildStableActorIdentifier(contact),
       role: roleCode,
       instanceId: employeeId,
     });
@@ -464,7 +488,7 @@ export class EmployeeManager {
       employeeUuid: employeeId,
       roleCode: normalizeCodeSystemAndValue(roleCode).split(/[:|]/).pop() || '',
     });
-    const employeeAliases = normalizePublicAliasList(claims[ClaimsPersonSchemaorg.sameAs]);
+    const employeeAliases = normalizePublicAliasList(claims[SchemaOrgPersonClaim.SameAs]);
 
     // Create verification methods from the provided JWKs
     const verificationMethods: VerificationMethod[] = [
@@ -522,23 +546,23 @@ export class EmployeeManager {
       employeeId: employeeId,
       meta: {
         claims: {
-          [ClaimsPersonSchemaorg.hasOccupation]: roleCode,
+          [SchemaOrgPersonClaim.HasOccupation]: roleCode,
         },
       },
     };
 
-    const attributesToIndex: ParameterData[] = [
-      { name: 'email', value: email, unique: true, type: 'string'},
+    const attributesToIndex: GatewayParameterData[] = [
+      { name: contact.contactKind, value: contact.contact, unique: true, type: 'string'},
       // The role code is normalized before HMAC to ensure consistent searching.
       { name: 'role', value: normalizeCodeSystemAndValue(roleCode), unique: false, type: 'token'},
       { name: 'kid', value: signerJwk.kid, unique: false, type: 'string'},
       { name: 'kid', value: encrypterJwk.kid, unique: false, type: 'string'},
       ...employeeAliases.map((alias) => ({
-        name: ClaimsPersonSchemaorg.sameAs,
+        name: SchemaOrgPersonClaim.SameAs,
         value: alias,
         unique: false,
         type: 'string',
-      } as ParameterData)),
+      } as GatewayParameterData)),
     ];
     
     const protectedAttributes = await this.kmsService.protectAttributesNameAndValue(attributesToIndex, tenantVaultId);
@@ -563,7 +587,7 @@ export class EmployeeManager {
       occupationId: occupationDoc.id,
       ownerIdentifier: organizationAuthorizationUrn,
       role: roleCode,
-      email,
+      contact,
     });
 
     return {
@@ -592,9 +616,9 @@ export class EmployeeManager {
     occupationId: string;
     ownerIdentifier?: string;
     role: string;
-    email: string;
+    contact: EmployeeContact;
   }): Promise<void> {
-    if (!getHealthcareRoleByClaim(params.role)) return;
+    if (getHealthcareRoleByClaim(params.role)?.family !== HealthcareRoleFamilies.ProfessionalOccupationIsco08) return;
     const actorIdentifier = canonicalUuidUrn(params.employeeId);
     const authorIdentifier = canonicalUuidUrn(params.occupationId);
     const ownerIdentifier = String(params.ownerIdentifier || '').trim();
@@ -607,10 +631,7 @@ export class EmployeeManager {
       authorIdentifier,
       ownerIdentifier,
       role: params.role,
-      verifiedContactIdentifiers: [buildStableActorIdentifier({
-        contactKind: 'email',
-        contact: params.email,
-      })],
+      verifiedContactIdentifiers: [buildStableActorIdentifier(params.contact)],
     };
     await this.vaultRepository.put(
       params.tenantVaultId,
@@ -623,17 +644,17 @@ export class EmployeeManager {
    * Finds an existing employee by its functional business identity.
    *
    * In v1, employee onboarding is treated as an idempotent/upsert-like flow keyed by
-   * `email + role`. The physical record id can still vary across payloads, but the
+   * `contact kind + contact + role`. The physical record id can still vary across payloads, but the
    * business identity must not create duplicates for the same role assignment.
    */
-  private async findEmployeeByEmailAndRole(
+  private async findEmployeeByContactAndRole(
     employeeCollectionName: string,
     tenantVaultId: string,
-    email: string,
+    contact: EmployeeContact,
     roleCode: string,
   ): Promise<ConfidentialStorageDoc | undefined> {
-    const queryAttributes: ParameterData[] = [
-      { name: 'email', value: email, unique: true, type: 'string' },
+    const queryAttributes: GatewayParameterData[] = [
+      { name: contact.contactKind, value: contact.contact, unique: true, type: 'string' },
       { name: 'role', value: normalizeCodeSystemAndValue(roleCode), unique: false, type: 'token' },
     ];
 
@@ -740,7 +761,7 @@ export class EmployeeManager {
         allowedPaymentMethods,
         LICENSE_USER_CLASS_EMPLOYEE,
       );
-      offerClaims[ClaimsOrganizationSchemaorg.alternateName] = params.tenantId;
+      offerClaims[SchemaOrgOrganizationClaim.AlternateName] = params.tenantId;
       await this.persistHostCommercialOffer(offerClaims);
 
       return {
@@ -754,7 +775,7 @@ export class EmployeeManager {
   }
 
   private async persistHostCommercialOffer(claims: Record<string, unknown>): Promise<void> {
-    const offerId = String(claims[ClaimsOfferSchemaorg.identifier] || '').trim();
+    const offerId = String(claims[SchemaOrgOfferClaim.Identifier] || '').trim();
     if (!offerId) return;
 
     const communicationDoc: ConfidentialStorageDoc & { meta?: { claims: Record<string, unknown> } } = {
@@ -858,8 +879,13 @@ export class EmployeeManager {
     claims: ClaimsRecord,
   ): Promise<void> {
     const email = normalizeIndexedEmail(
-      employee.claims?.[ClaimsPersonSchemaorg.email]
-      || claims?.[ClaimsPersonSchemaorg.email]
+      employee.claims?.[SchemaOrgPersonClaim.Email]
+      || claims?.[SchemaOrgPersonClaim.Email]
+      || '',
+    );
+    const phone = normalizeIndexedPhone(
+      employee.claims?.[SchemaOrgPersonClaim.Telephone]
+      || claims?.[SchemaOrgPersonClaim.Telephone]
       || '',
     );
     const roleCode = normalizeCodeSystemAndValue(
@@ -879,8 +905,8 @@ export class EmployeeManager {
       }
 
       const matchesSubject = license.subjectId === employeeId;
-      const matchesInvite = email
-        && normalizeIndexedEmail(String(license.issuedToEmail || '')) === email
+      const matchesInvite = ((email && normalizeIndexedEmail(license.issuedToEmail) === email)
+        || (phone && normalizeIndexedPhone(license.issuedToPhone) === phone))
         && roleCode
         && normalizeCodeSystemAndValue(String(license.issuedToRole || '')) === roleCode;
 
@@ -896,6 +922,7 @@ export class EmployeeManager {
       delete resetLicense.activationCode;
       delete resetLicense.issuedAt;
       delete resetLicense.issuedToEmail;
+      delete resetLicense.issuedToPhone;
       delete resetLicense.issuedToRole;
       delete resetLicense.activatedAt;
       delete resetLicense.deviceId;

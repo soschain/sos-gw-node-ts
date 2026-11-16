@@ -4,11 +4,11 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 import { invokeExpress } from './helpers/invokeExpress';
 import { startServer, resetServerConfig } from '../../server';
 import { getTenantVaultId, generateTenantCollectionNameFromClaims } from '../../utils/tenant';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { testPayloadCreateTenant1 } from '../data/end-to-end.data';
 import { testTenant1TenantId } from '../data/organization.data';
 import { initializeTenantServicesConfig } from '../../utils/services';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { getEnvSectionId } from '../../utils/section-env';
 import { configureAuthenticatedTestActor } from './helpers/authenticated-test-actor';
 import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
@@ -37,20 +37,20 @@ describe('RelatedPerson Communication and search API', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-        [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-        [ClaimsOrganizationSchemaorg.identifierValue]: 'A0011223344',
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+        [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+        [SchemaOrgOrganizationClaim.IdentifierValue]: 'A0011223344',
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
       await kmsService.provisionKeys(tenantVaultId);
       const protectedTenant = await kmsService.protectConfidentialData({
         id: tenantVaultId,
         sequence: 0,
         content: {
           claims: tenantClaims,
-          didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+          didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
           didDocument: { id: 'did:web:api.acme.org', '@context': 'https://www.w3.org/ns/did/v1' },
         },
       } as any, 'host');

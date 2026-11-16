@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import { EntityLifecycleStatus } from '../../gdc-backend-utils-node/models/enums';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { PdfSignatureEvidence } from '../../utils/pdf-evidence';
 import { getEnvSectionId } from '../../utils/section-env';
 import { slugFromDomain } from '../../utils/slug';

@@ -1,6 +1,6 @@
 // Flow contract: a verified professional may exchange either an invitation code or one exact portable employee URN; the gateway still validates the active licence before DCR.
 import { IdentityTokenManager } from '../../managers/IdentityTokenManager';
-import { IdentityAuthRequestFields } from 'gdc-common-utils-ts/constants/identity-auth';
+import { IdentityAuthRequestFields } from 'sos-data-utils-ts/identity-auth-wire-contract';
 
 const VERIFIED_PROFESSIONAL_EMAIL = 'doctor.doe@example.org';
 const PORTABLE_EMPLOYEE_URN = 'urn:cds-ca-bc:v1:organization:bn:Example-123:member:zJJPb9sJCAcnFLu8tVHGF4c:2211';

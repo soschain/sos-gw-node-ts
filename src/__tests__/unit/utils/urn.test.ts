@@ -9,8 +9,9 @@ import {
 } from "../../../utils/urn";
 import { URN_NAMESPACE, URN_VERSION } from "../../data/urn.data";
 import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
-import { HealthcareActorRoles } from 'gdc-common-utils-ts/constants/healthcare';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 
 describe('createEmployeeUrn', () => {
     const baseParams = {
@@ -23,6 +24,23 @@ describe('createEmployeeUrn', () => {
         idValue: 'B12345678',
         email: 'John.Doe@Example.com',
     };
+
+    it('preserves a phone stable actor and an explicit employee instance in the generic builder', () => {
+        const stableActorIdentifier = buildStableActorIdentifier({ contactKind: 'phone', contact: SAFE.phoneE164 });
+        const input = { organizationUrn: createOrganizationUrn(baseParams), stableActorIdentifier,
+            role: HealthcareActorRoles.Dentist, instanceId: SAFE.resourceUuid };
+        expect(createEmployeeUrnFromStableActorIdentifier(input)).toBe(
+            `${input.organizationUrn}:employee:${stableActorIdentifier.replace('urn:multibase:', '')}:role:isco-08|2261:instance:${SAFE.resourceUuid}`,
+        );
+    });
+
+    it('keeps generic email identity and instance byte-for-byte compatible with the existing email builder', () => {
+        const instance = SAFE.resourceUuid;
+        const input = { organizationUrn: createOrganizationUrn(baseParams),
+            stableActorIdentifier: buildStableActorIdentifier({ contactKind: 'email', contact: baseParams.email }),
+            role: HealthcareActorRoles.Dentist, instanceId: instance };
+        expect(createEmployeeUrnFromStableActorIdentifier(input)).toBe(createEmployeeUrn({ ...baseParams, role: input.role, instanceId: instance }));
+    });
 
     it('should create a URN with hashed email and role code', () => {
         const params = { ...baseParams, role: '1120' };

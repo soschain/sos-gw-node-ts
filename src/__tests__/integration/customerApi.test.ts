@@ -1,4 +1,4 @@
-// TDD contract: a decoded unsigned fixture crosses no cryptographic boundary and is queued for its validated route.
+// Flow contract: a decoded unsigned fixture crosses no cryptographic boundary and is queued for its validated customer route.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 /**
@@ -29,11 +29,11 @@
 
 import express from 'express';
 import { createApiRouter } from '../../routes/api';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { QueueAdapter } from '../../adapters/queue';
 import { TenantsCacheManager } from '../../managers/TenantsCacheManager';
 import { testEncryptedJwe1 } from '../data/async-response.data';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { mockKmsService } from '../mocks/kms.mock';
 import { VaultMemRepository } from '../../database/repositories/vault/vault.mem.repository';
 import { AsyncResponseStoreMem, IAsyncResponseStore } from '../../adapters/async-response-store.mem';

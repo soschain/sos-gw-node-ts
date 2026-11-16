@@ -1,5 +1,6 @@
+// Flow contract: independent identity and commerce claim catalogs preserve exact stored keys and authorization boundaries.
 import { afterEach, describe, expect, it, jest } from '@jest/globals';
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ManageAssetCryptographicKey } from '../../../blockchain/fabric/v3/manageAssetCryptographicKey';
 import { ManageAssetSubjectKeyBinding } from '../../../blockchain/fabric/v3/manageAssetSubjectKeyBinding';
 import { registerControllerKeysOnLedger } from '../../../utils/ledger-device-registration';
@@ -39,8 +40,8 @@ describe('controller key ledger registration', () => {
     await registerControllerKeysOnLedger({
       jurisdiction: 'ES',
       organizationClaims: {
-        [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-        [ClaimsOrganizationSchemaorg.identifierValue]: 'VATES-G02793479',
+        [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+        [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-G02793479',
       },
       controllerDid,
       actorIdentifier,

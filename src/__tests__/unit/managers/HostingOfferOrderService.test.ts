@@ -1,6 +1,6 @@
 // Flow contract: follow docs/LOCAL_FIRST_RELEASE_CONTRACT.md; host Offer search returns one primary row per response entry and never exposes the deprecated nested search list.
 import { afterAll, beforeAll } from '@jest/globals';
-import { ClaimsOfferSchemaorg, ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { HostingOfferOrderService } from '../../../managers/hosting/HostingOfferOrderService';
 import { SearchResponseProfileEnvironment, SearchResponseProfiles } from '../../../utils/didcomm-response';
 
@@ -20,8 +20,8 @@ describe('HostingOfferOrderService pending bootstrap reads', () => {
       indexed: { attributes: [], hmac: 'protected-index' },
     } as any;
     const claims = {
-      [ClaimsOrganizationSchemaorg.alternateName]: '704457076',
-      [ClaimsOfferSchemaorg.identifier]: 'urn:cds:CA-BC:v1:animal-care:product:org.schema:Offer:pending-fixture',
+      [SchemaOrgOrganizationClaim.AlternateName]: '704457076',
+      [SchemaOrgOfferClaim.Identifier]: 'urn:cds:CA-BC:v1:animal-care:product:org.schema:Offer:pending-fixture',
     };
     const vaultRepository = {
       query: jest.fn()
@@ -95,12 +95,12 @@ describe('HostingOfferOrderService pending bootstrap reads', () => {
 
     expect(response.response?.status).toBe('201');
     expect(response.resource?.meta?.claims).toEqual(expect.objectContaining({
-      [ClaimsOrganizationSchemaorg.alternateName]: '7654321',
-      [ClaimsOfferSchemaorg.category]: 'animal-care',
-      [ClaimsOfferSchemaorg.eligibleQuantityValue]: 3,
-      [ClaimsOfferSchemaorg.acceptedPaymentMethod]: 'TestNetworkVirtual',
+      [SchemaOrgOrganizationClaim.AlternateName]: '7654321',
+      [SchemaOrgOfferClaim.Category]: 'animal-care',
+      [SchemaOrgOfferClaim.EligibleQuantityValue]: 3,
+      [SchemaOrgOfferClaim.AcceptedPaymentMethod]: 'TestNetworkVirtual',
     }));
-    expect(response.resource?.meta?.claims?.[ClaimsOfferSchemaorg.serialNumber]).toBeUndefined();
+    expect(response.resource?.meta?.claims?.[SchemaOrgOfferClaim.SerialNumber]).toBeUndefined();
     expect(tenantsCacheManager.isTenantOperational).toHaveBeenCalledWith(expect.stringContaining('7654321'));
     expect(vaultRepository.put).toHaveBeenCalledWith(
       'host-collection',

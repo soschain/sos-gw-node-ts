@@ -6,8 +6,8 @@ import { Request, Response } from 'express';
 import { createOperationOutcome } from '../../../utils/outcome';
 import { compactJWT } from 'gdc-common-utils-ts/utils/jwt';
 import { convertPrimaryDocToFhirBundle } from '../../../utils/jsonapi';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 
 /**
  * Encodes a hostname from a request's Host header for use in a did:web.

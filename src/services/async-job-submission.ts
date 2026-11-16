@@ -1,4 +1,4 @@
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import type { IAsyncResponseStore, StoredJob } from '../adapters/async-response-store.mem';
 import type { QueueAdapter } from '../adapters/queue';
 

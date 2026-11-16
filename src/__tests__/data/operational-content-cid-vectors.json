@@ -1,0 +1,255 @@
+{
+  "provenance": {
+    "originalSource": "https://github.com/Global-DataCare/gdc-common-utils-ts/blob/f4031b221216cacd9917d1d20c5ff0b03bed7045/src/utils/fhir-cid.ts",
+    "oracleSourceSha256": "d654e3a0e46ac607b52167ebffb337bd52f2ca7b78067dc8bcaa67cd7afadd0c",
+    "readOnlyOracle": true,
+    "generatedAt": "2026-11-15T15:01:46.759Z",
+    "extendedReadOnlyOracle": true
+  },
+  "vectors": [
+    {
+      "name": "default",
+      "claims": {
+        "@context": "synthetic-context",
+        "@type": "synthetic-type",
+        "@id": "synthetic-envelope",
+        "id": "synthetic-root",
+        "Composition.identifier": "synthetic-logical",
+        "Composition.identifier.value": "synthetic-value",
+        "Composition.meta.versionId": "synthetic-version",
+        "Composition.status": "final",
+        "Composition.entry": [
+          "second",
+          "first"
+        ],
+        "nested": {
+          "id": "synthetic-nested",
+          "number": 7,
+          "label": "é水",
+          "array": [
+            2,
+            1
+          ]
+        }
+      },
+      "options": {},
+      "cid": "z4EBG9j4AEegUCcyG5pem14xM9aLVhyqcEt5sH5He2DsRVXwDyB",
+      "canonicalJson": "{\"Composition.entry\":[\"second\",\"first\"],\"Composition.status\":\"final\",\"nested\":{\"array\":[2,1],\"id\":\"synthetic-nested\",\"label\":\"é水\",\"number\":7}}",
+      "digestHex": "3c10d9630df542fca5fa7655f2221001be1a1b4cdb3ed0375e17df7536bf713a"
+    },
+    {
+      "name": "all-fields-retained",
+      "claims": {
+        "@context": "synthetic-context",
+        "@type": "synthetic-type",
+        "@id": "synthetic-envelope",
+        "id": "synthetic-root",
+        "Composition.identifier": "synthetic-logical",
+        "Composition.identifier.value": "synthetic-value",
+        "Composition.meta.versionId": "synthetic-version",
+        "Composition.status": "final",
+        "Composition.entry": [
+          "second",
+          "first"
+        ],
+        "nested": {
+          "id": "synthetic-nested",
+          "number": 7,
+          "label": "é水",
+          "array": [
+            2,
+            1
+          ]
+        }
+      },
+      "options": {
+        "stripJsonLdEnvelope": false,
+        "stripIdentifiers": false,
+        "stripVersionClaims": false
+      },
+      "cid": "z4EBG9jDkRm1GL8ro17BpzRMbCMv9WkzLMWs31SVYzyoip3yd7a",
+      "canonicalJson": "{\"@context\":\"synthetic-context\",\"@id\":\"synthetic-envelope\",\"@type\":\"synthetic-type\",\"Composition.entry\":[\"second\",\"first\"],\"Composition.identifier\":\"synthetic-logical\",\"Composition.identifier.value\":\"synthetic-value\",\"Composition.meta.versionId\":\"synthetic-version\",\"Composition.status\":\"final\",\"id\":\"synthetic-root\",\"nested\":{\"array\":[2,1],\"id\":\"synthetic-nested\",\"label\":\"é水\",\"number\":7}}",
+      "digestHex": "ca8c570cda8a6cc9176f709888eb273944258e8aa2f9089ba268f5d37cce370d"
+    },
+    {
+      "name": "envelope-identifiers-version-changed",
+      "claims": {
+        "@context": "other-context",
+        "@type": "other-type",
+        "@id": "other-envelope",
+        "id": "other-root",
+        "Composition.identifier": "other-logical",
+        "Composition.identifier.value": "other-value",
+        "Composition.meta.versionId": "other-version",
+        "Composition.status": "final",
+        "Composition.entry": [
+          "second",
+          "first"
+        ],
+        "nested": {
+          "id": "synthetic-nested",
+          "number": 7,
+          "label": "é水",
+          "array": [
+            2,
+            1
+          ]
+        }
+      },
+      "options": {},
+      "cid": "z4EBG9j4AEegUCcyG5pem14xM9aLVhyqcEt5sH5He2DsRVXwDyB",
+      "canonicalJson": "{\"Composition.entry\":[\"second\",\"first\"],\"Composition.status\":\"final\",\"nested\":{\"array\":[2,1],\"id\":\"synthetic-nested\",\"label\":\"é水\",\"number\":7}}",
+      "digestHex": "3c10d9630df542fca5fa7655f2221001be1a1b4cdb3ed0375e17df7536bf713a"
+    },
+    {
+      "name": "status-changed",
+      "claims": {
+        "@context": "synthetic-context",
+        "@type": "synthetic-type",
+        "@id": "synthetic-envelope",
+        "id": "synthetic-root",
+        "Composition.identifier": "synthetic-logical",
+        "Composition.identifier.value": "synthetic-value",
+        "Composition.meta.versionId": "synthetic-version",
+        "Composition.status": "preliminary",
+        "Composition.entry": [
+          "second",
+          "first"
+        ],
+        "nested": {
+          "id": "synthetic-nested",
+          "number": 7,
+          "label": "é水",
+          "array": [
+            2,
+            1
+          ]
+        }
+      },
+      "options": {},
+      "cid": "z4EBG9j4gYjtRaj3dH3ULzjjQJ2nf2Uy4aDEoUqjBiEw9u9gQ2v",
+      "canonicalJson": "{\"Composition.entry\":[\"second\",\"first\"],\"Composition.status\":\"preliminary\",\"nested\":{\"array\":[2,1],\"id\":\"synthetic-nested\",\"label\":\"é水\",\"number\":7}}",
+      "digestHex": "43d4ba43d505b81e973ac79cc6ec8532b855033f5e3e6a8795c90ed19e0a4fc3"
+    },
+    {
+      "name": "entry-order-changed",
+      "claims": {
+        "@context": "synthetic-context",
+        "@type": "synthetic-type",
+        "@id": "synthetic-envelope",
+        "id": "synthetic-root",
+        "Composition.identifier": "synthetic-logical",
+        "Composition.identifier.value": "synthetic-value",
+        "Composition.meta.versionId": "synthetic-version",
+        "Composition.status": "final",
+        "Composition.entry": [
+          "first",
+          "second"
+        ],
+        "nested": {
+          "id": "synthetic-nested",
+          "number": 7,
+          "label": "é水",
+          "array": [
+            2,
+            1
+          ]
+        }
+      },
+      "options": {},
+      "cid": "z4EBG9j7Dh9r4wG92NKFFLGWxT9qNamR8HFg9wjhDTTvzwSMaCu",
+      "canonicalJson": "{\"Composition.entry\":[\"first\",\"second\"],\"Composition.status\":\"final\",\"nested\":{\"array\":[2,1],\"id\":\"synthetic-nested\",\"label\":\"é水\",\"number\":7}}",
+      "digestHex": "69869e86e5cc4d53505fd7c03d8d2999d3142facce2a482e9439f90ec251d486"
+    },
+    {
+      "name": "object-key-order-changed",
+      "claims": {
+        "nested": {
+          "array": [
+            2,
+            1
+          ],
+          "label": "é水",
+          "number": 7,
+          "id": "synthetic-nested"
+        },
+        "Composition.entry": [
+          "second",
+          "first"
+        ],
+        "Composition.status": "final",
+        "Composition.meta.versionId": "synthetic-version",
+        "Composition.identifier.value": "synthetic-value",
+        "Composition.identifier": "synthetic-logical",
+        "id": "synthetic-root",
+        "@id": "synthetic-envelope",
+        "@type": "synthetic-type",
+        "@context": "synthetic-context"
+      },
+      "options": {},
+      "cid": "z4EBG9j4AEegUCcyG5pem14xM9aLVhyqcEt5sH5He2DsRVXwDyB",
+      "canonicalJson": "{\"Composition.entry\":[\"second\",\"first\"],\"Composition.status\":\"final\",\"nested\":{\"array\":[2,1],\"id\":\"synthetic-nested\",\"label\":\"é水\",\"number\":7}}",
+      "digestHex": "3c10d9630df542fca5fa7655f2221001be1a1b4cdb3ed0375e17df7536bf713a"
+    },
+    {
+      "name": "nested-array-order-changed",
+      "claims": {
+        "@context": "synthetic-context",
+        "@type": "synthetic-type",
+        "@id": "synthetic-envelope",
+        "id": "synthetic-root",
+        "Composition.identifier": "synthetic-logical",
+        "Composition.identifier.value": "synthetic-value",
+        "Composition.meta.versionId": "synthetic-version",
+        "Composition.status": "final",
+        "Composition.entry": [
+          "second",
+          "first"
+        ],
+        "nested": {
+          "id": "synthetic-nested",
+          "number": 7,
+          "label": "é水",
+          "array": [
+            1,
+            2
+          ]
+        }
+      },
+      "options": {},
+      "cid": "z4EBG9jCH8NmYCBXF8NDwp1LAxv33hzwc4ZVLNsTiL3h6U9xnEk",
+      "canonicalJson": "{\"Composition.entry\":[\"second\",\"first\"],\"Composition.status\":\"final\",\"nested\":{\"array\":[1,2],\"id\":\"synthetic-nested\",\"label\":\"é水\",\"number\":7}}",
+      "digestHex": "b4b250d8a80389c2d6e53595d122dabbf6a2f3ea4b8317cd6a1234b41a4b28a9"
+    },
+    {
+      "name": "number-changed-to-string",
+      "claims": {
+        "@context": "synthetic-context",
+        "@type": "synthetic-type",
+        "@id": "synthetic-envelope",
+        "id": "synthetic-root",
+        "Composition.identifier": "synthetic-logical",
+        "Composition.identifier.value": "synthetic-value",
+        "Composition.meta.versionId": "synthetic-version",
+        "Composition.status": "final",
+        "Composition.entry": [
+          "second",
+          "first"
+        ],
+        "nested": {
+          "id": "synthetic-nested",
+          "number": "7",
+          "label": "é水",
+          "array": [
+            2,
+            1
+          ]
+        }
+      },
+      "options": {},
+      "cid": "z4EBG9jF3tnHdEkN3msTZLnYPsb6QTfhza4rw14TAFZqvt7idos",
+      "canonicalJson": "{\"Composition.entry\":[\"second\",\"first\"],\"Composition.status\":\"final\",\"nested\":{\"array\":[2,1],\"id\":\"synthetic-nested\",\"label\":\"é水\",\"number\":\"7\"}}",
+      "digestHex": "dde17467fde1cb6b411ef5d889e6977ec4e2c6940c250dfc9d2e083e3fc16496"
+    }
+  ]
+}

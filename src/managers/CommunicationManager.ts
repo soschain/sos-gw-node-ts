@@ -1,23 +1,21 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/managers/CommunicationManager.ts
 // Description: Manager for handling business logic related to FHIR Communications.
-import { FhirDataTypes } from 'gdc-common-utils-ts/constants/fhir-resource-types';
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { FhirDataTypes } from 'fhir-data-utils-ts';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
-import { CommMsgExtended, DataEntry, FhirCommunication } from 'gdc-common-utils-ts/models/comm';
-import {
-  DataCollectionIds,
-  FhirResourceTypeDataCollections,
-  HealthcareBasicSections,
-  ResourceTypesFhirR4,
-} from 'gdc-common-utils-ts/constants/index';
-import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-claims/communication-claims';
-import { CompositionAttesterModes, CompositionClaim } from 'gdc-common-utils-ts/models/interoperable-claims/composition-claims';
-import { Format } from 'gdc-common-utils-ts/constants/Schemas';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { claimsToContentCid } from 'gdc-common-utils-ts/utils/fhir-cid';
+import { CommMsgExtended, DataEntry } from 'sos-data-utils-ts/communication-message-contract';
+import { FhirCommunication } from 'fhir-data-utils-ts/fhir-types';
+import { DataCollectionIds, FhirResourceTypeDataCollections } from 'sos-data-utils-ts/gateway-data-collections';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
+import { CommunicationClaim } from 'fhir-data-utils-ts';
+import { CompositionAttesterModes, CompositionClaim } from 'fhir-data-utils-ts';
+import { Format } from 'sos-data-utils-ts/bff-wire-contract';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { buildOperationalClaimsContentCid } from '../utils/operational-claims-content-cid';
 import {
   buildCommunicationParticipantIndexAttributes,
   CommunicationParticipantIndexNames,
@@ -25,25 +23,25 @@ import {
   paginateCommunicationParticipantMatches,
   parseCommunicationParticipantSearchCriteria,
 } from 'gdc-common-utils-ts/utils/communication-participant-search';
-import { SearchBundleTypes } from 'gdc-common-utils-ts/utils/fhir-search';
+import { GatewaySearchBundleTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { normalizeClaimsFromFhirResource } from 'gdc-common-utils-ts/utils/interoperable-resource-operation';
-import { compositionFhirR4ToFlat } from 'gdc-common-utils-ts/convert/convert-composition';
-import { buildConfidentialDocumentIndexedAttributes } from 'gdc-common-utils-ts/utils/confidential-document-provenance';
+import { compositionFhirR4ToFlat } from 'fhir-data-utils-ts';
+import { buildClinicalDocumentSearchAttributes } from '../utils/clinical-document-search-attributes';
 import { requireClaimsOnlyResourceShape } from '../utils/fhir-flat-claims';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { BundleJsonApi, BundleEntryResponse, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import type { OperationOutcome } from 'gdc-common-utils-ts/models/operation-outcome';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import { BundleJsonApi, BundleEntryResponse, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
+import type { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
 import { determineResourceId } from '../utils/resource';
 import { v4 as uuidv4 } from 'uuid';
 import { IJobProcessor } from './registry';
 import type { ITenantsManager } from './ITenantsManager';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { getTenantVaultId } from '../utils/tenant';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { getSubjectScopedSectionId } from '../utils/individual-sections';
 import { getEnvSectionId } from '../utils/section-env';
 import { createHash } from 'crypto';
-import { encodeMultibase58btc } from 'gdc-common-utils-ts/utils/multibase58';
+import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
 import { applyFhirCidVersioningToEntry, fhirResourceToCid } from '../utils/fhir-versioning';
 import { canonicalizeFhirClaims, getClaimValue, normalizeContextualizedClaims } from '../utils/claims';
 import { persistConsentRuleAndAttachment } from '../utils/consent-storage';
@@ -60,23 +58,15 @@ import {
   listEnabledDigitalTwinStudyTargets,
 } from '../utils/digital-twin-secondary-use';
 import { getAuthenticatedJobActorIdentifiers } from '../utils/authenticated-job-actor';
-import { ClaimConsent, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent, ConsentStatuses } from 'fhir-data-utils-ts';
 import { canonicalizeBundleEntryMetadata } from '../utils/canonical-entry-metadata';
-import {
-  FhirIpsCreatorKinds,
-  resolveClinicalCreatorBinding,
-  type AuthenticatedClinicalCreatorEvidence,
-  type ClinicalCreatorBinding,
-} from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
-import {
-  ClinicalResourceReplacementDecision,
-  evaluateClinicalResourceReplacement,
-  resolveClinicalDocumentAuthorOrganization,
-  type ClinicalDocumentAuthorOrganization,
-} from 'gdc-common-utils-ts/utils/clinical-resource-replacement';
+import { FhirIpsCreatorKinds, type AuthenticatedClinicalCreatorEvidence, type ClinicalCreatorBinding } from 'sos-data-utils-ts/clinical-creator-contract';
+import { resolveClinicalCreatorBinding } from 'sos-sdk-core-ts/clinical-creator';
+import { ClinicalResourceReplacementDecision, type ClinicalDocumentAuthorOrganization } from 'sos-data-utils-ts/clinical-creator-contract';
+import { evaluateClinicalResourceReplacement, resolveClinicalDocumentAuthorOrganization } from 'sos-sdk-core-ts/clinical-resource-replacement';
 import { getClinicalCreatorBindingsSectionId } from '../utils/clinical-creator-binding';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { EntityLifecycleStatus } from '../gdc-backend-utils-node/models/enums';
 import type { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
 import { ClinicalEvidenceChaincode } from '../utils/ledger';
@@ -485,7 +475,7 @@ export class CommunicationManager implements IJobProcessor {
 
     const responseBundle: BundleJsonApi<BundleEntryResponse | ErrorEntry> = {
       resourceType: ResourceTypesFhirR4.Bundle,
-      type: SearchBundleTypes.SearchResponse,
+      type: GatewaySearchBundleTypes.SearchResponse,
       total: records.length,
       data,
     };
@@ -791,7 +781,7 @@ export class CommunicationManager implements IJobProcessor {
       payloadSection,
     ].map((value) => String(value || '').trim()).filter(Boolean)));
     if (sectionCodes.length === 0) return;
-    const typeCode = claimsType || payloadType || HealthcareBasicSections.PatientSummaryDocument.attributeValue;
+    const typeCode = claimsType || payloadType || HealthcareCoreSections.PatientSummaryDocument.attributeValue;
 
     const sent = String(
       (entry?.resource?.meta?.claims?.[CommunicationClaim.Sent] as string | undefined)
@@ -840,7 +830,7 @@ export class CommunicationManager implements IJobProcessor {
       resourceType: ResourceTypesFhirR4.Composition,
       resourceId: fallbackId,
     });
-    const contentVersionId = claimsToContentCid(claims).cid;
+    const contentVersionId = buildOperationalClaimsContentCid(claims);
     claims['Composition.meta.versionId'] = contentVersionId;
 
     const individualSectionId = getSubjectScopedSectionId(subject, SUBJECT_SECTION_INDIVIDUAL, 'composition');
@@ -875,7 +865,7 @@ export class CommunicationManager implements IJobProcessor {
       if (target.researchUseReference) {
         researchClaims['__digitalTwinStudy.reference'] = target.researchUseReference;
       }
-      const researchVersionId = claimsToContentCid(researchClaims).cid;
+      const researchVersionId = buildOperationalClaimsContentCid(researchClaims);
       researchClaims['Composition.meta.versionId'] = researchVersionId;
       researchClaims['org.hl7.fhir.r4.Composition.meta.versionId'] = researchVersionId;
       const researchRecordId = this.buildStableProjectionRecordId(
@@ -1161,7 +1151,7 @@ export class CommunicationManager implements IJobProcessor {
       Buffer.from([0x55]),
       multihash,
     ]);
-    return encodeMultibase58btc(new Uint8Array(cidBytes));
+    return encodeBase58btc(new Uint8Array(cidBytes));
   }
 
   private buildStableProjectionRecordId(prefix: string, identity: string): string {
@@ -1685,7 +1675,7 @@ export class CommunicationManager implements IJobProcessor {
 
     const identifier = this.getFirstClaimValue(claims, config.identifierClaimKeys) || `urn:uuid:${uuidv4()}`;
     const fallbackId = determineResourceId(identifier, process.env.NODE_ENV);
-    const versionId = claimsToContentCid(this.clinicalContentVersionClaims(claims)).cid;
+    const versionId = buildOperationalClaimsContentCid(this.clinicalContentVersionClaims(claims));
     applyFhirCidVersioningToEntry({
       entry: { resource: input.resource },
       claims,
@@ -1821,7 +1811,7 @@ export class CommunicationManager implements IJobProcessor {
       ...persistedClaims,
       ...(audit ? { audit } : {}),
       indexed: {
-        attributes: buildConfidentialDocumentIndexedAttributes({
+        attributes: buildClinicalDocumentSearchAttributes({
           claims: persistedClaims,
           sector: String(input.job.sector || ''),
           audit,
@@ -1866,7 +1856,7 @@ export class CommunicationManager implements IJobProcessor {
         if (target.researchUseReference) {
           researchClaims['__digitalTwinStudy.reference'] = target.researchUseReference;
         }
-        const researchVersionId = claimsToContentCid(this.clinicalContentVersionClaims(researchClaims)).cid;
+        const researchVersionId = buildOperationalClaimsContentCid(this.clinicalContentVersionClaims(researchClaims));
         researchClaims[`${input.resourceType}.meta.versionId`] = researchVersionId;
         researchClaims[`org.hl7.fhir.r4.${input.resourceType}.meta.versionId`] = researchVersionId;
         const digitalTwinSectionId = getSubjectScopedSectionId(
@@ -1897,7 +1887,7 @@ export class CommunicationManager implements IJobProcessor {
           ...researchClaims,
           ...(researchAudit ? { audit: researchAudit } : {}),
           indexed: {
-            attributes: buildConfidentialDocumentIndexedAttributes({
+            attributes: buildClinicalDocumentSearchAttributes({
               claims: researchClaims,
               sector: String(input.job.sector || ''),
               audit: researchAudit,

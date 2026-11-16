@@ -1,9 +1,6 @@
-import { ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import {
-  parseServiceCapabilityTokens,
-  ServiceCapability,
-  ServiceCapabilityToken,
-} from 'gdc-common-utils-ts/constants/service-capabilities';
+import { SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { parseServiceCapabilityTokens, ServiceCapabilityToken } from 'sos-data-utils-ts/service-capabilities';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { ContinuityServiceCapability } from 'sos-data-utils-ts/continuity-service-capabilities';
 
 export const SERVICE_ADDITIONAL_TYPE_CLAIM = 'org.schema.Service.additionalType' as const;
@@ -81,16 +78,16 @@ export function getServiceCapabilityClaimFromClaims(
   claims: Record<string, unknown> | undefined,
 ): string | undefined {
   return mergeServiceCapabilityClaims(
-    readNonEmptyClaim(claims, ClaimsServiceSchemaorg.serviceType),
+    readNonEmptyClaim(claims, SchemaOrgServiceClaim.ServiceType),
     readNonEmptyClaim(claims, SERVICE_ADDITIONAL_TYPE_CLAIM),
   );
 }
 
 export function getTenantServiceCapabilityClaim(tenantConfig: any): string | undefined {
   return mergeServiceCapabilityClaims(
-    tenantConfig?.claims?.[ClaimsServiceSchemaorg.serviceType],
+    tenantConfig?.claims?.[SchemaOrgServiceClaim.ServiceType],
     tenantConfig?.claims?.[SERVICE_ADDITIONAL_TYPE_CLAIM],
-    tenantConfig?.provider?.service?.[ClaimsServiceSchemaorg.serviceType],
+    tenantConfig?.provider?.service?.[SchemaOrgServiceClaim.ServiceType],
     tenantConfig?.provider?.service?.[SERVICE_ADDITIONAL_TYPE_CLAIM],
   );
 }

@@ -126,6 +126,17 @@ references resolved by the Gateway; browser code does not construct them.
 
 ## Consent, contacts, members and invitations
 
+Organization workflow grants use the existing
+`organization/org.hl7.fhir.r5/Consent/_batch` owner. The current tenant
+controller and verified bearer must agree. Group membership is descriptive;
+the separate active Consent requires the persisted exact member, DCR assignment
+and active professional licence. `POST` activates it, a full inactive `PUT`
+revokes only the exact stored grant, and historical status-only inactive
+`PATCH` remains supported. Revocation may remove stale authority without
+re-authorizing that stale member. Different Group grants retain separate IDs.
+Ordinary patient Consent continues through its existing evidence policy.
+
+
 | Operation | Stable behavior | Status |
 | --- | --- | --- |
 | related person/contact | manage caregivers, guardians and emergency contacts as relationships | Portal adapter |

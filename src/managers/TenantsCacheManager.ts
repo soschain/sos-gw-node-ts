@@ -9,15 +9,15 @@ import { IHostingTenantRegistry } from './IHostingTenantRegistry';
 import { IApiTenantRegistry } from './IApiTenantRegistry';
 import { ILedgerTenantRegistry } from './ILedgerTenantRegistry';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import {
   getIdentifierUrnFromClaims,
   generateTenantCollectionNameFromClaims,
   resolveOrganizationRouteJurisdiction,
 } from '../utils/tenant';
 import { DidDocument, DidService, VerificationMethod } from '../gdc-backend-utils-node/models/did';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { getBaseUrlFromDidWeb, normalizeDidDocumentKeyRelationships } from '../utils/did-backend';
 import { parseTenantUrn } from '../utils/urn';
 import { getEnvSectionId } from '../utils/section-env';
@@ -26,7 +26,7 @@ import { hasProviderServiceCapabilityClaim } from '../utils/services';
 import { getTenantServiceCapabilityClaim } from '../utils/service-capability-claims';
 import { initializeTenantServicesConfig } from '../utils/services';
 import { resolveLedgerOrganizationId } from '../utils/ledger-organization-registration-helpers';
-import { normalizePublicAliasList } from 'gdc-common-utils-ts/utils/same-as';
+import { normalizePublicAliasList } from 'antifraud-data-utils-ts/public-aliases';
 
 const SERVICE_OPERATIONAL_URL_CLAIM = 'org.schema.Service.url';
 
@@ -67,7 +67,7 @@ type TenantRuntimeView = {
   alternateName?: string;
   domainUrl?: string;
   operationalUrl?: string;
-  sector?: Sector;
+  sector?: GatewaySector;
   serviceCapabilityClaim?: string;
 };
 
@@ -102,7 +102,7 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
 
   private withHydratedDidServiceConfig(tenantConfig: any): any {
     const alternateName = String(
-      tenantConfig?.claims?.[ClaimsOrganizationSchemaorg.alternateName]
+      tenantConfig?.claims?.[SchemaOrgOrganizationClaim.AlternateName]
       || tenantConfig?.claims?.alternateName
       || '',
     ).trim().toLowerCase();
@@ -112,7 +112,7 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
 
     const sector =
       tenantConfig?.provider?.service?.sectorCategory
-      || tenantConfig?.claims?.[ClaimsServiceSchemaorg.category]
+      || tenantConfig?.claims?.[SchemaOrgServiceClaim.Category]
       || undefined;
     const existingServices = Array.isArray(tenantConfig?.didConfig?.service)
       ? tenantConfig.didConfig.service
@@ -122,7 +122,7 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
       return tenantConfig;
     }
 
-    const defaultServices = initializeTenantServicesConfig(String(sector) as Sector);
+    const defaultServices = initializeTenantServicesConfig(String(sector) as GatewaySector);
     const mergedServices = [...existingServices];
     const seen = new Set(
       existingServices.map((service: any) =>
@@ -236,10 +236,10 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
       jurisdiction: tenantConfig?.claims
         ? resolveOrganizationRouteJurisdiction(tenantConfig.claims)
         : undefined,
-      alternateName: tenantConfig?.claims?.[ClaimsOrganizationSchemaorg.alternateName] as string | undefined,
-      domainUrl: getTenantServiceClaim(tenantConfig, ClaimsOrganizationSchemaorg.url),
+      alternateName: tenantConfig?.claims?.[SchemaOrgOrganizationClaim.AlternateName] as string | undefined,
+      domainUrl: getTenantServiceClaim(tenantConfig, SchemaOrgOrganizationClaim.Url),
       operationalUrl: getTenantServiceClaim(tenantConfig, SERVICE_OPERATIONAL_URL_CLAIM),
-      sector: parseTenantUrn(tenantIdentifierUrn || '')?.sector as Sector | undefined,
+      sector: parseTenantUrn(tenantIdentifierUrn || '')?.sector as GatewaySector | undefined,
       serviceCapabilityClaim: getTenantServiceCapabilityClaim(tenantConfig),
     };
   }
@@ -327,14 +327,14 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
     if (!target || target.toLowerCase() === 'host') return [];
 
     const hostConfig = await this.getTenant('host');
-    const hostIdentifierValue = String(hostConfig?.claims?.[ClaimsOrganizationSchemaorg.identifierValue] || '').trim();
+    const hostIdentifierValue = String(hostConfig?.claims?.[SchemaOrgOrganizationClaim.IdentifierValue] || '').trim();
     if (hostIdentifierValue && hostIdentifierValue === target) {
       return ['host'];
     }
 
     const results = await this.vaultRepository.query(
       this.hostCollectionName,
-      { sectionId: getEnvSectionId('tenants'), where: [{ name: ClaimsOrganizationSchemaorg.identifierValue, value: target }] },
+      { sectionId: getEnvSectionId('tenants'), where: [{ name: SchemaOrgOrganizationClaim.IdentifierValue, value: target }] },
       { hydrate: false },
     );
     const expectedIdentifierType = String(constraints.identifierType || '').trim().toLowerCase();
@@ -347,7 +347,7 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
       const tenantConfig = await this.getTenant(vaultId);
       const claims = tenantConfig?.claims || {};
       if (expectedIdentifierType
-        && String(claims[ClaimsOrganizationSchemaorg.identifierType] || '').trim().toLowerCase() !== expectedIdentifierType) {
+        && String(claims[SchemaOrgOrganizationClaim.IdentifierType] || '').trim().toLowerCase() !== expectedIdentifierType) {
         continue;
       }
       if (expectedTenantDid) {
@@ -356,7 +356,7 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
           ...(Array.isArray(tenantConfig?.didDocument?.alsoKnownAs)
             ? tenantConfig.didDocument.alsoKnownAs.map(String)
             : []),
-          ...normalizePublicAliasList(claims[ClaimsOrganizationSchemaorg.sameAs] as string | string[] | undefined),
+          ...normalizePublicAliasList(claims[SchemaOrgOrganizationClaim.SameAs] as string | string[] | undefined),
         ]);
         if (!tenantDids.includes(expectedTenantDid)) continue;
       }
@@ -554,12 +554,12 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
    * @param vaultId The unique vault identifier for the tenant.
    * @returns The sector, or `undefined` if the tenant is not found or the URN is malformed.
    */
-  public async getTenantSector(vaultId: string): Promise<Sector | undefined> {
+  public async getTenantSector(vaultId: string): Promise<GatewaySector | undefined> {
     const urn = await this.getTenantIdentifierUrn(vaultId);
     if (!urn) return undefined;
     
     const parsedUrn = parseTenantUrn(urn);
-    return parsedUrn?.sector as Sector;
+    return parsedUrn?.sector as GatewaySector;
   }
 
   /**

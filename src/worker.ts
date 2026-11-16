@@ -3,12 +3,12 @@
 
 import { IJobProcessor, ManagerRegistry } from './managers/registry';
 import { createErrorBundle } from './utils/bundle';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { parseJobName } from './utils/naming';
 import { composeHostDidWebId } from './utils/did-backend';
 import { IKmsService } from './gdc-backend-utils-node/models/IKmsService';
 import { getTenantVaultId } from './utils/tenant';
-import { JWK } from 'gdc-common-utils-ts/models/jwk';
+import { JWK } from 'antifraud-data-utils-ts/cryptography';
 import { SUBJECT_SECTION_INDIVIDUAL } from './constants/domain';
 import { resolveUnidWorkerManager } from './extensions/unid/worker-routing';
 import { logOperationOutcomeErrors } from './observability/operation-outcome-logging';

@@ -3,7 +3,7 @@
 
 import stripe from 'stripe';
 import { v4 as uuidv4 } from 'uuid';
-import { ClaimsOfferSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 
 interface PaymentContext {
   offerId: string;
@@ -214,8 +214,8 @@ export function readOfferPaymentContext(
   claims: Record<string, any>,
 ): Pick<PaymentContext, 'quantity' | 'price' | 'currency'> {
   return {
-    quantity: Number(claims[ClaimsOfferSchemaorg.eligibleQuantityValue] || 1),
-    price: claims[ClaimsOfferSchemaorg.price] as string | undefined,
-    currency: claims[ClaimsOfferSchemaorg.priceCurrency] as string | undefined,
+    quantity: Number(claims[SchemaOrgOfferClaim.EligibleQuantityValue] || 1),
+    price: claims[SchemaOrgOfferClaim.Price] as string | undefined,
+    currency: claims[SchemaOrgOfferClaim.PriceCurrency] as string | undefined,
   };
 }

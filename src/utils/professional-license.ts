@@ -1,11 +1,11 @@
-import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { LICENSE_STATUS_ACTIVE } from '../constants/domain';
 import { getEnvSectionId } from './section-env';
-import { normalizeIndexedEmail } from './indexed-contact';
+import { normalizeIndexedEmail, normalizeIndexedPhone } from './indexed-contact';
 import { normalizeCodeSystemAndValue } from './normalize-codeAndSystem';
 import { getPersonOccupationClaim } from './occupation';
 
@@ -29,23 +29,26 @@ export async function hasActiveProfessionalIdentityAndLicense(input: {
     input.employeeCollectionName,
     getEnvSectionId('employees'),
   );
-  let activeEmployeeEmail: string | undefined;
+  let activeEmployeeContact: Parameters<typeof buildStableActorIdentifier>[0] | undefined;
   for (const document of employeeDocuments || []) {
     try {
       const employee = await input.kmsService.unprotectConfidentialData<any>(document, input.tenantVaultId);
       if (String(employee?.status || '').trim().toLowerCase() !== LICENSE_STATUS_ACTIVE) continue;
-      const email = normalizeIndexedEmail(employee?.claims?.[ClaimsPersonSchemaorg.email]);
+      const email = normalizeIndexedEmail(employee?.claims?.[SchemaOrgPersonClaim.Email]);
+      const phone = normalizeIndexedPhone(employee?.claims?.[SchemaOrgPersonClaim.Telephone]);
       const role = getPersonOccupationClaim(employee?.claims || {});
-      if (!email || normalizeCodeSystemAndValue(role) !== normalizeCodeSystemAndValue(input.identity.role)) continue;
-      if (buildStableActorIdentifier({ contactKind: 'email', contact: email }) === input.identity.stableActorIdentifier) {
-        activeEmployeeEmail = email;
-        break;
-      }
+      if (normalizeCodeSystemAndValue(role) !== normalizeCodeSystemAndValue(input.identity.role)) continue;
+      const contacts: Array<Parameters<typeof buildStableActorIdentifier>[0]> = [
+        ...(email ? [{ contactKind: 'email' as const, contact: email }] : []),
+        ...(phone ? [{ contactKind: 'phone' as const, contact: phone }] : []),
+      ];
+      activeEmployeeContact = contacts.find(contact => buildStableActorIdentifier(contact) === input.identity.stableActorIdentifier);
+      if (activeEmployeeContact) break;
     } catch {
       continue;
     }
   }
-  if (!activeEmployeeEmail) return false;
+  if (!activeEmployeeContact) return false;
 
   const now = Math.floor(Date.now() / 1000);
   const licenseDocuments = await input.vaultRepository.getContainersInSection<any>(
@@ -63,10 +66,12 @@ export async function hasActiveProfessionalIdentityAndLicense(input: {
       if (normalizeCodeSystemAndValue(String(license.issuedToRole || '')) !== normalizeCodeSystemAndValue(input.identity.role)) {
         continue;
       }
-      const issuedEmail = normalizeIndexedEmail(String(license.issuedToEmail || ''));
+      const issuedContact = activeEmployeeContact.contactKind === 'email'
+        ? normalizeIndexedEmail(license.issuedToEmail) : normalizeIndexedPhone(license.issuedToPhone);
       const stableBinding = String(license.activatedBy || '').replace(/^firebase:/, '');
-      if (issuedEmail === activeEmployeeEmail
-        && (!stableBinding || stableBinding === input.identity.stableActorIdentifier)) {
+      if (issuedContact === activeEmployeeContact.contact
+        && (stableBinding === input.identity.stableActorIdentifier
+          || (activeEmployeeContact.contactKind === 'email' && !stableBinding))) {
         return true;
       }
     } catch {

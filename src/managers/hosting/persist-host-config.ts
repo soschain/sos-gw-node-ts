@@ -1,13 +1,13 @@
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
-import { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
+import type { VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
 import { OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { DidDocument } from 'gdc-common-utils-ts/models/did';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { initializeHostServicesConfig } from '../../utils/services';
 import { composeHostDidWebId, populateDidDocumentFromJwks, applyLegacyX509Metadata } from '../../utils/did-backend';
 import { populateDidDocumentServices } from '../../utils/did-document';
@@ -16,7 +16,7 @@ import { getEnvSectionId } from '../../utils/section-env';
 import { generateTenantCollectionNameFromClaims, getTenantVaultId } from '../../utils/tenant';
 import { AllowedIndexableClaims } from '../../gdc-backend-utils-node/models/indexing';
 import { registerOrganizationOnLedger } from '../../utils/ledger-organization-registration';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { PdfSignatureEvidence } from '../../utils/pdf-evidence';
 
 type PersistHostConfigDeps = Readonly<{
@@ -38,7 +38,7 @@ type PersistTenantConfigDeps = Readonly<{
   altName: string;
   allClaims: ClaimsRecord;
   contained: Array<IncludedResource | undefined>;
-  sector: Sector;
+  sector: GatewaySector;
   vaultRepository: any;
   kmsService: any;
   hostRuntime: any;
@@ -46,7 +46,7 @@ type PersistTenantConfigDeps = Readonly<{
     org: IncludedResource,
     altName: string,
     allClaims: ClaimsRecord,
-    sector: Sector,
+    sector: GatewaySector,
     vaultId: string,
   ) => Promise<OrganizationConfig>;
 }>;
@@ -157,7 +157,7 @@ export async function persistHostConfig(deps: PersistHostConfigDeps): Promise<vo
   if (deps.isLedgerRegistrationEnabled()) {
     const containedService = deps.extractContainedService(deps.contained);
     const serviceEvidence = deps.extractServiceEvidence(containedService);
-    const orgId = (deps.allClaims as any)[ClaimsOrganizationSchemaorg.identifier] || deps.org.id;
+    const orgId = (deps.allClaims as any)[SchemaOrgOrganizationClaim.IdentifierReference] || deps.org.id;
     await registerOrganizationOnLedger({
       ledgerConfig: deps.config.ledger,
       hostJurisdiction: deps.config.host.jurisdiction,
@@ -169,7 +169,7 @@ export async function persistHostConfig(deps: PersistHostConfigDeps): Promise<vo
       config: hostConfig,
       evidence: serviceEvidence,
       role: 'host',
-      sector: 'system' as Sector,
+      sector: 'system' as GatewaySector,
       jurisdiction: deps.config.host.jurisdiction,
     });
   }
@@ -255,7 +255,7 @@ export async function persistTenantConfig(deps: PersistTenantConfigDeps): Promis
     .map((claimKey) => ({
       name: claimKey,
       value: String(deps.allClaims[claimKey]),
-      ...(claimKey === ClaimsOrganizationSchemaorg.alternateName && { unique: true }),
+      ...(claimKey === SchemaOrgOrganizationClaim.AlternateName && { unique: true }),
     }))
     .filter((attr) => attr.value !== 'undefined' && attr.value !== 'null');
 

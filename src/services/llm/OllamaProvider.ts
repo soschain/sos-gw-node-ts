@@ -1,4 +1,4 @@
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import type { LLMGenerateJsonParams, LLMProvider } from './LLMProvider.js';
 
 type OllamaGenerateRequest = {

@@ -1,5 +1,6 @@
+// Flow contract: independent identity and commerce claim catalogs preserve exact stored keys and authorization boundaries.
 import { describe, expect, it, jest } from '@jest/globals';
-import { ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { getEnvSectionId } from '../../../utils/section-env';
 import { persistExistingTenantControllerBinding } from '../../../managers/hosting/persist-existing-tenant-controller-binding';
 import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
@@ -66,9 +67,9 @@ describe('persistExistingTenantControllerBinding', () => {
     const secondControllerSameAs = 'second.controller@example.test';
     await expect(persistExistingTenantControllerBinding({
       claims: {
-        [ClaimsOrganizationSchemaorg.alternateName]: 'VATES-G02793479',
-        [ClaimsPersonSchemaorg.hasOccupationalRoleValue]: 'RESPRSN',
-        [ClaimsServiceSchemaorg.category]: 'onehealth-research',
+        [SchemaOrgOrganizationClaim.AlternateName]: 'VATES-G02793479',
+        [SchemaOrgPersonClaim.OccupationIdentifierValue]: 'RESPRSN',
+        [SchemaOrgServiceClaim.Category]: 'onehealth-research',
       },
       controller: {
         did: CONTROLLER_DID,
@@ -90,9 +91,9 @@ describe('persistExistingTenantControllerBinding', () => {
 
     await persistExistingTenantControllerBinding({
       claims: {
-        [ClaimsOrganizationSchemaorg.alternateName]: 'VATES-G02793479',
-        [ClaimsPersonSchemaorg.hasOccupationalRoleValue]: 'RESPRSN',
-        [ClaimsServiceSchemaorg.category]: 'onehealth-research',
+        [SchemaOrgOrganizationClaim.AlternateName]: 'VATES-G02793479',
+        [SchemaOrgPersonClaim.OccupationIdentifierValue]: 'RESPRSN',
+        [SchemaOrgServiceClaim.Category]: 'onehealth-research',
       },
       controller: {
         did: CONTROLLER_DID,
@@ -153,9 +154,9 @@ describe('persistExistingTenantControllerBinding', () => {
     const secondControllerSameAs = 'second.controller@example.test';
     await expect(persistExistingTenantControllerBinding({
       claims: {
-        [ClaimsOrganizationSchemaorg.alternateName]: 'VATES-G02793479',
-        [ClaimsPersonSchemaorg.hasOccupationalRoleValue]: 'RESPRSN',
-        [ClaimsServiceSchemaorg.category]: 'onehealth-research',
+        [SchemaOrgOrganizationClaim.AlternateName]: 'VATES-G02793479',
+        [SchemaOrgPersonClaim.OccupationIdentifierValue]: 'RESPRSN',
+        [SchemaOrgServiceClaim.Category]: 'onehealth-research',
       },
       controller: {
         did: CONTROLLER_DID,

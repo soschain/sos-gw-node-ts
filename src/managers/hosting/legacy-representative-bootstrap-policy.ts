@@ -1,5 +1,5 @@
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 
 function parseEnabled(raw: string | boolean | undefined): boolean {
   if (typeof raw === 'boolean') return raw;

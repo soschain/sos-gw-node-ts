@@ -1,4 +1,6 @@
-import { DataCollectionIds, HealthcareBasicSections, ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/index';
+import { DataCollectionIds } from 'sos-data-utils-ts/gateway-data-collections';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { buildFhirResourceFromIndexedClaims } from './fhir-resource-rehydration';
 import { getClaimValue } from './claims';
@@ -16,13 +18,9 @@ import { TWIN_COMPOSITION_SECTION_RESOURCE_CONFIG } from '../managers/TwinCompos
 import { canonicalizeFhirClaims } from './claims';
 import { SupportedFhirIngestionFormat } from './fhir-ingestion';
 import { randomUUID } from 'crypto';
-import { Format } from 'gdc-common-utils-ts/constants/Schemas';
-import {
-  FhirIpsCreatorKinds,
-  buildFhirIpsCreatorProvenance,
-  resolveClinicalCreatorBinding,
-  type ClinicalCreatorBinding,
-} from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import { Format } from 'sos-data-utils-ts/bff-wire-contract';
+import { FhirIpsCreatorKinds, type ClinicalCreatorBinding } from 'sos-data-utils-ts/clinical-creator-contract';
+import { buildFhirIpsCreatorProvenance, resolveClinicalCreatorBinding } from 'sos-sdk-core-ts/clinical-creator';
 import { getClinicalCreatorBindingsSectionId } from './clinical-creator-binding';
 export { getClinicalCreatorBindingsSectionId } from './clinical-creator-binding';
 
@@ -253,7 +251,7 @@ export async function buildConsolidatedIpsBundleDocument(
     '@context': Format.FHIR_API,
     'Composition.identifier': compositionIdentifier,
     'Composition.subject': params.subject,
-    'Composition.type': HealthcareBasicSections.PatientSummaryDocument.attributeValue,
+    'Composition.type': HealthcareCoreSections.PatientSummaryDocument.attributeValue,
     'Composition.date': pickLatestIsoDate(compositionDates),
     'Composition.section': compositionSectionTokens.join(','),
   };
@@ -277,8 +275,8 @@ export async function buildConsolidatedIpsBundleDocument(
     },
     type: {
       coding: [{
-        system: HealthcareBasicSections.PatientSummaryDocument.system,
-        code: HealthcareBasicSections.PatientSummaryDocument.code,
+        system: HealthcareCoreSections.PatientSummaryDocument.system,
+        code: HealthcareCoreSections.PatientSummaryDocument.code,
         display: 'Patient summary Document',
       }],
     },

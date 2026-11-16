@@ -4,7 +4,7 @@
 import { afterAll, beforeAll, describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { MedicationStatementManager } from '../../../managers/MedicationStatementManager';
 import { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
 import { getEnvSectionId } from '../../../utils/section-env';
 import { SearchResponseProfileEnvironment, SearchResponseProfiles } from '../../../utils/didcomm-response';

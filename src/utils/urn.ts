@@ -1,6 +1,6 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/utils/urn.ts
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 export const EMPLOYEE_URN_SEGMENT = ':employee:';
 export const EMPLOYEE_ROLE_URN_SEGMENT = ':role:';
 
@@ -27,6 +27,7 @@ export interface StableEmployeeUrnParams {
   organizationUrn: string;
   stableActorIdentifier: string;
   role: string;
+  instanceId?: string;
 }
 
 function hashEmployeeEmail(email: string): string {
@@ -127,7 +128,9 @@ export function createEmployeeUrnFromStableActorIdentifier(params: StableEmploye
     throw new Error('Employee URN requires its canonical organization URN.');
   }
   if (!match) throw new Error('Employee URN requires its stable actor identifier.');
-  return `${organizationUrn}${EMPLOYEE_URN_SEGMENT}${match[1]}${EMPLOYEE_ROLE_URN_SEGMENT}${normalizeEmployeeRole(params.role)}`;
+  const instanceId = String(params.instanceId || '').trim().toLowerCase();
+  const instanceSuffix = instanceId ? `:instance:${instanceId}` : '';
+  return `${organizationUrn}${EMPLOYEE_URN_SEGMENT}${match[1]}${EMPLOYEE_ROLE_URN_SEGMENT}${normalizeEmployeeRole(params.role)}${instanceSuffix}`;
 }
 
 /** Resolves the privacy-safe role-bearing employee URN from its DID document. */

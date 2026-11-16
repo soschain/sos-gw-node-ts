@@ -1,7 +1,7 @@
 // Flow contract: secondary-use consent rebuilds only finalized, professionally attested clinical records and never promotes personal records into the research repository.
 import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
-import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
 import {
   applyDigitalTwinSecondaryUseDecision,
@@ -16,7 +16,7 @@ import {
   isRegisteredDigitalTwinSubjectId,
 } from '../../../utils/digital-twin-research-projection';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 describe('digital twin secondary-use lifecycle', () => {
   const tenantVaultId = 'health-care_acme';

@@ -3,13 +3,11 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import {
-  HealthcareActorRoles,
-  HealthcareBasicSections,
-  HealthcareConsentPurposes,
-} from 'gdc-common-utils-ts/constants/healthcare';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
-import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
+import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   EXAMPLE_API_ORGANIZATION_DID,
   EXAMPLE_CONSENT_ATTACHMENT_CONTENT_TYPE,
@@ -20,7 +18,7 @@ import {
   EXAMPLE_TENANT_IDENTIFIER,
 } from 'gdc-common-utils-ts/examples/shared';
 import { EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_PURPOSE } from 'gdc-common-utils-ts/examples/inter-tenant-access-contract';
-import { ClaimConsent, ConsentDecisions, ConsentStatuses, type ConsentRule } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent, ConsentDecisions, ConsentStatuses, type ConsentRule } from 'fhir-data-utils-ts';
 import { ClaimInterTenantAccessContract } from 'gdc-common-utils-ts/models/inter-tenant-access-contract';
 import { MedicationStatementClaim } from 'gdc-common-utils-ts/models/interoperable-claims';
 import {
@@ -30,7 +28,7 @@ import {
   createVP,
   addVC,
 } from 'gdc-common-utils-ts';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { buildExampleCommunicationIngestionPayload } from 'gdc-common-utils-ts/examples/shared';
 import {
   BundleDocumentRequestMessageTypes,
@@ -64,8 +62,8 @@ export const DEMO_SMART_ACCESS_LOCAL_IDS = Object.freeze({
 
 /** Two-section regression constraint used by the real local-network proof. */
 export const DEMO_SMART_SUMMARY_ALLOWED_SECTIONS = Object.freeze([
-  HealthcareBasicSections.HistoryOfMedicationUse.claim,
-  HealthcareBasicSections.ProblemList.claim,
+  HealthcareCoreSections.HistoryOfMedicationUse.claim,
+  HealthcareCoreSections.ProblemList.claim,
 ] as const);
 
 export const DEMO_SMART_ACCESS_LOCAL_EMAILS = Object.freeze({
@@ -284,7 +282,7 @@ export function buildDemoIndividualIpsSearchRequest(input: Readonly<{
   subjectDid: string;
 }>): Record<string, unknown> {
   const subjectDid = String(input.subjectDid || '').trim();
-  const compositionType = HealthcareBasicSections.PatientSummaryDocument.claim;
+  const compositionType = HealthcareCoreSections.PatientSummaryDocument.claim;
   return {
     thid: DEMO_SMART_ACCESS_LOCAL_IDS.individualBundleSearchThreadId,
     body: {
@@ -494,7 +492,7 @@ export function buildDemoDigitalTwinResearchSubjectSearchRequest(): Record<strin
     body: {
       resourceType: 'Parameters',
       parameter: [
-        { name: 'section', valueString: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue },
+        { name: 'section', valueString: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue },
         // Research projections intentionally remove free text; use the
         // preserved coded claim for deterministic discovery.
         { name: MedicationStatementClaim.Code, valueString: ibuprofenCode },
@@ -551,6 +549,6 @@ export function buildDemoResearchRequesterMatrix(): Readonly<{
 export function buildDemoResearchRequesterClaims(email: string): Readonly<Record<string, string>> {
   return Object.freeze({
     '@context': 'org.schema',
-    [ClaimsPersonSchemaorg.email]: String(email || '').trim(),
+    [SchemaOrgPersonClaim.Email]: String(email || '').trim(),
   });
 }

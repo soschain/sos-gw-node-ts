@@ -1,4 +1,5 @@
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+// Flow contract: independent identity and commerce claim catalogs preserve exact stored keys and authorization boundaries.
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 
 import {
   buildLedgerOrganizationId,
@@ -13,8 +14,8 @@ describe('ledger organization registration helpers', () => {
 
   it('resolves the canonical ledger organization id from claims', () => {
     expect(resolveLedgerOrganizationId({
-      [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-      [ClaimsOrganizationSchemaorg.identifierValue]: 'acme-id',
+      [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+      [SchemaOrgOrganizationClaim.IdentifierValue]: 'acme-id',
     } as any)).toBe('urn:org:tax:acme-id');
   });
 

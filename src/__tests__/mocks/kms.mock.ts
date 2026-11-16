@@ -3,7 +3,7 @@
 
 import { jest } from '@jest/globals';
 import { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { Content } from 'gdc-common-utils-ts/utils/content';
 
 // This is the definitive, globally-safe mock.

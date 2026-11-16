@@ -1,0 +1,458 @@
+{
+  "sourceUrl": "https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/constants/healthcare.ts",
+  "installedOriginalSha256": "59376c682b34dc0a9f75728cdcc04bbc22bd846f6534863da2723a483684925c",
+  "profiles": [
+    {
+      "historical": "HealthcareBasicSections",
+      "owner": "HealthcareCoreSections",
+      "entries": {
+        "ProblemList": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "11450-4",
+            "attributeValue": "LOINC|11450-4",
+            "claim": "LOINC|11450-4",
+            "i18nKey": "org.loinc.11450-4",
+            "titleEn": "Problem list"
+          },
+          "enumerable": true
+        },
+        "AllergiesAndIntolerances": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "48765-2",
+            "attributeValue": "LOINC|48765-2",
+            "claim": "LOINC|48765-2",
+            "i18nKey": "org.loinc.48765-2",
+            "titleEn": "Allergies and adverse reactions"
+          },
+          "enumerable": true
+        },
+        "HistoryOfMedicationUse": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "10160-0",
+            "attributeValue": "LOINC|10160-0",
+            "claim": "LOINC|10160-0",
+            "i18nKey": "org.loinc.10160-0",
+            "titleEn": "History of medication use"
+          },
+          "enumerable": true
+        },
+        "Immunizations": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "11369-6",
+            "attributeValue": "LOINC|11369-6",
+            "claim": "LOINC|11369-6",
+            "i18nKey": "org.loinc.11369-6",
+            "titleEn": "History of immunization"
+          },
+          "enumerable": true
+        },
+        "Results": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "30954-2",
+            "attributeValue": "LOINC|30954-2",
+            "claim": "LOINC|30954-2",
+            "i18nKey": "org.loinc.30954-2",
+            "titleEn": "Relevant diagnostic tests/laboratory data"
+          },
+          "enumerable": true
+        },
+        "Procedures": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "47519-4",
+            "attributeValue": "LOINC|47519-4",
+            "claim": "LOINC|47519-4",
+            "i18nKey": "org.loinc.47519-4",
+            "titleEn": "History of Procedures"
+          },
+          "enumerable": true
+        },
+        "MedicalDevices": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "46264-8",
+            "attributeValue": "LOINC|46264-8",
+            "claim": "LOINC|46264-8",
+            "i18nKey": "org.loinc.46264-8",
+            "titleEn": "History of medical device use"
+          },
+          "enumerable": true
+        },
+        "VitalSigns": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "8716-3",
+            "attributeValue": "LOINC|8716-3",
+            "claim": "LOINC|8716-3",
+            "i18nKey": "org.loinc.8716-3",
+            "titleEn": "Vital signs"
+          },
+          "enumerable": true
+        },
+        "SocialHistory": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "29762-2",
+            "attributeValue": "LOINC|29762-2",
+            "claim": "LOINC|29762-2",
+            "i18nKey": "org.loinc.29762-2",
+            "titleEn": "Social history"
+          },
+          "enumerable": true
+        },
+        "Alert": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "104605-1",
+            "attributeValue": "LOINC|104605-1",
+            "claim": "LOINC|104605-1",
+            "i18nKey": "org.loinc.104605-1",
+            "titleEn": "Alert"
+          },
+          "enumerable": true
+        },
+        "GoalsAndPreferences": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "81338-6",
+            "attributeValue": "LOINC|81338-6",
+            "claim": "LOINC|81338-6",
+            "i18nKey": "org.loinc.81338-6",
+            "titleEn": "Goals / Preferences"
+          },
+          "enumerable": true
+        },
+        "AdvanceDirectives": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "42348-3",
+            "attributeValue": "LOINC|42348-3",
+            "claim": "LOINC|42348-3",
+            "i18nKey": "org.loinc.42348-3",
+            "titleEn": "Advance directives"
+          },
+          "enumerable": true
+        },
+        "FunctionalStatus": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "47420-5",
+            "attributeValue": "LOINC|47420-5",
+            "claim": "LOINC|47420-5",
+            "i18nKey": "org.loinc.47420-5",
+            "titleEn": "Functional status"
+          },
+          "enumerable": true
+        },
+        "HistoryOfPastIllness": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "11348-0",
+            "attributeValue": "LOINC|11348-0",
+            "claim": "LOINC|11348-0",
+            "i18nKey": "org.loinc.11348-0",
+            "titleEn": "History of past illness"
+          },
+          "enumerable": true
+        },
+        "PregnancyHistory": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "10162-6",
+            "attributeValue": "LOINC|10162-6",
+            "claim": "LOINC|10162-6",
+            "i18nKey": "org.loinc.10162-6",
+            "titleEn": "Pregnancy History"
+          },
+          "enumerable": true
+        },
+        "PlanOfCare": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "18776-5",
+            "attributeValue": "LOINC|18776-5",
+            "claim": "LOINC|18776-5",
+            "i18nKey": "org.loinc.18776-5",
+            "titleEn": "Plan of care"
+          },
+          "enumerable": true
+        },
+        "DietAndNutrition": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "61144-2",
+            "attributeValue": "LOINC|61144-2",
+            "claim": "LOINC|61144-2",
+            "i18nKey": "org.loinc.61144-2",
+            "titleEn": "Diet and nutrition"
+          },
+          "enumerable": true
+        },
+        "HistoryOfFamilyMemberDiseases": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "10157-6",
+            "attributeValue": "LOINC|10157-6",
+            "claim": "LOINC|10157-6",
+            "i18nKey": "org.loinc.10157-6",
+            "titleEn": "History of family member diseases"
+          },
+          "enumerable": true
+        },
+        "HistoryOfHospitalizationsAndOutpatientVisits": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "46240-8",
+            "attributeValue": "LOINC|46240-8",
+            "claim": "LOINC|46240-8",
+            "i18nKey": "org.loinc.46240-8",
+            "titleEn": "History of hospitalizations+History of outpatient visits"
+          },
+          "enumerable": true
+        },
+        "HistoryOfPresentIllness": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "10164-2",
+            "attributeValue": "LOINC|10164-2",
+            "claim": "LOINC|10164-2",
+            "i18nKey": "org.loinc.10164-2",
+            "titleEn": "History of present illness"
+          },
+          "enumerable": true
+        },
+        "ProblemListNarrativeReported": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "57852-6",
+            "attributeValue": "LOINC|57852-6",
+            "claim": "LOINC|57852-6",
+            "i18nKey": "org.loinc.57852-6",
+            "titleEn": "Problem list"
+          },
+          "enumerable": true
+        },
+        "Instructions": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "69730-0",
+            "attributeValue": "LOINC|69730-0",
+            "claim": "LOINC|69730-0",
+            "i18nKey": "org.loinc.69730-0",
+            "titleEn": "Instructions"
+          },
+          "enumerable": true
+        },
+        "PatientSummaryDocument": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "60591-5",
+            "attributeValue": "LOINC|60591-5",
+            "claim": "LOINC|60591-5",
+            "i18nKey": "org.loinc.60591-5",
+            "titleEn": "Patient summary document"
+          },
+          "enumerable": false
+        },
+        "PlanOfTreatment": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "18776-5",
+            "attributeValue": "LOINC|18776-5",
+            "claim": "LOINC|18776-5",
+            "i18nKey": "org.loinc.18776-5",
+            "titleEn": "Plan of care"
+          },
+          "enumerable": false
+        }
+      }
+    },
+    {
+      "historical": "HealthcareSummarySections",
+      "owner": "HealthcarePermissionSummarySections",
+      "entries": {
+        "ProblemList": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "11450-4",
+            "attributeValue": "LOINC|11450-4",
+            "claim": "LOINC|11450-4",
+            "i18nKey": "org.loinc.11450-4",
+            "titleEn": "Problem list"
+          },
+          "enumerable": true
+        },
+        "AllergiesAndIntolerances": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "48765-2",
+            "attributeValue": "LOINC|48765-2",
+            "claim": "LOINC|48765-2",
+            "i18nKey": "org.loinc.48765-2",
+            "titleEn": "Allergies and adverse reactions"
+          },
+          "enumerable": true
+        },
+        "HistoryOfMedicationUse": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "10160-0",
+            "attributeValue": "LOINC|10160-0",
+            "claim": "LOINC|10160-0",
+            "i18nKey": "org.loinc.10160-0",
+            "titleEn": "History of medication use"
+          },
+          "enumerable": true
+        },
+        "Immunizations": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "11369-6",
+            "attributeValue": "LOINC|11369-6",
+            "claim": "LOINC|11369-6",
+            "i18nKey": "org.loinc.11369-6",
+            "titleEn": "History of immunization"
+          },
+          "enumerable": true
+        },
+        "Results": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "30954-2",
+            "attributeValue": "LOINC|30954-2",
+            "claim": "LOINC|30954-2",
+            "i18nKey": "org.loinc.30954-2",
+            "titleEn": "Relevant diagnostic tests/laboratory data"
+          },
+          "enumerable": true
+        },
+        "Procedures": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "47519-4",
+            "attributeValue": "LOINC|47519-4",
+            "claim": "LOINC|47519-4",
+            "i18nKey": "org.loinc.47519-4",
+            "titleEn": "History of Procedures"
+          },
+          "enumerable": true
+        },
+        "MedicalDevices": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "46264-8",
+            "attributeValue": "LOINC|46264-8",
+            "claim": "LOINC|46264-8",
+            "i18nKey": "org.loinc.46264-8",
+            "titleEn": "History of medical device use"
+          },
+          "enumerable": true
+        },
+        "VitalSigns": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "8716-3",
+            "attributeValue": "LOINC|8716-3",
+            "claim": "LOINC|8716-3",
+            "i18nKey": "org.loinc.8716-3",
+            "titleEn": "Vital signs"
+          },
+          "enumerable": true
+        },
+        "SocialHistory": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "29762-2",
+            "attributeValue": "LOINC|29762-2",
+            "claim": "LOINC|29762-2",
+            "i18nKey": "org.loinc.29762-2",
+            "titleEn": "Social history"
+          },
+          "enumerable": true
+        },
+        "Alert": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "104605-1",
+            "attributeValue": "LOINC|104605-1",
+            "claim": "LOINC|104605-1",
+            "i18nKey": "org.loinc.104605-1",
+            "titleEn": "Alert"
+          },
+          "enumerable": true
+        },
+        "GoalsAndPreferences": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "81338-6",
+            "attributeValue": "LOINC|81338-6",
+            "claim": "LOINC|81338-6",
+            "i18nKey": "org.loinc.81338-6",
+            "titleEn": "Goals / Preferences"
+          },
+          "enumerable": true
+        },
+        "AdvanceDirectives": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "42348-3",
+            "attributeValue": "LOINC|42348-3",
+            "claim": "LOINC|42348-3",
+            "i18nKey": "org.loinc.42348-3",
+            "titleEn": "Advance directives"
+          },
+          "enumerable": true
+        },
+        "FunctionalStatus": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "47420-5",
+            "attributeValue": "LOINC|47420-5",
+            "claim": "LOINC|47420-5",
+            "i18nKey": "org.loinc.47420-5",
+            "titleEn": "Functional status"
+          },
+          "enumerable": true
+        },
+        "HistoryOfPastIllness": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "11348-0",
+            "attributeValue": "LOINC|11348-0",
+            "claim": "LOINC|11348-0",
+            "i18nKey": "org.loinc.11348-0",
+            "titleEn": "History of past illness"
+          },
+          "enumerable": true
+        },
+        "PregnancyHistory": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "10162-6",
+            "attributeValue": "LOINC|10162-6",
+            "claim": "LOINC|10162-6",
+            "i18nKey": "org.loinc.10162-6",
+            "titleEn": "Pregnancy History"
+          },
+          "enumerable": true
+        },
+        "PlanOfCare": {
+          "value": {
+            "system": "http://loinc.org",
+            "code": "18776-5",
+            "attributeValue": "LOINC|18776-5",
+            "claim": "LOINC|18776-5",
+            "i18nKey": "org.loinc.18776-5",
+            "titleEn": "Plan of care"
+          },
+          "enumerable": true
+        }
+      }
+    }
+  ]
+}

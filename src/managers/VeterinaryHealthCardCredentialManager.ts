@@ -1,4 +1,4 @@
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import {
   decodeSmartHealthCardPayloadBytes,

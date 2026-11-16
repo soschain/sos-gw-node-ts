@@ -4,7 +4,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { normalizeInteroperableClaims } from '../utils/claims';
-import { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
+import { RecordBase } from 'sos-data-utils-ts/confidential-storage';
 import { getEnvSectionId } from '../utils/section-env';
 
 export interface ListInput {

@@ -1,13 +1,13 @@
-import { GatewayInternalResourceTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { GatewayInternalResourceTypes } from 'sos-data-utils-ts/gateway-response-contract';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { v4 as uuidv4 } from 'uuid';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { OrganizationDidBindingEntryTypes } from 'gdc-common-utils-ts/utils/organization-did-binding';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
@@ -40,7 +40,7 @@ export async function processTenantDidDocumentBinding(
     throw new ManagerError('Organization DID binding requires at least one organization.url value.', IssueType.Required);
   }
 
-  const tenantSector = String(deps.job.sector || '').trim() as Sector;
+  const tenantSector = String(deps.job.sector || '').trim() as GatewaySector;
   const tenantRouteId = String(deps.job.tenantId || '').trim();
   const jurisdiction = String(deps.job.jurisdiction || '').trim();
   if (!tenantSector || !tenantRouteId || !jurisdiction) {

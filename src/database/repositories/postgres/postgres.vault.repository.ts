@@ -1,5 +1,5 @@
 import { Pool, PoolClient } from 'pg';
-import { RecordBase, VaultConfig } from 'gdc-common-utils-ts/models/resource-document';
+import { RecordBase, VaultConfig } from 'sos-data-utils-ts/confidential-storage';
 import { IVaultRepository, type VaultQueryOptions } from '../vault/vault.repository';
 import { getEnvSectionId } from '../../../utils/section-env';
 import { resolvePostgresSchema } from './postgres.schema';

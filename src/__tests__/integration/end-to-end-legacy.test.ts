@@ -1,4 +1,5 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import { REPOSITORY_SAFE_EXAMPLES } from 'sos-data-utils-ts/repository-privacy';
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 // src/__tests__/integration/end-to-end-legacy.test.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
@@ -45,7 +46,7 @@ import { LicenseManager } from '../../managers/LicenseManager';
 import { ManagerRegistry } from '../../managers/registry';
 import { Worker } from '../../worker';
 import { KmsService } from '../../services/KmsService';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { AdapterCryptoSdkNode } from '../../gdc-backend-utils-node/adapters/node/crypto';
 import { BlockchainAdapterMem } from '../../adapters/BlockchainAdapterMem';
 import { StorageMemAdapter } from '../../database/storage/mem.storage.adapter';
@@ -53,15 +54,15 @@ import { ConsoleLogger } from '../../loggers/ConsoleLogger';
 import { getEnvSectionId } from '../../utils/section-env';
 import { IServerConfig } from '../../config';
 import { IAuthorizationManager } from '../../managers/auth/IAuthorizationManager';
-import { BundleEntry } from 'gdc-common-utils-ts/models/bundle';
-import { IAccessTokenClaims } from 'gdc-common-utils-ts/models/auth';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
+import { ClientAccessTokenClaims as IAccessTokenClaims } from 'antifraud-data-utils-ts/openid-contracts';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { getTenantVaultId, generateTenantCollectionNameFromClaims } from '../../utils/tenant';
-import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
+import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { getClaimsInFirstDataEntry } from 'gdc-common-utils-ts/utils/bundle-reader';
 import { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import { invokeExpress } from './helpers/invokeExpress';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 
 // Mock implementation for the AuthorizationManager
 class MockAuthorizationManager implements IAuthorizationManager {
@@ -124,7 +125,7 @@ describe('End-to-End API Flow (Legacy / Unencrypted)', () => {
       didcommPlainEnabled: true,
       demoAllowInsecureBearer: true,
       nodeEnv: 'test', port: 3000, maxHeaderSize: 16 * 1024, apiHostname: 'testhost', hostExternalDomain: 'testhost.com',
-      apiBaseUrl: 'http://testhost:3000', namespace: 'test-namespace', sectorsAllowed: [Sector.HEALTH_CARE, Sector.TEST],
+      apiBaseUrl: REPOSITORY_SAFE_EXAMPLES.httpsBaseUrl, namespace: 'test-namespace', sectorsAllowed: [GatewaySector.HEALTH_CARE, GatewaySector.TEST],
       allowedPaymentMethods: ['Stripe'],
       dbProvider: 'mem', queueProvider: 'mem', storageProvider: 'mem',
       host: { legalName: 'Test Host', jurisdiction: 'us', idType: 'test-id', idValue: '12345' },
@@ -213,13 +214,13 @@ describe('End-to-End API Flow (Legacy / Unencrypted)', () => {
     const pdfBase64 = Buffer.from('dummy-pdf-content').toString('base64');
     const orgCreationPayloadWithPdf = JSON.parse(JSON.stringify(testPayloadCreateTenant1));
     const claims = getClaimsInFirstDataEntry(orgCreationPayloadWithPdf.body);
-    claims[ClaimsServiceSchemaorg.termsOfService] = pdfBase64;
+    claims[SchemaOrgServiceClaim.TermsOfService] = pdfBase64;
     // Ensure the Service resource can be materialized into a stored document.
-    claims[ClaimsServiceSchemaorg.identifier] = 'urn:uuid:service-001';
-    claims[ClaimsOrganizationSchemaorg.alternateName] = 'acme-with-pdf';
+    claims[SchemaOrgServiceClaim.IdentifierReference] = 'urn:uuid:service-001';
+    claims[SchemaOrgOrganizationClaim.AlternateName] = 'acme-with-pdf';
     // Tenant identity is keyed by the legal identifier value, not by the display
     // alias. Reusing `acme-id` would exercise idempotency and never process this PDF.
-    claims[ClaimsOrganizationSchemaorg.identifierValue] = 'acme-with-pdf';
+    claims[SchemaOrgOrganizationClaim.IdentifierValue] = 'acme-with-pdf';
     const registrationUrl = `/host/cds-ES/v1/test/registry/org.schema/Organization/_batch`;
 
     const response = await invokeExpress(app, {
@@ -248,16 +249,16 @@ describe('End-to-End API Flow (Legacy / Unencrypted)', () => {
 
     // Registration step creates a provisional tenant record stored in the HOST vault.
     const vaultId = getTenantVaultId(
-      String(claims[ClaimsServiceSchemaorg.category]),
-      String(claims[ClaimsOrganizationSchemaorg.identifierValue]),
+      String(claims[SchemaOrgServiceClaim.Category]),
+      String(claims[SchemaOrgOrganizationClaim.IdentifierValue]),
     );
     const hostCollectionName = resolveHostPhysicalCollectionName();
     const secureTenantRecord = await vaultRepository.get<any>(hostCollectionName, vaultId, getEnvSectionId('tenants'));
     expect(secureTenantRecord).toBeDefined();
 
     const decryptedProvisional = await kmsService.unprotectConfidentialData<any>(secureTenantRecord, 'host');
-    const termsUrl = decryptedProvisional.claims[ClaimsServiceSchemaorg.termsOfService];
-    const termsHash = decryptedProvisional.claims[`${ClaimsServiceSchemaorg.termsOfService}#hash`];
+    const termsUrl = decryptedProvisional.claims[SchemaOrgServiceClaim.TermsOfService];
+    const termsHash = decryptedProvisional.claims[`${SchemaOrgServiceClaim.TermsOfService}#hash`];
     
     expect(termsUrl).not.toBe(pdfBase64);
     expect(termsUrl).toContain('/local-storage/');
@@ -283,8 +284,8 @@ describe('End-to-End API Flow (Legacy / Unencrypted)', () => {
         // so that subsequent API calls in other tests can find it.
         const claims = getClaimsInFirstDataEntry(testPayloadCreateTenant1.body);
         const vaultId = getTenantVaultId(
-          String(claims[ClaimsServiceSchemaorg.category]),
-          String(claims[ClaimsOrganizationSchemaorg.alternateName]),
+          String(claims[SchemaOrgServiceClaim.Category]),
+          String(claims[SchemaOrgOrganizationClaim.AlternateName]),
         );
         await tenantManager.getTenant(vaultId);
     });

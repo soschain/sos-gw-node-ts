@@ -2,9 +2,9 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { randomBytes, randomUUID } from 'crypto';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
-import { DEFAULT_LICENSE_DEVICE_ALLOWANCE } from 'gdc-common-utils-ts/utils/license';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
+import { resolveIssuedSeatDeviceAllowance } from './license-seat-policy';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { getEnvSectionId } from './section-env';
@@ -446,9 +446,6 @@ export async function issueActivationCodeFromPool(params: IssueActivationCodePar
 
   await vaultRepository.put(tenantVaultId, [match], getEnvSectionId('device-licenses'));
 
-  const configuredAllowance = Number(license.maxDevices);
-  const maxDevices = Number.isInteger(configuredAllowance) && configuredAllowance > 0
-    ? configuredAllowance
-    : DEFAULT_LICENSE_DEVICE_ALLOWANCE;
+  const maxDevices = resolveIssuedSeatDeviceAllowance(license.maxDevices);
   return { activationCode, licenseId: match.id, maxDevices };
 }

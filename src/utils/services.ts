@@ -3,22 +3,20 @@
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
 
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
-import { DidService, ServiceEndpointSelector } from 'gdc-common-utils-ts/models/did';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
+import { GatewayDidService as DidService } from 'sos-data-utils-ts/gateway-did-profile';
+import { ServiceEndpointSelector } from 'sos-data-utils-ts/confidential-job';
 import {
   DidServiceIds,
   DidServiceTypes,
-} from 'gdc-common-utils-ts/constants/did-services';
-import { DataspaceWellKnownPaths } from 'gdc-common-utils-ts/constants/dataspace-protocol';
-import {
-  buildGwCatalogRequestPath,
-  buildGwDspaceVersionWellKnownPath,
-} from 'gdc-common-utils-ts/utils/dataspace-protocol';
+} from 'sos-data-utils-ts/gateway-did-profile';
+import { DataspaceWellKnownPaths } from 'sos-data-utils-ts/gateway-did-profile';
+import { buildGatewayDataspaceCatalogRequestPath, buildGatewayDataspaceVersionPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import {
   ServiceCapabilityKind,
   hasServiceCapabilityKind,
   parseServiceCapabilityTokens,
-} from 'gdc-common-utils-ts/constants/service-capabilities';
+} from 'sos-data-utils-ts/service-capabilities';
 import {
   ContinuityServiceCapability,
   isContinuityProviderCapability,
@@ -32,7 +30,7 @@ import {
   SUBJECT_SECTION_INDIVIDUAL,
 } from '../constants/domain';
 import { mergeServiceCapabilityClaims } from './service-capability-claims';
-import { IdentityAuthActions } from 'gdc-common-utils-ts/constants/identity-auth';
+import { IdentityAuthActions } from 'sos-data-utils-ts/identity-auth-wire-contract';
 
 export type HostRegistrySector = 'test' | 'local-network' | 'test-network' | 'network';
 
@@ -129,7 +127,7 @@ function parseResourceListFromEnv(value: string | undefined): string[] {
  * (Schema.org and HL7 FHIR, respectively). The API router's validation logic
  * handles this by performing a case-insensitive comparison.
  */
-function generateDefaultBusinessServices(sector: Sector): DidService[] {
+function generateDefaultBusinessServices(sector: GatewaySector): DidService[] {
   const services: DidService[] = [];
   const isFhir = isFhirSector(sector);
   const isResearch = isResearchSector(sector);
@@ -523,7 +521,7 @@ function generateDefaultBusinessServices(sector: Sector): DidService[] {
 
 function filterBusinessServicesByCapabilityClaim(
   services: DidService[],
-  sector: Sector,
+  sector: GatewaySector,
   serviceCapabilityClaim?: string,
 ): DidService[] {
   const hasExplicitClaim = String(serviceCapabilityClaim || '').trim().length > 0;
@@ -583,7 +581,7 @@ function filterBusinessServicesByCapabilityClaim(
  * This defines the services for `didConfig.service`.
  */
 export function initializeTenantServicesConfig(
-  sector: Sector,
+  sector: GatewaySector,
   customServices: DidService[] = [],
   serviceCapabilityClaim?: string,
   serviceAdditionalTypeClaim?: string,
@@ -675,7 +673,7 @@ export function initializeTenantServicesConfig(
     {
       id: '#dsp-catalog-service',
       type: DidServiceTypes.CatalogService,
-      serviceEndpoint: buildGwCatalogRequestPath(),
+      serviceEndpoint: buildGatewayDataspaceCatalogRequestPath(),
     } as DidService,
     {
       id: '#dcp-issuer-service',
@@ -704,7 +702,7 @@ export function initializeTenantServicesConfig(
  * Generates the business logic service CONFIGURATION for the Host.
  * This defines the services for `didConfig.service`.
  */
-export function initializeHostServicesConfig(sectorsAllowed: Sector[], nodeEnv: string, networkMode?: string): DidService[] {
+export function initializeHostServicesConfig(sectorsAllowed: GatewaySector[], nodeEnv: string, networkMode?: string): DidService[] {
   const services: DidService[] = [];
   const hostRegistrySector = resolveHostRegistrySector({ nodeEnv, networkMode });
 
@@ -734,7 +732,7 @@ export function initializeHostServicesConfig(sectorsAllowed: Sector[], nodeEnv: 
   // ICA enrollment endpoint (system + test-network).
   services.push(
     createDidEndpointConfigFromSelector(
-      { sector: Sector.SYSTEM as any, section: 'test-network', format: 'ica' },
+      { sector: GatewaySector.SYSTEM as any, section: 'test-network', format: 'ica' },
       ['csr'],
       ['_enroll'],
     ),
@@ -743,7 +741,7 @@ export function initializeHostServicesConfig(sectorsAllowed: Sector[], nodeEnv: 
   // DIDComm messaging (general, non-FHIR)
   services.push(
     createDidEndpointConfigFromSelector(
-      { sector: Sector.SYSTEM as any, section: 'messaging', format: 'post-quantum' },
+      { sector: GatewaySector.SYSTEM as any, section: 'messaging', format: 'post-quantum' },
       ['didcomm-plaintext', 'didcomm-signed', 'didcomm-encrypted'],
       ['_send', '_receive', '_messages', '_get', '_delete'],
     ),
@@ -753,7 +751,7 @@ export function initializeHostServicesConfig(sectorsAllowed: Sector[], nodeEnv: 
   // business-sector specific because they are consumed by tenants/apps in that sector.
   const uniqueBusinessSectors = new Set([...(sectorsAllowed || [])]);
   for (const sector of Array.from(uniqueBusinessSectors)) {
-    if (sector === Sector.SYSTEM || sector === Sector.TEST) continue;
+    if (sector === GatewaySector.SYSTEM || sector === GatewaySector.TEST) continue;
     services.push(
       createDidEndpointConfigFromSelector(
         { sector, section: 'identity', format: 'firebase' },
@@ -779,7 +777,7 @@ export function initializeHostServicesConfig(sectorsAllowed: Sector[], nodeEnv: 
   if (hostExtensionResources.length > 0) {
     services.push(
       createDidEndpointConfigFromSelector(
-        { sector: Sector.TEST as any, section: SUBJECT_SECTION_INDIVIDUAL, format: 'org.hl7.fhir.api' },
+        { sector: GatewaySector.TEST as any, section: SUBJECT_SECTION_INDIVIDUAL, format: 'org.hl7.fhir.api' },
         hostExtensionResources,
         ['_batch', '_search'],
       ),
@@ -791,7 +789,7 @@ export function initializeHostServicesConfig(sectorsAllowed: Sector[], nodeEnv: 
     {
       id: '#dsp-data-service',
       type: 'DataService',
-      serviceEndpoint: buildGwDspaceVersionWellKnownPath({
+      serviceEndpoint: buildGatewayDataspaceVersionPath({
         participantId: 'host',
         jurisdiction: '{hostCoverageScope}',
         version: 'v1',
@@ -801,7 +799,7 @@ export function initializeHostServicesConfig(sectorsAllowed: Sector[], nodeEnv: 
     {
       id: DidServiceIds.Catalog,
       type: DidServiceTypes.CatalogService,
-      serviceEndpoint: buildGwCatalogRequestPath({
+      serviceEndpoint: buildGatewayDataspaceCatalogRequestPath({
         participantId: 'host',
         jurisdiction: '{hostCoverageScope}',
         version: 'v1',
@@ -851,7 +849,7 @@ export function initializeEmployeeServices(employeeConfig: EntityConfig): DidSer
  * @param sector The sector of the tenant under which the customer is being created.
  * @returns The array of DidService objects for the customer's didDocument.
  */
-export function initializeCustomerServices(customerConfig: EntityConfig, sector: Sector): DidService[] {
+export function initializeCustomerServices(customerConfig: EntityConfig, sector: GatewaySector): DidService[] {
   const { didDocument } = customerConfig;
   if (!didDocument?.id) {
     throw new TypeError("Cannot initialize customer services: didDocument with id is missing from the configuration.");

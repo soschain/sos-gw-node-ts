@@ -1,6 +1,7 @@
+// Flow contract: independent identity and commerce claim catalogs preserve exact stored keys and authorization boundaries.
 // File: src/__tests__/unit/utils/tenant.test.ts
 
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { generateTenantCollectionNameFromClaims, isValidTenantAlternateName } from '../../../utils/tenant';
 
 const originalStorageEnv = {
@@ -18,10 +19,10 @@ afterEach(() => {
 });
 
 const exampleClaims = {
-  [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-  [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-  [ClaimsOrganizationSchemaorg.identifierValue]: 'B87.617.981',
-  [ClaimsServiceSchemaorg.category]: 'system',
+  [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+  [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+  [SchemaOrgOrganizationClaim.IdentifierValue]: 'B87.617.981',
+  [SchemaOrgServiceClaim.Category]: 'system',
 };
 
 describe('generateTenantCollectionNameFromClaims', () => {

@@ -1,11 +1,11 @@
 import { randomUUID } from 'crypto';
 import { IJobProcessor } from './registry';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { createOperationOutcome } from '../utils/outcome';
 import { getClaimValue, normalizeContextualizedClaims } from '../utils/claims';
 import { determineResourceId } from '../utils/resource';
@@ -22,9 +22,9 @@ import {
 import { listEnabledDigitalTwinStudyTargets } from '../utils/digital-twin-secondary-use';
 import { buildSearchResponseEntries } from '../utils/didcomm-response';
 import { GatewayResponseEntryTypes } from '../shared/gateway-response-types';
-import { buildConfidentialDocumentIndexedAttributes } from 'gdc-common-utils-ts/utils/confidential-document-provenance';
-import type { OperationOutcome } from 'gdc-common-utils-ts/models/operation-outcome';
-import { claimsToContentCid } from 'gdc-common-utils-ts/utils/fhir-cid';
+import { buildClinicalDocumentSearchAttributes } from '../utils/clinical-document-search-attributes';
+import type { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
+import { buildOperationalClaimsContentCid } from '../utils/operational-claims-content-cid';
 import type { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
 import { ClinicalEvidenceChaincode } from '../utils/ledger';
 import {
@@ -180,11 +180,11 @@ export class MedicationStatementManager implements IJobProcessor {
             getClaimValue<string>(claims, 'MedicationStatement.identifier') ||
             getClaimValue<string>(claims, 'MedicationStatement.identifier.value');
           const id = String(entry?.resource?.id || determineResourceId(identifierClaim, process.env.NODE_ENV));
-          const indexedAttributes = buildConfidentialDocumentIndexedAttributes({
+          const indexedAttributes = buildClinicalDocumentSearchAttributes({
             claims,
             sector: job.sector,
           });
-          const versionId = claimsToContentCid(claims).cid;
+          const versionId = buildOperationalClaimsContentCid(claims);
           const record = {
             id,
             ...claims,
@@ -224,7 +224,7 @@ export class MedicationStatementManager implements IJobProcessor {
                 id: researchId,
                 ...researchClaims,
                 indexed: {
-                  attributes: buildConfidentialDocumentIndexedAttributes({
+                  attributes: buildClinicalDocumentSearchAttributes({
                     claims: researchClaims,
                     sector: job.sector,
                   }),

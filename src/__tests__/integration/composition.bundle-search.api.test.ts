@@ -12,18 +12,16 @@ import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { getTenantVaultId, generateTenantCollectionNameFromClaims } from '../../utils/tenant';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { testPayloadCreateTenant1 } from '../data/end-to-end.data';
 import { initializeTenantServicesConfig } from '../../utils/services';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { startServer, resetServerConfig } from '../../server';
 import { getEnvSectionId } from '../../utils/section-env';
 import { getSubjectScopedSectionId } from '../../utils/individual-sections';
-import {
-  HealthcareBasicSections,
-  HealthcareConsentPurposes,
-  ResourceTypesFhirR4,
-} from 'gdc-common-utils-ts/constants/index';
+import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { CompositionAttesterModes } from 'gdc-common-utils-ts';
 import { testTenant1TenantId } from '../data/organization.data';
 import {
@@ -41,13 +39,13 @@ import {
   EXAMPLE_SUBJECT_DID,
   EXAMPLE_TENANT_SERVICE_DID,
 } from 'gdc-common-utils-ts/examples/shared';
-import { FhirIpsCreatorKinds } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { getClinicalCreatorBindingsSectionId } from '../../utils/ips-bundle';
 import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
 import { ExampleEmployeeEmails, ExampleEmployeeRoles } from 'gdc-common-utils-ts/examples/employee';
 import { ClaimConsent, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
 import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-claims/communication-claims';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_PROVIDER_ORGANIZATION_URN } from 'gdc-common-utils-ts/examples/inter-tenant-access-contract';
 import {
   DEMO_SMART_ACCESS_LOCAL_IDS,
@@ -142,18 +140,18 @@ describe('Composition Bundle _search API (integration)', () => {
             title: 'Veterinary clinical summary',
             section: [
               {
-                title: HealthcareBasicSections.HistoryOfMedicationUse.titleEn,
+                title: HealthcareCoreSections.HistoryOfMedicationUse.titleEn,
                 code: { coding: [{
-                  system: HealthcareBasicSections.HistoryOfMedicationUse.system,
-                  code: HealthcareBasicSections.HistoryOfMedicationUse.code,
+                  system: HealthcareCoreSections.HistoryOfMedicationUse.system,
+                  code: HealthcareCoreSections.HistoryOfMedicationUse.code,
                 }] },
                 entry: [{ reference: `MedicationStatement/${medicationId}` }],
               },
               {
-                title: HealthcareBasicSections.VitalSigns.titleEn,
+                title: HealthcareCoreSections.VitalSigns.titleEn,
                 code: { coding: [{
-                  system: HealthcareBasicSections.VitalSigns.system,
-                  code: HealthcareBasicSections.VitalSigns.code,
+                  system: HealthcareCoreSections.VitalSigns.system,
+                  code: HealthcareCoreSections.VitalSigns.code,
                 }] },
                 entry: [{ reference: `Observation/${observationId}` }],
               },
@@ -231,18 +229,18 @@ describe('Composition Bundle _search API (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: 'did:web:api.acme.org', '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -401,18 +399,18 @@ describe('Composition Bundle _search API (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: 'did:web:api.acme.org', '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -425,7 +423,7 @@ describe('Composition Bundle _search API (integration)', () => {
       await tenantManager.getTenant(tenantVaultId);
 
       const subjectDid = 'did:web:api.acme.org:individual:ips-excluded-sections-001';
-      const ipsType = `${HealthcareBasicSections.PatientSummaryDocument.system}|${HealthcareBasicSections.PatientSummaryDocument.code}`;
+      const ipsType = `${HealthcareCoreSections.PatientSummaryDocument.system}|${HealthcareCoreSections.PatientSummaryDocument.code}`;
       const compositionSectionId = getSubjectScopedSectionId(subjectDid, 'individual', 'composition');
       const practitionerIdentifier = `urn:uuid:${EXAMPLE_KYC_CONTROLLER_USER_UUID}`;
       const practitionerRoleIdentifier = `urn:uuid:${EXAMPLE_KYC_CONTROLLER_UUID}`;
@@ -448,7 +446,7 @@ describe('Composition Bundle _search API (integration)', () => {
             '@context': 'org.hl7.fhir.r4',
             'Composition.identifier': 'urn:uuid:composition-medications-001',
             'Composition.subject': subjectDid,
-            'Composition.section': HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
+            'Composition.section': HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
             'Composition.author': EXAMPLE_PROFESSIONAL_DID,
             'Composition.date': '2026-05-16T10:00:00Z',
             'Composition.type': ipsType,
@@ -458,7 +456,7 @@ describe('Composition Bundle _search API (integration)', () => {
             '@context': 'org.hl7.fhir.r4',
             'Composition.identifier': 'urn:uuid:composition-allergies-001',
             'Composition.subject': subjectDid,
-            'Composition.section': HealthcareBasicSections.AllergiesAndIntolerances.attributeValue,
+            'Composition.section': HealthcareCoreSections.AllergiesAndIntolerances.attributeValue,
             'Composition.author': EXAMPLE_PROFESSIONAL_DID,
             'Composition.date': '2026-05-16T11:00:00Z',
             'Composition.type': ipsType,
@@ -484,7 +482,7 @@ describe('Composition Bundle _search API (integration)', () => {
                   url:
                     `Bundle?type=document&composition.subject=${encodeURIComponent(subjectDid)}`
                     + `&composition.type=${encodeURIComponent(ipsType)}`
-                    + `&composition.section:not=${encodeURIComponent(HealthcareBasicSections.AllergiesAndIntolerances.attributeValue)}`,
+                    + `&composition.section:not=${encodeURIComponent(HealthcareCoreSections.AllergiesAndIntolerances.attributeValue)}`,
                 },
               },
             ],
@@ -516,7 +514,7 @@ describe('Composition Bundle _search API (integration)', () => {
       expect(searchPayload?.data?.[0]?.resource?.entry?.[0]?.resource?.section).toHaveLength(1);
       expect(
         searchPayload?.data?.[0]?.resource?.entry?.[0]?.resource?.section?.[0]?.code?.coding?.[0]?.code,
-      ).toBe(HealthcareBasicSections.HistoryOfMedicationUse.code);
+      ).toBe(HealthcareCoreSections.HistoryOfMedicationUse.code);
       expect(searchPayload?.data?.[0]?.resource?.entry?.[0]?.resource?.author)
         .toEqual([{ reference: EXAMPLE_TENANT_SERVICE_DID }]);
       expect(searchPayload?.data?.[0]?.resource?.entry?.[0]?.resource?.attester)
@@ -561,18 +559,18 @@ describe('Composition Bundle _search API (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: 'did:web:api.acme.org', '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -671,18 +669,18 @@ describe('Composition Bundle _search API (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: 'did:web:api.acme.org', '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -810,18 +808,18 @@ describe('Composition Bundle _search API (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: 'did:web:api.acme.org', '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -930,8 +928,8 @@ describe('Composition Bundle _search API (integration)', () => {
         || '',
       ));
       expect(indexedCompositionSections[0].split(',')).toEqual(expect.arrayContaining([
-        HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
-        HealthcareBasicSections.VitalSigns.attributeValue,
+        HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
+        HealthcareCoreSections.VitalSigns.attributeValue,
       ]));
       const researchMedicationCode = String(Object.entries(medicationRecords[0] || {})
         .find(([key]) => key.endsWith('MedicationStatement.code'))?.[1] || '');
@@ -994,7 +992,7 @@ describe('Composition Bundle _search API (integration)', () => {
       expect(rebuiltCompositions).toHaveLength(compositionRecords.length);
       expect(rebuiltCompositions.some((record: any) => String(
         record['Composition.section'] || record['org.hl7.fhir.r4.Composition.section'] || '',
-      ).split(',').includes(HealthcareBasicSections.HistoryOfMedicationUse.attributeValue))).toBe(true);
+      ).split(',').includes(HealthcareCoreSections.HistoryOfMedicationUse.attributeValue))).toBe(true);
       expect(rebuiltMedications.length).toBeGreaterThan(0);
       expect(rebuiltMedications.some((record) =>
         (record['MedicationStatement.code']
@@ -1098,12 +1096,12 @@ describe('Composition Bundle _search API (integration)', () => {
       }
 
       const scopedSectionCodes = [
-        HealthcareBasicSections.ProblemList.attributeValue,
-        HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
+        HealthcareCoreSections.ProblemList.attributeValue,
+        HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
       ];
       const requestedScopedSectionCodes = [
         ...scopedSectionCodes,
-        HealthcareBasicSections.AllergiesAndIntolerances.attributeValue,
+        HealthcareCoreSections.AllergiesAndIntolerances.attributeValue,
       ];
       const sectionScopedBearer = createDemoBearer({
         sub: EXAMPLE_SUBJECT_DID,
@@ -1381,8 +1379,8 @@ describe('Composition Bundle _search API (integration)', () => {
           thid: 'ips-all-sections-basic-text-date-search-001',
           expectedSubject: twinFor(subjectDid),
           parameters: [
-            { name: 'section', valueString: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue },
-            { name: 'section', valueString: HealthcareBasicSections.Results.attributeValue },
+            { name: 'section', valueString: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue },
+            { name: 'section', valueString: HealthcareCoreSections.Results.attributeValue },
             { name: 'date-from', valueDate: '2024-01-01' },
             { name: 'text', valueString: researchMedicationCode },
           ],
@@ -1391,7 +1389,7 @@ describe('Composition Bundle _search API (integration)', () => {
           thid: 'ips-all-sections-vs-search-001',
           expectedSubject: twinFor(subjectDid),
           parameters: [
-            { name: 'section', valueString: HealthcareBasicSections.VitalSigns.attributeValue },
+            { name: 'section', valueString: HealthcareCoreSections.VitalSigns.attributeValue },
             { name: 'Observation.code', valueString: 'http://loinc.org|85354-9' },
           ],
         },
@@ -1401,8 +1399,8 @@ describe('Composition Bundle _search API (integration)', () => {
           thid: 'ips-multi-family-intersection-search-001',
           expectedSubject: twinFor(subjectDid),
           parameters: [
-            { name: 'section', valueString: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue },
-            { name: 'section', valueString: HealthcareBasicSections.VitalSigns.attributeValue },
+            { name: 'section', valueString: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue },
+            { name: 'section', valueString: HealthcareCoreSections.VitalSigns.attributeValue },
             { name: 'MedicationStatement.code', valueString: researchMedicationCode },
             { name: 'Observation.code', valueString: 'http://loinc.org|85354-9' },
           ],
@@ -1676,18 +1674,18 @@ describe('Composition Bundle _search API (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: 'did:web:api.acme.org', '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -1747,8 +1745,8 @@ describe('Composition Bundle _search API (integration)', () => {
                     '@type': 'Composition:ResearcherWorkingSelection',
                     'Composition.identifier': selectionCompositionId,
                     'Composition.subject': subjectDid,
-                    'Composition.section': HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
-                    'Composition.type': HealthcareBasicSections.PatientSummaryDocument.attributeValue,
+                    'Composition.section': HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
+                    'Composition.type': HealthcareCoreSections.PatientSummaryDocument.attributeValue,
                     'Composition.author': operationalEmployeeDid,
                     'Composition.date': '2026-07-01T10:00:00Z',
                   },
@@ -1786,7 +1784,7 @@ describe('Composition Bundle _search API (integration)', () => {
           body: {
             resourceType: 'Parameters',
             parameter: [
-              { name: 'section', valueString: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue },
+              { name: 'section', valueString: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue },
               { name: 'Composition.meta-tag', valueCoding: { system: 'urn:research:tag:score', code: '10' } },
             ],
           },
@@ -1852,18 +1850,18 @@ describe('Composition Bundle _search API (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
-      const tenantVaultId = getTenantVaultId(tenantClaims[ClaimsServiceSchemaorg.category], testTenant1TenantId);
+      const tenantVaultId = getTenantVaultId(tenantClaims[SchemaOrgServiceClaim.Category], testTenant1TenantId);
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: 'did:web:api.acme.org', '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -1973,7 +1971,7 @@ describe('Composition Bundle _search API (integration)', () => {
           body: {
             resourceType: 'Parameters',
             parameter: [
-              { name: 'section', valueString: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue },
+              { name: 'section', valueString: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue },
               { name: 'MedicationStatement.code', valueString: medicationCodeToken },
             ],
           },
@@ -2110,11 +2108,11 @@ describe('Composition Bundle _search API (integration)', () => {
                           { name: 'subject', valueString: twinSubjectId },
                           {
                             name: 'section',
-                            valueString: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
+                            valueString: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
                           },
                           {
                             name: 'section',
-                            valueString: HealthcareBasicSections.VitalSigns.attributeValue,
+                            valueString: HealthcareCoreSections.VitalSigns.attributeValue,
                           },
                         ],
                       }), 'utf8').toString('base64'),

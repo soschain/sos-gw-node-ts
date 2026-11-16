@@ -1,5 +1,6 @@
+// Flow contract: independent identity and commerce claim catalogs preserve exact stored keys and authorization boundaries.
 import { describe, expect, it, jest } from '@jest/globals';
-import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   isConfiguredHostLegalPersonTenant,
   processHostOrderEntry,
@@ -9,8 +10,8 @@ import {
 describe('processHostOrderEntry active offer idempotency', () => {
   it('recognizes only the exact configured host legal identifier', () => {
     const claims = {
-      [ClaimsOrganizationSchemaorg.identifierType]: 'BN',
-      [ClaimsOrganizationSchemaorg.identifierValue]: '704457076',
+      [SchemaOrgOrganizationClaim.IdentifierType]: 'BN',
+      [SchemaOrgOrganizationClaim.IdentifierValue]: '704457076',
     };
     expect(isConfiguredHostLegalPersonTenant(claims, {
       idType: 'BN', idValue: '704457076',
@@ -23,19 +24,19 @@ describe('processHostOrderEntry active offer idempotency', () => {
   it('keeps the pending Offer authoritative when mandatory ledger registration fails', async () => {
     const offerId = 'urn:cds:CA-BC:v1:animal-care:product:org.schema:Offer:pending';
     const pendingClaims = {
-      [ClaimsOfferSchemaorg.identifier]: offerId,
-      [ClaimsOrganizationSchemaorg.alternateName]: '704457076',
-      [ClaimsOrganizationSchemaorg.addressCountry]: 'US',
-      [ClaimsOrganizationSchemaorg.identifierType]: 'BN',
-      [ClaimsOrganizationSchemaorg.identifierValue]: '704457076',
-      [ClaimsOrganizationSchemaorg.legalName]: 'Example Veterinary Organization',
-      [ClaimsServiceSchemaorg.category]: 'animal-care',
+      [SchemaOrgOfferClaim.Identifier]: offerId,
+      [SchemaOrgOrganizationClaim.AlternateName]: '704457076',
+      [SchemaOrgOrganizationClaim.AddressCountry]: 'US',
+      [SchemaOrgOrganizationClaim.IdentifierType]: 'BN',
+      [SchemaOrgOrganizationClaim.IdentifierValue]: '704457076',
+      [SchemaOrgOrganizationClaim.LegalName]: 'Example Veterinary Organization',
+      [SchemaOrgServiceClaim.Category]: 'animal-care',
     };
     const put = jest.fn(async () => true);
     const ledgerFailure = new Error('ledger endorsement timeout');
 
     await expect(processHostOrderEntry({
-      entry: { resource: { resourceType: 'Order', meta: { claims: { [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId } } } } as any,
+      entry: { resource: { resourceType: 'Order', meta: { claims: { [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId } } } } as any,
       vaultRepository: {
         query: jest.fn(async () => [{
           id: 'animal-care_704457076', status: 'pending',
@@ -79,16 +80,16 @@ describe('processHostOrderEntry active offer idempotency', () => {
   it('does not issue licenses or require another payment when replaying an accepted organization offer', async () => {
     const offerId = 'urn:cds:CA-BC:v1:animal-care:product:org.schema:Offer:existing';
     const response = await processHostOrderEntry({
-      entry: { resource: { resourceType: 'Order', meta: { claims: { [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId } } } } as any,
+      entry: { resource: { resourceType: 'Order', meta: { claims: { [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId } } } } as any,
       vaultRepository: {
         query: jest.fn(async () => [{
           status: 'active',
           content: {
             status: 'active',
             claims: {
-              [ClaimsOfferSchemaorg.identifier]: offerId,
-              [ClaimsOrganizationSchemaorg.alternateName]: '704457076',
-              [ClaimsServiceSchemaorg.category]: 'animal-care',
+              [SchemaOrgOfferClaim.Identifier]: offerId,
+              [SchemaOrgOrganizationClaim.AlternateName]: '704457076',
+              [SchemaOrgServiceClaim.Category]: 'animal-care',
             },
           },
         }]),
@@ -110,6 +111,6 @@ describe('processHostOrderEntry active offer idempotency', () => {
     });
 
     expect(response.response?.status).toBe('200');
-    expect(response.resource?.meta?.claims?.[ClaimsOrderSchemaorg.acceptedOfferIdentifier]).toBe(offerId);
+    expect(response.resource?.meta?.claims?.[SchemaOrgOrderClaim.AcceptedOfferIdentifier]).toBe(offerId);
   });
 });

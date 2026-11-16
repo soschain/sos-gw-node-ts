@@ -2,29 +2,29 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { v4 as uuidv4 } from 'uuid';
-import { OrganizationEmployeeSearchResponseEntryTypes } from 'gdc-common-utils-ts';
+import { OrganizationEmployeeSearchResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { IJobProcessor } from './registry';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 
 import { getTenantVaultId } from '../utils/tenant';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { getClaimValue, normalizeContextualizedClaims } from '../utils/claims';
-import type { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
+import type { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { createOperationOutcome } from '../utils/outcome';
-import { IssueLevel } from 'gdc-common-utils-ts/models/issue';
+import { IssueLevel } from 'fhir-data-utils-ts/operation-outcome';
 import {
   issueActivationCodeFromPool,
 } from '../utils/license-issuance';
 import {
   classifyLicenseRole,
   LicenseRoleKinds,
-} from 'gdc-common-utils-ts/utils/license';
+} from '../utils/license-seat-policy';
 import { getEnvSectionId } from '../utils/section-env';
 import { getPersonOccupationClaim } from '../utils/occupation';
 import {
@@ -51,17 +51,17 @@ import {
   SUBJECT_SECTION_INDIVIDUAL,
 } from '../constants/domain';
 import type { ITenantsManager } from './ITenantsManager';
-import { ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { normalizePublicAliasList } from 'gdc-common-utils-ts/utils/same-as';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { normalizePublicAliasList } from 'antifraud-data-utils-ts/public-aliases';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import type { OrganizationRoleLicenseSectorPolicy } from 'gdc-common-utils-ts/models/organization-role-license';
 import {
   buildIssuedRoleLicenseLedgerIdentity,
   ensureIssuedRoleLicenseOnLedger,
 } from '../utils/ledger-role-license';
-import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { normalizeIndexedEmail, normalizeIndexedPhone } from '../utils/indexed-contact';
 import { REGISTERED_PROFILE_ACCOUNT_DIRECTORY_META } from '../utils/secure-route-bearer-binding';
 
@@ -355,7 +355,7 @@ export class LicenseManager implements IJobProcessor {
         const filters = extractLicenseSearchFilters(entry);
         this.assertRegisteredProfileDirectoryContact(job, filters);
         const matches = await this.searchLicenseDocuments(tenantVaultId, filters);
-        if (filters[ClaimsPersonSchemaorg.email]?.length || filters[ClaimsPersonSchemaorg.telephone]?.length) {
+        if (filters[SchemaOrgPersonClaim.Email]?.length || filters[SchemaOrgPersonClaim.Telephone]?.length) {
           await this.repairLegacySelfSubjectBindings(tenantVaultId, matches);
         }
         responseEntries.push(...buildSearchResponseEntries(
@@ -413,10 +413,10 @@ export class LicenseManager implements IJobProcessor {
 
     const expectedEmail = normalizeIndexedEmail(binding.authenticatedEmail);
     const expectedPhone = normalizeIndexedPhone(binding.authenticatedTelephone);
-    const requestedEmails = (filters[ClaimsPersonSchemaorg.email] || [])
+    const requestedEmails = (filters[SchemaOrgPersonClaim.Email] || [])
       .map(normalizeIndexedEmail)
       .filter((value): value is string => Boolean(value));
-    const requestedPhones = (filters[ClaimsPersonSchemaorg.telephone] || [])
+    const requestedPhones = (filters[SchemaOrgPersonClaim.Telephone] || [])
       .map(normalizeIndexedPhone)
       .filter((value): value is string => Boolean(value));
     if ((expectedEmail && requestedEmails.includes(expectedEmail))
@@ -463,7 +463,7 @@ export class LicenseManager implements IJobProcessor {
         tenantVaultId,
       );
       const [authorizedSubjectDid] = normalizePublicAliasList(
-        String(organization?.claims?.[ClaimsOrganizationSchemaorg.sameAs] || ''),
+        String(organization?.claims?.[SchemaOrgOrganizationClaim.SameAs] || ''),
       );
       if (!authorizedSubjectDid) continue;
 

@@ -2,20 +2,8 @@
 // Copyright 2026 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { describe, expect, it } from '@jest/globals';
-import {
-  ClaimsOfferSchemaorg,
-  ClaimsPersonSchemaorg,
-  DeviceAppTypes,
-  DeviceUserClasses,
-  EXAMPLE_LICENSE_ACTIVE_RECORD,
-  EXAMPLE_LICENSE_AVAILABLE_RECORD,
-  EXAMPLE_LICENSE_OFFER_ID,
-  EXAMPLE_LICENSE_SEAT_UUID_ACTIVE,
-  EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
-  LicenseCategories,
-  LicenseClaimContext,
-  LicenseStatuses,
-} from 'gdc-common-utils-ts';
+import { DeviceAppTypes, DeviceUserClasses, EXAMPLE_LICENSE_ACTIVE_RECORD, EXAMPLE_LICENSE_AVAILABLE_RECORD, EXAMPLE_LICENSE_OFFER_ID, EXAMPLE_LICENSE_SEAT_UUID_ACTIVE, EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE, LicenseCategories, LicenseClaimContext, LicenseStatuses } from 'gdc-common-utils-ts';
+import { SchemaOrgOfferClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   buildLicenseSearchClaims,
   extractLicenseSearchFilters,
@@ -30,14 +18,14 @@ describe('license-search utils', () => {
       meta: {
         status: EXAMPLE_LICENSE_AVAILABLE_RECORD.status,
         claims: {
-          [ClaimsOfferSchemaorg.serialNumber]: EXAMPLE_LICENSE_ACTIVE_RECORD.id,
-          [ClaimsPersonSchemaorg.email]: EXAMPLE_LICENSE_ACTIVE_RECORD.claims[ClaimsPersonSchemaorg.email],
+          [SchemaOrgOfferClaim.SerialNumber]: EXAMPLE_LICENSE_ACTIVE_RECORD.id,
+          [SchemaOrgPersonClaim.Email]: EXAMPLE_LICENSE_ACTIVE_RECORD.claims[SchemaOrgPersonClaim.Email],
         },
       },
     } as any);
 
-    expect(filters[ClaimsOfferSchemaorg.serialNumber]).toEqual([EXAMPLE_LICENSE_ACTIVE_RECORD.id]);
-    expect(filters[ClaimsPersonSchemaorg.email]).toEqual([EXAMPLE_LICENSE_ACTIVE_RECORD.claims[ClaimsPersonSchemaorg.email]]);
+    expect(filters[SchemaOrgOfferClaim.SerialNumber]).toEqual([EXAMPLE_LICENSE_ACTIVE_RECORD.id]);
+    expect(filters[SchemaOrgPersonClaim.Email]).toEqual([EXAMPLE_LICENSE_ACTIVE_RECORD.claims[SchemaOrgPersonClaim.Email]]);
     expect(filters.status).toEqual([EXAMPLE_LICENSE_AVAILABLE_RECORD.status]);
   });
 
@@ -47,14 +35,14 @@ describe('license-search utils', () => {
       userClass: DeviceUserClasses.Employee,
       type: DeviceAppTypes.Mobile,
       orderId: EXAMPLE_LICENSE_OFFER_ID,
-      issuedToEmail: EXAMPLE_LICENSE_ACTIVE_RECORD.claims[ClaimsPersonSchemaorg.email],
-      issuedToRole: EXAMPLE_LICENSE_ACTIVE_RECORD.claims[ClaimsPersonSchemaorg.hasOccupationalRoleValue],
+      issuedToEmail: EXAMPLE_LICENSE_ACTIVE_RECORD.claims[SchemaOrgPersonClaim.Email],
+      issuedToRole: EXAMPLE_LICENSE_ACTIVE_RECORD.claims[SchemaOrgPersonClaim.OccupationIdentifierValue],
     } as any);
 
     expect(claims['@context']).toBe(LicenseClaimContext.SchemaOrg);
-    expect(claims[ClaimsOfferSchemaorg.serialNumber]).toBe(EXAMPLE_LICENSE_SEAT_UUID_ACTIVE);
-    expect(claims[ClaimsOfferSchemaorg.identifier]).toBe(EXAMPLE_LICENSE_OFFER_ID);
-    expect(claims[ClaimsPersonSchemaorg.email]).toBe(EXAMPLE_LICENSE_ACTIVE_RECORD.claims[ClaimsPersonSchemaorg.email]);
+    expect(claims[SchemaOrgOfferClaim.SerialNumber]).toBe(EXAMPLE_LICENSE_SEAT_UUID_ACTIVE);
+    expect(claims[SchemaOrgOfferClaim.Identifier]).toBe(EXAMPLE_LICENSE_OFFER_ID);
+    expect(claims[SchemaOrgPersonClaim.Email]).toBe(EXAMPLE_LICENSE_ACTIVE_RECORD.claims[SchemaOrgPersonClaim.Email]);
   });
 
   it('matches exact license filters against the current storage model', () => {
@@ -68,7 +56,7 @@ describe('license-search utils', () => {
         subjectId: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
       } as any,
       {
-        [ClaimsOfferSchemaorg.serialNumber]: [EXAMPLE_LICENSE_SEAT_UUID_ACTIVE],
+        [SchemaOrgOfferClaim.SerialNumber]: [EXAMPLE_LICENSE_SEAT_UUID_ACTIVE],
         status: [LicenseStatuses.Available],
       },
     );
@@ -83,7 +71,7 @@ describe('license-search utils', () => {
       status: LicenseStatuses.Active,
       userClass: DeviceUserClasses.Employee,
       type: DeviceAppTypes.Mobile,
-      issuedToEmail: EXAMPLE_LICENSE_ACTIVE_RECORD.claims[ClaimsPersonSchemaorg.email],
+      issuedToEmail: EXAMPLE_LICENSE_ACTIVE_RECORD.claims[SchemaOrgPersonClaim.Email],
     };
     const validDocument = { id: 'valid', content: validLicense };
     const unreadableDocument = { id: 'legacy-corrupt', content: { protected: 'invalid' } };
@@ -96,7 +84,7 @@ describe('license-search utils', () => {
     });
 
     const rows = await searchLicenseDocuments(repository, 'tenant-vault', {
-      [ClaimsPersonSchemaorg.email]: [EXAMPLE_LICENSE_ACTIVE_RECORD.claims[ClaimsPersonSchemaorg.email]],
+      [SchemaOrgPersonClaim.Email]: [EXAMPLE_LICENSE_ACTIVE_RECORD.claims[SchemaOrgPersonClaim.Email]],
     }, unprotect);
 
     expect(rows).toHaveLength(1);

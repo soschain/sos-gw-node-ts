@@ -5,7 +5,8 @@ import { decodeJwt, decodeProtectedHeader } from 'jose';
 import { buildClientAssertionFixture } from 'gdc-common-utils-ts/utils/client-assertion';
 import { EXAMPLE_DEVICE_CLIENT_ID, EXAMPLE_SUBJECT_DID } from 'gdc-common-utils-ts/examples/shared';
 import { buildScopeSmartCompositionAccess } from 'gdc-common-utils-ts/utils/smart-scope';
-import { HealthcareBasicSections, HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { SmartIntrospectionExtensionFields } from 'gdc-common-utils-ts/utils/smart-authorization-profile';
 import { buildDeterministicSignedJwt } from '../../utils/deterministic-jwt-fixtures';
 import { FederatedSmartVerificationManager } from '../../../managers/FederatedSmartVerificationManager';
@@ -39,7 +40,7 @@ describe('FederatedSmartVerificationManager', () => {
     });
     const scope = buildScopeSmartCompositionAccess({
       subjectDid: EXAMPLE_SUBJECT_DID,
-      sections: [HealthcareBasicSections.AllergiesAndIntolerances.attributeValue],
+      sections: [HealthcareCoreSections.AllergiesAndIntolerances.attributeValue],
       accessVerb: 'rs',
     });
     const presentationHash = createHash('sha256').update(PROFESSIONAL_PRESENTATION, 'utf8').digest('hex');

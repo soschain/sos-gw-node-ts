@@ -1,8 +1,8 @@
 import { createHash } from 'crypto';
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
-import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
+import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprints';
 import {
   buildOrganizationAuthorizationUrn,
   normalizeOrganizationAuthorizationUrn,
@@ -52,8 +52,8 @@ export function buildLedgerOrganizationId(identifierType: string, identifierValu
  * `Organization.address.addressRegion`.
  */
 export function resolveLedgerOrganizationId(claims?: ClaimsRecord, fallbackOrgId?: string): string {
-  const identifierType = String(claims?.[ClaimsOrganizationSchemaorg.identifierType] || '').trim();
-  const identifierValue = String(claims?.[ClaimsOrganizationSchemaorg.identifierValue] || '').trim();
+  const identifierType = String(claims?.[SchemaOrgOrganizationClaim.IdentifierType] || '').trim();
+  const identifierValue = String(claims?.[SchemaOrgOrganizationClaim.IdentifierValue] || '').trim();
   if (identifierType && identifierValue) {
     return buildLedgerOrganizationId(identifierType, identifierValue);
   }

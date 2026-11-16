@@ -1,4 +1,5 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { resolveHostPhysicalCollectionName } from '../../../config/storage-layout';
 // Authorization invariant: a tenant controller cannot disable a tenant while an active individual organization remains hosted by it.
 // Persistence invariant: rejected lifecycle transitions leave tenant and descendant records active and unchanged.
@@ -7,22 +8,16 @@ import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbpri
 import { buildOrganizationDidWeb, buildProfessionalDidWeb } from 'gdc-common-utils-ts/utils/did';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
 import { IServerConfig } from '../../../config';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { IStorageAdapter } from '../../../database/storage/IStorageAdapter';
 import { ILogger } from '../../../loggers/ILogger';
 import { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { LICENSE_STATUS_AVAILABLE, LICENSE_STATUS_ISSUED, SUBJECT_SECTION_INDIVIDUAL } from '../../../constants/domain';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
-import {
-  ClaimsOfferSchemaorg,
-  ClaimsOrderSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsPersonSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { LifecycleRequestType } from 'gdc-common-utils-ts/constants/lifecycle';
 import { testClaimsHostInitialization, testClaimsTenant1Registration } from '../../data/end-to-end.data';
 import { testDefaultHostServiceTypeClaim } from '../../data/organization.data';
@@ -89,8 +84,8 @@ describe('HostingManager activation flow', () => {
           credentialSubject: {
             id: 'did:web:api.acme.org',
             taxID: 'VATES-B00112233',
-            category: testClaimsTenant1Registration[ClaimsServiceSchemaorg.category],
-            serviceType: testClaimsTenant1Registration[ClaimsServiceSchemaorg.serviceType],
+            category: testClaimsTenant1Registration[SchemaOrgServiceClaim.Category],
+            serviceType: testClaimsTenant1Registration[SchemaOrgServiceClaim.ServiceType],
           },
         },
         {
@@ -158,7 +153,7 @@ describe('HostingManager activation flow', () => {
       hostExternalDomain: 'testhost.com',
       apiBaseUrl: 'http://testhost:3000',
       namespace: 'test-namespace',
-      sectorsAllowed: [Sector.HEALTH_CARE, Sector.SYSTEM, Sector.HEALTH_INSURANCE],
+      sectorsAllowed: [GatewaySector.HEALTH_CARE, GatewaySector.SYSTEM, GatewaySector.HEALTH_INSURANCE],
       dbProvider: 'mem',
       queueProvider: 'mem',
       storageProvider: 'mem',
@@ -213,7 +208,7 @@ describe('HostingManager activation flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId: 'host',
       jurisdiction: 'es',
-      sector: 'test-network' as Sector,
+      sector: 'test-network' as GatewaySector,
       section: 'registry',
       format: 'org.schema',
       action: '_activate',
@@ -232,8 +227,8 @@ describe('HostingManager activation flow', () => {
             credentialSubject: {
               id: 'did:web:api.acme.org',
               taxID: 'VATES-B00112233',
-              category: testClaimsTenant1Registration[ClaimsServiceSchemaorg.category],
-              serviceType: testClaimsTenant1Registration[ClaimsServiceSchemaorg.serviceType],
+              category: testClaimsTenant1Registration[SchemaOrgServiceClaim.Category],
+              serviceType: testClaimsTenant1Registration[SchemaOrgServiceClaim.ServiceType],
             },
           },
           representativeCredential: {
@@ -294,7 +289,7 @@ describe('HostingManager activation flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId: 'host',
       jurisdiction: 'es',
-      sector: 'test-network' as Sector,
+      sector: 'test-network' as GatewaySector,
       section: 'registry',
       format: 'org.schema',
       action,
@@ -319,7 +314,7 @@ describe('HostingManager activation flow', () => {
               resource: {
                 meta: {
                   claims: {
-                    [ClaimsOrganizationSchemaorg.identifierValue]: testClaimsTenant1Registration[ClaimsOrganizationSchemaorg.identifierValue],
+                    [SchemaOrgOrganizationClaim.IdentifierValue]: testClaimsTenant1Registration[SchemaOrgOrganizationClaim.IdentifierValue],
                   },
                 },
               },
@@ -350,7 +345,7 @@ describe('HostingManager activation flow', () => {
             credentialSubject: {
               id: representativeDid,
               memberOf: {
-                taxID: input?.memberOfTaxId || String(testClaimsTenant1Registration[ClaimsOrganizationSchemaorg.identifierValue]),
+                taxID: input?.memberOfTaxId || String(testClaimsTenant1Registration[SchemaOrgOrganizationClaim.IdentifierValue]),
               },
               hasOccupation: {
                 identifier: {
@@ -375,7 +370,7 @@ describe('HostingManager activation flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId: 'host',
       jurisdiction: 'es',
-      sector: 'test-network' as Sector,
+      sector: 'test-network' as GatewaySector,
       section: 'registry',
       format: 'org.schema',
       action,
@@ -396,7 +391,7 @@ describe('HostingManager activation flow', () => {
               resource: {
                 meta: {
                   claims: {
-                    [ClaimsOrganizationSchemaorg.identifierValue]: testClaimsHostInitialization[ClaimsOrganizationSchemaorg.identifierValue],
+                    [SchemaOrgOrganizationClaim.IdentifierValue]: testClaimsHostInitialization[SchemaOrgOrganizationClaim.IdentifierValue],
                   },
                 },
               },
@@ -467,8 +462,8 @@ describe('HostingManager activation flow', () => {
 
     const claims = job.content!.body!.data[0]!.resource!.meta!.claims;
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      claims[ClaimsServiceSchemaorg.category] as Sector,
-      claims[ClaimsOrganizationSchemaorg.alternateName],
+      claims[SchemaOrgServiceClaim.Category] as GatewaySector,
+      claims[SchemaOrgOrganizationClaim.AlternateName],
     );
     const finalDoc = await vaultRepository.get(
       hostCollectionName,
@@ -484,7 +479,7 @@ describe('HostingManager activation flow', () => {
 
     const tenantCollectionName = tenantUtils.generateTenantCollectionNameFromClaims({
       ...claims,
-      [ClaimsOrganizationSchemaorg.url]: 'https://api.acme.org',
+      [SchemaOrgOrganizationClaim.Url]: SAFE.httpsBaseUrl,
     } as any);
     const legalParticipantDoc = await vaultRepository.get(
       tenantCollectionName,
@@ -523,7 +518,7 @@ describe('HostingManager activation flow', () => {
   it('should expose the canonical org.schema.Offer.identifier in _activate and require that exact value for the follow-up Order', async () => {
     const activationResponse = await hostingManager.process(buildActivationJob());
     const activationClaims = activationResponse.body.data[0].resource?.meta?.claims as Record<string, unknown>;
-    const canonicalOfferId = activationClaims[ClaimsOfferSchemaorg.identifier];
+    const canonicalOfferId = activationClaims[SchemaOrgOfferClaim.Identifier];
     const offerId = String(canonicalOfferId || '');
 
     expect(activationResponse.body.data[0].type).toBe('Organization-activation-response-v1.0');
@@ -538,7 +533,7 @@ describe('HostingManager activation flow', () => {
       createdAtTimestamp: Date.now(),
       tenantId: 'host',
       jurisdiction: 'es',
-      sector: 'test-network' as Sector,
+      sector: 'test-network' as GatewaySector,
       section: 'registry',
       format: 'org.schema',
       action: '_batch',
@@ -547,15 +542,15 @@ describe('HostingManager activation flow', () => {
       httpMethod: 'POST',
       requestUrl: '/host/cds-es/v1/test-network/registry/org.schema/Order/_batch',
     };
-    orderJob.content!.body.data[0].resource.meta.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier] = offerId;
-    orderJob.content!.body.data[0].resource.meta.claims[ClaimsOrderSchemaorg.paymentMethod] = 'Stripe';
-    orderJob.content!.body.data[0].resource.meta.claims[ClaimsOrderSchemaorg.partOfInvoice] = 'in_activation_follow_up';
+    orderJob.content!.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] = offerId;
+    orderJob.content!.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.PaymentMethod] = 'Stripe';
+    orderJob.content!.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.PartOfInvoice] = 'in_activation_follow_up';
 
     const orderResponse = await hostingManager.process(orderJob);
 
     expect(orderResponse.body.data[0].response.status).toBe('200');
     expect(
-      orderResponse.body.data[0].resource?.meta?.claims?.[ClaimsOrderSchemaorg.acceptedOfferIdentifier],
+      orderResponse.body.data[0].resource?.meta?.claims?.[SchemaOrgOrderClaim.AcceptedOfferIdentifier],
     ).toBe(offerId);
   });
 
@@ -577,11 +572,11 @@ describe('HostingManager activation flow', () => {
       const replayResponse = await hostingManager.process(replay);
 
       expect(replayResponse.body.data[0].response.status).toBe('200');
-      expect(replayResponse.body.data[0].resource?.meta?.claims?.[ClaimsOfferSchemaorg.identifier]).toBeUndefined();
+      expect(replayResponse.body.data[0].resource?.meta?.claims?.[SchemaOrgOfferClaim.Identifier]).toBeUndefined();
       const claims = replay.content!.body!.data[0]!.resource!.meta!.claims;
       const tenantVaultId = tenantUtils.getTenantVaultId(
-        claims[ClaimsServiceSchemaorg.category] as Sector,
-        claims[ClaimsOrganizationSchemaorg.alternateName] as string,
+        claims[SchemaOrgServiceClaim.Category] as GatewaySector,
+        claims[SchemaOrgOrganizationClaim.AlternateName] as string,
       );
       const employeeSeats = await vaultRepository.getContainersInSection(
         tenantVaultId,
@@ -590,7 +585,7 @@ describe('HostingManager activation flow', () => {
       expect(employeeSeats).toHaveLength(2);
       expect(employeeSeats.filter((doc) =>
         ((doc as ConfidentialStorageDoc).content as DeviceLicense)?.issuedToEmail
-          === claims[ClaimsPersonSchemaorg.email],
+          === claims[SchemaOrgPersonClaim.Email],
       )).toHaveLength(1);
       expect(employeeSeats.filter((doc) =>
         ((doc as ConfidentialStorageDoc).content as DeviceLicense)?.status === LICENSE_STATUS_AVAILABLE,
@@ -609,9 +604,9 @@ describe('HostingManager activation flow', () => {
   it('repairs the mandatory representative reservation before exposing free employee seats', async () => {
     const job = buildActivationJob();
     const claims = job.content!.body!.data[0]!.resource!.meta!.claims;
-    const tenantId = claims[ClaimsOrganizationSchemaorg.alternateName] as string;
+    const tenantId = claims[SchemaOrgOrganizationClaim.AlternateName] as string;
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      claims[ClaimsServiceSchemaorg.category] as Sector,
+      claims[SchemaOrgServiceClaim.Category] as GatewaySector,
       tenantId,
     );
     await vaultRepository.createNewVault({ id: tenantVaultId });
@@ -657,7 +652,7 @@ describe('HostingManager activation flow', () => {
       content: {
         status: EntityLifecycleStatus.Active,
         claims: {
-          [ClaimsPersonSchemaorg.additionalType]: 'v3-RoleCode|RESPRSN',
+          [SchemaOrgPersonClaim.AdditionalType]: 'v3-RoleCode|RESPRSN',
         },
         didDocument: { id: 'did:web:testhost.com:controller:stored' },
       },
@@ -673,7 +668,7 @@ describe('HostingManager activation flow', () => {
       expect(seats).toHaveLength(2);
       expect(seats).toEqual(expect.arrayContaining([
         expect.objectContaining({ content: expect.objectContaining({
-          issuedToEmail: claims[ClaimsPersonSchemaorg.email],
+          issuedToEmail: claims[SchemaOrgPersonClaim.Email],
           status: 'issued',
         }) }),
       ]));
@@ -728,8 +723,8 @@ describe('HostingManager activation flow', () => {
       expect(responsePayload.body.data[0].response.status).toBe('201');
 
       const tenantVaultId = tenantUtils.getTenantVaultId(
-        claims[ClaimsServiceSchemaorg.category] as Sector,
-        claims[ClaimsOrganizationSchemaorg.alternateName] as string,
+        claims[SchemaOrgServiceClaim.Category] as GatewaySector,
+        claims[SchemaOrgOrganizationClaim.AlternateName] as string,
       );
       const tenantDoc = await vaultRepository.get(
         hostCollectionName,
@@ -745,11 +740,11 @@ describe('HostingManager activation flow', () => {
       const expectedLegacyControllerDid = buildProfessionalDidWeb({
         organizationDidWeb: buildOrganizationDidWeb({
           hostDidWeb: 'did:web:testhost.com',
-          tenantId: claims[ClaimsOrganizationSchemaorg.alternateName] as string,
-          jurisdiction: claims[ClaimsOrganizationSchemaorg.addressCountry] as string,
-          sector: claims[ClaimsServiceSchemaorg.category] as string,
+          tenantId: claims[SchemaOrgOrganizationClaim.AlternateName] as string,
+          jurisdiction: claims[SchemaOrgOrganizationClaim.AddressCountry] as string,
+          sector: claims[SchemaOrgServiceClaim.Category] as string,
         }),
-        email: claims[ClaimsPersonSchemaorg.email] as string,
+        email: claims[SchemaOrgPersonClaim.Email] as string,
         role: 'RESPRSN',
       });
       expect(legacyControllerDid).toBe(expectedLegacyControllerDid);
@@ -759,7 +754,7 @@ describe('HostingManager activation flow', () => {
 
       const tenantCollectionName = tenantUtils.generateTenantCollectionNameFromClaims({
         ...claims,
-        [ClaimsOrganizationSchemaorg.url]: 'https://api.acme.org',
+        [SchemaOrgOrganizationClaim.Url]: SAFE.httpsBaseUrl,
       } as any);
       const beforeRotation = await vaultRepository.getContainersInSection(
         tenantCollectionName,
@@ -820,7 +815,7 @@ describe('HostingManager activation flow', () => {
     const claims = job.content!.body!.data[0]!.resource!.meta!.claims;
     const tenantCollectionName = tenantUtils.generateTenantCollectionNameFromClaims({
       ...claims,
-      [ClaimsOrganizationSchemaorg.url]: 'https://api.acme.org',
+      [SchemaOrgOrganizationClaim.Url]: SAFE.httpsBaseUrl,
     } as any);
     const proofDoc = await vaultRepository.get(
       tenantCollectionName,
@@ -839,7 +834,7 @@ describe('HostingManager activation flow', () => {
     const job = buildActivationJob();
     mockConfig.securityMode = 'demo';
     const activationClaims = { ...job.content!.body!.data[0]!.resource!.meta!.claims } as Record<string, unknown>;
-    delete activationClaims[ClaimsOrganizationSchemaorg.addressCountry];
+    delete activationClaims[SchemaOrgOrganizationClaim.AddressCountry];
     job.content!.body!.data[0]!.resource!.meta!.claims = activationClaims;
 
     const responsePayload = await hostingManager.process(job);
@@ -850,19 +845,19 @@ describe('HostingManager activation flow', () => {
     const claims = entry.resource.meta.claims;
     const tenantCollectionName = tenantUtils.generateTenantCollectionNameFromClaims({
       ...claims,
-      [ClaimsOrganizationSchemaorg.url]: 'https://api.acme.org',
+      [SchemaOrgOrganizationClaim.Url]: SAFE.httpsBaseUrl,
     } as any);
     const tenantDoc = await vaultRepository.get(
       hostCollectionName,
       tenantUtils.getTenantVaultId(
-        claims[ClaimsServiceSchemaorg.category] as Sector,
-        claims[ClaimsOrganizationSchemaorg.alternateName] as string,
+        claims[SchemaOrgServiceClaim.Category] as GatewaySector,
+        claims[SchemaOrgOrganizationClaim.AlternateName] as string,
       ),
       getEnvSectionId('tenants'),
     ) as ConfidentialStorageDoc;
     expect(tenantCollectionName).toBeDefined();
     expect(tenantDoc.content?.status).toBe('active');
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.addressCountry]).toBe('ES');
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.AddressCountry]).toBe('ES');
     expect(mockLogger.error).not.toHaveBeenCalledWith(
       'Unexpected error during registration processing:',
       expect.anything(),
@@ -872,20 +867,20 @@ describe('HostingManager activation flow', () => {
   it('should derive organization identifier claims from taxID when activation claims omit them', async () => {
     const job = buildActivationJob();
     const activationClaims = { ...job.content!.body!.data[0]!.resource!.meta!.claims } as Record<string, unknown>;
-    delete activationClaims[ClaimsOrganizationSchemaorg.alternateName];
-    delete activationClaims[ClaimsOrganizationSchemaorg.identifier];
-    delete activationClaims[ClaimsOrganizationSchemaorg.identifierType];
-    delete activationClaims[ClaimsOrganizationSchemaorg.identifierValue];
+    delete activationClaims[SchemaOrgOrganizationClaim.AlternateName];
+    delete activationClaims[SchemaOrgOrganizationClaim.IdentifierReference];
+    delete activationClaims[SchemaOrgOrganizationClaim.IdentifierType];
+    delete activationClaims[SchemaOrgOrganizationClaim.IdentifierValue];
     job.content!.body!.data[0]!.resource!.meta!.claims = activationClaims;
 
     const responsePayload = await hostingManager.process(job);
     const entry = responsePayload.body.data[0];
 
     expect(entry.response.status).toBe('201');
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.alternateName]).toBe('VATES-B00112233');
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.identifierType]).toBe('TAX');
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.identifierValue]).toBe('VATES-B00112233');
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.identifier]).toBe(
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.AlternateName]).toBe('VATES-B00112233');
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.IdentifierType]).toBe('TAX');
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.IdentifierValue]).toBe('VATES-B00112233');
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.IdentifierReference]).toBe(
       'urn:test-namespace:test-network:es:v1:health-care:entity:tax:VATES-B00112233',
     );
   });
@@ -893,16 +888,16 @@ describe('HostingManager activation flow', () => {
   it('should derive addressCountry from activation route jurisdiction when claims omit it', async () => {
     const job = buildActivationJob();
     const activationClaims = { ...job.content!.body!.data[0]!.resource!.meta!.claims } as Record<string, unknown>;
-    delete activationClaims[ClaimsOrganizationSchemaorg.addressCountry];
-    delete activationClaims[ClaimsOrganizationSchemaorg.identifier];
+    delete activationClaims[SchemaOrgOrganizationClaim.AddressCountry];
+    delete activationClaims[SchemaOrgOrganizationClaim.IdentifierReference];
     job.content!.body!.data[0]!.resource!.meta!.claims = activationClaims;
 
     const responsePayload = await hostingManager.process(job);
     const entry = responsePayload.body.data[0];
 
     expect(entry.response.status).toBe('201');
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.addressCountry]).toBe('ES');
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.identifier]).toBe(
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.AddressCountry]).toBe('ES');
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.IdentifierReference]).toBe(
       'urn:test-namespace:test-network:es:v1:health-care:entity:tax:acme-id',
     );
   });
@@ -910,10 +905,10 @@ describe('HostingManager activation flow', () => {
   it('should return OperationOutcome instead of crashing when activation URN inputs are still incomplete', async () => {
     const job = buildActivationJob({ jurisdiction: '' as any });
     const activationClaims = { ...job.content!.body!.data[0]!.resource!.meta!.claims } as Record<string, unknown>;
-    delete activationClaims[ClaimsOrganizationSchemaorg.addressCountry];
-    delete activationClaims[ClaimsOrganizationSchemaorg.identifier];
-    delete activationClaims[ClaimsOrganizationSchemaorg.identifierType];
-    delete activationClaims[ClaimsOrganizationSchemaorg.identifierValue];
+    delete activationClaims[SchemaOrgOrganizationClaim.AddressCountry];
+    delete activationClaims[SchemaOrgOrganizationClaim.IdentifierReference];
+    delete activationClaims[SchemaOrgOrganizationClaim.IdentifierType];
+    delete activationClaims[SchemaOrgOrganizationClaim.IdentifierValue];
     delete (job.content!.body as any).organizationCredential.credentialSubject.taxID;
     job.content!.body!.data[0]!.resource!.meta!.claims = activationClaims;
 
@@ -929,10 +924,10 @@ describe('HostingManager activation flow', () => {
   it('should default organization identifierType to UUID when identifierValue is a UUID', async () => {
     const job = buildActivationJob();
     const activationClaims = { ...job.content!.body!.data[0]!.resource!.meta!.claims } as Record<string, unknown>;
-    delete activationClaims[ClaimsOrganizationSchemaorg.alternateName];
-    delete activationClaims[ClaimsOrganizationSchemaorg.identifier];
-    delete activationClaims[ClaimsOrganizationSchemaorg.identifierType];
-    activationClaims[ClaimsOrganizationSchemaorg.identifierValue] = '123e4567-e89b-12d3-a456-426614174000';
+    delete activationClaims[SchemaOrgOrganizationClaim.AlternateName];
+    delete activationClaims[SchemaOrgOrganizationClaim.IdentifierReference];
+    delete activationClaims[SchemaOrgOrganizationClaim.IdentifierType];
+    activationClaims[SchemaOrgOrganizationClaim.IdentifierValue] = '123e4567-e89b-12d3-a456-426614174000';
     job.content!.body!.data[0]!.resource!.meta!.claims = activationClaims;
     uuidMock.validate.mockReturnValue(true);
 
@@ -940,10 +935,10 @@ describe('HostingManager activation flow', () => {
     const entry = responsePayload.body.data[0];
 
     expect(entry.response.status).toBe('201');
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.alternateName]).toBe('123e4567-e89b-12d3-a456-426614174000');
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.identifierType]).toBe('UUID');
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.identifierValue]).toBe('123e4567-e89b-12d3-a456-426614174000');
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.identifier]).toBe(
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.AlternateName]).toBe('123e4567-e89b-12d3-a456-426614174000');
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.IdentifierType]).toBe('UUID');
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.IdentifierValue]).toBe('123e4567-e89b-12d3-a456-426614174000');
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.IdentifierReference]).toBe(
       'urn:test-namespace:test-network:es:v1:health-care:entity:uuid:123e4567-e89b-12d3-a456-426614174000',
     );
   });
@@ -951,10 +946,10 @@ describe('HostingManager activation flow', () => {
   it('should prefer a distinct legal identifier over taxID when deriving alternateName', async () => {
     const job = buildActivationJob();
     const activationClaims = { ...job.content!.body!.data[0]!.resource!.meta!.claims } as Record<string, unknown>;
-    delete activationClaims[ClaimsOrganizationSchemaorg.alternateName];
-    delete activationClaims[ClaimsOrganizationSchemaorg.identifier];
-    delete activationClaims[ClaimsOrganizationSchemaorg.identifierType];
-    activationClaims[ClaimsOrganizationSchemaorg.identifierValue] = 'BC1234567';
+    delete activationClaims[SchemaOrgOrganizationClaim.AlternateName];
+    delete activationClaims[SchemaOrgOrganizationClaim.IdentifierReference];
+    delete activationClaims[SchemaOrgOrganizationClaim.IdentifierType];
+    activationClaims[SchemaOrgOrganizationClaim.IdentifierValue] = 'BC1234567';
     job.content!.body!.data[0]!.resource!.meta!.claims = activationClaims;
     uuidMock.validate.mockReturnValue(false);
 
@@ -962,10 +957,10 @@ describe('HostingManager activation flow', () => {
     const entry = responsePayload.body.data[0];
 
     expect(entry.response.status).toBe('201');
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.alternateName]).toBe('BC1234567');
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.identifierType]).toBe('TAX');
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.identifierValue]).toBe('BC1234567');
-    expect(entry.resource.meta.claims[ClaimsOrganizationSchemaorg.identifier]).toBe(
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.AlternateName]).toBe('BC1234567');
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.IdentifierType]).toBe('TAX');
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.IdentifierValue]).toBe('BC1234567');
+    expect(entry.resource.meta.claims[SchemaOrgOrganizationClaim.IdentifierReference]).toBe(
       'urn:test-namespace:test-network:es:v1:health-care:entity:tax:BC1234567',
     );
   });
@@ -1125,16 +1120,16 @@ describe('HostingManager activation flow', () => {
     const operationalControllerDid = buildProfessionalDidWeb({
       organizationDidWeb: buildOrganizationDidWeb({
         hostDidWeb: 'did:web:testhost.com',
-        tenantId: claims[ClaimsOrganizationSchemaorg.alternateName] as string,
-        jurisdiction: claims[ClaimsOrganizationSchemaorg.addressCountry] as string,
-        sector: claims[ClaimsServiceSchemaorg.category] as string,
+        tenantId: claims[SchemaOrgOrganizationClaim.AlternateName] as string,
+        jurisdiction: claims[SchemaOrgOrganizationClaim.AddressCountry] as string,
+        sector: claims[SchemaOrgServiceClaim.Category] as string,
       }),
-      email: claims[ClaimsPersonSchemaorg.email] as string,
+      email: claims[SchemaOrgPersonClaim.Email] as string,
       role: 'RESPRSN',
     });
     const tenantCollectionName = tenantUtils.generateTenantCollectionNameFromClaims({
       ...claims,
-      [ClaimsOrganizationSchemaorg.url]: 'https://api.acme.org',
+      [SchemaOrgOrganizationClaim.Url]: SAFE.httpsBaseUrl,
     } as any);
     const employeeDocs = await vaultRepository.getContainersInSection(
       tenantCollectionName,
@@ -1208,7 +1203,7 @@ describe('HostingManager activation flow', () => {
     const claims = job.content!.body!.data[0]!.resource!.meta!.claims;
     const tenantCollectionName = tenantUtils.generateTenantCollectionNameFromClaims({
       ...claims,
-      [ClaimsOrganizationSchemaorg.url]: 'https://api.acme.org',
+      [SchemaOrgOrganizationClaim.Url]: SAFE.httpsBaseUrl,
     } as any);
     const proofDoc = await vaultRepository.get(
       tenantCollectionName,
@@ -1227,8 +1222,8 @@ describe('HostingManager activation flow', () => {
 
     const claims = activationJob.content!.body!.data[0]!.resource!.meta!.claims;
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      claims[ClaimsServiceSchemaorg.category] as Sector,
-      claims[ClaimsOrganizationSchemaorg.alternateName],
+      claims[SchemaOrgServiceClaim.Category] as GatewaySector,
+      claims[SchemaOrgOrganizationClaim.AlternateName],
     );
     const disabledDoc = await vaultRepository.get(
       hostCollectionName,
@@ -1260,8 +1255,8 @@ describe('HostingManager activation flow', () => {
     await hostingManager.process(activationJob);
     const healthClaims = activationJob.content!.body!.data[0]!.resource!.meta!.claims;
     const healthVaultId = tenantUtils.getTenantVaultId(
-      healthClaims[ClaimsServiceSchemaorg.category] as Sector,
-      healthClaims[ClaimsOrganizationSchemaorg.alternateName],
+      healthClaims[SchemaOrgServiceClaim.Category] as GatewaySector,
+      healthClaims[SchemaOrgOrganizationClaim.AlternateName],
     );
     const healthRegistryDoc = await vaultRepository.get<ConfidentialStorageDoc>(
       hostCollectionName,
@@ -1270,20 +1265,20 @@ describe('HostingManager activation flow', () => {
     );
     expect(healthRegistryDoc).toBeDefined();
 
-    const siblingSector = Sector.HEALTH_INSURANCE;
+    const siblingSector = GatewaySector.HEALTH_INSURANCE;
     const siblingDid = buildOrganizationDidWeb({
       hostDidWeb: hostRuntime.hostDid,
-      tenantId: String(healthClaims[ClaimsOrganizationSchemaorg.identifierValue]),
-      jurisdiction: String(healthClaims[ClaimsOrganizationSchemaorg.addressCountry]),
+      tenantId: String(healthClaims[SchemaOrgOrganizationClaim.IdentifierValue]),
+      jurisdiction: String(healthClaims[SchemaOrgOrganizationClaim.AddressCountry]),
       sector: siblingSector,
     });
     const siblingClaims = {
       ...healthClaims,
-      [ClaimsServiceSchemaorg.category]: siblingSector,
+      [SchemaOrgServiceClaim.Category]: siblingSector,
     };
     const siblingVaultId = tenantUtils.getTenantVaultId(
       siblingSector,
-      siblingClaims[ClaimsOrganizationSchemaorg.alternateName],
+      siblingClaims[SchemaOrgOrganizationClaim.AlternateName],
     );
     await vaultRepository.put(hostCollectionName, [{
       ...healthRegistryDoc!,
@@ -1303,11 +1298,11 @@ describe('HostingManager activation flow', () => {
 
     const exactStatus = buildLifecycleJob('_status');
     const exactClaims = exactStatus.content!.body!.data[0]!.resource!.meta!.claims;
-    exactClaims[ClaimsOrganizationSchemaorg.identifierType] = siblingClaims[ClaimsOrganizationSchemaorg.identifierType];
-    exactClaims[ClaimsOrganizationSchemaorg.sameAs] = siblingDid;
+    exactClaims[SchemaOrgOrganizationClaim.IdentifierType] = siblingClaims[SchemaOrgOrganizationClaim.IdentifierType];
+    exactClaims[SchemaOrgOrganizationClaim.SameAs] = siblingDid;
     const exact = await hostingManager.process(exactStatus);
     expect(exact.body.data[0].response.status).toBe('200');
-    expect(exact.body.data[0].resource.meta.claims[ClaimsOrganizationSchemaorg.sameAs]).toBe(siblingDid);
+    expect(exact.body.data[0].resource.meta.claims[SchemaOrgOrganizationClaim.SameAs]).toBe(siblingDid);
   });
 
   it('should attribute tenant lifecycle changedBy to the controller proof bearer actor when present', async () => {
@@ -1346,8 +1341,8 @@ describe('HostingManager activation flow', () => {
 
     const claims = activationJob.content!.body!.data[0]!.resource!.meta!.claims;
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      claims[ClaimsServiceSchemaorg.category] as Sector,
-      claims[ClaimsOrganizationSchemaorg.alternateName],
+      claims[SchemaOrgServiceClaim.Category] as GatewaySector,
+      claims[SchemaOrgOrganizationClaim.AlternateName],
     );
     await putEmployeeLifecycleDoc(
       tenantVaultId,
@@ -1366,8 +1361,8 @@ describe('HostingManager activation flow', () => {
 
     const claims = activationJob.content!.body!.data[0]!.resource!.meta!.claims;
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      claims[ClaimsServiceSchemaorg.category] as Sector,
-      claims[ClaimsOrganizationSchemaorg.alternateName],
+      claims[SchemaOrgServiceClaim.Category] as GatewaySector,
+      claims[SchemaOrgOrganizationClaim.AlternateName],
     );
     await putIndividualLifecycleDoc(
       tenantVaultId,
@@ -1391,8 +1386,8 @@ describe('HostingManager activation flow', () => {
     await hostingManager.process(activationJob);
     const claims = activationJob.content!.body!.data[0]!.resource!.meta!.claims;
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      claims[ClaimsServiceSchemaorg.category] as Sector,
-      claims[ClaimsOrganizationSchemaorg.alternateName],
+      claims[SchemaOrgServiceClaim.Category] as GatewaySector,
+      claims[SchemaOrgOrganizationClaim.AlternateName],
     );
     const sectionId = getEnvSectionId(`${SUBJECT_SECTION_INDIVIDUAL}_subject`);
     await vaultRepository.put(tenantVaultId, [{
@@ -1409,8 +1404,8 @@ describe('HostingManager activation flow', () => {
     await hostingManager.process(activationJob);
     const claims = activationJob.content!.body!.data[0]!.resource!.meta!.claims;
     const tenantVaultId = tenantUtils.getTenantVaultId(
-      claims[ClaimsServiceSchemaorg.category] as Sector,
-      claims[ClaimsOrganizationSchemaorg.alternateName],
+      claims[SchemaOrgServiceClaim.Category] as GatewaySector,
+      claims[SchemaOrgOrganizationClaim.AlternateName],
     );
     const sectionId = getEnvSectionId(`${SUBJECT_SECTION_INDIVIDUAL}_subject`);
     await vaultRepository.put(tenantVaultId, [{

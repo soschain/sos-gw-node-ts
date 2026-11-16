@@ -1,7 +1,7 @@
 // src/routes/api.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
-import { GatewayInternalResourceTypes } from 'gdc-common-utils-ts/constants/gateway-response';
-import { GatewayResponseEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
+import { GatewayInternalResourceTypes } from 'sos-data-utils-ts/gateway-response-contract';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 
 import * as express from 'express';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
@@ -10,14 +10,16 @@ import { QueueAdapter } from '../adapters/queue';
 import { IAsyncResponseStore } from '../adapters/async-response-store.mem';
 import { createJobName } from '../utils/naming';
 import { isRequestValid } from '../utils/request-validator';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { RegisteredDidcommTransportEvidence } from '../utils/individual-registration-admission';
+import { computeJwkThumbprint, toBaseJwk } from '../gdc-backend-utils-node/jwk-thumbprint';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { Content } from 'antifraud-data-utils-ts/cryptography';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
-import { JWK } from 'gdc-common-utils-ts/models/jwk';
+import { JWK } from 'antifraud-data-utils-ts/cryptography';
 import { VerificationMethod } from '../gdc-backend-utils-node/models/did';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
-import { ICryptography } from 'gdc-common-utils-ts/interfaces/ICryptography';
+import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { getTenantVaultIdFromIss, getTenantVaultId } from '../utils/tenant';
 import { composeHostDidWebId } from '../utils/did-backend';
 import { buildGaiaXLegalParticipantOptionsFromClaims, createGaiaXLegalParticipantCredential } from '../utils/credential-generators';
@@ -28,13 +30,13 @@ import { sendDidcommEarlyError } from '../utils/didcomm-error-response';
 import { ACTION_DISABLE, ACTION_ENABLE, ACTION_PURGE, ACTION_STATUS } from '../constants/domain';
 import { getTenantAuthorizationStatus as readTenantAuthorizationStatusFromConfig } from '../utils/tenant-lifecycle';
 import { enforceSmartScopeRouteCompatibility } from '../utils/smart-scope-route-authorization';
-import { IdentityAuthActions } from 'gdc-common-utils-ts/constants/identity-auth';
-import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
+import { IdentityAuthActions } from 'sos-data-utils-ts/identity-auth-wire-contract';
+import { DeviceBindingStatuses } from 'sos-data-utils-ts/device-license-contract';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { resolveHostRegistrySector } from '../utils/services';
 import { isEncryptionJwk, isSignatureJwk } from '../managers/hosting/registration-keys';
-import { ClaimsOfferSchemaorg, ClaimsOrderSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import type { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { getClaimValue } from '../utils/claims';
 import { isVerifiedBearerBoundToActorDid } from '../utils/authenticated-job-actor';
 import {
@@ -47,7 +49,7 @@ import { decodeJwt } from 'jose';
 import { randomUUID } from 'node:crypto';
 import { enqueueAsyncJob } from '../services/async-job-submission';
 import type { FederatedSmartVerificationManager } from '../managers/FederatedSmartVerificationManager';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { buildDemoWorkspaceScope } from 'sos-data-utils-ts/demo-workspace-scope';
 import { DemoWorkspaceCardDirectory } from '../services/demo/DemoWorkspaceCardDirectory';
 
@@ -80,7 +82,7 @@ function demoErrorStatus(error: unknown): number {
  * wire claims or their fully qualified storage form.
  */
 export function readPendingOrderAcceptedOfferId(claims: Record<string, unknown>): string {
-  return String(getClaimValue(claims, ClaimsOrderSchemaorg.acceptedOfferIdentifier) || '').trim();
+  return String(getClaimValue(claims, SchemaOrgOrderClaim.AcceptedOfferIdentifier) || '').trim();
 }
 
 function getVerifiedBearerPayload(verificationResult: any): Record<string, any> {
@@ -736,11 +738,11 @@ export function createApiRouter(
     if (!hostCollectionName) return undefined;
     const candidates = await vaultRepository.query(hostCollectionName, {
       sectionId: getEnvSectionId('tenants'),
-      where: [{ name: ClaimsOfferSchemaorg.identifier, value: offerId }],
+      where: [{ name: SchemaOrgOfferClaim.Identifier, value: offerId }],
     });
     for (const candidate of candidates || []) {
       const protectedContent = await kmsService.unprotectConfidentialData<any>(candidate, 'host');
-      if (String(protectedContent?.claims?.[ClaimsOfferSchemaorg.identifier] || '').trim() !== offerId) continue;
+      if (String(protectedContent?.claims?.[SchemaOrgOfferClaim.Identifier] || '').trim() !== offerId) continue;
       const registeredSenderDid = String(protectedContent?.registrationControllerDid || '').trim();
       if (registeredSenderDid !== senderDid) continue;
       const signerJwk = protectedContent?.registrationKeys?.signerJwk;
@@ -4681,6 +4683,7 @@ export function createApiRouter(
     const parsedContentType = parseIncomingContentType(contentType);
     let jobRequest: JobRequest;
     let verifiedBearerPayload: Record<string, any> = {};
+    let authenticatedTransport: RegisteredDidcommTransportEvidence | undefined;
 
     try {
       if (
@@ -4887,6 +4890,17 @@ export function createApiRouter(
             // their HMAC-indexed DID entity in the physical tenant collection.
             const employeeDoc = queryResult[0];
             const employeeConfig = await kmsService.unprotectConfidentialData<EntityConfig>(employeeDoc, vaultId);
+            if (
+              requiresVerifiedBearerActorBindingForSecureRoute({
+                section,
+                format: req.params.format,
+                resourceType,
+                action,
+              })
+              && !isVerifiedBearerBoundToActorDid(verifiedBearerPayload, senderDid)
+            ) {
+              throw new Error(`Verified bearer identity does not match secure-message issuer '${senderDid}'.`);
+            }
             senderSigningKey = employeeConfig.didDocument?.verificationMethod?.find(
               (vm: VerificationMethod) => vm.id.endsWith(`#${senderSigningKeyId}`)
             )?.publicKeyJwk;
@@ -4980,6 +4994,14 @@ export function createApiRouter(
             senderSigningKey,
             cryptographyService,
           );
+          if (!reviewedBootstrapKeys) {
+            authenticatedTransport = {
+              kind: 'registered-didcomm', actorDid: String(senderDid),
+              signingKeyId: String(senderSigningKeyId),
+              signedClientId: String((decodedJob.content as any)?.client_id || '').trim(),
+              signingKeyThumbprint: await computeJwkThumbprint(toBaseJwk(senderSigningKey)),
+            };
+          }
 
           // 7. Enrich the internal job metadata with only the keys that this
           // middleware resolved and cryptographically verified. The worker
@@ -5123,6 +5145,10 @@ export function createApiRouter(
     }
 
     // --- 2. Transaction ID Validation ---
+    // A decoded envelope can contain hostile top-level fields. Overwrite this
+    // server-only fact for every transport, including unsigned bootstrap input.
+    (jobRequest as JobRequest & { authenticatedTransport?: RegisteredDidcommTransportEvidence }).authenticatedTransport = authenticatedTransport;
+
     // Ensure contentType is always present for downstream handling (e.g. worker response encryption paths).
     (jobRequest as any).contentType = (jobRequest as any).contentType || contentType;
 

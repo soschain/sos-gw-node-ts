@@ -1,9 +1,4 @@
-import {
-  ClaimsOfferSchemaorg,
-  ClaimsOrderSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { toExternalClaimLabel } from '../../utils/claim-contract';
 
 /**
@@ -13,28 +8,28 @@ import { toExternalClaimLabel } from '../../utils/claim-contract';
  * non-optional in addition to any broader schema validation.
  */
 export const HOST_TRANSACTION_REQUIRED_INPUT_CLAIMS = [
-  ClaimsOrganizationSchemaorg.alternateName,
-  ClaimsServiceSchemaorg.category,
+  SchemaOrgOrganizationClaim.AlternateName,
+  SchemaOrgServiceClaim.Category,
 ] as const;
 
 export const HOST_TRANSACTION_REQUIRED_OUTPUT_CLAIMS = [
-  ClaimsOfferSchemaorg.identifier,
+  SchemaOrgOfferClaim.Identifier,
 ] as const;
 
 export const HOST_ACTIVATE_REQUIRED_INPUT_CLAIMS = [
-  ClaimsOrganizationSchemaorg.alternateName,
-  ClaimsServiceSchemaorg.category,
-  ClaimsOrganizationSchemaorg.addressCountry,
+  SchemaOrgOrganizationClaim.AlternateName,
+  SchemaOrgServiceClaim.Category,
+  SchemaOrgOrganizationClaim.AddressCountry,
 ] as const;
 
 export const HOST_ACTIVATE_REQUIRED_OUTPUT_CLAIMS = [
-  ClaimsOfferSchemaorg.identifier,
+  SchemaOrgOfferClaim.Identifier,
 ] as const;
 
 export const HOST_ORDER_REQUIRED_INPUT_CLAIMS = [
-  ClaimsOrderSchemaorg.acceptedOfferIdentifier,
+  SchemaOrgOrderClaim.AcceptedOfferIdentifier,
 ] as const;
 
 export const HOST_ORDER_REQUIRED_INPUT_DISPLAY_CLAIMS = [
-  toExternalClaimLabel(ClaimsOrderSchemaorg.acceptedOfferIdentifier),
+  toExternalClaimLabel(SchemaOrgOrderClaim.AcceptedOfferIdentifier),
 ] as const;

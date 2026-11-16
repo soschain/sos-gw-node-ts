@@ -1,9 +1,10 @@
 // src/utils/did.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
-import { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
-import { DidDocument, VerificationMethod } from 'gdc-common-utils-ts/models/did';
-import { JwkSet } from 'gdc-common-utils-ts/models/jwk';
+import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
+import { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
+import { VerificationMethod } from 'antifraud-data-utils-ts/did-document';
+import { JwkSet } from 'antifraud-data-utils-ts/cryptography';
 
 /**
  * Encodes a hostname according to did:web spec (percent-encodes port colons).

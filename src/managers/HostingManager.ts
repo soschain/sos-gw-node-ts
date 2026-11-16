@@ -1,26 +1,26 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/managers/HostingManager.ts
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 import { IServerConfig } from '../config';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { IStorageAdapter } from '../database/storage/IStorageAdapter';
-import { BundleJsonApi, BundleEntry, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { DidDocument, DidService } from 'gdc-common-utils-ts/models/did';
+import { BundleJsonApi, BundleEntry, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import { GatewayDidDocument as DidDocument, GatewayDidService as DidService } from 'sos-data-utils-ts/gateway-did-profile';
 import { OrganizationConfig } from '../gdc-backend-utils-node/models/entity';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
-import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
-import { ClaimsIndividualProductSchemaorg, ClaimsOfferSchemaorg, ClaimsOrderSchemaorg, ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
+import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import type { PostalActivationCodeBinding } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
 import { getBundleResponseTypeForAction } from '../utils/bundle';
 import { getClaimValue, normalizeContextualizedClaims } from '../utils/claims';
@@ -37,14 +37,14 @@ import { ILogger } from '../loggers/ILogger';
 import type { IHostingTenantRegistry } from './IHostingTenantRegistry';
 import type { IHostRuntime } from './IHostRuntime';
 import { generateLicenseOffer } from '../utils/offer';
-import { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
+import type { VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
 import { EntityLifecycleStatus, EntityType, NetworkAccessStatus, NetworkName, BundleEntryType } from '../gdc-backend-utils-node/models/enums';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
-import { ParameterData } from 'gdc-common-utils-ts/models/params';
+import type { GatewayParameterData } from 'sos-data-utils-ts/gateway-parameter-contract';
 import { normalizeCodeSystemAndValue } from '../utils/normalize-codeAndSystem';
-import { VerificationMethod } from 'gdc-common-utils-ts/models/did';
-import { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
-import { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import { VerificationMethod } from 'antifraud-data-utils-ts/did-document';
+import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
+import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { issueActivationCodeFromPool, reserveTechnicalControllerSeat } from '../utils/license-issuance';
 import {
   LICENSE_STATUS_ACTIVE,
@@ -54,7 +54,7 @@ import {
   LICENSE_USER_CLASS_EMPLOYEE,
 } from '../constants/domain';
 import { shouldUseFabricLedger } from '../adapters/credential-ledger-resolver';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { resolveLedgerOrganizationId } from '../utils/ledger-organization-registration-helpers';
 import {
   buildIssuedRoleLicenseLedgerIdentity,
@@ -170,13 +170,10 @@ import {
 } from './hosting/hosting-claim-contracts';
 import { SERVICE_ADDITIONAL_TYPE_CLAIM } from '../utils/service-capability-claims';
 import { ClearingHouseService, IClearingHouseService } from '../services/ClearingHouseService';
-import { JwkSet } from 'gdc-common-utils-ts/models/jwk';
+import { JwkSet } from 'antifraud-data-utils-ts/cryptography';
 import {
   parseServiceCapabilityTokens,
-} from 'gdc-common-utils-ts/constants/service-capabilities';
-import {
-  validateActivationServiceAuthorizationPolicy,
-} from 'gdc-common-utils-ts/utils/activation-policy';
+} from 'sos-data-utils-ts/service-capabilities';
 import {
   DefaultActivationTrustAdapter,
   IActivationTrustAdapter,
@@ -192,15 +189,13 @@ import {
   ACTION_PURGE,
   ACTION_STATUS,
 } from '../constants/domain';
-import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
-import type { ICryptography } from 'gdc-common-utils-ts/interfaces/ICryptography';
+import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprints';
+import type { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { verifyOrganizationTestNetworkCredential } from './hosting/organization-test-network-credential';
 import { registerOrganizationOnLedger } from '../utils/ledger-organization-registration';
 import { OrganizationDidBindingEntryTypes } from 'gdc-common-utils-ts/utils/organization-did-binding';
-import {
-  DIDCOMM_DEFAULT_ACCEPT_HEADER,
-  DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE,
-} from 'gdc-common-utils-ts/utils/didcomm-submit';
+import { DIDCOMM_DEFAULT_ACCEPT_HEADER } from 'sos-data-utils-ts/bff-wire-contract';
+import { DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE } from 'antifraud-data-utils-ts/didcomm-contracts';
 
 // Transitional ICA transport contract:
 // GW host routes use the newer `application/didcomm-plain+json`, but the
@@ -230,7 +225,7 @@ type LegalOrganizationVerificationTransactionNextStep = Readonly<{
   action: 'Order/_batch';
   acceptedOffer: {
     identifier?: string;
-    identifierClaim: typeof ClaimsOrderSchemaorg.acceptedOfferIdentifier;
+    identifierClaim: typeof SchemaOrgOrderClaim.AcceptedOfferIdentifier;
   };
 }>;
 type LegalOrganizationVerificationTransactionResponseResource = Readonly<{
@@ -544,14 +539,14 @@ export class HostingManager {
 
   private assertActivationUrnInputs(claims: ClaimsRecord): void {
     const missing: string[] = [];
-    if (!String(claims[ClaimsOrganizationSchemaorg.addressCountry] || '').trim()) {
-      missing.push(ClaimsOrganizationSchemaorg.addressCountry);
+    if (!String(claims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim()) {
+      missing.push(SchemaOrgOrganizationClaim.AddressCountry);
     }
-    if (!String(claims[ClaimsOrganizationSchemaorg.identifierType] || '').trim()) {
-      missing.push(ClaimsOrganizationSchemaorg.identifierType);
+    if (!String(claims[SchemaOrgOrganizationClaim.IdentifierType] || '').trim()) {
+      missing.push(SchemaOrgOrganizationClaim.IdentifierType);
     }
-    if (!String(claims[ClaimsOrganizationSchemaorg.identifierValue] || '').trim()) {
-      missing.push(ClaimsOrganizationSchemaorg.identifierValue);
+    if (!String(claims[SchemaOrgOrganizationClaim.IdentifierValue] || '').trim()) {
+      missing.push(SchemaOrgOrganizationClaim.IdentifierValue);
     }
     if (missing.length > 0) {
       throw new ManagerError(
@@ -563,17 +558,17 @@ export class HostingManager {
 
   private createOrganizationUrnSafely(
     claims: ClaimsRecord,
-    requestedSector: Sector,
+    requestedSector: GatewaySector,
   ): string {
     this.assertActivationUrnInputs(claims);
     try {
       return createOrganizationUrn({
         namespace: this.config.namespace,
         network: this.getCurrentUrnNetwork(),
-        jurisdiction: claims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+        jurisdiction: claims[SchemaOrgOrganizationClaim.AddressCountry] as string,
         sector: requestedSector,
-        idType: claims[ClaimsOrganizationSchemaorg.identifierType] as string,
-        idValue: claims[ClaimsOrganizationSchemaorg.identifierValue] as string,
+        idType: claims[SchemaOrgOrganizationClaim.IdentifierType] as string,
+        idValue: claims[SchemaOrgOrganizationClaim.IdentifierValue] as string,
       });
     } catch (error: any) {
       throw new ManagerError(
@@ -935,7 +930,9 @@ export class HostingManager {
           controller: resource.controller,
           organization: resource.organization,
           controllerEmail: String(resource.controller?.email || ''),
+          controllerTelephone: String(resource.controller?.telephone || ''),
           legalRepresentativeEmail: String(resource.legalRepresentativePayload?.email || resource.legalRepresentative?.email || ''),
+          legalRepresentativeTelephone: String(resource.legalRepresentativePayload?.telephone || resource.legalRepresentative?.telephone || ''),
           testNetworkCredentials: resource.testNetworkCredentials,
           cryptography: this.cryptographyService,
           trustedIssuers,
@@ -964,8 +961,8 @@ export class HostingManager {
     })) return undefined;
 
     validateNewOrganizationClaims(normalizedClaims);
-    const alternateName = String(normalizedClaims[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
-    const sector = String(normalizedClaims[ClaimsServiceSchemaorg.category] || '').trim() as Sector;
+    const alternateName = String(normalizedClaims[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
+    const sector = String(normalizedClaims[SchemaOrgServiceClaim.Category] || '').trim() as GatewaySector;
     const vaultId = getTenantVaultId(sector, alternateName);
     if (!await this.vaultRepository.vaultExists(vaultId)) return undefined;
 
@@ -975,16 +972,16 @@ export class HostingManager {
     const tenantUrn = createOrganizationUrn({
       namespace: this.config.namespace,
       network: this.getCurrentUrnNetwork(),
-      jurisdiction: normalizedClaims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+      jurisdiction: normalizedClaims[SchemaOrgOrganizationClaim.AddressCountry] as string,
       sector,
-      idType: normalizedClaims[ClaimsOrganizationSchemaorg.identifierType] as string,
-      idValue: normalizedClaims[ClaimsOrganizationSchemaorg.identifierValue] as string,
+      idType: normalizedClaims[SchemaOrgOrganizationClaim.IdentifierType] as string,
+      idValue: normalizedClaims[SchemaOrgOrganizationClaim.IdentifierValue] as string,
     });
     const hostedTenantDid = createHostedDidWeb(
       composeHostDidWebId(this.config.apiBaseUrl, this.config.hostExternalDomain),
       alternateName,
       {
-        jurisdiction: normalizedClaims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+        jurisdiction: normalizedClaims[SchemaOrgOrganizationClaim.AddressCountry] as string,
         version: 'v1',
         sector,
       },
@@ -1038,10 +1035,10 @@ export class HostingManager {
     await this.tenantsCacheManager.refreshTenant(vaultId);
     return {
       ...normalizedClaims,
-      [ClaimsOrganizationSchemaorg.identifier]: tenantUrn,
+      [SchemaOrgOrganizationClaim.IdentifierReference]: tenantUrn,
       ...(representativeActivationCode ? {
-        [ClaimsIndividualProductSchemaorg.serialNumber]: representativeActivationCode,
-        [ClaimsIndividualProductSchemaorg.category]: 'professional',
+        [SchemaOrgIndividualProductClaim.SerialNumber]: representativeActivationCode,
+        [SchemaOrgIndividualProductClaim.Category]: 'professional',
       } : {}),
     };
   }
@@ -1071,7 +1068,7 @@ export class HostingManager {
       return license?.userClass === LICENSE_USER_CLASS_EMPLOYEE;
     });
     const email = normalizeIndexedEmail(
-      String(input.claims[ClaimsPersonSchemaorg.email] || ''),
+      String(input.claims[SchemaOrgPersonClaim.Email] || ''),
     );
     const role = getPersonOccupationClaim(input.claims);
     const representativeSeat = email && role ? employeeSeats.find((doc) => {
@@ -1114,7 +1111,7 @@ export class HostingManager {
     if (!email || !role) return undefined;
     const organizationOfficialId = resolveLedgerOrganizationId(input.claims);
     const jurisdiction = String(
-      input.claims[ClaimsOrganizationSchemaorg.addressCountry] || '',
+      input.claims[SchemaOrgOrganizationClaim.AddressCountry] || '',
     ).trim();
     if (!jurisdiction) {
       throw new Error('Legal-representative licence requires the authoritative organization jurisdiction.');
@@ -1145,14 +1142,14 @@ export class HostingManager {
           beforePersist: async () => {
             await ensureIssuedRoleLicenseOnLedger({
               identity: ledgerIdentity,
-              sector: String(input.claims[ClaimsServiceSchemaorg.category] || '').trim(),
+              sector: String(input.claims[SchemaOrgServiceClaim.Category] || '').trim(),
             });
           },
         });
     if (representativeSeat) {
       await ensureIssuedRoleLicenseOnLedger({
         identity: ledgerIdentity,
-        sector: String(input.claims[ClaimsServiceSchemaorg.category] || '').trim(),
+        sector: String(input.claims[SchemaOrgServiceClaim.Category] || '').trim(),
       });
       const current = representativeSeat.content as DeviceLicense;
       if (current.ownerOrganizationId !== organizationOfficialId
@@ -1201,8 +1198,8 @@ export class HostingManager {
       try {
         const tenant = await this.kmsService.unprotectConfidentialData<OrganizationConfig>(record, 'host');
         const claims = tenant?.claims as ClaimsRecord | undefined;
-        const tenantId = String(claims?.[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
-        const sector = String(claims?.[ClaimsServiceSchemaorg.category] || '').trim() as Sector;
+        const tenantId = String(claims?.[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
+        const sector = String(claims?.[SchemaOrgServiceClaim.Category] || '').trim() as GatewaySector;
         if (!claims || !tenantId || !sector) continue;
         const tenantVaultId = getTenantVaultId(sector, tenantId);
         await this.reconcileLegacyRepresentativeEmployeeSeats({ tenantVaultId, tenantId, claims });
@@ -1240,7 +1237,7 @@ export class HostingManager {
               tenantVaultId,
             );
             const role = normalizeCodeSystemAndValue(String(
-              employee?.claims?.[ClaimsPersonSchemaorg.additionalType] || '',
+              employee?.claims?.[SchemaOrgPersonClaim.AdditionalType] || '',
             ));
             const did = String(employee?.didDocument?.id || '').trim();
             if (
@@ -1305,14 +1302,14 @@ export class HostingManager {
       if (!record?.id || record.id === 'host') continue;
       const tenant = await this.kmsService.unprotectConfidentialData<OrganizationConfig>(record, 'host');
       const claims = tenant?.claims as ClaimsRecord | undefined;
-      const tenantId = String(claims?.[ClaimsOrganizationSchemaorg.alternateName] || '').trim();
+      const tenantId = String(claims?.[SchemaOrgOrganizationClaim.AlternateName] || '').trim();
       if (!claims || !tenantId || !tenant.didDocument?.id) continue;
 
-      const sector = String(claims[ClaimsServiceSchemaorg.category] || '').trim() as Sector;
-      const jurisdiction = String(claims[ClaimsOrganizationSchemaorg.addressCountry] || '').trim();
+      const sector = String(claims[SchemaOrgServiceClaim.Category] || '').trim() as GatewaySector;
+      const jurisdiction = String(claims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim();
       if (!sector || !jurisdiction) continue;
       const publicTenantUrl = this.normalizeTenantPublicUrl(
-        claims[ClaimsOrganizationSchemaorg.url] as string | undefined,
+        claims[SchemaOrgOrganizationClaim.Url] as string | undefined,
       );
       const operationalTenantUrl = this.getOperationalServiceBaseUrl(claims);
       const hostedByDefault = !publicTenantUrl?.startsWith('https://')
@@ -1325,7 +1322,7 @@ export class HostingManager {
       const didConfigServices = initializeTenantServicesConfig(
         sector,
         [],
-        claims[ClaimsServiceSchemaorg.serviceType] as string | undefined,
+        claims[SchemaOrgServiceClaim.ServiceType] as string | undefined,
         claims[SERVICE_ADDITIONAL_TYPE_CLAIM] as string | undefined,
       );
       const canonicalServices = populateDidDocumentServices(
@@ -1734,11 +1731,11 @@ export class HostingManager {
    */
   private withHostedOrganizationOfferClaims(
     claims: ClaimsRecord,
-    requestedSector: Sector,
+    requestedSector: GatewaySector,
   ): ClaimsRecord {
     const hostDid = composeHostDidWebId(this.config.apiBaseUrl, this.config.hostExternalDomain);
     const requestedEmployeeCount = Number(
-      claims[ClaimsOrganizationSchemaorg.numberOfEmployees],
+      claims[SchemaOrgOrganizationClaim.NumberOfEmployees],
     );
     const employeeCount = Number.isInteger(requestedEmployeeCount) && requestedEmployeeCount > 0
       ? Math.max(2, requestedEmployeeCount)
@@ -1953,7 +1950,7 @@ export class HostingManager {
     altName: string,
     allClaims: ClaimsRecord,
     contained: Array<IncludedResource | undefined>,
-    sector: Sector,
+    sector: GatewaySector,
   ) {
     return persistTenantConfigExternal({
       org,
@@ -1975,7 +1972,7 @@ export class HostingManager {
     org: IncludedResource,
     altName: string,
     allClaims: ClaimsRecord,
-    sector: Sector,
+    sector: GatewaySector,
     vaultId: string,
     options?: {
       primaryDid?: string;

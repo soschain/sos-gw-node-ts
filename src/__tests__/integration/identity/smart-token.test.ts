@@ -5,12 +5,12 @@ import { resolveHostPhysicalCollectionName } from '../../../config/storage-layou
 
 import { invokeExpress } from '../helpers/invokeExpress';
 import { getTenantVaultId } from '../../../utils/tenant';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { testPayloadCreateTenant1 } from '../../data/end-to-end.data';
 import { testConsentRulePermitOrgDid } from '../../data/consent-rules.data';
 import { generateTenantCollectionNameFromClaims } from '../../../utils/tenant';
 import { initializeTenantServicesConfig } from '../../../utils/services';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { getIndividualSectionId } from '../../../utils/individual-sections';
 import { startServer, resetServerConfig } from '../../../server';
 import { getEnvSectionId } from '../../../utils/section-env';
@@ -29,8 +29,9 @@ import { ClaimInterTenantAccessContract } from 'gdc-common-utils-ts/models/inter
 import { buildInterTenantAccessContractCredential } from 'gdc-common-utils-ts/utils/inter-tenant-access-contract';
 import { buildClientAssertionFixture, buildClientAssertionJwt } from 'gdc-common-utils-ts/utils/client-assertion';
 import { addVC, createVP } from 'gdc-common-utils-ts/utils/vp-token';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
-import { HealthcareActorRoles, HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
 import {
   EXAMPLE_ALTERNATE_PORTAL_INDIVIDUAL_DID,
@@ -51,8 +52,8 @@ import {
 } from 'gdc-common-utils-ts/examples/shared';
 import { OpenIdAuthManager } from '../../../managers/OpenIdAuthManager';
 import { buildResearchStudyControllerImportScope } from '../../../managers/ResearchStudyConsentManager';
-import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { DeviceBindingStatuses } from 'sos-data-utils-ts/device-license-contract';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { LICENSE_USER_CLASS_INDIVIDUAL } from '../../../constants/domain';
 
 const EXAMPLE_INTER_TENANT_DIGITAL_TWIN_SCOPE =
@@ -111,14 +112,14 @@ describe('SMART token issuance (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
       const tenantVaultId = getTenantVaultId(
-        tenantClaims[ClaimsServiceSchemaorg.category],
+        tenantClaims[SchemaOrgServiceClaim.Category],
         tenantClaims['org.schema.Organization.alternateName'],
       );
       await kmsService.provisionKeys(tenantVaultId);
@@ -127,7 +128,7 @@ describe('SMART token issuance (integration)', () => {
         sequence: 0,
         content: {
           claims: tenantClaims,
-          didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+          didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
           didDocument: { id: EXAMPLE_HOSTING_OPERATOR_DID, '@context': 'https://www.w3.org/ns/did/v1' },
         },
       } as any, 'host');
@@ -194,22 +195,22 @@ describe('SMART token issuance (integration)', () => {
     try {
       // Create tenant "acme" directly in the host registry (avoid full crypto onboarding here).
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
 
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
       const tenantVaultId = getTenantVaultId(
-        tenantClaims[ClaimsServiceSchemaorg.category],
+        tenantClaims[SchemaOrgServiceClaim.Category],
         tenantClaims['org.schema.Organization.alternateName'],
       );
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: EXAMPLE_HOSTING_OPERATOR_DID, '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -326,22 +327,22 @@ describe('SMART token issuance (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
 
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
       const tenantVaultId = getTenantVaultId(
-        tenantClaims[ClaimsServiceSchemaorg.category],
+        tenantClaims[SchemaOrgServiceClaim.Category],
         tenantClaims['org.schema.Organization.alternateName'],
       );
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerOrganizationDid, '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -448,22 +449,22 @@ describe('SMART token issuance (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
 
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
       const tenantVaultId = getTenantVaultId(
-        tenantClaims[ClaimsServiceSchemaorg.category],
+        tenantClaims[SchemaOrgServiceClaim.Category],
         tenantClaims['org.schema.Organization.alternateName'],
       );
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerOrganizationDid, '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -575,22 +576,22 @@ describe('SMART token issuance (integration)', () => {
     const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
     try {
       const hostBootstrapClaims = {
-        [ClaimsOrganizationSchemaorg.addressCountry]: process.env.ORG_HOST_JURISDICTION,
-        [ClaimsOrganizationSchemaorg.identifierType]: process.env.ORG_HOST_ID_TYPE,
-        [ClaimsOrganizationSchemaorg.identifierValue]: process.env.ORG_HOST_ID_VALUE,
-        [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+        [SchemaOrgOrganizationClaim.AddressCountry]: process.env.ORG_HOST_JURISDICTION,
+        [SchemaOrgOrganizationClaim.IdentifierType]: process.env.ORG_HOST_ID_TYPE,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: process.env.ORG_HOST_ID_VALUE,
+        [SchemaOrgServiceClaim.Category]: GatewaySector.SYSTEM,
       };
       const hostCollectionName = resolveHostPhysicalCollectionName();
 
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
       const tenantVaultId = getTenantVaultId(
-        tenantClaims[ClaimsServiceSchemaorg.category],
+        tenantClaims[SchemaOrgServiceClaim.Category],
         tenantClaims['org.schema.Organization.alternateName'],
       );
 
       const tenantConfig = {
         claims: tenantClaims,
-        didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+        didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
         didDocument: { id: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerOrganizationDid, '@context': 'https://www.w3.org/ns/did/v1' },
       };
 
@@ -700,8 +701,8 @@ describe('SMART token issuance (integration)', () => {
     try {
       const tenantClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as any;
       const tenantVaultId = getTenantVaultId(
-        tenantClaims[ClaimsServiceSchemaorg.category],
-        tenantClaims[ClaimsOrganizationSchemaorg.alternateName],
+        tenantClaims[SchemaOrgServiceClaim.Category],
+        tenantClaims[SchemaOrgOrganizationClaim.AlternateName],
       );
       await kmsService.provisionKeys(tenantVaultId);
       const protectedTenant = await kmsService.protectConfidentialData({
@@ -709,7 +710,7 @@ describe('SMART token issuance (integration)', () => {
         sequence: 0,
         content: {
           claims: tenantClaims,
-          didConfig: { service: initializeTenantServicesConfig(Sector.HEALTH_CARE) },
+          didConfig: { service: initializeTenantServicesConfig(GatewaySector.HEALTH_CARE) },
           didDocument: { id: EXAMPLE_HOSTING_OPERATOR_DID, '@context': 'https://www.w3.org/ns/did/v1' },
         },
       } as any, 'host');
@@ -780,7 +781,7 @@ describe('SMART token issuance (integration)', () => {
         sequence: 0,
         content: {
           claims: {
-            [ClaimsOrganizationSchemaorg.sameAs]: EXAMPLE_PORTAL_INDIVIDUAL_DID,
+            [SchemaOrgOrganizationClaim.SameAs]: EXAMPLE_PORTAL_INDIVIDUAL_DID,
           },
         },
       } as any, tenantVaultId);

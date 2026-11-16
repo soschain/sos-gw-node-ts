@@ -1,8 +1,8 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/database/repositories/vault/vault.repository.ts
 
-import { ConsentRule } from "gdc-common-utils-ts/models/consent-rule";
-import { RecordBase, VaultConfig } from "gdc-common-utils-ts/models/resource-document";
+import type { ConsentRule } from "fhir-data-utils-ts";
+import { RecordBase, VaultConfig } from 'sos-data-utils-ts/confidential-storage';
 
 export type VaultQueryOptions = {
     hydrate?: boolean;

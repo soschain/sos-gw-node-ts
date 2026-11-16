@@ -35,12 +35,7 @@ import { jest } from '@jest/globals';
 import type { QueueAdapterMem } from '../../../adapters/queue-mem';
 import { startServer, resetServerConfig } from '../../../server';
 import { invokeExpress } from './invokeExpress';
-import {
-  ClaimsOfferSchemaorg,
-  ClaimsOrderSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { testClaimsTenant1Registration } from '../../data/end-to-end.data';
 import { ORGANIZATION_ORDER_REQUEST } from '../../data/example-payloads';
 
@@ -106,8 +101,8 @@ export function buildActivationPayload(): Record<string, unknown> {
             credentialSubject: {
               id: 'did:web:api.acme.org',
               taxID: 'VATES-B00112233',
-              category: testClaimsTenant1Registration[ClaimsServiceSchemaorg.category],
-              serviceType: testClaimsTenant1Registration[ClaimsServiceSchemaorg.serviceType],
+              category: testClaimsTenant1Registration[SchemaOrgServiceClaim.Category],
+              serviceType: testClaimsTenant1Registration[SchemaOrgServiceClaim.ServiceType],
             },
           },
           {
@@ -148,8 +143,8 @@ export function buildActivationPayload(): Record<string, unknown> {
         credentialSubject: {
           id: 'did:web:api.acme.org',
           taxID: 'VATES-B00112233',
-          category: testClaimsTenant1Registration[ClaimsServiceSchemaorg.category],
-          serviceType: testClaimsTenant1Registration[ClaimsServiceSchemaorg.serviceType],
+          category: testClaimsTenant1Registration[SchemaOrgServiceClaim.Category],
+          serviceType: testClaimsTenant1Registration[SchemaOrgServiceClaim.ServiceType],
         },
       },
       representativeCredential: {
@@ -215,7 +210,7 @@ export async function onboardTenantViaActivateAndOrder(app: express.Express, que
   }
 
   const activationEntry = activationPoll.body.data[0];
-  const offerId = String(activationEntry.resource?.meta?.claims?.[ClaimsOfferSchemaorg.identifier] || '');
+  const offerId = String(activationEntry.resource?.meta?.claims?.[SchemaOrgOfferClaim.Identifier] || '');
   if (!offerId) {
     throw new Error('Activation flow did not return an Offer identifier.');
   }
@@ -229,9 +224,9 @@ export async function onboardTenantViaActivateAndOrder(app: express.Express, que
   orderPayload.body.data[0].resource = {
     meta: {
       claims: {
-        [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
-        [ClaimsOrderSchemaorg.paymentMethod]: 'Stripe',
-        [ClaimsOrderSchemaorg.partOfInvoice]: 'activation-story-invoice',
+        [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
+        [SchemaOrgOrderClaim.PaymentMethod]: 'Stripe',
+        [SchemaOrgOrderClaim.PartOfInvoice]: 'activation-story-invoice',
       },
     },
   };
@@ -252,7 +247,7 @@ export async function onboardTenantViaActivateAndOrder(app: express.Express, que
     throw new Error(`Activation order poll failed with status ${orderPoll.status}`);
   }
 
-  return String(activationEntry.resource?.meta?.claims?.[ClaimsOrganizationSchemaorg.alternateName] || '');
+  return String(activationEntry.resource?.meta?.claims?.[SchemaOrgOrganizationClaim.AlternateName] || '');
 }
 
 export function installIcaVerifyFetchMock(): typeof global.fetch {

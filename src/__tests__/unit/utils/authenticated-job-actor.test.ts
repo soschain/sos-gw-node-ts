@@ -8,7 +8,7 @@ import {
   EXAMPLE_KYC_CONTROLLER_TELEPHONE,
   EXAMPLE_ORGANIZATION_CONTROLLER_ROLE,
 } from 'gdc-common-utils-ts/examples/shared';
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import {
   getAuthenticatedJobActorIdentifiers,
   isVerifiedBearerBoundToActorDid,

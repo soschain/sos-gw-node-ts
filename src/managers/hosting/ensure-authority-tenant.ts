@@ -1,9 +1,9 @@
-import type { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
 import type { OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
 import type { IServerConfig } from '../../config';
@@ -35,7 +35,7 @@ type EnsureAuthorityTenantDeps = Readonly<{
 export async function ensureAuthorityTenant(
   deps: EnsureAuthorityTenantDeps,
 ): Promise<void> {
-  const sector = Sector.SYSTEM;
+  const sector = GatewaySector.SYSTEM;
   const vaultId = getTenantVaultId(sector, deps.alternateName);
   const hostCollectionName = deps.hostRuntime.hostCollectionName;
   if (!hostCollectionName) {
@@ -89,24 +89,24 @@ export async function ensureAuthorityTenant(
   const idValue = idValueRaw.replace(/[^a-zA-Z0-9]/g, '');
 
   const claims: ClaimsRecord = {
-    [ClaimsOrganizationSchemaorg.legalName]: deps.config.host.legalName || 'GW CORE Host',
-    [ClaimsOrganizationSchemaorg.alternateName]: deps.alternateName,
-    [ClaimsOrganizationSchemaorg.addressCountry]: hostJurisdiction,
-    [ClaimsOrganizationSchemaorg.identifierType]: idType,
-    [ClaimsOrganizationSchemaorg.identifierValue]: idValue,
-    [ClaimsServiceSchemaorg.category]: sector,
-    ...(deps.externalDomain ? { [ClaimsOrganizationSchemaorg.url]: `https://${deps.externalDomain}` } : {}),
+    [SchemaOrgOrganizationClaim.LegalName]: deps.config.host.legalName || 'GW CORE Host',
+    [SchemaOrgOrganizationClaim.AlternateName]: deps.alternateName,
+    [SchemaOrgOrganizationClaim.AddressCountry]: hostJurisdiction,
+    [SchemaOrgOrganizationClaim.IdentifierType]: idType,
+    [SchemaOrgOrganizationClaim.IdentifierValue]: idValue,
+    [SchemaOrgServiceClaim.Category]: sector,
+    ...(deps.externalDomain ? { [SchemaOrgOrganizationClaim.Url]: `https://${deps.externalDomain}` } : {}),
   };
 
   const orgUrn = createOrganizationUrn({
     namespace: deps.config.namespace,
     network: deps.getCurrentUrnNetwork(),
-    jurisdiction: claims[ClaimsOrganizationSchemaorg.addressCountry] as string,
+    jurisdiction: claims[SchemaOrgOrganizationClaim.AddressCountry] as string,
     sector,
     idType,
     idValue,
   });
-  (claims as any)[ClaimsOrganizationSchemaorg.identifier] = orgUrn;
+  (claims as any)[SchemaOrgOrganizationClaim.IdentifierReference] = orgUrn;
 
   const authorityConfig: OrganizationConfig = {
     id: determineResourceId(orgUrn, deps.config.nodeEnv),

@@ -1,10 +1,7 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
-import {
-  ClaimsOfferSchemaorg,
-  ClaimsOrderSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   EXAMPLE_API_ORGANIZATION_DID,
   EXAMPLE_LICENSE_INVOICE_ID,
@@ -84,20 +81,20 @@ describe('Professional license Offer/Order route story', () => {
     expect(offerPoll.status).toBe(200);
     const offerEntry = offerPoll.body.data[0];
     const offerClaims = offerEntry.resource?.meta?.claims;
-    const offerId = String(offerClaims?.[ClaimsOfferSchemaorg.identifier] || '');
+    const offerId = String(offerClaims?.[SchemaOrgOfferClaim.Identifier] || '');
     expect(offerId).toBeTruthy();
-    expect(offerClaims?.[ClaimsOfferSchemaorg.eligibleQuantityValue])
+    expect(offerClaims?.[SchemaOrgOfferClaim.EligibleQuantityValue])
       .toBe(EXAMPLE_LICENSE_PURCHASE_INPUT.quantity);
-    expect(offerClaims?.[ClaimsOfferSchemaorg.serialNumber]).toBeUndefined();
+    expect(offerClaims?.[SchemaOrgOfferClaim.SerialNumber]).toBeUndefined();
 
     const orderPayload = structuredClone(ORGANIZATION_ORDER_REQUEST) as any;
     orderPayload.iss = EXAMPLE_API_ORGANIZATION_DID;
     orderPayload.aud = tenantId;
     orderPayload.body.data[0].resource.meta.claims = {
       ...orderPayload.body.data[0].resource.meta.claims,
-      [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
-      [ClaimsOrderSchemaorg.paymentMethod]: EXAMPLE_LICENSE_PAYMENT_METHOD_INVOICE,
-      [ClaimsOrderSchemaorg.partOfInvoice]: EXAMPLE_LICENSE_INVOICE_ID,
+      [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
+      [SchemaOrgOrderClaim.PaymentMethod]: EXAMPLE_LICENSE_PAYMENT_METHOD_INVOICE,
+      [SchemaOrgOrderClaim.PartOfInvoice]: EXAMPLE_LICENSE_INVOICE_ID,
     };
 
     const orderSubmit = await invokeExpress(harness.app, {

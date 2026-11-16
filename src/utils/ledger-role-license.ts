@@ -1,4 +1,4 @@
-import { buildStableActorIdentifier, type StableActorContactKind } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier, type StableActorContactKind } from 'antifraud-data-utils-ts/organization-identity';
 import {
   buildOrganizationRoleLicenseId,
   DEFAULT_ORGANIZATION_ROLE_LICENSE_POLICY,

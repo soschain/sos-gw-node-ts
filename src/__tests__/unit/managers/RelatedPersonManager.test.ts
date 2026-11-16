@@ -5,7 +5,7 @@
 import { describe, expect, it, jest, beforeEach, afterEach } from '@jest/globals';
 import { RelatedPersonManager } from '../../../managers/RelatedPersonManager';
 import { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
 import { EntityLifecycleStatus } from '../../../gdc-backend-utils-node/models/enums';
 import { InteroperableLifecycleStatuses } from 'gdc-common-utils-ts/utils/interoperable-resource-operation';

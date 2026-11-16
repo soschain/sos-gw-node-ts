@@ -1,17 +1,15 @@
 // src/managers/CompositionManager.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
-import type { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import type { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import type { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import type { RecordBase } from 'gdc-common-utils-ts/models/resource-document';
-import { IssueLevel, IssueType } from 'gdc-common-utils-ts/models/issue';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import {
-  DataCollectionIds,
-  HealthcareBasicSections,
-  ResourceTypesFhirR4,
-} from 'gdc-common-utils-ts/constants/index';
+import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import type { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
+import type { RecordBase } from 'sos-data-utils-ts/confidential-storage';
+import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { DataCollectionIds } from 'sos-data-utils-ts/gateway-data-collections';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { createOperationOutcome } from '../utils/outcome';
 import {
   buildFhirClaimKeys,
@@ -75,7 +73,7 @@ const RESEARCHER_WORKING_SELECTION_TYPE = 'Composition:ResearcherWorkingSelectio
  * https://build.fhir.org/ig/HL7/fhir-ips/en/Bundle-bundle-ips-all-sections.json.html
  *
  * The gateway exposes those sections through the shared healthcare catalogs
- * published by `gdc-common-utils-ts`.
+ * published in the SOS operational healthcare section catalogs.
  */
 export const IPS_ALL_SECTIONS_EXAMPLE_URL =
   'https://build.fhir.org/ig/HL7/fhir-ips/en/Bundle-bundle-ips-all-sections.json.html' as const;
@@ -86,8 +84,8 @@ export const IPS_ALL_SECTIONS_EXAMPLE_URL =
  * ResearchSubject's canonical Composition.
  *
  * These are not IPS section tokens and they are not equivalent to
- * `HealthcareSummarySections`:
- * - `HealthcareSummarySections` is the public/documental section taxonomy
+ * `HealthcarePermissionSummarySections`:
+ * - `HealthcarePermissionSummarySections` is the public/documental section taxonomy
  *   expressed as LOINC tokens
  * - `DIGITAL_TWIN_RESOURCE_COLLECTION_IDS` is the private persistence taxonomy
  *   expressed as per-family collection suffixes such as `medications` or
@@ -587,7 +585,7 @@ export class CompositionManager implements IJobProcessor {
   private extractSummaryTypes(body: any): string[] {
     const explicitTypes = extractCompositionSearchTypes(body);
     if (explicitTypes.length > 0) return explicitTypes;
-    return [HealthcareBasicSections.PatientSummaryDocument.attributeValue];
+    return [HealthcareCoreSections.PatientSummaryDocument.attributeValue];
   }
 
   private filterDocumentReferenceMatches(
@@ -606,7 +604,7 @@ export class CompositionManager implements IJobProcessor {
     if (String(requestedBundleType || '').trim().toLowerCase() !== 'document') return false;
     if (!Array.isArray(requiredTypes) || requiredTypes.length === 0) return false;
 
-    const ipsCode = HealthcareBasicSections.PatientSummaryDocument.code;
+    const ipsCode = HealthcareCoreSections.PatientSummaryDocument.code;
     return requiredTypes.some((value) => extractTokenCode(value) === ipsCode);
   }
 

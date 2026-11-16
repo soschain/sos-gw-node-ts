@@ -1,8 +1,9 @@
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import type { DidDocument } from 'gdc-common-utils-ts/models/did';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
+import { createHash } from 'node:crypto';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import type { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import type { VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import type { OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
@@ -23,10 +24,43 @@ type ReconcilePersistedHostRuntimeConfigDeps = Readonly<{
   tenantsCacheManager: IHostingTenantRegistry;
 }>;
 
+function runtimeTranscript(host: OrganizationConfig): string {
+  return createHash('sha256').update(JSON.stringify({
+    claims: host.claims,
+    didConfig: host.didConfig,
+    didDocument: host.didDocument,
+    governanceVc: host.governanceVc,
+    selfDescriptionVc: host.selfDescriptionVc,
+  })).digest('hex');
+}
+
+async function finishPendingPublication(
+  deps: ReconcilePersistedHostRuntimeConfigDeps,
+  host: OrganizationConfig,
+  secureHost: ConfidentialStorageDoc,
+): Promise<void> {
+  const docs: ConfidentialStorageDoc[] = [
+    { id: 'legal-participant.vc.json', status: 'active', sequence: 0, content: host.governanceVc },
+    { id: 'vc.json', status: 'active', sequence: 0, content: host.governanceVc },
+    { id: 'self-description.json', status: 'active', sequence: 0, content: host.selfDescriptionVc },
+  ];
+  const protectedDocs = await Promise.all(docs.map(doc => deps.kmsService.protectConfidentialData(doc, 'host')));
+  if (!await deps.vaultRepository.put(deps.hostRuntime.hostCollectionName, protectedDocs, getEnvSectionId('.well-known'))) {
+    throw new ManagerError('Host credential publication failed.', IssueType.Exception);
+  }
+  const { hostRuntimeReconciliation: _pending, ...meta } = host.meta;
+  const completed = await deps.kmsService.protectConfidentialData({ ...secureHost, content: { ...host, meta } }, 'host');
+  if (!await deps.vaultRepository.put(deps.hostRuntime.hostCollectionName, [completed], getEnvSectionId('tenants'))) {
+    throw new ManagerError('Host reconciliation completion failed.', IssueType.Exception);
+  }
+}
+
 /**
  * Refreshes the persisted host runtime service projection and repairs the DID
  * identifier when a previous bootstrap persisted a non-authoritative runtime
  * hostname. Key material and legal identity claims are left untouched.
+ * Pending publication is restart-safe under a single migration writer; the
+ * repository does not expose a cross-process transaction or compare-and-swap.
  */
 export async function reconcilePersistedHostRuntimeConfig(
   deps: ReconcilePersistedHostRuntimeConfigDeps,
@@ -57,6 +91,30 @@ export async function reconcilePersistedHostRuntimeConfig(
   );
   const didId = composeHostDidWebId(deps.config.apiBaseUrl, deps.config.hostExternalDomain);
   const previousDidId = String(hostConfig.didDocument?.id || '');
+  const nextDidDocumentServices = populateDidDocumentServices(
+    didId,
+    deps.config.apiBaseUrl,
+    expectedDidConfigServices,
+    false,
+    {} as any,
+  );
+  const pending: unknown = hostConfig.meta?.hostRuntimeReconciliation;
+  if (pending !== undefined) {
+    if (!pending || typeof pending !== 'object' || Array.isArray(pending)
+      || Object.keys(pending).sort().join(',') !== 'targetDid,transcriptSha256,version'
+      || !('version' in pending) || pending.version !== 1
+      || !('targetDid' in pending) || pending.targetDid !== didId || previousDidId !== didId
+      || !('transcriptSha256' in pending) || pending.transcriptSha256 !== runtimeTranscript(hostConfig)
+      || !hostConfig.governanceVc || !hostConfig.selfDescriptionVc
+      || JSON.stringify(hostConfig.didConfig?.service || []) !== JSON.stringify(expectedDidConfigServices)
+      || JSON.stringify(hostConfig.didDocument?.service || []) !== JSON.stringify(nextDidDocumentServices)) {
+      throw new ManagerError('Host reconciliation pending state is inconsistent.', IssueType.Exception);
+    }
+    await finishPendingPublication(deps, hostConfig, existingSecureDoc);
+    const refreshTenant = deps.tenantsCacheManager.refreshTenant;
+    if (typeof refreshTenant === 'function') await refreshTenant.call(deps.tenantsCacheManager, 'host');
+    return true;
+  }
   const publicKeys = previousDidId === didId ? undefined : await deps.kmsService.getPublicJwks('host');
   const didDocument = publicKeys
     ? populateDidDocumentFromJwks({
@@ -70,13 +128,6 @@ export async function reconcilePersistedHostRuntimeConfig(
       id: didId,
       alsoKnownAs: Array.isArray(hostConfig.didDocument?.alsoKnownAs) ? hostConfig.didDocument?.alsoKnownAs : [],
     } as DidDocument;
-  const nextDidDocumentServices = populateDidDocumentServices(
-    didId,
-    deps.config.apiBaseUrl,
-    expectedDidConfigServices,
-    false,
-    {} as any,
-  );
   applyLegacyX509Metadata(
     didDocument,
     deps.config.legacySignAlg,
@@ -150,6 +201,13 @@ export async function reconcilePersistedHostRuntimeConfig(
       lastUpdated: new Date().toISOString(),
     },
   };
+  if (publicKeys) {
+    nextHostConfig.meta.hostRuntimeReconciliation = {
+      version: 1,
+      targetDid: didId,
+      transcriptSha256: runtimeTranscript(nextHostConfig),
+    };
+  }
 
   const nextSecureDoc: ConfidentialStorageDoc = {
     ...existingSecureDoc,
@@ -157,17 +215,11 @@ export async function reconcilePersistedHostRuntimeConfig(
     content: nextHostConfig,
   };
   const protectedDoc = await deps.kmsService.protectConfidentialData(nextSecureDoc, 'host');
-  await deps.vaultRepository.put(hostCollectionName, [protectedDoc], getEnvSectionId('tenants'));
+  if (!await deps.vaultRepository.put(hostCollectionName, [protectedDoc], getEnvSectionId('tenants'))) {
+    throw new ManagerError('Host reconciliation persistence failed.', IssueType.Exception);
+  }
   if (publicKeys && governanceVc && selfDescriptionVc) {
-    const wellKnownDocs: ConfidentialStorageDoc[] = [
-      { id: 'legal-participant.vc.json', status: 'active', sequence: 0, content: governanceVc },
-      { id: 'vc.json', status: 'active', sequence: 0, content: governanceVc },
-      { id: 'self-description.json', status: 'active', sequence: 0, content: selfDescriptionVc },
-    ];
-    const protectedWellKnownDocs = await Promise.all(
-      wellKnownDocs.map(doc => deps.kmsService.protectConfidentialData(doc, 'host')),
-    );
-    await deps.vaultRepository.put(hostCollectionName, protectedWellKnownDocs, getEnvSectionId('.well-known'));
+    await finishPendingPublication(deps, nextHostConfig, protectedDoc);
   }
 
   const refreshTenant = (deps.tenantsCacheManager as any)?.refreshTenant;

@@ -1,4 +1,4 @@
-import { ClaimsOrganizationSchemaorg, ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 
 export type IndividualOrganizationKycProfile = Readonly<{
   uuid?: string | null;
@@ -109,32 +109,32 @@ export function buildClaimsFromIndividualOrganizationKyc(
 
   const claims: Record<string, string> = {
     '@context': 'org.schema',
-    [ClaimsOrganizationSchemaorg.alternateName]: organizationAlternateName,
+    [SchemaOrgOrganizationClaim.AlternateName]: organizationAlternateName,
   };
 
   if (controllerIdentifier) {
-    claims[ClaimsOrganizationSchemaorg.ownerIdentifierValue] = controllerIdentifier;
-    claims[ClaimsPersonSchemaorg.identifierValue] = controllerIdentifier;
-    claims[ClaimsPersonSchemaorg.identifier] = `urn:person:identifier:${controllerIdentifier}`;
+    claims[SchemaOrgOrganizationClaim.OwnerIdentifierValue] = controllerIdentifier;
+    claims[SchemaOrgPersonClaim.IdentifierValue] = controllerIdentifier;
+    claims[SchemaOrgPersonClaim.Identifier] = `urn:person:identifier:${controllerIdentifier}`;
   }
-  claims[ClaimsOrganizationSchemaorg.ownerAlternateName] = organizationAlternateName;
+  claims[SchemaOrgOrganizationClaim.OwnerAlternateName] = organizationAlternateName;
   if (controllerEmail) {
-    claims[ClaimsOrganizationSchemaorg.ownerEmail] = controllerEmail;
+    claims[SchemaOrgOrganizationClaim.OwnerEmail] = controllerEmail;
   }
   if (controllerTelephone) {
-    claims[ClaimsOrganizationSchemaorg.ownerTelephone] = controllerTelephone;
+    claims[SchemaOrgOrganizationClaim.OwnerTelephone] = controllerTelephone;
   }
-  if (givenName) claims[ClaimsPersonSchemaorg.givenName] = givenName;
-  if (familyName) claims[ClaimsPersonSchemaorg.familyName] = familyName;
-  if (controllerName) claims[ClaimsPersonSchemaorg.name] = controllerName;
-  claims[ClaimsOrganizationSchemaorg.memberRole] = 'ONESELF';
-  if (normalizeUpperText(profile.country)) claims[ClaimsOrganizationSchemaorg.addressCountry] = normalizeUpperText(profile.country) as string;
-  if (normalizeText(profile.city)) claims[ClaimsOrganizationSchemaorg.addressLocality] = normalizeText(profile.city);
-  if (normalizeText(profile.address)) claims[ClaimsOrganizationSchemaorg.streetAddress] = normalizeText(profile.address);
-  if (normalizeText(profile.postal_code)) claims[ClaimsOrganizationSchemaorg.postalCode] = normalizeText(profile.postal_code);
-  if (gender) claims[ClaimsPersonSchemaorg.gender] = gender;
-  if (controllerBirthYear) claims[ClaimsPersonSchemaorg.birthDate] = controllerBirthYear;
-  if (subjectBirthYear) claims[ClaimsOrganizationSchemaorg.memberBirthDate] = subjectBirthYear;
+  if (givenName) claims[SchemaOrgPersonClaim.GivenName] = givenName;
+  if (familyName) claims[SchemaOrgPersonClaim.FamilyName] = familyName;
+  if (controllerName) claims[SchemaOrgPersonClaim.Name] = controllerName;
+  claims[SchemaOrgOrganizationClaim.MemberRole] = 'ONESELF';
+  if (normalizeUpperText(profile.country)) claims[SchemaOrgOrganizationClaim.AddressCountry] = normalizeUpperText(profile.country) as string;
+  if (normalizeText(profile.city)) claims[SchemaOrgOrganizationClaim.AddressLocality] = normalizeText(profile.city);
+  if (normalizeText(profile.address)) claims[SchemaOrgOrganizationClaim.StreetAddress] = normalizeText(profile.address);
+  if (normalizeText(profile.postal_code)) claims[SchemaOrgOrganizationClaim.PostalCode] = normalizeText(profile.postal_code);
+  if (gender) claims[SchemaOrgPersonClaim.Gender] = gender;
+  if (controllerBirthYear) claims[SchemaOrgPersonClaim.BirthDate] = controllerBirthYear;
+  if (subjectBirthYear) claims[SchemaOrgOrganizationClaim.MemberBirthDate] = subjectBirthYear;
 
   return {
     claims,

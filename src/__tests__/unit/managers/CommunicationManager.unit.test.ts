@@ -16,39 +16,24 @@ import { CommunicationManager } from '../../../managers/CommunicationManager';
 import { TwinCompositionManager } from '../../../managers/TwinCompositionManager';
 import type { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { testCommunicationAppointmentFhirR4, testCommMsgExtAppointmentRequest, testAppointmentRequestText } from '../../data/appointment.data';
-import { DataEntry } from 'gdc-common-utils-ts/models/comm';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { DataEntry } from 'sos-data-utils-ts/communication-message-contract';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { createHash, randomUUID } from 'crypto';
 import { createServer, type Server } from 'node:http';
 import type { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
-import {
-  buildCommunicationParticipantSearchParameters,
-  buildCommunicationParticipantIndexAttributes,
-  buildExampleCommunicationParticipantProjection,
-  buildExampleCommunicationParticipantSearchInput,
-  BundleEditableResourceTypes,
-  BundleEditor,
-  BundleOperations,
-  CommunicationParticipantPrefixes,
-  CompositionAttesterModes,
-  CompositionClaim,
-  ConfidentialDocumentIndex,
-  ConsentDecisions,
-  ConsentStatuses,
-  DataCollectionIds,
-  HealthcareActorRoles,
-  HealthcareBasicSections,
-  HealthcareConsentPurposes,
-  ResourceTypesFhirR4,
-} from 'gdc-common-utils-ts';
+import { buildCommunicationParticipantSearchParameters, buildCommunicationParticipantIndexAttributes, buildExampleCommunicationParticipantProjection, buildExampleCommunicationParticipantSearchInput, BundleEditableResourceTypes, BundleEditor, BundleOperations, CommunicationParticipantPrefixes, CompositionAttesterModes, CompositionClaim, ConfidentialDocumentIndex, ConsentDecisions, ConsentStatuses, ResourceTypesFhirR4 } from 'gdc-common-utils-ts';
+import { DataCollectionIds } from 'sos-data-utils-ts/gateway-data-collections';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-claims/communication-claims';
 import { BundleTypes } from 'gdc-common-utils-ts/models/bundle-editor-types';
-import { Format } from 'gdc-common-utils-ts/constants/Schemas';
-import { HttpMediaTypes } from 'gdc-common-utils-ts/constants/http';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { Format } from 'sos-data-utils-ts/bff-wire-contract';
+import { HttpMediaTypes } from 'sos-data-utils-ts/bff-wire-contract';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import {
   EXAMPLE_ALLERGY_IDENTIFIER,
   EXAMPLE_ALLERGY_ONSET_DATE_TIME,
@@ -70,7 +55,7 @@ import {
   EXAMPLE_CLIENT_INSTANCE_UUID,
   EXAMPLE_CONTROLLER_SIGN_KEY,
 } from 'gdc-common-utils-ts/examples/shared';
-import { FhirIpsCreatorKinds } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
 import { getClinicalCreatorBindingsSectionId } from '../../../utils/ips-bundle';
 import {
@@ -222,7 +207,7 @@ describe('CommunicationManager Unit Tests', () => {
                 [CommunicationClaim.Subject]: subjectDid,
                 [CommunicationClaim.Sender]: issuer,
                 [CommunicationClaim.Status]: communicationStatus,
-                [CommunicationClaim.Topic]: HealthcareBasicSections.AllergiesAndIntolerances.attributeValue,
+                [CommunicationClaim.Topic]: HealthcareCoreSections.AllergiesAndIntolerances.attributeValue,
                 [CommunicationClaim.ContentAttachmentType]: 'application/fhir+json',
                 [CommunicationClaim.ContentAttachmentData]: Buffer.from(JSON.stringify(attachedBundle), 'utf8').toString('base64'),
               } } },
@@ -563,7 +548,7 @@ describe('CommunicationManager Unit Tests', () => {
               parameter: [
                 { name: 'text', valueString: text },
                 { name: 'date-from', valueDate: '2026-01-01' },
-                { name: 'section', valueString: HealthcareBasicSections.Results.attributeValue },
+                { name: 'section', valueString: HealthcareCoreSections.Results.attributeValue },
               ],
             },
           } as any,
@@ -843,7 +828,7 @@ describe('CommunicationManager Unit Tests', () => {
         'Observation.code': 'http://snomed.info/sct|386661006',
         'Observation.effective-datetime': '2026-10-23T11:42:00Z',
         'Observation.meta.versionId': 'zG9EU4AWxfuVgFj41YxQMzyo4Y9neV8zDtN9ZvevfwRaPxYvgFMAvjXsjty9TzEyZAA9r',
-        [CompositionClaim.Section]: HealthcareBasicSections.AllergiesAndIntolerances.attributeValue,
+        [CompositionClaim.Section]: HealthcareCoreSections.AllergiesAndIntolerances.attributeValue,
         [CompositionClaim.Author]: EXAMPLE_PROVIDER_ORGANIZATION_AUTHORIZATION_URN_CDS,
         [CompositionClaim.Attester]: professionalAssignment,
         [CompositionClaim.AttesterMode]: CompositionAttesterModes.Professional,
@@ -1879,7 +1864,7 @@ describe('CommunicationManager Unit Tests', () => {
         createdAtTimestamp: Date.now(),
         tenantId,
         jurisdiction: EXAMPLE_HEALTHCARE_JURISDICTION,
-        sector: Sector.HEALTH_CARE,
+        sector: GatewaySector.HEALTH_CARE,
         section: 'individual',
         format: Format.FHIR_R4,
         resourceType: ResourceTypesFhirR4.Communication,
@@ -1931,7 +1916,7 @@ describe('CommunicationManager Unit Tests', () => {
         } }],
       };
 
-      const tenantVaultId = `${Sector.HEALTH_CARE}_${tenantId}`;
+      const tenantVaultId = `${GatewaySector.HEALTH_CARE}_${tenantId}`;
       await mockVaultRepository.put(tenantVaultId, [{
         id: `urn:uuid:${EXAMPLE_KYC_CONTROLLER_UUID}`,
         kind: FhirIpsCreatorKinds.Professional,
@@ -3092,7 +3077,7 @@ describe('CommunicationManager Unit Tests', () => {
       const job: JobRequest = {
         id: randomUUID(), status: JobStatus.DRAFT, sequence: 0, createdAtTimestamp: Date.now(),
         tenantId: 'acme', jurisdiction: EXAMPLE_HEALTHCARE_JURISDICTION,
-        sector: Sector.HEALTH_CARE, section: 'individual', format: Format.FHIR_R4,
+        sector: GatewaySector.HEALTH_CARE, section: 'individual', format: Format.FHIR_R4,
         resourceType: ResourceTypesFhirR4.Communication, action: '_batch',
         content: {
           jti: randomUUID(), thid: randomUUID(), iss: EXAMPLE_PROVIDER_ORGANIZATION_DID,
@@ -3124,7 +3109,7 @@ describe('CommunicationManager Unit Tests', () => {
 
       await communicationManager.process(job);
 
-      const tenantVaultId = `${Sector.HEALTH_CARE}_acme`;
+      const tenantVaultId = `${GatewaySector.HEALTH_CARE}_acme`;
       expect(mockVaultRepository.put.mock.calls.some((args) =>
         args[0] === tenantVaultId
         && args[2] === getSubjectScopedSectionId(subjectDid, 'individual', 'composition'))).toBe(true);
@@ -3354,7 +3339,7 @@ describe('CommunicationManager Unit Tests', () => {
                   '@context': 'org.hl7.fhir.r4',
                   'Communication.subject': subjectDid,
                   'Communication.sent': '2026-05-22T10:00:00Z',
-                  [CompositionClaim.Section]: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
+                  [CompositionClaim.Section]: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
                 },
               },
               resource: {
@@ -3671,7 +3656,7 @@ describe('CommunicationManager Unit Tests', () => {
 
       await expect(communicationManager.process({
         id: randomUUID(), status: JobStatus.DRAFT, sequence: 0, createdAtTimestamp: Date.now(),
-        tenantId: 'acme', jurisdiction: EXAMPLE_HEALTHCARE_JURISDICTION, sector: Sector.HEALTH_CARE,
+        tenantId: 'acme', jurisdiction: EXAMPLE_HEALTHCARE_JURISDICTION, sector: GatewaySector.HEALTH_CARE,
         section: 'individual', format: Format.FHIR_API as any,
         resourceType: ResourceTypesFhirR4.Communication, action: '_search',
         content: {
@@ -3699,7 +3684,7 @@ describe('CommunicationManager Unit Tests', () => {
         .setDecision(ConsentDecisions.Permit)
         .setActorIdentifierList([EXAMPLE_PROFESSIONAL_DID])
         .setPurposeList([HealthcareConsentPurposes.Treatment])
-        .setSectionList([HealthcareBasicSections.PatientSummaryDocument.attributeValue])
+        .setSectionList([HealthcareCoreSections.PatientSummaryDocument.attributeValue])
         .doneEntry();
       const permissionBundle = permissionBundleEditor.buildJsonApi();
 
@@ -3722,7 +3707,7 @@ describe('CommunicationManager Unit Tests', () => {
         createdAtTimestamp: Date.now(),
         tenantId: 'acme',
         jurisdiction: EXAMPLE_HEALTHCARE_JURISDICTION,
-        sector: Sector.HEALTH_CARE,
+        sector: GatewaySector.HEALTH_CARE,
         section: 'individual',
         format: Format.FHIR_API as any,
         resourceType: ResourceTypesFhirR4.Communication,

@@ -3,15 +3,14 @@
 
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
-import { VerifiableCredentialV2, ProofEBSIv2 } from '../gdc-backend-utils-node/models/verifiable-credential';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { objectToBytes } from 'gdc-common-utils-ts/utils/object-convert';
-import { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
+import type { VerifiableCredentialV2, CredentialProof } from 'antifraud-data-utils-ts/credential-contracts';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { generateVcId } from '../utils/vc-id';
-import { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
-import { ClaimsRecord } from 'gdc-common-utils-ts/models/resource-document';
-import { ParameterData } from 'gdc-common-utils-ts/models/params';
+import { Content, PublicJwk } from 'antifraud-data-utils-ts/cryptography';
+import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
+import type { GatewayParameterData } from 'sos-data-utils-ts/gateway-parameter-contract';
 import { parseValidityPeriod } from '../utils/time';
 import type { ITenantsManager } from './ITenantsManager';
 
@@ -103,7 +102,7 @@ export class CredentialManager {
     subjectUrn: string,
     decryptionEntityId: string,
   ): Promise<void> {
-    const indexIdentifier: ParameterData = {
+    const indexIdentifier: GatewayParameterData = {
       name: 'identifier',
       value: subjectUrn,
       unique: true,
@@ -197,7 +196,7 @@ export class CredentialManager {
     unsignedVc.id = generateVcId(unsignedVc.credentialSubject.identifier as string, unsignedVc.validFrom as string);
 
     const signatureResult = await this.kmsService.signWithManagedKey(
-      objectToBytes(unsignedVc),
+      Content.objectToBytes(unsignedVc),
       signerEntityId,
       undefined,
       'vc_sign',
@@ -209,7 +208,7 @@ export class CredentialManager {
     
     const jws = `${signatureResult.signatures[0].protected}..${signatureResult.signatures[0].signature}`;
 
-    const proof: ProofEBSIv2 = {
+    const proof: CredentialProof = {
       type: 'JsonWebSignature2020',
       proofPurpose: 'assertionMethod',
       verificationMethod: `${issuer}#${(signingKey as PublicJwk).kid}`,

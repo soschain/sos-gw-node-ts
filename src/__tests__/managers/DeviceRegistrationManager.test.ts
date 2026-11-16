@@ -1,4 +1,5 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import { DCR_REPLAY_PUBLIC_KEYS } from '../data/dcr-replay-public-keys';
 // Contract: DCR binds one verified activation seat, authenticated account,
 // controller role DID, authorized subject and registered device JWKS.
 // Member roles and mismatched account/subject/key tuples must never inherit
@@ -8,26 +9,26 @@
 
 import cloneDeep from 'lodash.clonedeep';
 import { validate as uuidValidate } from 'uuid';
-import { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
+import { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { DeviceRegistrationManager } from '../../managers/DeviceRegistrationManager';
 import { DCR_REGISTRATION_JOB } from '../data/example-jobs';
 import { VaultMemRepository } from '../../database/repositories/vault/vault.mem.repository';
 import { mockKmsService } from '../mocks/kms.mock';
 import { getTenantVaultId } from '../../utils/tenant';
 import { getEnvSectionId } from '../../utils/section-env';
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
 import type { EntityConfig } from '../../gdc-backend-utils-node/models/entity';
-import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ManageAssetCryptographicKey } from '../../blockchain/fabric/v3/manageAssetCryptographicKey';
 import { ManageAssetSubjectKeyBinding } from '../../blockchain/fabric/v3/manageAssetSubjectKeyBinding';
 import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';
-import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
-import { IdentityAuthActions, IdentityAuthRequestFields, IdentityDcrMetadataFields } from 'gdc-common-utils-ts/constants/identity-auth';
-import { HealthcareActorRoles } from 'gdc-common-utils-ts/constants/healthcare';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
-import { DataspaceSectors } from 'gdc-common-utils-ts/constants/sectors';
+import { DeviceBindingStatuses } from 'sos-data-utils-ts/device-license-contract';
+import { IdentityAuthActions, IdentityAuthRequestFields, IdentityDcrMetadataFields } from 'sos-data-utils-ts/identity-auth-wire-contract';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import { createEmployeeUrn, createOrganizationUrn } from '../../utils/urn';
 import { URN_NAMESPACE, URN_NETWORK, URN_VERSION } from '../data/urn.data';
 import {
@@ -46,10 +47,10 @@ import {
   EXAMPLE_EMPLOYEE_ACTIVE_DEVICE_BINDINGS,
   EXAMPLE_LICENSE_ACTIVE_RECORD,
 } from 'gdc-common-utils-ts/examples/license';
-import { FhirIpsCreatorKinds } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { getClinicalCreatorBindingsSectionId } from '../../utils/clinical-creator-binding';
 import { testIndividualControllerDcrIdentity } from '../data/identity.data';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 
 const TEST_API_BASE_URL = 'http://localhost:3001';
 const TEST_ORGANIZATION_URN = createOrganizationUrn({
@@ -227,8 +228,8 @@ describe('DeviceRegistrationManager', () => {
           type: EntityType.Person,
           status: EntityLifecycleStatus.Active,
           claims: {
-            [ClaimsPersonSchemaorg.email]: EXAMPLE_EMAIL_PROFESSIONAL,
-            [ClaimsPersonSchemaorg.hasOccupation]: HealthcareActorRoles.Veterinarian,
+            [SchemaOrgPersonClaim.Email]: EXAMPLE_EMAIL_PROFESSIONAL,
+            [SchemaOrgPersonClaim.HasOccupation]: HealthcareActorRoles.Veterinarian,
           },
           didDocument: {
             '@context': 'https://www.w3.org/ns/did/v1',
@@ -457,6 +458,174 @@ describe('DeviceRegistrationManager', () => {
       }));
     });
 
+    it.each([
+      {
+        label: 'canonical multibase',
+        actorDid: CANONICAL_INDIVIDUAL_CONTROLLER_ACTOR_DID,
+        subjectDid: CANONICAL_INDIVIDUAL_CONTROLLER_SUBJECT_DID,
+        licensedSubjectDid: undefined,
+      },
+      {
+        label: 'historical typed',
+        actorDid: testIndividualControllerDcrIdentity.actorDid,
+        subjectDid: testIndividualControllerDcrIdentity.subjectDid,
+        licensedSubjectDid: testIndividualControllerDcrIdentity.subjectDid,
+      },
+      {
+        // The controller is a RelatedPerson/RESPRSN actor. The animal remains
+        // the distinct ONESELF subject; DCR must bind the relationship rather
+        // than requiring the human actor DID to equal the animal DID.
+        label: 'separate animal subject and controller actor',
+        actorDid: testIndividualControllerDcrIdentity.actorDid,
+        subjectDid: EXAMPLE_SUBJECT_DID,
+        licensedSubjectDid: EXAMPLE_SUBJECT_DID,
+      },
+    ])('replays complete-key same-installation $label controller DCR without changing client, device or licence', async ({
+      actorDid,
+      subjectDid,
+      licensedSubjectDid,
+    }) => {
+      const job = cloneDeep(DCR_REGISTRATION_JOB);
+      const activationCode = (job.content?.body as any).code as string;
+      (job.content!.body as any).jwks = { keys: structuredClone(DCR_REPLAY_PUBLIC_KEYS) };
+      Object.assign(job.content!.body as any, {
+        actor_did: actorDid,
+        profile_did: actorDid,
+        [IdentityDcrMetadataFields.ClinicalCreatorBinding]: {
+          kind: FhirIpsCreatorKinds.IndividualMember,
+          actorIdentifier: `urn:uuid:${EXAMPLE_KYC_CONTROLLER_USER_UUID}`,
+          authorIdentifier: `urn:uuid:${EXAMPLE_KYC_CONTROLLER_UUID}`,
+          ownerIdentifier: `urn:uuid:${EXAMPLE_PRIVATE_INDIVIDUAL_UUID}`,
+          role: testIndividualControllerDcrIdentity.role,
+        },
+      });
+      job.content!.meta = {
+        bearer: { jwt: { payload: {
+          sub: testIndividualControllerDcrIdentity.authenticatedSubject,
+          act_code: activationCode,
+          scope: testIndividualControllerDcrIdentity.scope,
+        } } },
+      } as any;
+      const vaultId = getTenantVaultId(job.sector as any, job.tenantId as string);
+      await vaultRepository.put(vaultId, [{
+        id: 'animal-controller-license', status: 'active', sequence: 1,
+        content: {
+          id: 'animal-controller-license', tenantId: job.tenantId, orderId: 'animal-order',
+          activationCode, userClass: 'individual', type: 'mobile', status: 'active',
+          plan: 'default', renewalCycle: '12m', reactivationEnabled: false,
+          exp: Math.floor(Date.now() / 1000) + 3600,
+          ownerOrganizationId: EXAMPLE_PRIVATE_INDIVIDUAL_UUID,
+          subjectId: EXAMPLE_PRIVATE_INDIVIDUAL_UUID,
+          issuedToEmail: EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL,
+          issuedToRole: testIndividualControllerDcrIdentity.role,
+          authorizedSubjectDid: licensedSubjectDid,
+        } as DeviceLicense,
+      }], getEnvSectionId('device-licenses'));
+
+      const result = await manager.process(job);
+      const entry = (result.body as BundleJsonApi).data[0] as BundleEntryResponse;
+      expect(entry.response.status).toBe('201');
+      const clientId = String((entry.resource as any).client_id);
+      const stored = await vaultRepository.get<ConfidentialStorageDoc>(
+        vaultId, clientId, getEnvSectionId('device-profiles'),
+      );
+      const profile = await mockKmsService.unprotectConfidentialData<any>(stored!, vaultId);
+      expect(profile).toEqual(expect.objectContaining({
+        actorDid,
+        profileDid: actorDid,
+        authorizedSubjectDid: subjectDid,
+        authenticatedSubject: testIndividualControllerDcrIdentity.authenticatedSubject,
+        authenticatedEmail: EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL,
+        licenseId: 'animal-controller-license',
+      }));
+      const repairedLicenseDocument = await vaultRepository.get<ConfidentialStorageDoc>(
+        vaultId, 'animal-controller-license', getEnvSectionId('device-licenses'),
+      );
+      const repairedLicense = await mockKmsService.unprotectConfidentialData<any>(
+        repairedLicenseDocument!, vaultId,
+      );
+      expect(repairedLicense).toEqual(expect.objectContaining({
+        subjectId: EXAMPLE_PRIVATE_INDIVIDUAL_UUID,
+        authorizedSubjectDid: subjectDid,
+        activatedBy: buildStableActorIdentifier({
+          contactKind: 'email',
+          contact: EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL,
+        }),
+      }));
+      const creatorBinding = await vaultRepository.get<any>(
+        vaultId, `urn:uuid:${EXAMPLE_KYC_CONTROLLER_UUID}`, getClinicalCreatorBindingsSectionId(),
+      );
+      expect(creatorBinding).toEqual(expect.objectContaining({
+        kind: FhirIpsCreatorKinds.IndividualMember,
+        actorDids: [actorDid],
+      }));
+
+      const deviceRowsBefore = await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(vaultId, getEnvSectionId('device-profiles'));
+      const replayJob = cloneDeep(job);
+      replayJob.content!.thid = String(job.content!.thid) + '-same-installation-replay';
+      const replay = await manager.process(replayJob);
+      const replayEntry = ((replay.body as BundleJsonApi).data[0] as BundleEntryResponse);
+      expect(replayEntry.response.status).toBe('201');
+      expect((replayEntry.resource as any).client_id).toBe(clientId);
+      expect((replayEntry.resource as any).registration_access_token).toBeUndefined();
+      expect(await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(vaultId, getEnvSectionId('device-profiles'))).toEqual(deviceRowsBefore);
+      expect(await vaultRepository.get<ConfidentialStorageDoc>(vaultId, clientId, getEnvSectionId('device-profiles'))).toEqual(stored);
+      expect(await vaultRepository.get<ConfidentialStorageDoc>(vaultId, 'animal-controller-license', getEnvSectionId('device-licenses'))).toEqual(repairedLicenseDocument);
+
+      // Recovery is bound to current verified account and the complete request,
+      // not merely a known installation locator or matching key identifiers.
+      const foreignAccount = cloneDeep(replayJob);
+      (foreignAccount.content!.meta as any).bearer.jwt.payload.sub += '-foreign-account';
+      const foreignResult = await manager.process(foreignAccount);
+      expect(((foreignResult.body as BundleJsonApi).data[0] as BundleEntryResponse).response.status).toBe('403');
+      const foreignAccountAndKeys = cloneDeep(foreignAccount);
+      const foreignKeys = (foreignAccountAndKeys.content!.body as any).jwks.keys;
+      foreignKeys[0] = { ...foreignKeys[0], x: foreignKeys[1].x, y: foreignKeys[1].y };
+      const foreignRotationResult = await manager.process(foreignAccountAndKeys);
+      expect(((foreignRotationResult.body as BundleJsonApi).data[0] as BundleEntryResponse).response.status).toBe('403');
+      expect(await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(vaultId, getEnvSectionId('device-profiles'))).toEqual(deviceRowsBefore);
+      expect(await vaultRepository.get<ConfidentialStorageDoc>(vaultId, 'animal-controller-license', getEnvSectionId('device-licenses'))).toEqual(repairedLicenseDocument);
+      const changedMetadata = cloneDeep(replayJob);
+      (changedMetadata.content!.body as any).client_name = 'Changed application metadata';
+      const changedResult = await manager.process(changedMetadata);
+      expect(((changedResult.body as BundleJsonApi).data[0] as BundleEntryResponse).response.status).toBe('409');
+
+      // Public JWK set ordering is transport representation, not key rotation.
+      const reordered = cloneDeep(replayJob);
+      (reordered.content!.body as any).jwks.keys.reverse();
+      const reorderedResult = await manager.process(reordered);
+      expect(((reorderedResult.body as BundleJsonApi).data[0] as BundleEntryResponse).resource).toEqual(replayEntry.resource);
+      expect(await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(vaultId, getEnvSectionId('device-profiles'))).toEqual(deviceRowsBefore);
+      expect(await vaultRepository.get<ConfidentialStorageDoc>(vaultId, 'animal-controller-license', getEnvSectionId('device-licenses'))).toEqual(repairedLicenseDocument);
+
+      const expiredLicense = await mockKmsService.protectConfidentialData({
+        ...repairedLicenseDocument!,
+        content: { ...repairedLicense, exp: Math.floor(Date.now() / 1000) - 1 },
+      }, vaultId);
+      await vaultRepository.put(vaultId, [expiredLicense], getEnvSectionId('device-licenses'));
+      const expiredResult = await manager.process(replayJob);
+      expect(((expiredResult.body as BundleJsonApi).data[0] as BundleEntryResponse).response.status).toBe('403');
+      expect(await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(vaultId, getEnvSectionId('device-profiles'))).toEqual(deviceRowsBefore);
+      expect(await vaultRepository.get<ConfidentialStorageDoc>(vaultId, 'animal-controller-license', getEnvSectionId('device-licenses'))).toEqual(expiredLicense);
+
+      // Restore the current licence fixture: legitimate same-authority material
+      // rotation still creates a replacement client rather than replaying old keys.
+      await vaultRepository.put(vaultId, [repairedLicenseDocument!], getEnvSectionId('device-licenses'));
+      const authorizedRotation = cloneDeep(replayJob);
+      const rotatedKeys = (authorizedRotation.content!.body as any).jwks.keys;
+      rotatedKeys[0] = { ...rotatedKeys[0], x: rotatedKeys[1].x, y: rotatedKeys[1].y };
+      const rotated = await manager.process(authorizedRotation);
+      const rotatedEntry = (rotated.body as BundleJsonApi).data[0] as BundleEntryResponse;
+      expect(rotatedEntry.response.status).toBe('201');
+      expect((rotatedEntry.resource as any).client_id).not.toBe(clientId);
+      const rotatedLicenseDocument = await vaultRepository.get<ConfidentialStorageDoc>(vaultId, 'animal-controller-license', getEnvSectionId('device-licenses'));
+      const rotatedLicense = await mockKmsService.unprotectConfidentialData<any>(rotatedLicenseDocument!, vaultId);
+      expect(rotatedLicense.deviceBindings).toEqual(expect.arrayContaining([
+        expect.objectContaining({ clientId, status: DeviceBindingStatuses.Revoked }),
+        expect.objectContaining({ clientId: (rotatedEntry.resource as any).client_id, status: DeviceBindingStatuses.Active }),
+      ]));
+    });
+
     it('does not promote a non-controller individual role into DCR controller authority', async () => {
       const job = cloneDeep(DCR_REGISTRATION_JOB);
       const authenticatedSubject = 'firebase-member-001';
@@ -603,8 +772,8 @@ describe('DeviceRegistrationManager', () => {
         type: EntityType.Person,
         status: EntityLifecycleStatus.Active,
         claims: {
-          [ClaimsPersonSchemaorg.email]: EXAMPLE_EMAIL_PROFESSIONAL,
-          [ClaimsPersonSchemaorg.hasOccupation]: HealthcareActorRoles.Veterinarian,
+          [SchemaOrgPersonClaim.Email]: EXAMPLE_EMAIL_PROFESSIONAL,
+          [SchemaOrgPersonClaim.HasOccupation]: HealthcareActorRoles.Veterinarian,
         } as any,
         didDocument: {
           '@context': 'https://www.w3.org/ns/did/v1',

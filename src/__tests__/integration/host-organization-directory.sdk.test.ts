@@ -1,6 +1,6 @@
 // Flow contract: the trusted host BFF SDK submits and polls the real in-memory SOS Gateway Organization registry route, and reads back the exact tenant previously written to protected host storage as a paginated DIDComm Bundle; a different bearer subject cannot read it.
 import { createServer, type Server } from 'node:http';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { initializeTenantServicesConfig } from '../../utils/services';
 import { getTenantVaultId } from '../../utils/tenant';
 import { getEnvSectionId } from '../../utils/section-env';
@@ -35,13 +35,13 @@ describe('host organization directory SDK integration', () => {
     const vaultRepository = new VaultMemRepository();
     harness = await buildRestartableGateway(vaultRepository);
     const claims = {
-      [ClaimsOrganizationSchemaorg.alternateName]: 'clinic-one',
-      [ClaimsOrganizationSchemaorg.legalName]: 'Clinic One',
-      [ClaimsOrganizationSchemaorg.name]: 'Clinic One',
-      [ClaimsOrganizationSchemaorg.identifierType]: 'TAX',
-      [ClaimsOrganizationSchemaorg.identifierValue]: 'B12345678',
-      [ClaimsOrganizationSchemaorg.addressCountry]: 'ES',
-      [ClaimsServiceSchemaorg.category]: 'health-care',
+      [SchemaOrgOrganizationClaim.AlternateName]: 'clinic-one',
+      [SchemaOrgOrganizationClaim.LegalName]: 'Clinic One',
+      [SchemaOrgOrganizationClaim.Name]: 'Clinic One',
+      [SchemaOrgOrganizationClaim.IdentifierType]: 'TAX',
+      [SchemaOrgOrganizationClaim.IdentifierValue]: 'B12345678',
+      [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+      [SchemaOrgServiceClaim.Category]: 'health-care',
     };
     const vaultId = getTenantVaultId('health-care', 'clinic-one');
     await harness.kmsService.provisionKeys(vaultId);
@@ -56,8 +56,8 @@ describe('host organization directory SDK integration', () => {
       },
     } as any, 'host');
     (protectedTenant as any).indexed = { attributes: [
-      { name: ClaimsOrganizationSchemaorg.identifierType, value: 'TAX' },
-      { name: ClaimsOrganizationSchemaorg.identifierValue, value: 'B12345678' },
+      { name: SchemaOrgOrganizationClaim.IdentifierType, value: 'TAX' },
+      { name: SchemaOrgOrganizationClaim.IdentifierValue, value: 'B12345678' },
     ] };
     await harness.vaultRepository.put(harness.hostCollectionName, [protectedTenant as any], getEnvSectionId('tenants'));
     await harness.tenantManager.refreshTenant(vaultId);

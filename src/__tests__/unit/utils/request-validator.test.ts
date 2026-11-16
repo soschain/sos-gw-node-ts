@@ -4,8 +4,8 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { isRequestValid } from '../../../utils/request-validator';
-import { DidService } from 'gdc-common-utils-ts/models/did';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewayDidService as DidService } from 'sos-data-utils-ts/gateway-did-profile';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 
 describe('isRequestValid', () => {
   const mockServices: DidService[] = [
@@ -76,7 +76,7 @@ describe('isRequestValid', () => {
 
   it('should return TRUE for a valid request matching a GENERAL service definition', () => {
     const params = {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'entity',
       format: 'org.schema',
       resourceType: 'Employee',
@@ -87,7 +87,7 @@ describe('isRequestValid', () => {
 
   it('should return TRUE for a valid request matching a SPECIFIC service definition', () => {
     const params = {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'test-network',
       format: 'org.schema',
       resourceType: 'Action',
@@ -106,7 +106,7 @@ describe('isRequestValid', () => {
     }];
 
     expect(isRequestValid(legacyDigitalTwinServices, {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'digitaltwin',
       format: 'org.hl7.fhir.r4',
       resourceType: 'Composition',
@@ -124,7 +124,7 @@ describe('isRequestValid', () => {
     }];
 
     expect(isRequestValid(legacyDigitalTwinServices, {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'digitaltwin',
       format: 'org.hl7.fhir.r4',
       resourceType: 'ResearchSubject',
@@ -134,7 +134,7 @@ describe('isRequestValid', () => {
   
   it('should return TRUE for a request where resourceType has different casing', () => {
     const params = {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'entity',
       format: 'org.schema',
       resourceType: 'organization', // Lowercase
@@ -189,7 +189,7 @@ describe('isRequestValid', () => {
 
   it('should return TRUE for individual organization _transaction alias', () => {
     const params = {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       resourceType: 'Organization',
@@ -200,7 +200,7 @@ describe('isRequestValid', () => {
 
   it('should return TRUE for individual organization _purge', () => {
     const params = {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       resourceType: 'Organization',
@@ -211,7 +211,7 @@ describe('isRequestValid', () => {
 
   it('should return TRUE for individual organization _disable', () => {
     const params = {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       resourceType: 'Organization',
@@ -222,7 +222,7 @@ describe('isRequestValid', () => {
 
   it('should return TRUE for employee _purge', () => {
     const params = {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'entity',
       format: 'org.schema',
       resourceType: 'Employee',
@@ -233,7 +233,7 @@ describe('isRequestValid', () => {
 
   it('should return TRUE for employee _search', () => {
     const params = {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'entity',
       format: 'org.schema',
       resourceType: 'Employee',
@@ -244,7 +244,7 @@ describe('isRequestValid', () => {
 
   it('keeps employee licence inventory readable for historical tenant service declarations', () => {
     expect(isRequestValid(mockServices, {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'entity',
       format: 'org.schema',
       resourceType: 'License',
@@ -254,7 +254,7 @@ describe('isRequestValid', () => {
 
   it('never invents License/_add for historical mutable employee declarations', () => {
     expect(isRequestValid(mockServices, {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'entity',
       format: 'org.schema',
       resourceType: 'License',
@@ -264,7 +264,7 @@ describe('isRequestValid', () => {
 
   it('does not widen historical employee search into licence mutations', () => {
     expect(isRequestValid(mockServices, {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'entity',
       format: 'org.schema',
       resourceType: 'License',
@@ -285,7 +285,7 @@ describe('isRequestValid', () => {
 
   it('should return TRUE for individual Order _search', () => {
     const params = {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       resourceType: 'Order',
@@ -296,7 +296,7 @@ describe('isRequestValid', () => {
 
   it('should return TRUE for related person _purge on the individual FHIR API surface', () => {
     const params = {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.hl7.fhir.api',
       resourceType: 'RelatedPerson',
@@ -307,7 +307,7 @@ describe('isRequestValid', () => {
 
   it('should return FALSE if no services are defined for the tenant', () => {
     const params = {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'entity',
       format: 'org.schema',
       resourceType: 'Employee',
@@ -318,7 +318,7 @@ describe('isRequestValid', () => {
 
   it('should return FALSE if no matching service is found', () => {
     const params = {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'non-existent-section',
       format: 'org.schema',
       resourceType: 'Employee',
@@ -329,7 +329,7 @@ describe('isRequestValid', () => {
 
   it('should return FALSE if the resourceType is not listed in the matching service', () => {
     const params = {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'entity',
       format: 'org.schema',
       resourceType: 'Patient', // Not in 'Organization,Employee,Place'
@@ -340,7 +340,7 @@ describe('isRequestValid', () => {
 
   it('should return FALSE if the action is not listed in the matching service', () => {
     const params = {
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'entity',
       format: 'org.schema',
       resourceType: 'Employee',

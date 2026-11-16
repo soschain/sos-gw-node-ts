@@ -1,14 +1,14 @@
 // File: src/managers/PingManager.ts
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
-import { HttpStatusCodes } from 'gdc-common-utils-ts/constants/http';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
 import { v4 as uuidv4 } from 'uuid';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
-import { BundleJsonApi, BundleEntry } from 'gdc-common-utils-ts/models/bundle';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
+import { BundleJsonApi, BundleEntry } from 'sos-data-utils-ts/bundle-contract';
 import { getBundleResponseTypeForAction } from '../utils/bundle';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import type { ITenantsManager } from './ITenantsManager';
 
 /**

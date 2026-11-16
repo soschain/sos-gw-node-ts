@@ -3,7 +3,7 @@
 // transport location stays private and optional coded tags are positively
 // allowlisted before the mapping reaches a blockchain adapter.
 // TDD contract: write this test red first; make it green only with the complete real behavior.
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { CompositionClaim } from 'gdc-common-utils-ts/models/interoperable-claims/composition-claims';
 import {
   EXAMPLE_CONTROLLER_DID,

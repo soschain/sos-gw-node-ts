@@ -2,7 +2,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { Request, Response, NextFunction } from 'express';
-import { ICryptography } from 'gdc-common-utils-ts/interfaces/ICryptography';
+import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 
 // This is a placeholder for the full implementation
 export const createDecodeRequestMiddleware = (cryptoService: ICryptography) => {

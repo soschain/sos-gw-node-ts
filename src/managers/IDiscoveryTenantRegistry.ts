@@ -1,7 +1,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import type { DidDocument, DidService } from '../gdc-backend-utils-node/models/did';
-import type { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 
 /**
  * Tenant-registry contract specifically for public discovery/publication flows.
@@ -69,7 +69,7 @@ export interface IDiscoveryTenantRegistry {
    * Returns the tenant business sector used for discovery gating such as
    * FHIR-only endpoints.
    */
-  getTenantSector(vaultId: string): Promise<Sector | undefined>;
+  getTenantSector(vaultId: string): Promise<GatewaySector | undefined>;
 
   /** Returns the public jurisdiction used to validate and label datasets. */
   getTenantJurisdiction(vaultId: string): Promise<string | undefined>;

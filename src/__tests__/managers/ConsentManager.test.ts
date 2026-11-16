@@ -1,13 +1,13 @@
-// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+// Flow contract: preserve actual Consent persistence and revocation, provider/caller/thread reply binding and bare Consent acknowledgements without inventing returned resource IDs; reuse canonical fixtures and types.
 import { createHash, randomUUID } from 'crypto';
 import { mock, MockProxy } from 'jest-mock-extended';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { ConsentManager } from '../../managers/ConsentManager';
 import { IVaultRepository } from '../../database/repositories/vault/vault.repository';
-import { BundleJsonApi, BundleEntryRequest, BundleEntryResponse, ErrorEntry } from 'gdc-common-utils-ts/models/bundle';
-import { OperationOutcome } from 'gdc-common-utils-ts/models/operation-outcome';
-import { ConsentRule, ClaimConsent, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
+import { BundleJsonApi, BundleEntryRequest, BundleEntryResponse, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
+import { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
+import { type ConsentRule, ClaimConsent, ConsentStatuses } from 'fhir-data-utils-ts';
 import { CONSENT_CREATION_MESSAGE } from '../data/example-payloads';
 import { buildConsentRuleStorageKey, expandConsentActorRoles, hashConsentRuleId } from '../../utils/consent';
 import { getClaimValue } from '../../utils/claims';
@@ -20,8 +20,8 @@ import {
   deriveConsentRuleBlockchainStatus,
 } from '../../utils/consent-access-blockchain';
 import { getJurisdictionGroup } from '../../utils/jurisdiction';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
-import { HealthcareConsentPurposes } from 'gdc-common-utils-ts/constants/healthcare';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 
 /**
  * @fileoverview This test suite verifies the functionality of the ConsentManager.
@@ -261,9 +261,15 @@ describe('ConsentManager', () => {
     // Act
     const jobResponse = await consentManager.process(mockJobRequest);
 
+    expect(jobResponse.iss).toBe(mockDecodedMessage.aud);
+    expect(jobResponse.aud).toBe(mockDecodedMessage.iss);
+    expect(jobResponse.thid).toBe(mockDecodedMessage.thid);
+
     // Assert: Verify the response and interactions with the mock
     const responseBody = jobResponse.body as BundleJsonApi;
     const responseEntry = responseBody.data[0] as BundleEntryResponse;
+    expect(responseEntry.type).toBe('Consent');
+    expect(responseEntry).not.toHaveProperty('resource');
     expect(responseEntry.response.status).toEqual('201');
     expect(responseBody.type).toEqual('_batch-response');
     expect(responseEntry.response.location).toEqual(

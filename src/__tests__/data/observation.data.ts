@@ -1,7 +1,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/__tests__/data/observation.data.ts
 
-import type { ConfidentialStorageDoc, MetaTagCoding } from 'gdc-common-utils-ts/models/confidential-storage';
+import type { ConfidentialStorageDoc, MetaTagCoding } from 'sos-data-utils-ts/confidential-storage';
 import { ObservationCategoryCodes } from 'gdc-common-utils-ts/constants/observation-category';
 import {
   EXAMPLE_OBSERVATION_ANXIETY_CODING,

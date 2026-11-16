@@ -3,7 +3,7 @@
 
 import * as express from 'express';
 import { ILogger } from '../loggers/ILogger';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { sendDidcommEarlyError } from '../utils/didcomm-error-response';
 
 type RequestBodySizeError = Error & {

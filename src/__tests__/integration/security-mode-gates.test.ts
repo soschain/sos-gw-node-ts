@@ -19,8 +19,14 @@ import {
   EXAMPLE_TENANT_IDENTIFIER,
 } from 'gdc-common-utils-ts/examples/shared';
 import { buildUnsignedJwt } from 'gdc-common-utils-ts/utils/jwt';
-import { DataspaceSectors } from 'gdc-common-utils-ts/constants/sectors';
-import { IdentityAuthRequestFields } from 'gdc-common-utils-ts/constants/identity-auth';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
+import { IdentityAuthRequestFields } from 'sos-data-utils-ts/identity-auth-wire-contract';
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
+import { computeJwkThumbprint, toBaseJwk } from '../../gdc-backend-utils-node/jwk-thumbprint';
+import {createHash,randomBytes,randomUUID} from 'node:crypto';
+import {CryptographyService} from 'antifraud-data-utils-ts/cryptography';
 
 function buildTestApp(options?: { appAuthManager?: any; tenantsCacheManager?: any; kmsService?: any }) {
   const app = express();
@@ -75,12 +81,162 @@ function buildTestApp(options?: { appAuthManager?: any; tenantsCacheManager?: an
 }
 
 describe('SECURITY_MODE content-type gates', () => {
+  it.each([true,false])('checks real fresh-wallet DCR signature without promoting it to registered authority: valid=%s', async valid => {
+    process.env={...previousEnv,SECURITY_MODE:'strict',DEMO_ALLOW_INSECURE_BEARER:'false',JSON_LEGACY:'false',FHIR_LEGACY:'false',DIDCOMM_PLAIN:'false'};
+    const crypto=new CryptographyService({getRandomBytes:async count=>randomBytes(count),
+      digestString:async(value,algorithm)=>createHash(algorithm.replaceAll('-','').toLowerCase()).update(value).digest('hex'),randomUUID});
+    const pair=await crypto.generateKeyPairMlDsa(randomBytes(32),'ML-DSA-44');
+    const jwk={...pair.publicJWKey,kid:'synthetic-new-recipient-signing-key'};
+    const body={code:'synthetic-activation-code',actor_did:`${SAFE.didWeb}:employee:synthetic-recipient`,profile_did:`${SAFE.didWeb}:employee:synthetic-recipient`,redirect_uris:['https://example.invalid/auth'],jwks:{keys:[jwk]},ext_device_info:{device_id:'synthetic-installation'}};
+    const signed={iss:body.actor_did,aud:SAFE.didWeb,thid:SAFE.resourceUuid,type:'openid-dcr-request',body};
+    const header={alg:'ML-DSA-44',kid:jwk.kid,jwk};
+    const jws=await crypto.signDataJws(signed,header,pair.secretKeyBytes);
+    const decoded={...signed,...(valid?{}:{body:{...body,code:'synthetic-substituted-code'}}),meta:{jws:{protected:header,signature:jws.signature},jwe:{header:{skid:'synthetic-new-encryption-key'}}}};
+    const appAuthManager={verifyInitialAccessToken:jest.fn(async()=>({sub:'verified-recipient',act_code:body.code,scope:'dcr:register'}))};
+    const kmsService={decodeRequest:jest.fn(async()=>({content:decoded})),getHmacBase64Url:jest.fn(),unprotectConfidentialData:jest.fn()};
+    const tenantsCacheManager={tenantExists:jest.fn(async()=>true),getCollectionName:jest.fn(async()=> 'isolated-tenant'),getTenant:jest.fn(async()=>({authorizationStatus:'active'})),
+      getDidServiceConfig:jest.fn(async()=>[{id:'#identity:openid',selector:{section:'identity',format:'openid'},serviceEndpoint:'Device',actions:['_dcr']}])};
+    const harness=buildTestApp({appAuthManager,kmsService,tenantsCacheManager});
+    harness.cryptographyService.verifyDetachedJws.mockImplementation((...args:Parameters<CryptographyService['verifyDetachedJws']>)=>crypto.verifyDetachedJws(...args));
+    const response=await request(harness.app).post(`/${SAFE.tenantId}/cds-es-md/v1/health-care/identity/openid/Device/_dcr`)
+      .set('Authorization','Bearer synthetic-host-initial-token').type('form').send({request:'synthetic-kms-encrypted-envelope'});
+    expect(response.status).toBe(valid?202:401);
+    expect(appAuthManager.verifyInitialAccessToken).toHaveBeenCalledWith('synthetic-host-initial-token');
+    expect(harness.vaultRepository.query).not.toHaveBeenCalled();
+    if(valid){expect(harness.queueAdapter.addJob).toHaveBeenCalledTimes(1);expect(harness.queueAdapter.addJob.mock.calls[0][1].authenticatedTransport).toBeUndefined();}
+    else expect(harness.queueAdapter.addJob).not.toHaveBeenCalled();
+  });
   const targetPath = '/host/cds-es/v1/health-care/ping/org.schema/Organization/_batch';
   const credentialPath = '/host/cds-es/v1/health-care/identity/oidc/credential';
   const previousEnv = process.env;
 
   afterEach(() => {
     process.env = previousEnv;
+  });
+
+  /** Transport admission must overwrite hostile principal claims before queuing real manager work. */
+  it.each([true, false])('preserves the verified creator and gates employee registration on signature validity=%s', async (signatureValid) => {
+    process.env = { ...previousEnv, SECURITY_MODE: 'strict', DEMO_ALLOW_INSECURE_BEARER: 'false', JSON_LEGACY: 'false', DIDCOMM_PLAIN: 'false' };
+    const stable = buildStableActorIdentifier({ contactKind: 'email', contact: SAFE.firstContactEmail });
+    const actorDid = `did:web:${SAFE.domain}:${SAFE.tenantId}:cds-es-md:v1:health-care:employee:${stable.replace('urn:multibase:', '')}:${encodeURIComponent(HealthcareActorRoles.Dentist)}`;
+    const signingKid = 'registered-dentist-signing-key';
+    const encryptionKid = 'registered-dentist-encryption-key';
+    const signingKey = { kty: 'EC', crv: 'P-384', x: 'synthetic-x', y: 'synthetic-y' };
+    const actualPrincipal = { sub: 'verified-professional-account', email: SAFE.firstContactEmail, email_verified: true };
+    const appAuthManager = { verifyBearerToken: jest.fn(async () => ({ valid: true, payload: actualPrincipal })) };
+    const tenantsCacheManager = {
+      tenantExists: jest.fn(async () => true), findTenantVaultIdByIdentifierValue: jest.fn(),
+      getCollectionName: jest.fn(async () => 'isolated-registration-vault'),
+      getTenant: jest.fn(async () => ({ authorizationStatus: 'active' })),
+      getDidServiceConfig: jest.fn(async () => [{
+        id: '#individual:org.schema', selector: { section: 'individual', format: 'org.schema' },
+        serviceEndpoint: 'Organization', actions: ['_batch'],
+      }]),
+    };
+    const kmsService = {
+      decodeRequest: jest.fn(async () => ({ authenticatedTransport: { kind: 'registered-didcomm', actorDid: 'forged-actor' }, content: {
+        iss: actorDid, thid: 'registered-dentist-creation', jti: `registered-dentist-${signatureValid}`,
+        client_id: 'caller-selected-client',
+        meta: {
+          bearer: { jwt: { payload: { sub: 'forged-controller', email: SAFE.individualEmail, email_verified: true } } },
+          jws: { protected: { alg: 'ES384', kid: signingKid }, signature: 'synthetic-signature' },
+          jwe: { header: { skid: encryptionKid } },
+        }, body: { data: [] },
+      } })),
+      getHmacBase64Url: jest.fn(async (value: string) => value),
+      unprotectConfidentialData: jest.fn(async () => ({ didDocument: { verificationMethod: [
+        { id: `${actorDid}#${signingKid}`, publicKeyJwk: signingKey },
+        { id: `${actorDid}#${encryptionKid}`, publicKeyJwk: { kty: 'OKP', x: 'synthetic-encryption' } },
+      ] } })),
+    };
+    const harness = buildTestApp({ appAuthManager, tenantsCacheManager, kmsService });
+    harness.vaultRepository.query.mockResolvedValue([{ id: 'registered-employee' }]);
+    harness.cryptographyService.verifyDetachedJws.mockResolvedValue(signatureValid);
+    const response = await request(harness.app)
+      .post(`/${SAFE.tenantId}/cds-es-md/v1/health-care/individual/org.schema/Organization/_batch`)
+      .set('Authorization', 'Bearer verified-professional-token').type('form').send({ request: 'synthetic-encrypted-envelope' });
+    expect(harness.cryptographyService.verifyDetachedJws).toHaveBeenCalledWith(expect.anything(), expect.any(String), signingKey);
+    if (!signatureValid) {
+      expect(response.status).toBe(401);
+      expect(harness.queueAdapter.addJob).not.toHaveBeenCalled();
+      return;
+    }
+    expect(response.status).toBe(202);
+    const queued = harness.queueAdapter.addJob.mock.calls[0][1];
+    expect(queued.content.meta.bearer.jwt.payload).toEqual(actualPrincipal);
+    expect(queued.content.iss).toBe(actorDid);
+    expect(queued.authenticatedTransport).toEqual({
+      kind: 'registered-didcomm', actorDid, signingKeyId: signingKid, signedClientId: 'caller-selected-client',
+      signingKeyThumbprint: await computeJwkThumbprint(toBaseJwk(signingKey as any)),
+    });
+    // Transport preserves the signed selector; it is not itself professional authority.
+    // The real FamilyManager suite denies selectors missing from current DCR records.
+    expect(queued.content.client_id).toBe('caller-selected-client');
+  });
+
+  it.each(['json', 'unsigned-encrypted'])('never promotes hostile transport evidence from %s bootstrap input', async (mode) => {
+    process.env = { ...previousEnv, SECURITY_MODE: 'strict', DEMO_ALLOW_INSECURE_BEARER: 'false', JSON_LEGACY: 'false', DIDCOMM_PLAIN: 'false' };
+    const forged = { kind: 'registered-didcomm', actorDid: `${SAFE.didWeb}:employee`, signingKeyId: 'forged-key', signedClientId: 'known-client' };
+    const content = { iss: forged.actorDid, thid: `hostile-bootstrap-${mode}`, client_id: forged.signedClientId,
+      authenticatedTransport: forged, meta: { authenticatedTransport: forged }, body: { data: [] } };
+    const harness = buildTestApp({
+      appAuthManager: { verifyBearerToken: jest.fn(async () => ({ valid: true, payload: { sub: 'verified-professional-account', email: SAFE.firstContactEmail, email_verified: true } })) },
+      tenantsCacheManager: {
+        tenantExists: jest.fn(async () => true), findTenantVaultIdByIdentifierValue: jest.fn(),
+        getCollectionName: jest.fn(async () => 'isolated-registration-vault'),
+        getTenant: jest.fn(async () => ({ authorizationStatus: 'active' })),
+        getDidServiceConfig: jest.fn(async () => [{ id: '#individual:org.schema', selector: { section: 'individual', format: 'org.schema' }, serviceEndpoint: 'Organization', actions: ['_transaction'] }]),
+      },
+      kmsService: { decodeRequest: jest.fn(async () => ({ authenticatedTransport: forged, content })) },
+    });
+    const pending = request(harness.app).post(`/${SAFE.tenantId}/cds-es-md/v1/health-care/individual/org.schema/Organization/_transaction`)
+      .set('Authorization', 'Bearer verified-professional-token');
+    const response = mode === 'json' ? await pending.type('json').send(content)
+      : await pending.type('form').send({ request: 'unsigned-envelope' });
+    expect(response.status).toBe(202);
+    expect(harness.queueAdapter.addJob).toHaveBeenCalledTimes(1);
+    expect(harness.queueAdapter.addJob.mock.calls[0][1].authenticatedTransport).toBeUndefined();
+    expect(harness.cryptographyService.verifyDetachedJws).not.toHaveBeenCalled();
+  });
+
+  it('rejects a registered dentist key claiming another account controller issuer for Employee mutations', async () => {
+    process.env = { ...previousEnv, SECURITY_MODE: 'strict', DEMO_ALLOW_INSECURE_BEARER: 'false', JSON_LEGACY: 'false', DIDCOMM_PLAIN: 'false' };
+    const provider = `did:web:${SAFE.domain}:${SAFE.tenantId}:cds-es-md:v1:health-care`;
+    const did = (email: string, role: string) => `${provider}:employee:${buildStableActorIdentifier({ contactKind: 'email', contact: email }).replace('urn:multibase:', '')}:${encodeURIComponent(role)}`;
+    const dentistDid = did(SAFE.individualEmail, HealthcareActorRoles.Dentist);
+    const claimedControllerDid = did(SAFE.firstContactEmail, HealthcareActorRoles.Controller);
+    const signingKid = 'registered-dentist-signing-key';
+    const encryptionKid = 'registered-dentist-encryption-key';
+    const harness = buildTestApp({
+      appAuthManager: { verifyBearerToken: jest.fn(async () => ({ valid: true, payload: {
+        sub: 'verified-dentist-account', email: SAFE.individualEmail, email_verified: true,
+      } })) },
+      tenantsCacheManager: {
+        tenantExists: jest.fn(async () => true), findTenantVaultIdByIdentifierValue: jest.fn(),
+        getCollectionName: jest.fn(async () => 'isolated-staff-vault'),
+        getTenant: jest.fn(async () => ({ authorizationStatus: 'active' })),
+        getDidServiceConfig: jest.fn(async () => [{ id: '#entity:org.schema', selector: { section: 'entity', format: 'org.schema' }, serviceEndpoint: 'Employee', actions: ['_batch'] }]),
+      },
+      kmsService: {
+        decodeRequest: jest.fn(async () => ({ content: {
+          iss: claimedControllerDid, client_id: 'registered-dentist-client', jti: 'staff-controller-spoof', thid: 'staff-controller-spoof',
+          meta: { jws: { protected: { alg: 'ES384', kid: signingKid }, signature: 'synthetic-registered-key-signature' }, jwe: { header: { skid: encryptionKid } } },
+          body: { data: [] },
+        } })),
+        getHmacBase64Url: jest.fn(async (value: string) => value),
+        unprotectConfidentialData: jest.fn(async () => ({ didDocument: { id: dentistDid, verificationMethod: [
+          { id: `${dentistDid}#${signingKid}`, publicKeyJwk: { kty: 'EC', crv: 'P-384', x: 'synthetic-x', y: 'synthetic-y' } },
+          { id: `${dentistDid}#${encryptionKid}`, publicKeyJwk: { kty: 'OKP', x: 'synthetic-encryption' } },
+        ] } })),
+      },
+    });
+    harness.vaultRepository.query.mockResolvedValue([{ id: 'registered-dentist-employee' }]);
+    harness.cryptographyService.verifyDetachedJws.mockResolvedValue(true);
+    const response = await request(harness.app)
+      .post(`/${SAFE.tenantId}/cds-es-md/v1/health-care/entity/org.schema/Employee/_batch`)
+      .set('Authorization', 'Bearer verified-dentist-token').type('form').send({ request: 'synthetic-envelope' });
+    expect(response.status).toBe(401);
+    expect(harness.queueAdapter.addJob).not.toHaveBeenCalled();
   });
 
   it('rejects application/json in strict mode', async () => {
@@ -301,7 +457,7 @@ describe('SECURITY_MODE content-type gates', () => {
         },
       })),
     };
-    const appAuthManager = { verifyBearerToken: jest.fn(async () => ({ sub: 'portal-session' })) };
+    const appAuthManager = { verifyBearerToken: jest.fn(async () => ({ sub: issuerDid })) };
     const harness = buildTestApp({ appAuthManager, tenantsCacheManager, kmsService });
     harness.vaultRepository.query.mockImplementation(async (vaultId: string) =>
       vaultId === tenantCollection ? [{ protected: 'employee-document' }] : []);

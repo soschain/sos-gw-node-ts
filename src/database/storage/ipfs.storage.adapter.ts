@@ -1,9 +1,9 @@
 // src/database/storage/ipfs.storage.adapter.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
-import { HttpRequestMethods } from 'gdc-common-utils-ts/constants/http';
+import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 
 import { sha3_384 } from '@noble/hashes/sha3.js';
-import { encodeMultibase58btc } from 'gdc-common-utils-ts/utils/multibase58';
+import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
 import { appendStorageTrace, isStorageTraceEnabled } from '../../utils/storage-trace';
 import { DownloadResult, IStorageAdapter, UploadResult } from './IStorageAdapter';
 
@@ -34,7 +34,7 @@ export function computeEncodedMultiHash(dataBytes: Uint8Array): string {
   const multihashBytes = new Uint8Array(SHA3_384_MULTIHASH_PREFIX.length + digest.length);
   multihashBytes.set(SHA3_384_MULTIHASH_PREFIX);
   multihashBytes.set(digest, SHA3_384_MULTIHASH_PREFIX.length);
-  return encodeMultibase58btc(multihashBytes);
+  return encodeBase58btc(multihashBytes);
 }
 
 function buildMfsPath(mfsRoot: string, encodedMultiHash: string): string {

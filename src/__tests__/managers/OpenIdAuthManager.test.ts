@@ -9,7 +9,7 @@
 import { OpenIdAuthManager } from '../../managers/OpenIdAuthManager';
 import { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import { TenantsCacheManager } from '../../managers/TenantsCacheManager';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import {
   testConsentRulePermitEmailWildcardRole,
@@ -32,13 +32,10 @@ import { ClaimInterTenantAccessContract } from 'gdc-common-utils-ts/models/inter
 import { buildInterTenantAccessContractCredential } from 'gdc-common-utils-ts/utils/inter-tenant-access-contract';
 import { buildClientAssertionFixture, buildClientAssertionJwt } from 'gdc-common-utils-ts/utils/client-assertion';
 import { addVC, createVP } from 'gdc-common-utils-ts/utils/vp-token';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
-import {
-  HealthcareActorRoles,
-  getHealthcareRoleByClaim,
-  HealthcareBasicSections,
-  HealthcareConsentPurposes,
-} from 'gdc-common-utils-ts/constants/healthcare';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
+import { HealthcareActorRoles, getHealthcareRoleByClaim } from 'sos-data-utils-ts/healthcare-roles';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { buildSmartCompositionReadScope } from 'gdc-common-utils-ts/utils/smart-scope';
 import {
   buildUnsignedIndividualControllerIdentityVpJwt,
@@ -68,15 +65,12 @@ import {
 import {
   IdentityAuthResourceTypes,
   SmartPostDcrActions,
-} from 'gdc-common-utils-ts/constants/identity-auth';
-import {
-  GatewayRouteFormats,
-  GatewayRouteSections,
-} from 'gdc-common-utils-ts/constants/gateway-response';
-import { DeviceBindingStatuses } from 'gdc-common-utils-ts/constants/device';
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+} from 'sos-data-utils-ts/identity-auth-wire-contract';
+import { GatewayRouteFormats, GatewayRouteSections } from 'sos-data-utils-ts/gateway-response-contract';
+import { DeviceBindingStatuses } from 'sos-data-utils-ts/device-license-contract';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { EXAMPLE_DEVICE_BOUND_SMART_DIDCOMM_MESSAGE } from 'gdc-common-utils-ts/examples/didcomm-identity';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { decodeJwt } from 'jose';
 import {
   RESEARCH_STUDY_ACCESS_FIXTURE,
@@ -87,6 +81,7 @@ import {
   RESEARCH_STUDY_SECTION,
 } from '../../managers/ResearchStudyConsentManager';
 import { getIndividualSectionId } from '../../utils/individual-sections';
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { parseProfessionalDidIdentity } from '../../utils/professional-did-identity';
 import { LICENSE_USER_CLASS_INDIVIDUAL } from '../../constants/domain';
 import {
@@ -511,7 +506,7 @@ describe('OpenIdAuthManager', () => {
     const memberPhone = '+34600111222';
     const role = 'v3-RoleCode|RESPRSN';
     const actorDid = `did:web:api.acme.org:family:${actorId}:${role}`;
-    const allergySection = HealthcareBasicSections.AllergiesAndIntolerances.attributeValue;
+    const allergySection = HealthcareCoreSections.AllergiesAndIntolerances.attributeValue;
     const requestedScope = buildSmartCompositionReadScope({ subjectDid, sections: '*' });
     const vpToken = buildUnsignedIndividualMemberIdentityVpJwt({
       clientId: actorDid,
@@ -747,7 +742,7 @@ describe('OpenIdAuthManager', () => {
     expect(response.body.access_token).toContain('.sig');
     expect(response.body.scope).toBe(buildSmartCompositionReadScope({
       subjectDid: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid,
-      sections: HealthcareBasicSections.AllergiesAndIntolerances.attributeValue,
+      sections: HealthcareCoreSections.AllergiesAndIntolerances.attributeValue,
     }));
     expect(response.body.scope).not.toContain('section=*');
     expect(response.body.ledger_verified).toBe(true);
@@ -3142,7 +3137,7 @@ describe('OpenIdAuthManager', () => {
             id,
             status: DeviceBindingStatuses.Active,
             content: {
-              claims: { [ClaimsOrganizationSchemaorg.sameAs]: publicCardDid },
+              claims: { [SchemaOrgOrganizationClaim.SameAs]: publicCardDid },
             },
           };
         }
@@ -3355,7 +3350,7 @@ describe('OpenIdAuthManager', () => {
             id,
             status: DeviceBindingStatuses.Active,
             content: {
-              claims: { [ClaimsOrganizationSchemaorg.sameAs]: requestedSubjectDid },
+              claims: { [SchemaOrgOrganizationClaim.SameAs]: requestedSubjectDid },
             },
           };
         }
@@ -3431,7 +3426,7 @@ describe('OpenIdAuthManager', () => {
     });
     const differentActorIdentifier = buildStableActorIdentifier({
       contactKind: 'email',
-      contact: EXAMPLE_ACCOUNT_OWNER_ID,
+      contact: SAFE.individualEmail,
     });
     const fixture = await buildClientAssertionFixture({ clientId, audience: issuerDid });
     const deviceProfile = {
@@ -3544,7 +3539,7 @@ describe('OpenIdAuthManager', () => {
             id,
             status: DeviceBindingStatuses.Active,
             content: {
-              claims: { [ClaimsOrganizationSchemaorg.sameAs]: `${EXAMPLE_SUBJECT_DID}:owned-card` },
+              claims: { [SchemaOrgOrganizationClaim.SameAs]: `${EXAMPLE_SUBJECT_DID}:owned-card` },
             },
           };
         }

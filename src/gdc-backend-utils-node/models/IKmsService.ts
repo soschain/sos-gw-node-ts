@@ -1,12 +1,12 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: crypto-ts/interfaces/IKmsService.ts
 
-import { JwkSet, JWK } from 'gdc-common-utils-ts/models/jwk';
-import { JwsMultiSign } from 'gdc-common-utils-ts/models/jws';
-import { ParameterData } from 'gdc-common-utils-ts/models/params'; // extends ParamAttribute with `type` and others.
-import { ConfidentialStorageDoc, IndexedAttribute } from 'gdc-common-utils-ts/models/confidential-storage';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { MlkemPublicJwk, PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import { JwkSet, JWK } from 'antifraud-data-utils-ts/cryptography';
+import { JwsMultiSign } from 'antifraud-data-utils-ts/cryptography';
+import type { GatewayParameterData } from 'sos-data-utils-ts/gateway-parameter-contract'; // extends the owned scalar attribute contract.
+import { ConfidentialStorageDoc, IndexedAttribute } from 'sos-data-utils-ts/confidential-storage';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { MlkemPublicJwk, PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 
 export type SigningPurpose = 'comm_sig' | 'vc_sign';
 
@@ -218,9 +218,9 @@ export interface IKmsService {
    * This is used to create the `indexed` array for a `ConfidentialStorageDoc`.
    * The implementation MUST use domain separation based on the attribute `type` to prevent collisions.
    *
-   * @param attributes The array of plaintext `ParameterData` objects.
+   * @param attributes The array of plaintext `GatewayParameterData` objects.
    * @param entityVaultId The security context for key selection.
    * @returns A promise that resolves to the array of protected `IndexedAttribute` objects, ready for storage.
    */
-  protectAttributesNameAndValue(attributes: ParameterData[], entityVaultId: string): Promise<IndexedAttribute[]>;
+  protectAttributesNameAndValue(attributes: GatewayParameterData[], entityVaultId: string): Promise<IndexedAttribute[]>;
 }

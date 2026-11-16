@@ -1,4 +1,5 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { resolveHostPhysicalCollectionName } from '../../../config/storage-layout';
 // TDD contract: family route fixtures either carry a complete valid signature or make no signature claim.
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
@@ -8,24 +9,19 @@ import { createApiRouter } from '../../../routes/api';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { AsyncResponseStoreMem } from '../../../adapters/async-response-store.mem';
-import { CryptographyService } from 'gdc-common-utils-ts/CryptographyService';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { AdapterCryptoSdkNode } from '../../../gdc-backend-utils-node/adapters/node/crypto';
 import { mockKmsService } from '../../mocks/kms.mock';
 import { HostingManager } from '../../../managers/HostingManager';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { generateTenantCollectionNameFromClaims } from '../../../utils/tenant';
 import { testClaimsHostInitialization } from '../../data/end-to-end.data';
 import { ORGANIZATION_ORDER_JOB, ORGANIZATION_REGISTRATION_JOB } from '../../data/example-jobs';
-import {
-  ClaimsOfferSchemaorg,
-  ClaimsOrderSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { getClaimValue } from '../../../utils/claims';
 import { withCanonicalEntryClaims } from '../../helpers/canonical-bundle-entry';
 import { FAMILY_REGISTRATION_REQUEST, withoutIncompleteJwsProof } from '../../data/example-payloads';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { IStorageAdapter } from '../../../database/storage/IStorageAdapter';
 import { ILogger } from '../../../loggers/ILogger';
 import { testTenant1TenantId } from '../../data/organization.data';
@@ -149,7 +145,7 @@ describe('[/individual/org.schema/Organization/_batch] Integration Tests (sandbo
       hostExternalDomain: 'host.example.com',
       apiBaseUrl: 'http://host.example.com',
       namespace: 'test-namespace',
-      sectorsAllowed: [Sector.HEALTH_CARE, Sector.SYSTEM, Sector.TEST],
+      sectorsAllowed: [GatewaySector.HEALTH_CARE, GatewaySector.SYSTEM, GatewaySector.TEST],
       dbProvider: 'mem',
       queueProvider: 'mem',
       storageProvider: 'mem',
@@ -188,14 +184,14 @@ describe('[/individual/org.schema/Organization/_batch] Integration Tests (sandbo
     // These canonical fixtures contain nested mutable claims. A shallow copy leaks
     // accepted offer identifiers across tests and can make tenant activation order-dependent.
     const regJob = structuredClone(ORGANIZATION_REGISTRATION_JOB);
-    regJob.sector = Sector.HEALTH_CARE;
+    regJob.sector = GatewaySector.HEALTH_CARE;
     regJob.jurisdiction = 'es';
     regJob.content = {
       ...regJob.content,
       body: {
         ...regJob.content!.body,
         data: regJob.content!.body!.data.map((entry: any) => withCanonicalEntryClaims(entry, {
-          [ClaimsServiceSchemaorg.category]: Sector.HEALTH_CARE,
+          [SchemaOrgServiceClaim.Category]: GatewaySector.HEALTH_CARE,
         })),
       },
     } as any;
@@ -203,18 +199,18 @@ describe('[/individual/org.schema/Organization/_batch] Integration Tests (sandbo
     expect(offerPayload.body.data[0]).toMatchObject({ response: { status: '201' } });
     const offerId = getClaimValue<string>(
       offerPayload.body.data[0].resource?.meta?.claims || {},
-      ClaimsOfferSchemaorg.identifier,
+      SchemaOrgOfferClaim.Identifier,
     );
     expect(offerId).toBeDefined();
     const orderJob = structuredClone(ORGANIZATION_ORDER_JOB);
-    orderJob.sector = Sector.HEALTH_CARE;
+    orderJob.sector = GatewaySector.HEALTH_CARE;
     orderJob.jurisdiction = 'es';
     orderJob.content!.body!.data[0] = withCanonicalEntryClaims(orderJob.content!.body!.data[0]!, {
-      [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
+      [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
     });
     const orderPayload = await hostingManager.process(orderJob);
     expect(orderPayload.body.data[0]).toMatchObject({ response: { status: '201' } });
-    await tenantsCacheManager.refreshTenant(getTenantVaultId(Sector.HEALTH_CARE, testTenant1TenantId));
+    await tenantsCacheManager.refreshTenant(getTenantVaultId(GatewaySector.HEALTH_CARE, testTenant1TenantId));
 
     const asyncResponseStore = new AsyncResponseStoreMem();
     const crypto = new CryptographyService(new AdapterCryptoSdkNode());
@@ -248,7 +244,7 @@ describe('[/individual/org.schema/Organization/_batch] Integration Tests (sandbo
 	      sequence: 0,
 	      createdAtTimestamp: Date.now(),
 	      tenantId,
-	      sector: Sector.HEALTH_CARE,
+	      sector: GatewaySector.HEALTH_CARE,
 	      section: 'individual',
 	      format: 'org.schema',
 	      action: '_batch',
@@ -290,7 +286,7 @@ describe('[/individual/org.schema/Organization/_batch] Integration Tests (sandbo
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_transaction',
@@ -332,7 +328,7 @@ describe('[/individual/org.schema/Organization/_batch] Integration Tests (sandbo
       sequence: 0,
       createdAtTimestamp: Date.now(),
       tenantId,
-      sector: Sector.HEALTH_CARE,
+      sector: GatewaySector.HEALTH_CARE,
       section: 'individual',
       format: 'org.schema',
       action: '_purge',
@@ -343,10 +339,10 @@ describe('[/individual/org.schema/Organization/_batch] Integration Tests (sandbo
           data: [{
             type: 'Family-purge-request-v1.0',
             resource: { meta: { claims: {
-                [ClaimsOrganizationSchemaorg.ownerTelephone]: '+34600000001',
-                [ClaimsOrganizationSchemaorg.ownerEmail]: 'parent@example.com',
-                [ClaimsOrganizationSchemaorg.alternateName]: 'Ana',
-                [ClaimsServiceSchemaorg.category]: Sector.HEALTH_CARE,
+                [SchemaOrgOrganizationClaim.OwnerTelephone]: SAFE.phoneE164,
+                [SchemaOrgOrganizationClaim.OwnerEmail]: 'parent@example.com',
+                [SchemaOrgOrganizationClaim.AlternateName]: 'Ana',
+                [SchemaOrgServiceClaim.Category]: GatewaySector.HEALTH_CARE,
               } } },
           }],
         },

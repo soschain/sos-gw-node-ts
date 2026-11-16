@@ -1,13 +1,13 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/routes/handlers/fhir/FhirController.ts
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 import { Request, Response, Router } from 'express';
 import { IAuthorizationManager } from '../../../managers/auth/IAuthorizationManager';
 import { QueueAdapter } from '../../../adapters/queue';
-import { IAccessTokenClaims } from 'gdc-common-utils-ts/models/auth';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
+import { ClientAccessTokenClaims as IAccessTokenClaims } from 'antifraud-data-utils-ts/openid-contracts';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { validOrNewUuidv4 } from '../../../utils/uuid';
 import { SUBJECT_SECTION_INDIVIDUAL } from '../../../constants/domain';
 import { v4 as uuidv4 } from 'uuid';

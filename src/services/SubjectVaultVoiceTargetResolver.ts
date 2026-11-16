@@ -1,11 +1,11 @@
-import type { ConfidentialStorageDoc } from 'gdc-common-utils-ts/models/confidential-storage';
-import { ClaimsPersonSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService.js';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository.js';
 import { normalizePhoneNumber } from '../utils/phone-number.js';
 import { getEnvSectionId } from '../utils/section-env.js';
 import { getTenantVaultId } from '../utils/tenant.js';
-import { normalizeUuid } from 'gdc-common-utils-ts';
+import { normalizeUuid } from 'antifraud-data-utils-ts/organization-identity';
 import type { ReminderRouteContext, VoiceTargetResolver } from './UhcReminderDaemon.js';
 
 const INDIVIDUAL_SECTION = getEnvSectionId('individual');
@@ -55,7 +55,7 @@ function extractPhoneFromClaims(claims: Record<string, unknown>): string | undef
   const candidates = [
     claimString(claims, 'org.schema.Organization.telephone'),
     claimString(claims, 'org.schema.Organization.owner.telephone'),
-    claimString(claims, ClaimsPersonSchemaorg.telephone),
+    claimString(claims, SchemaOrgPersonClaim.Telephone),
     claimString(claims, 'telephone'),
     claimString(claims, 'phone'),
     claimString(claims, 'mobile'),
@@ -86,7 +86,7 @@ function matchesSubject(entity: any, subjectTokens: Set<string>, containerId?: s
   pushToken(candidateTokens, containerId);
   pushToken(candidateTokens, didDocumentId);
   pushToken(candidateTokens, internalId);
-  pushToken(candidateTokens, claimString(claims, ClaimsPersonSchemaorg.identifier));
+  pushToken(candidateTokens, claimString(claims, SchemaOrgPersonClaim.Identifier));
   pushToken(candidateTokens, claimString(claims, 'org.schema.Organization.identifier.value'));
   pushToken(candidateTokens, claimString(claims, 'org.schema.Organization.identifier'));
   pushToken(candidateTokens, claimString(claims, 'identifier'));

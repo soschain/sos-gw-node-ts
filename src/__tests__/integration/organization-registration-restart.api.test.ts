@@ -15,13 +15,7 @@
  * pending record and original Offer remain authoritative.
  */
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import {
-  ClaimsIndividualProductSchemaorg,
-  ClaimsOfferSchemaorg,
-  ClaimsOrderSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { VaultMemRepository } from '../../database/repositories/vault/vault.mem.repository';
 import { getEnvSectionId } from '../../utils/section-env';
 import { getTenantVaultId } from '../../utils/tenant';
@@ -74,12 +68,12 @@ describe('organization registration continuation across local GW restart', () =>
     await initial.queueAdapter.waitForEmptyQueue();
     const firstPoll = await pollJsonBody(initial.app, firstSubmit.headers.location, firstTransaction.thid);
     const firstClaims = firstPoll.body.data[0].resource.meta.claims;
-    const offerId = String(firstClaims[ClaimsOfferSchemaorg.identifier] || '');
+    const offerId = String(firstClaims[SchemaOrgOfferClaim.Identifier] || '');
     expect(offerId).toContain(':Offer:');
 
     const vaultId = getTenantVaultId(
-      firstClaims[ClaimsServiceSchemaorg.category],
-      firstClaims[ClaimsOrganizationSchemaorg.alternateName],
+      firstClaims[SchemaOrgServiceClaim.Category],
+      firstClaims[SchemaOrgOrganizationClaim.AlternateName],
     );
     const beforeRestart = await repository.get<any>(initial.hostCollectionName, vaultId, getEnvSectionId('tenants'));
     const historicalPending = await initial.kmsService.unprotectConfidentialData<any>(beforeRestart!, 'host');
@@ -103,7 +97,7 @@ describe('organization registration continuation across local GW restart', () =>
     expect(replaySubmit.status).toBe(202);
     await restarted.queueAdapter.waitForEmptyQueue();
     const replayPoll = await pollJsonBody(restarted.app, replaySubmit.headers.location, replayTransaction.thid);
-    expect(replayPoll.body.data[0].resource.meta.claims[ClaimsOfferSchemaorg.identifier]).toBe(offerId);
+    expect(replayPoll.body.data[0].resource.meta.claims[SchemaOrgOfferClaim.Identifier]).toBe(offerId);
 
     const afterRestart = await repository.get<any>(restarted.hostCollectionName, vaultId, getEnvSectionId('tenants'));
     const resumedPending = await restarted.kmsService.unprotectConfidentialData<any>(afterRestart!, 'host');
@@ -114,9 +108,9 @@ describe('organization registration continuation across local GW restart', () =>
     const order = structuredClone(ORGANIZATION_ORDER_REQUEST) as any;
     order.body.data[0].meta = {};
     order.body.data[0].resource = { meta: { claims: {
-      [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
-      [ClaimsOrderSchemaorg.paymentMethod]: 'Stripe',
-      [ClaimsOrderSchemaorg.partOfInvoice]: 'restart-contract-invoice',
+      [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
+      [SchemaOrgOrderClaim.PaymentMethod]: 'Stripe',
+      [SchemaOrgOrderClaim.PartOfInvoice]: 'restart-contract-invoice',
     } } };
     const orderSubmit = await invokeExpress(restarted.app, {
       method: 'POST',
@@ -128,7 +122,7 @@ describe('organization registration continuation across local GW restart', () =>
     await restarted.queueAdapter.waitForEmptyQueue();
     const orderPoll = await pollJsonBody(restarted.app, orderSubmit.headers.location, order.thid);
     expect(orderPoll.body.data[0].response.status).toBe('201');
-    expect(orderPoll.body.data[0].resource.meta.claims[ClaimsOrderSchemaorg.acceptedOfferIdentifier]).toBe(offerId);
-    expect(orderPoll.body.data[0].resource.meta.claims[ClaimsIndividualProductSchemaorg.serialNumber]).toBeTruthy();
+    expect(orderPoll.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier]).toBe(offerId);
+    expect(orderPoll.body.data[0].resource.meta.claims[SchemaOrgIndividualProductClaim.SerialNumber]).toBeTruthy();
   });
 });

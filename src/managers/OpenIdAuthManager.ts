@@ -1,15 +1,15 @@
 // src/managers/OpenIdAuthManager.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/fhir-resource-types';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 import { IJobProcessor } from './registry';
-import { JobRequest } from 'gdc-common-utils-ts/models/confidential-job';
-import { IDecodedDidcommPayload } from 'gdc-common-utils-ts/models/confidential-message';
+import { JobRequest } from 'sos-data-utils-ts/confidential-job';
+import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import type { ITenantsManager } from './ITenantsManager';
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { Content } from 'antifraud-data-utils-ts/cryptography';
 import { getTenantVaultId } from '../utils/tenant';
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { getClaimValue } from '../utils/claims';
@@ -23,16 +23,15 @@ import { getMatchingInterTenantAccessContractFromVpToken } from 'gdc-common-util
 import { getMatchingSubjectIdentityBindingFromVpToken } from 'gdc-common-utils-ts/utils/subject-identity-binding';
 import { calculateJwkThumbprint, compactVerify, decodeProtectedHeader, importJWK, type JWK } from 'jose';
 import { getEnvSectionId } from '../utils/section-env';
-import { ServiceCapability } from 'gdc-common-utils-ts/constants/service-capabilities';
-import {
-  HealthcareActorRoleCodes,
-  HealthcareConsentPurposes,
-} from 'gdc-common-utils-ts/constants/healthcare';
-import { deriveGrantedSmartScopes } from 'gdc-common-utils-ts/utils/smart-scope';
-import { ClaimConsent, ConsentDecisions, ConsentStatuses, type ConsentRule } from 'gdc-common-utils-ts/models/consent-rule';
+import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
+import { HealthcareActorRoleCodes } from 'sos-data-utils-ts/healthcare-roles';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
+import { deriveGrantedSmartScopes } from 'sos-data-utils-ts/consent-smart-scopes';
+import type { ConsentRule } from 'fhir-data-utils-ts';
+import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'fhir-data-utils-ts';
 import { getMatchingIndividualMemberCredentialFromVpToken } from 'gdc-common-utils-ts/utils/individual-smart';
 import { getMatchingProfessionalCredentialFromVpToken } from 'gdc-common-utils-ts/utils/professional-smart';
-import type { DeviceLicense } from 'gdc-common-utils-ts/models/device-license';
+import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { getOrCreateDigitalTwinSubjectId } from '../utils/digital-twin-research-projection';
 import { getMatchingIndividualControllerCredentialFromVpToken } from '../utils/individual-controller-smart';
 import { parseTenantUrn } from '../utils/urn';
@@ -52,7 +51,7 @@ import {
   type ResearchStudyConsentRecord,
 } from './ResearchStudyConsentManager';
 import { getClinicalCreatorBindingsSectionId } from '../utils/clinical-creator-binding';
-import type { ClinicalCreatorBinding } from 'gdc-common-utils-ts/utils/fhir-ips-creator-identity';
+import type { ClinicalCreatorBinding } from 'sos-data-utils-ts/clinical-creator-contract';
 import { readClaimsOnlyContent, type FlatClaims } from '../utils/fhir-flat-claims';
 import {
   LICENSE_STATUS_ACTIVE,
@@ -61,11 +60,11 @@ import {
 } from '../constants/domain';
 import { isIso3166CountryCode, isIso3166SubdivisionForCountry } from 'vet-data-utils-ts/iso-jurisdictions';
 import { jurisdictionGrantCovers } from 'sos-data-utils-ts/professional-access-policy';
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { normalizePublicAliasList } from 'gdc-common-utils-ts/utils/same-as';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { normalizePublicAliasList } from 'antifraud-data-utils-ts/public-aliases';
 import { getAuthenticatedJobActorIdentifiers } from '../utils/authenticated-job-actor';
 import { normalizeIndexedEmail, normalizeIndexedPhone } from '../utils/indexed-contact';
-import { buildStableActorIdentifier } from 'gdc-common-utils-ts/utils/actor-identifier';
+import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 
 type TokenRequestBody = {
   client_id?: string;
@@ -730,7 +729,7 @@ export class OpenIdAuthManager implements IJobProcessor {
       const aliases = candidateClaims
         && typeof candidateClaims === 'object'
         && !Array.isArray(candidateClaims)
-        ? normalizePublicAliasList(candidateClaims[ClaimsOrganizationSchemaorg.sameAs])
+        ? normalizePublicAliasList(candidateClaims[SchemaOrgOrganizationClaim.SameAs])
         : [];
       return aliases.includes(requestedSubjectDid);
     };

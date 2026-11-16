@@ -10,13 +10,7 @@ import {
   stopStoryServer,
 } from './helpers/story-flow';
 import { invokeExpress } from './helpers/invokeExpress';
-import {
-  ClaimsIndividualProductSchemaorg,
-  ClaimsOfferSchemaorg,
-  ClaimsOrderSchemaorg,
-  ClaimsOrganizationSchemaorg,
-  ClaimsServiceSchemaorg,
-} from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   FAMILY_ORDER_REQUEST,
   FAMILY_REGISTRATION_TRANSACTION_REQUEST,
@@ -52,16 +46,16 @@ describe('Family transaction Offer/Order route story', () => {
     registrationPayload.jti = 'family-transaction-story-jti';
     const familyClaims = {
       ...(registrationPayload.body.data[0].resource?.meta?.claims || {}),
-      [ClaimsOrganizationSchemaorg.alternateName]: 'ana-story',
-      [ClaimsOrganizationSchemaorg.identifier]: `urn:uuid:${EXAMPLE_KYC_CONTROLLER_UUID}`,
-      [ClaimsOrganizationSchemaorg.identifierValue]: EXAMPLE_KYC_CONTROLLER_UUID,
-      [ClaimsOrganizationSchemaorg.ownerEmail]: 'adult1@example.com',
-      [ClaimsOrganizationSchemaorg.ownerIdentifierValue]: EXAMPLE_KYC_CONTROLLER_UUID,
-      [ClaimsServiceSchemaorg.category]: 'health-care',
+      [SchemaOrgOrganizationClaim.AlternateName]: 'ana-story',
+      [SchemaOrgOrganizationClaim.IdentifierReference]: `urn:uuid:${EXAMPLE_KYC_CONTROLLER_UUID}`,
+      [SchemaOrgOrganizationClaim.IdentifierValue]: EXAMPLE_KYC_CONTROLLER_UUID,
+      [SchemaOrgOrganizationClaim.OwnerEmail]: 'adult1@example.com',
+      [SchemaOrgOrganizationClaim.OwnerIdentifierValue]: EXAMPLE_KYC_CONTROLLER_UUID,
+      [SchemaOrgServiceClaim.Category]: 'health-care',
     };
     // An individual has no required country. The Offer jurisdiction/network
     // must be taken from `/cds-es/`, even when this claim is absent.
-    delete familyClaims[ClaimsOrganizationSchemaorg.addressCountry];
+    delete familyClaims[SchemaOrgOrganizationClaim.AddressCountry];
     registrationPayload.body.data[0] = withCanonicalEntryClaims(
       registrationPayload.body.data[0],
       familyClaims,
@@ -84,7 +78,7 @@ describe('Family transaction Offer/Order route story', () => {
     expect(transactionPoll.status).toBe(200);
 
     const registrationEntry = transactionPoll.body.data[0];
-    const offerId = String(registrationEntry.resource?.meta?.claims?.[ClaimsOfferSchemaorg.identifier] || '');
+    const offerId = String(registrationEntry.resource?.meta?.claims?.[SchemaOrgOfferClaim.Identifier] || '');
 
     expect(registrationEntry.response.status).toBe('201');
     // The route, not an individual address claim, selects the Offer network.
@@ -96,9 +90,9 @@ describe('Family transaction Offer/Order route story', () => {
     orderPayload.thid = 'family-order-story-thid';
     orderPayload.jti = 'family-order-story-jti';
     orderPayload.body.data[0] = withCanonicalEntryClaims(orderPayload.body.data[0], {
-      [ClaimsOrderSchemaorg.acceptedOfferIdentifier]: offerId,
-      [ClaimsOrderSchemaorg.paymentMethod]: EXAMPLE_LICENSE_PAYMENT_METHOD_STRIPE,
-      [ClaimsOrderSchemaorg.partOfInvoice]: EXAMPLE_LICENSE_INVOICE_ID,
+      [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
+      [SchemaOrgOrderClaim.PaymentMethod]: EXAMPLE_LICENSE_PAYMENT_METHOD_STRIPE,
+      [SchemaOrgOrderClaim.PartOfInvoice]: EXAMPLE_LICENSE_INVOICE_ID,
     });
 
     const orderSubmit = await invokeExpress(harness.app, {
@@ -118,8 +112,8 @@ describe('Family transaction Offer/Order route story', () => {
 
     const orderEntry = orderPoll.body.data[0];
     expect(orderEntry.response.status).toBe('201');
-    expect(orderEntry.resource?.meta?.claims?.[ClaimsOrderSchemaorg.acceptedOfferIdentifier]).toBe(offerId);
-    expect(orderEntry.resource?.meta?.claims?.[ClaimsIndividualProductSchemaorg.serialNumber])
+    expect(orderEntry.resource?.meta?.claims?.[SchemaOrgOrderClaim.AcceptedOfferIdentifier]).toBe(offerId);
+    expect(orderEntry.resource?.meta?.claims?.[SchemaOrgIndividualProductClaim.SerialNumber])
       .toEqual(expect.any(String));
 
     // A confirmed registration remains discoverable through its original
@@ -134,7 +128,7 @@ describe('Family transaction Offer/Order route story', () => {
       body: {
         data: [{
           type: 'Offer-search-request-v1.0',
-          resource: { meta: { claims: { [ClaimsOfferSchemaorg.identifier]: offerId } } },
+          resource: { meta: { claims: { [SchemaOrgOfferClaim.Identifier]: offerId } } },
         }],
       },
     };
@@ -179,6 +173,6 @@ describe('Family transaction Offer/Order route story', () => {
     const repeatedClaims = repeatedPoll.body.data[0].resource.meta.claims;
     const sharedFamilySearchClaims = EXAMPLE_FAMILY_ORGANIZATION_SEARCH_RESPONSE_BODY.body.data[0].resource.meta.claims;
     expect(Object.values(repeatedClaims)).toContain(Object.values(sharedFamilySearchClaims)[0]);
-    expect(repeatedClaims[ClaimsOfferSchemaorg.identifier]).toBe(offerId);
+    expect(repeatedClaims[SchemaOrgOfferClaim.Identifier]).toBe(offerId);
   });
 });

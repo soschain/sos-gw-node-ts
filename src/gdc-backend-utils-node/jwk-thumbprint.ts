@@ -1,8 +1,8 @@
 // src/crypto/jwk-thumbprint.ts
 // Minimal utilities for ML-KEM (OKP) and ML-DSA (AKP)
 
-import { Content } from "gdc-common-utils-ts/utils/content";
-import { BaseJwk, PublicJwk, MlkemCurve, MldsaAlg, MlkemPublicJwk, MldsaPublicJwk, EcBaseJwk } from "gdc-common-utils-ts/interfaces/Cryptography.types";
+import { Content } from 'antifraud-data-utils-ts/cryptography';
+import { BaseJwk, PublicJwk, MlkemCurve, MldsaAlg, MlkemPublicJwk, MldsaPublicJwk, EcBaseJwk } from 'antifraud-data-utils-ts/cryptography';
 
 /**
  * Creates a canonical string from a simple, flat JSON object as required by

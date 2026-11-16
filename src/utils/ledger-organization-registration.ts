@@ -1,10 +1,10 @@
-import { ManagerError } from 'gdc-common-utils-ts/utils/manager-error';
-import { IssueType } from 'gdc-common-utils-ts/models/issue';
-import { IncludedResource } from 'gdc-common-utils-ts/models/jsonapi';
-import { ClaimsOrganizationSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { PublicJwk } from 'gdc-common-utils-ts/interfaces/Cryptography.types';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { OrganizationConfig } from '../gdc-backend-utils-node/models/entity';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { PdfSignatureEvidence } from './pdf-evidence';
 import { ILogger } from '../loggers/ILogger';
 import { resolveOrganizationIdentityChannel } from './ledger';
@@ -112,7 +112,7 @@ export async function registerOrganizationOnLedger(params: {
   config: OrganizationConfig;
   evidence?: PdfSignatureEvidence[];
   role: 'host' | 'tenant';
-  sector: Sector;
+  sector: GatewaySector;
   jurisdiction?: string;
 }): Promise<void> {
   const mspId = params.ledgerConfig?.mspId || process.env.LEDGER_MSP_ID || process.env.HLF_MSP_ID_ORG1;
@@ -202,23 +202,23 @@ export async function upsertOrganizationSectorHostingBindingOnLedger(params: {
   organizationClaims: Record<string, unknown>;
   tenantDid?: string;
   providerDomain?: string;
-  sector: Sector | string;
+  sector: GatewaySector | string;
   jurisdiction?: string;
   status: 'validated' | 'revoked';
 }): Promise<void> {
   const identifierType = String(
-    params.organizationClaims[ClaimsOrganizationSchemaorg.identifierType] || '',
+    params.organizationClaims[SchemaOrgOrganizationClaim.IdentifierType] || '',
   ).trim();
   const identifierValue = String(
-    params.organizationClaims[ClaimsOrganizationSchemaorg.identifierValue] || '',
+    params.organizationClaims[SchemaOrgOrganizationClaim.IdentifierValue] || '',
   ).trim();
   const country = String(
-    params.organizationClaims[ClaimsOrganizationSchemaorg.addressCountry]
+    params.organizationClaims[SchemaOrgOrganizationClaim.AddressCountry]
       || params.jurisdiction
       || '',
   ).trim();
   const administrativeSublevel1 = String(
-    params.organizationClaims[ClaimsOrganizationSchemaorg.addressRegion] || '',
+    params.organizationClaims[SchemaOrgOrganizationClaim.AddressRegion] || '',
   ).trim() || undefined;
   const tenantDid = String(params.tenantDid || '').trim();
   if (!identifierType || !identifierValue || !country || !tenantDid) {

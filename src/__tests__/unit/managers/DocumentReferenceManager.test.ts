@@ -5,7 +5,7 @@
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
 import { DocumentReferenceManager } from '../../../managers/DocumentReferenceManager';
 import { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
-import { JobRequest, JobStatus } from 'gdc-common-utils-ts/models/confidential-job';
+import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { getIndividualSectionId } from '../../../utils/individual-sections';
 import { ClinicalEvidenceChaincode, resolveClinicalDataChannel } from '../../../utils/ledger';
 
