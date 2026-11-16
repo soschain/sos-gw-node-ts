@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Resolve queued actor DID identifier extraction from the neutral Antifraud
+  identity owner, preserving existing contact binding and rejection behavior.
+
 - Bind routed Organization R5 Consent operations to the verified current
   controller. Support full inactive PUT against the exact stored grant while
   preserving status-only PATCH, independent Group grants and stale-grant

@@ -317,3 +317,14 @@ nondeleting TypeScript passed. These are local authority/persistence controls,
 not Fabric, cloud authentication or an online lifecycle acceptance. The
 existing actor-DID extraction import still needs its neutral owner before
 independence promotion.
+
+## Stable actor DID extraction ownership
+
+Adopted the neutral Antifraud organization-identity extraction operation in the
+queued bearer-to-actor binding helper. The import change preserves the original
+regex behavior for bare-host and tenant employee DIDs; extraction alone grants
+no authority. Read-only provenance is
+https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/actor-identifier.ts;
+the actual historical installed module SHA256 is
+19c0eec47e06650ae872bf47f0c11858cff9d1b26658d130710db36305a13e74.
+No remote-main byte identity or completed gateway independence is claimed.
