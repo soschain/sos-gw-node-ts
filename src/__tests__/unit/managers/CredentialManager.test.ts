@@ -11,7 +11,7 @@ import { VaultMemRepository } from '../../../database/repositories/vault/vault.m
 import { IServerConfig } from '../../../config';
 import { testClaimsTenant1Receptionist1, testTenant1Receptionist1Email, testTenant1Receptionist1Urn } from '../../data/employee.data';
 import { MldsaPublicJwk } from 'antifraud-data-utils-ts/cryptography';
-import { ProofEBSIv2, VerifiableCredentialV2 } from '../../../gdc-backend-utils-node/models/verifiable-credential';
+import type { CredentialProof, VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
 import { JwsMultiSign } from 'antifraud-data-utils-ts/cryptography';
 import { testHostDidWeb, testHostDomain, testTenant1IdentifierUrn, testTenant1VaultId } from '../../data/organization.data';
 import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
@@ -113,7 +113,7 @@ describe('CredentialManager', () => {
       expect(vc.evidence?.[0]).toEqual(evidence);
 
       expect(vc.proof).toBeDefined();
-      expect((vc.proof as Array<ProofEBSIv2>)[0].verificationMethod).toBe(`${testHostDidWeb}#${mockHostPublicKey.kid}`);
+      expect((vc.proof as Array<CredentialProof>)[0].verificationMethod).toBe(`${testHostDidWeb}#${mockHostPublicKey.kid}`);
       expect(mockKmsService.signWithManagedKey).toHaveBeenCalledWith(expect.any(Uint8Array), 'host', undefined, 'vc_sign');
     });
   });
@@ -142,7 +142,7 @@ describe('CredentialManager', () => {
       expect(vc.evidence?.[0]).toEqual(evidence);
       
       expect(vc.proof).toBeDefined();
-      expect((vc.proof as Array<ProofEBSIv2>)[0].verificationMethod).toBe(`${testTenant1IdentifierUrn}#${mockTenantPublicKey.kid}`);
+      expect((vc.proof as Array<CredentialProof>)[0].verificationMethod).toBe(`${testTenant1IdentifierUrn}#${mockTenantPublicKey.kid}`);
       expect(mockKmsService.signWithManagedKey).toHaveBeenCalledWith(expect.any(Uint8Array), jobContext.tenantVaultId, undefined, 'vc_sign');
     });
 

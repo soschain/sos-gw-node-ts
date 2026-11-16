@@ -2,18 +2,12 @@ import type { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
 import type { VerificationMethod } from 'antifraud-data-utils-ts/did-document';
-import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
+import type { VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
 import {
-  ActivationCredentialTypes,
-  ContractCredentialTypes,
-  EnvironmentCredentialTypes,
-} from 'gdc-common-utils-ts/constants/verifiable-credentials';
-import {
+  ReviewedOrganizationCredentialTypes,
   canonicalizeOrganizationTestNetworkCredential,
-} from 'gdc-common-utils-ts/utils/organization-test-network-credential';
-import {
   canonicalizeTestNetworkOrganizationCredential,
-} from 'gdc-common-utils-ts/utils/test-network-organization-credentials';
+} from 'antifraud-data-utils-ts/organization-credentials';
 import { buildStableActorIdentifier, normalizeActorContact, type ActorContactInput } from 'antifraud-data-utils-ts/organization-identity';
 import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprints';
 import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
@@ -71,7 +65,7 @@ export async function verifyOrganizationTestNetworkCredential(
   const issuer = typeof credential.issuer === 'string'
     ? credential.issuer
     : String((credential.issuer as { id?: string } | undefined)?.id || '');
-  if (!credential.type.includes(ContractCredentialTypes.OrganizationTestNetworkCredential)) {
+  if (!credential.type.includes(ReviewedOrganizationCredentialTypes.Admission)) {
     fail('Unexpected organization Test Network credential type.');
   }
   if (!input.trustedIssuers.includes(issuer)) fail('Organization Test Network admission issuer is not trusted.');
@@ -209,9 +203,9 @@ async function verifyTestNetworkDomainCredentials(input: Readonly<{
   const credentials = input.credentials || [];
   if (credentials.length !== 3) fail('Test Network admission requires exactly three domain credentials.');
   const find = (type: string) => credentials.filter(credential => credential.type.includes(type));
-  const organization = find(ActivationCredentialTypes.OrganizationCredential);
-  const representative = find(ActivationCredentialTypes.LegalRepresentativeCredential);
-  const controller = find(ActivationCredentialTypes.ServiceControllerCredential);
+  const organization = find(ReviewedOrganizationCredentialTypes.Organization);
+  const representative = find(ReviewedOrganizationCredentialTypes.LegalRepresentative);
+  const controller = find(ReviewedOrganizationCredentialTypes.ServiceController);
   if (organization.length !== 1 || representative.length !== 1 || controller.length !== 1) {
     fail('Test Network admission requires Organization, LegalRepresentative and ServiceController credentials.');
   }
@@ -228,14 +222,20 @@ async function verifyTestNetworkDomainCredentials(input: Readonly<{
   if (representative[0].credentialSubject.sameAs !== representativeActor) {
     fail('Test Network LegalRepresentativeCredential does not match the reviewed representative.');
   }
-  if (controller[0].credentialSubject.owner?.sameAs !== controllerActor
-    || controller[0].credentialSubject.owner?.additionalType !== 'RESPRSN'
-    || controller[0].credentialSubject.owner?.hasCredential?.material
-      !== admissionSubject.controller?.hasCredential?.material) {
+  const owner = controller[0].credentialSubject.owner;
+  const ownerObject = owner !== null && typeof owner === 'object' ? owner : undefined;
+  const ownerSameAs = ownerObject && 'sameAs' in ownerObject ? ownerObject.sameAs : undefined;
+  const ownerRole = ownerObject && 'additionalType' in ownerObject ? ownerObject.additionalType : undefined;
+  const ownerCredential = ownerObject && 'hasCredential' in ownerObject ? ownerObject.hasCredential : undefined;
+  const ownerKeyMaterial = ownerCredential !== null && typeof ownerCredential === 'object' && 'material' in ownerCredential
+    ? ownerCredential.material : undefined;
+  if (ownerSameAs !== controllerActor
+    || ownerRole !== 'RESPRSN'
+    || ownerKeyMaterial !== admissionSubject.controller?.hasCredential?.material) {
     fail('Test Network ServiceControllerCredential does not match controller authority and key.');
   }
   for (const domainCredential of credentials) {
-    if (!domainCredential.type.includes(EnvironmentCredentialTypes.TestNetworkCredential)
+    if (!domainCredential.type.includes(ReviewedOrganizationCredentialTypes.TestNetwork)
       || domainCredential.issuer !== input.organizationTestNetworkCredential.issuer
       || !Array.isArray(domainCredential.evidence)
       || !(domainCredential.evidence as any[]).some(item => item?.id === pdfEvidenceId)) {

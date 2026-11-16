@@ -3,7 +3,7 @@
 
 import { GatewayDidDocument as DidDocument, GatewayDidService as DidService } from 'sos-data-utils-ts/gateway-did-profile';
 import { RecordBase, ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
+import type { VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
 import { EntityLifecycleStatus, NetworkAccessStatus, EntityType } from './enums';
 
 

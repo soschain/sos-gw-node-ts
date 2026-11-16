@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Use neutral Antifraud credential/proof models and W3C context, and resolve
+  organization review transcripts and type markers from their owned runtime.
+  Preserve signed JSON bytes, issuer/key/party bindings and existing denial
+  behavior while checking nested owner fields without an untyped assumption.
+
 - Use owned SOS Data parameter types, gateway response envelopes and complete
   logical collection mappings in KMS, employee/controller indexing and clinical
   fan-out. Preserve required scalar values, configured parameter extensions,

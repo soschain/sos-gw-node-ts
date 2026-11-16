@@ -37,7 +37,7 @@ import { ILogger } from '../loggers/ILogger';
 import type { IHostingTenantRegistry } from './IHostingTenantRegistry';
 import type { IHostRuntime } from './IHostRuntime';
 import { generateLicenseOffer } from '../utils/offer';
-import { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
+import type { VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
 import { EntityLifecycleStatus, EntityType, NetworkAccessStatus, NetworkName, BundleEntryType } from '../gdc-backend-utils-node/models/enums';
 import { EntityConfig } from '../gdc-backend-utils-node/models/entity';
 import type { GatewayParameterData } from 'sos-data-utils-ts/gateway-parameter-contract';

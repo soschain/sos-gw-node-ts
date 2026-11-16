@@ -1,7 +1,7 @@
 import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import type { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
-import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
+import type { VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';

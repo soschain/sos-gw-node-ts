@@ -1,7 +1,7 @@
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
-import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
+import type { VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import type { OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';

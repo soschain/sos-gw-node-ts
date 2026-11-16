@@ -1,5 +1,28 @@
 # GDC Core to SOSChain GW synchronization
 
+## Adopted neutral credential and transcript ownership
+
+Credential consumers use Antifraud `VerifiableCredentialV2`, `CredentialProof`
+and `VC_CONTEXT_V2` directly. The neutral proof name replaces the legacy EBSI
+label; proof fields, signing purposes and the W3C context remain unchanged.
+Organization admission and domain credentials use the same owned type markers
+and canonicalizers as their draft builders. The existing recursive proof-free
+transcript bytes and marker checks are retained.
+
+The canonicalizer input contract now accepts both reviewed drafts and the
+existing neutral credential consumer profile. This signature-only Antifraud
+addition belongs to the unreleased neutral-identity group; its emitted
+serializer JavaScript is byte-identical. Full credential, trusted signer,
+contact, key-material and organization binding checks remain in the gateway.
+Nested controller-owner fields are read through checked object properties;
+invalid JSON values retain the existing security denial.
+
+Read-only historical source references:
+
+- https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/models/verifiable-credential.ts
+- https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/organization-test-network-credential.ts
+- https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/test-network-organization-credentials.ts
+
 ## Adopted encrypted-index and collection data contracts
 
 Gateway parameter consumers use `GatewayParameterData` from SOS Data rather

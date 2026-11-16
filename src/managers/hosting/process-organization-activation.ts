@@ -7,7 +7,7 @@ import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-stor
 import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { GatewayDidDocument as DidDocument } from 'sos-data-utils-ts/gateway-did-profile';
 import type { EntityConfig, OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
-import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
+import type { VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';

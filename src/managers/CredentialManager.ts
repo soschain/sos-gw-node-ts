@@ -3,7 +3,7 @@
 
 import { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
-import { VerifiableCredentialV2, ProofEBSIv2 } from '../gdc-backend-utils-node/models/verifiable-credential';
+import type { VerifiableCredentialV2, CredentialProof } from 'antifraud-data-utils-ts/credential-contracts';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
@@ -208,7 +208,7 @@ export class CredentialManager {
     
     const jws = `${signatureResult.signatures[0].protected}..${signatureResult.signatures[0].signature}`;
 
-    const proof: ProofEBSIv2 = {
+    const proof: CredentialProof = {
       type: 'JsonWebSignature2020',
       proofPurpose: 'assertionMethod',
       verificationMethod: `${issuer}#${(signingKey as PublicJwk).kid}`,

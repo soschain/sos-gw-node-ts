@@ -2,7 +2,7 @@ import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-c
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
+import type { VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
 import { OrganizationConfig } from '../../gdc-backend-utils-node/models/entity';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';

@@ -23,7 +23,7 @@ import {
   HOST_TRANSACTION_REQUIRED_INPUT_CLAIMS,
   HOST_TRANSACTION_REQUIRED_OUTPUT_CLAIMS,
 } from './hosting-claim-contracts';
-import type { VerifiableCredentialV2 } from 'gdc-common-utils-ts/models/verifiable-credential';
+import type { VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
 import type { TestNetworkAdmissionVerificationResult } from './organization-test-network-credential';
 import type { PostalActivationCodeBinding } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
