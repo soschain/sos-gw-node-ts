@@ -1,5 +1,20 @@
 # GDC Core to SOSChain GW synchronization
 
+## Versioned R5 subscription owner
+
+SubscriptionManager consumes the public FHIR 0.7.1 subscription matcher and
+notification builder. Its explicit adapter maps historical topic
+`canFilterBy.resourceType` to R5 `resource`, rejecting conflicting spellings.
+The manager retains its tenant, endpoint, exact-subject and handshake guards.
+Unsupported filter modifiers do not match.
+
+Event notifications now carry valid caller-owned UUID fullUrls and a timestamp.
+Their serialized body is persisted in the existing encrypted outbox so storage
+key order and process restart cannot change retry bytes. Older outbox records
+without that body retain their previous serialization fallback. Registration
+handshakes remain a separate existing profile. The remaining project-wide GDC
+boundary is still blocked.
+
 ## Host DID reconciliation recovery
 
 The existing host reconciler uses the same physical registry and KMS custody.

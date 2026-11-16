@@ -1,5 +1,13 @@
 ## Unreleased
 
+- Use public FHIR 0.7.1 R5 subscription event selection and notification
+  construction. Project historical topic filter `resourceType` spelling at
+  this boundary, deny unsupported modifiers, and persist caller-owned UUID
+  entry identities, timestamp and serialized notification bytes with the
+  encrypted outbox. Retries retain those exact bytes after restart. This
+  corrects the previous invalid notification fullUrls; it does not claim
+  byte parity with that invalid wire profile.
+
 - Resolve FHIR code-system identifiers and appointment fixtures from the
   canonical FHIR package, and search-response HTTP status values from SOS Data.
   Preserve successful response strings and remove unused legacy clinical
