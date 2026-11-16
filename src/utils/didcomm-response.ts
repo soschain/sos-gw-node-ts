@@ -3,7 +3,7 @@ import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import type { BundleEntryResponse, BundleJsonApi } from 'sos-data-utils-ts/bundle-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
-import { ExampleHttpStatusText } from 'gdc-common-utils-ts';
+import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { GatewayEnvelopeTypes } from '../shared/gateway-response-types';
 import { BundleType } from './bundle';
 
@@ -42,14 +42,14 @@ export function buildSearchResponseEntries(
     return matches.map(resource => ({
       type: responseType,
       resource,
-      response: { status: ExampleHttpStatusText.Ok },
+      response: { status: String(HttpStatusCodes.Ok) },
     }));
   }
   return [{
     type: responseType,
     // Deprecated response-only compatibility. Never use as a FHIR resource.
     resource: { ...legacyResourceMetadata, total: matches.length, data: matches } as any,
-    response: { status: ExampleHttpStatusText.Ok },
+    response: { status: String(HttpStatusCodes.Ok) },
   }];
 }
 
