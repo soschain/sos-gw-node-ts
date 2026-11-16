@@ -1,5 +1,12 @@
 # GDC Core to SOSChain GW synchronization
 
+## Discovery protected-record types
+
+The two protected section reads in discovery use
+`sos-data-utils-ts/confidential-storage`. This removes only erased record-type
+imports; the compiled route and its tenant, KMS and publication checks remain
+byte-identical. No dependency version changes are required.
+
 ## Versioned R5 subscription owner
 
 SubscriptionManager consumes the public FHIR 0.7.1 subscription matcher and

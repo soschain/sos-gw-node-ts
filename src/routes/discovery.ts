@@ -33,6 +33,7 @@ import { buildGaiaXServiceOfferingCredentialDraft } from 'gdc-common-utils-ts/co
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { ILogger } from '../loggers/ILogger';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { TenantStatusService } from '../services/TenantStatusService';
 import { CommunicationRequestClaim, DocumentReferenceClaim } from 'fhir-data-utils-ts/claims';
 import { PublicAlertOperationalClaim } from 'sos-data-utils-ts/public-notifications';
@@ -1380,8 +1381,8 @@ export function createDiscoveryRouter(
       const collectionName = String(tenant?.collectionName || await tenantsCacheManager.getCollectionName(vaultId) || '');
       if (!collectionName) continue;
       const tenantJurisdiction = String(await tenantsCacheManager.getTenantJurisdiction(vaultId) || '').toUpperCase();
-      const records = await vaultRepository.listContainersInSection<import('gdc-common-utils-ts/models/confidential-storage').ConfidentialStorageDoc>(collectionName, 'care-communication-requests');
-      const documentRecords = await vaultRepository.listContainersInSection<import('gdc-common-utils-ts/models/confidential-storage').ConfidentialStorageDoc>(collectionName, 'organization-document-references');
+      const records = await vaultRepository.listContainersInSection<ConfidentialStorageDoc>(collectionName, 'care-communication-requests');
+      const documentRecords = await vaultRepository.listContainersInSection<ConfidentialStorageDoc>(collectionName, 'organization-document-references');
       const documents = new Map<string, FlatClaims>();
       for (const record of documentRecords) {
         try {

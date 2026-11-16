@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Type discovery's protected CommunicationRequest and DocumentReference
+  section reads with the existing SOS Data record contract. Preserve emitted
+  route bytes and every storage, publication and authority check.
+
 - Use public FHIR 0.7.1 R5 subscription event selection and notification
   construction. Project historical topic filter `resourceType` spelling at
   this boundary, deny unsupported modifiers, and persist caller-owned UUID
