@@ -20,6 +20,7 @@
   "scripts": {
     "prepublishOnly": "node -e \"console.error('ERROR: sos-gw-node-ts is a deployable service and must never be published to npm'); process.exit(1)\"",
     "check:project-boundaries": "node --test scripts/tests/no-gdc-dependencies.test.mjs",
+    "test:subscription-runtime": "node --experimental-specifier-resolution=node --import ./scripts/register-tsnode.mjs --test --test-concurrency=1 scripts/runtime-tests/subscription-manager.test.mjs",
     "start": "node --import ./scripts/register-tsnode.mjs build/main.js",
     "clean": "node scripts/clean-build.mjs",
     "build": "npm run clean && npm run build:swagger && tsc && node scripts/patch-esm-imports.mjs",
@@ -129,7 +130,7 @@
     "cors": "^2.8.5",
     "env-var": "^7.5.0",
     "express": "4.22.2",
-    "fhir-data-utils-ts": "0.7.0",
+    "fhir-data-utils-ts": "0.7.1",
     "firebase-admin": "^14.2.0",
     "gdc-common-utils-ts": "2.9.30",
     "google-auth-library": "^10.9.1",
