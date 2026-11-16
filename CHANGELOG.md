@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Persist a bound pending state while reconciling the configured host DID.
+  Restart retries publish the exact stored self-credentials before clearing
+  that state; inconsistent targets fail closed. Keys, claims and tenants stay
+  unchanged. This recovery protocol requires one migration writer.
+
 - Resolve Communication composition conversion from the canonical FHIR owner
   and host Offer/Order request types from SOS Data. Preserve conversion output
   and the existing confidential-job boundary.

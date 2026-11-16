@@ -1,5 +1,20 @@
 # GDC Core to SOSChain GW synchronization
 
+## Host DID reconciliation recovery
+
+The existing host reconciler uses the same physical registry and KMS custody.
+When the configured host DID changes, its protected host record retains a
+pending marker bound to the intended DID and a digest of the exact claims,
+DID document, service configuration and signed self-credentials. A restart
+republishes those persisted credentials and clears the marker only after all
+well-known writes succeed. An inconsistent marker or changed target is denied.
+
+`IVaultRepository` has no transaction or compare-and-swap API. This is a
+single-writer recovery protocol, not a concurrent migration lock. Deployment
+must serialize the identity change. Tenant identifiers, aliases, key material,
+ledger state and storage scope are not migrated by this operation. Existing
+tenant service-catalog reconciliation remains a separate startup operation.
+
 ## Adopted existing composition and job owners
 
 Communication composition conversion now imports the existing

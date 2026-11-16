@@ -29,7 +29,7 @@ import type { IVaultRepository } from '../../../database/repositories/vault/vaul
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import { EntityConfig } from '../../../gdc-backend-utils-node/models/entity';
+import { EntityConfig, OrganizationConfig } from '../../../gdc-backend-utils-node/models/entity';
 import type { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import { IServerConfig } from '../../../config';
@@ -343,6 +343,63 @@ describe('HostingManager', () => {
         && Array.isArray(service?.actions)
         && service.actions.includes('_transaction'))
     ).toBe(true);
+  });
+
+  it('[1.1a HOST] retries interrupted DID credential publication without changing keys or tenants', async () => {
+    const collection = await mockTenantsCacheManager.getCollectionName('host') as string;
+    const section = getEnvSectionId('tenants');
+    const before = await vaultRepository.get<ConfidentialStorageDoc>(collection, 'host', section);
+    expect(before).toBeDefined();
+    const originalHost = await mockKmsService.unprotectConfidentialData<OrganizationConfig>(before!, 'host');
+    const tenant = { ...before!, id: SAFE.tenantId, content: { ...structuredClone(originalHost), didDocument: { ...originalHost.didDocument!, id: SAFE.didWeb } } };
+    await vaultRepository.put(collection, [tenant], section);
+    const tenantBefore = structuredClone(await vaultRepository.get(collection, SAFE.tenantId, section));
+    const keysBefore = structuredClone(mockPublicKeys);
+    const originalPut = vaultRepository.put.bind(vaultRepository);
+    let failPublication = true;
+    const put = jest.spyOn(vaultRepository, 'put').mockImplementation(async (target, docs, targetSection) => {
+      if (targetSection === getEnvSectionId('.well-known') && failPublication) {
+        failPublication = false;
+        throw new Error('injected well-known write failure');
+      }
+      return originalPut(target, docs, targetSection);
+    });
+    mockConfig.apiBaseUrl = SAFE.httpsBaseUrl;
+    mockConfig.hostExternalDomain = SAFE.domain;
+    await expect(hostingManager.reconcilePersistedHostRuntimeConfig()).rejects.toThrow('injected well-known write failure');
+    const interrupted = await vaultRepository.get<ConfidentialStorageDoc>(collection, 'host', section);
+    const persisted = await mockKmsService.unprotectConfidentialData<OrganizationConfig>(interrupted!, 'host');
+    const signatures = mockKmsService.createDetachedJws.mock.calls.length;
+
+    expect(await hostingManager.reconcilePersistedHostRuntimeConfig()).toBe(true);
+    for (const [id, expected] of [['legal-participant.vc.json', persisted.governanceVc], ['vc.json', persisted.governanceVc], ['self-description.json', persisted.selfDescriptionVc]] as const) {
+      const doc = await vaultRepository.get<ConfidentialStorageDoc>(collection, id, getEnvSectionId('.well-known'));
+      expect(await mockKmsService.unprotectConfidentialData(doc!, 'host')).toEqual(expected);
+    }
+    const repaired = await vaultRepository.get<ConfidentialStorageDoc>(collection, 'host', section);
+    const finalHost = await mockKmsService.unprotectConfidentialData<OrganizationConfig>(repaired!, 'host');
+    expect(finalHost.claims).toEqual(originalHost.claims);
+    expect(finalHost.didDocument?.alsoKnownAs).toEqual(originalHost.didDocument?.alsoKnownAs || []);
+    expect(finalHost.meta.hostRuntimeReconciliation).toBeUndefined();
+    expect(mockPublicKeys).toEqual(keysBefore);
+    expect(mockKmsService.createDetachedJws).toHaveBeenCalledTimes(signatures);
+    expect(await vaultRepository.get(collection, SAFE.tenantId, section)).toEqual(tenantBefore);
+    expect(put.mock.calls.every(([target, docs]) => target === collection && docs.every(doc => ['host', 'legal-participant.vc.json', 'vc.json', 'self-description.json'].includes(doc.id)))).toBe(true);
+    put.mockClear();
+    expect(await hostingManager.reconcilePersistedHostRuntimeConfig()).toBe(false);
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  it('[1.1b HOST] refuses an inconsistent pending DID publication before writing', async () => {
+    const collection = await mockTenantsCacheManager.getCollectionName('host') as string;
+    const section = getEnvSectionId('tenants');
+    const before = await vaultRepository.get<ConfidentialStorageDoc>(collection, 'host', section);
+    const host = await mockKmsService.unprotectConfidentialData<OrganizationConfig>(before!, 'host');
+    host.meta.hostRuntimeReconciliation = { version: 1, targetDid: SAFE.didWeb, transcriptSha256: '0'.repeat(64) };
+    await vaultRepository.put(collection, [await mockKmsService.protectConfidentialData({ ...before!, content: host }, 'host')], section);
+    const put = jest.spyOn(vaultRepository, 'put');
+    await expect(hostingManager.reconcilePersistedHostRuntimeConfig()).rejects.toThrow(/reconciliation.*inconsistent/i);
+    expect(put).not.toHaveBeenCalled();
   });
 
   it('[1.2a TENANT] migrates stale canonical twin routes without requiring split-runtime configuration', async () => {
