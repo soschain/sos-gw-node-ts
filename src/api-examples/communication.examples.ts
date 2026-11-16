@@ -5,7 +5,7 @@ import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
 import { CommunicationCategoryCodes } from 'fhir-data-utils-ts';
-import { HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { Format } from 'sos-data-utils-ts/bff-wire-contract';
 
 const IPS_BUNDLE_LIGHT_EXAMPLE = {
@@ -18,8 +18,8 @@ const IPS_BUNDLE_LIGHT_EXAMPLE = {
         status: 'final',
         type: {
           coding: [{
-            system: HealthcareBasicSections.PatientSummaryDocument.system,
-            code: HealthcareBasicSections.PatientSummaryDocument.code,
+            system: HealthcareCoreSections.PatientSummaryDocument.system,
+            code: HealthcareCoreSections.PatientSummaryDocument.code,
           }],
         },
       },

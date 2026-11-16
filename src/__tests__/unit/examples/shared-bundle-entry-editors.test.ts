@@ -1,16 +1,5 @@
-import {
-  EXAMPLE_CONDITION_CODE,
-  EXAMPLE_CONDITION_IDENTIFIER,
-  EXAMPLE_COMPOSITION_DATE_MEDICATION_DOCUMENT,
-  EXAMPLE_COMPOSITION_IDENTIFIER_MEDICATION_DOCUMENT,
-  EXAMPLE_COMPOSITION_TITLE_MEDICATION_DOCUMENT,
-  EXAMPLE_MEDICATION_STATEMENT_IDENTIFIER,
-  EXAMPLE_MEDICATION_STATEMENT_STATUS,
-  EXAMPLE_MEDICATION_STATEMENT_TEXT,
-  EXAMPLE_SUBJECT_DID,
-  HealthcareBasicSections,
-  HealthcareDocumentTypes,
-} from 'gdc-common-utils-ts';
+import { EXAMPLE_CONDITION_CODE, EXAMPLE_CONDITION_IDENTIFIER, EXAMPLE_COMPOSITION_DATE_MEDICATION_DOCUMENT, EXAMPLE_COMPOSITION_IDENTIFIER_MEDICATION_DOCUMENT, EXAMPLE_COMPOSITION_TITLE_MEDICATION_DOCUMENT, EXAMPLE_MEDICATION_STATEMENT_IDENTIFIER, EXAMPLE_MEDICATION_STATEMENT_STATUS, EXAMPLE_MEDICATION_STATEMENT_TEXT, EXAMPLE_SUBJECT_DID, HealthcareDocumentTypes } from 'gdc-common-utils-ts';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { BundleEditor, BundleEditableResourceTypes, BundleTypes } from 'gdc-common-utils-ts/utils/bundle-editor';
 import { BundleReader } from 'gdc-common-utils-ts/utils/bundle-reader';
 import { EmployeeBundleOperations } from 'gdc-common-utils-ts/utils/employee';
@@ -48,7 +37,7 @@ describe('shared bundle entry editor surface in GW', () => {
       .setCode('http://snomed.info/sct|91936005')
       .setClaim(
         'Composition.section',
-        HealthcareBasicSections.AllergiesAndIntolerances.attributeValue,
+        HealthcareCoreSections.AllergiesAndIntolerances.attributeValue,
       )
       .doneEntry()
       .newEntryAs(BundleEditableResourceTypes.medicationStatement, 'medication-001')
@@ -59,7 +48,7 @@ describe('shared bundle entry editor surface in GW', () => {
       .setMedicationText(EXAMPLE_MEDICATION_STATEMENT_TEXT)
       .setClaim(
         'Composition.section',
-        HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
+        HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
       )
       .doneEntry()
       .newEntryAs(BundleEditableResourceTypes.condition, 'condition-001')
@@ -68,7 +57,7 @@ describe('shared bundle entry editor surface in GW', () => {
       .setCode(EXAMPLE_CONDITION_CODE)
       .setClaim(
         'Composition.section',
-        HealthcareBasicSections.ProblemList.attributeValue,
+        HealthcareCoreSections.ProblemList.attributeValue,
       )
       .doneEntry()
       .build();
@@ -108,7 +97,7 @@ describe('shared bundle entry editor surface in GW', () => {
       expect.objectContaining({
         'AllergyIntolerance.identifier': 'urn:uuid:allergy-001',
         'AllergyIntolerance.subject': EXAMPLE_SUBJECT_DID,
-        'Composition.section': HealthcareBasicSections.AllergiesAndIntolerances.attributeValue,
+        'Composition.section': HealthcareCoreSections.AllergiesAndIntolerances.attributeValue,
       }),
     );
     expect(clinicalEntries[1]?.resource?.meta?.claims).toEqual(

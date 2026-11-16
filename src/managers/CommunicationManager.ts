@@ -7,7 +7,8 @@ import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
 import { CommMsgExtended, DataEntry } from 'sos-data-utils-ts/communication-message-contract';
 import { FhirCommunication } from 'fhir-data-utils-ts/fhir-types';
-import { DataCollectionIds, FhirResourceTypeDataCollections, HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
+import { DataCollectionIds, FhirResourceTypeDataCollections } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { CommunicationClaim } from 'fhir-data-utils-ts';
 import { CompositionAttesterModes, CompositionClaim } from 'fhir-data-utils-ts';
@@ -780,7 +781,7 @@ export class CommunicationManager implements IJobProcessor {
       payloadSection,
     ].map((value) => String(value || '').trim()).filter(Boolean)));
     if (sectionCodes.length === 0) return;
-    const typeCode = claimsType || payloadType || HealthcareBasicSections.PatientSummaryDocument.attributeValue;
+    const typeCode = claimsType || payloadType || HealthcareCoreSections.PatientSummaryDocument.attributeValue;
 
     const sent = String(
       (entry?.resource?.meta?.claims?.[CommunicationClaim.Sent] as string | undefined)

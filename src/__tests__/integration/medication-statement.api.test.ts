@@ -4,7 +4,7 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 import { invokeExpress } from './helpers/invokeExpress';
 import { getTenantVaultId, generateTenantCollectionNameFromClaims } from '../../utils/tenant';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import {
   buildDemoCommunicationBatchSubmitRequest,
   demoCommunicationMedicationIpsDefaults,
@@ -111,8 +111,8 @@ describe('MedicationStatement API (integration)', () => {
                 },
                 type: {
                   coding: [{
-                    system: HealthcareBasicSections.PatientSummaryDocument.system,
-                    code: HealthcareBasicSections.PatientSummaryDocument.code,
+                    system: HealthcareCoreSections.PatientSummaryDocument.system,
+                    code: HealthcareCoreSections.PatientSummaryDocument.code,
                     display: 'Patient summary Document',
                   }],
                 },
@@ -132,8 +132,8 @@ describe('MedicationStatement API (integration)', () => {
                   {
                     code: {
                       coding: [{
-                        system: HealthcareBasicSections.HistoryOfMedicationUse.system,
-                        code: HealthcareBasicSections.HistoryOfMedicationUse.code,
+                        system: HealthcareCoreSections.HistoryOfMedicationUse.system,
+                        code: HealthcareCoreSections.HistoryOfMedicationUse.code,
                       }],
                     },
                     entry: [{ reference: `MedicationStatement/medication-${suffix}` }],
@@ -141,8 +141,8 @@ describe('MedicationStatement API (integration)', () => {
                   {
                     code: {
                       coding: [{
-                        system: HealthcareBasicSections.ProblemList.system,
-                        code: HealthcareBasicSections.ProblemList.code,
+                        system: HealthcareCoreSections.ProblemList.system,
+                        code: HealthcareCoreSections.ProblemList.code,
                       }],
                     },
                     entry: [{ reference: `Condition/condition-${suffix}` }],
@@ -150,8 +150,8 @@ describe('MedicationStatement API (integration)', () => {
                   {
                     code: {
                       coding: [{
-                        system: HealthcareBasicSections.AllergiesAndIntolerances.system,
-                        code: HealthcareBasicSections.AllergiesAndIntolerances.code,
+                        system: HealthcareCoreSections.AllergiesAndIntolerances.system,
+                        code: HealthcareCoreSections.AllergiesAndIntolerances.code,
                       }],
                     },
                     entry: [{ reference: `AllergyIntolerance/allergy-${suffix}` }],
@@ -159,8 +159,8 @@ describe('MedicationStatement API (integration)', () => {
                   {
                     code: {
                       coding: [{
-                        system: HealthcareBasicSections.Results.system,
-                        code: HealthcareBasicSections.Results.code,
+                        system: HealthcareCoreSections.Results.system,
+                        code: HealthcareCoreSections.Results.code,
                       }],
                     },
                     entry: [{ reference: `Observation/observation-${suffix}` }],
@@ -306,7 +306,7 @@ describe('MedicationStatement API (integration)', () => {
                       'Communication.identifier': `comm-replay-${suffix}`,
                       'Communication.subject': subjectDid,
                       'Communication.sent': sent,
-                      'Composition.section': HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
+                      'Composition.section': HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
                     } },
                     subject: { reference: subjectDid },
                     sent,
@@ -444,7 +444,7 @@ describe('MedicationStatement API (integration)', () => {
       await tenantManager.getTenant(tenantVaultId);
 
       const subjectDid = 'did:web:api.acme.org:individual:subject-001';
-      const ipsDocumentTypeToken = `${HealthcareBasicSections.PatientSummaryDocument.system}|${HealthcareBasicSections.PatientSummaryDocument.code}`;
+      const ipsDocumentTypeToken = `${HealthcareCoreSections.PatientSummaryDocument.system}|${HealthcareCoreSections.PatientSummaryDocument.code}`;
       const documentBundle = {
         resourceType: 'Bundle',
         type: 'document',
@@ -456,8 +456,8 @@ describe('MedicationStatement API (integration)', () => {
               status: 'final',
               type: {
                 coding: [{
-                  system: HealthcareBasicSections.PatientSummaryDocument.system,
-                  code: HealthcareBasicSections.PatientSummaryDocument.code,
+                  system: HealthcareCoreSections.PatientSummaryDocument.system,
+                  code: HealthcareCoreSections.PatientSummaryDocument.code,
                   display: 'Patient summary Document',
                 }],
               },
@@ -472,8 +472,8 @@ describe('MedicationStatement API (integration)', () => {
               section: [
                 {
                   code: { coding: [{
-                    system: HealthcareBasicSections.HistoryOfMedicationUse.system,
-                    code: HealthcareBasicSections.HistoryOfMedicationUse.code,
+                    system: HealthcareCoreSections.HistoryOfMedicationUse.system,
+                    code: HealthcareCoreSections.HistoryOfMedicationUse.code,
                     display: 'History of Medication Use',
                   }] },
                   entry: [{ reference: 'urn:uuid:medication-001' }],
@@ -539,7 +539,7 @@ describe('MedicationStatement API (integration)', () => {
                     '@context': 'org.hl7.fhir.r4',
                     'Communication.subject': subjectDid,
                     'Communication.sent': '2026-05-22T10:00:00Z',
-                    'Composition.section': HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
+                    'Composition.section': HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
                   } },
                   subject: { reference: subjectDid },
                   sent: '2026-05-22T10:00:00Z',
@@ -663,7 +663,7 @@ describe('MedicationStatement API (integration)', () => {
       expect(ipsSearchPayload?.data?.[0]?.resource?.type).toBe('document');
       expect(ipsSearchPayload?.data?.[0]?.resource?.entry?.[0]?.resource?.resourceType).toBe('Composition');
       expect(ipsSearchPayload?.data?.[0]?.resource?.entry?.[0]?.resource?.type?.coding?.[0]?.code).toBe(
-        HealthcareBasicSections.PatientSummaryDocument.code,
+        HealthcareCoreSections.PatientSummaryDocument.code,
       );
       expect(
         ipsSearchPayload?.data?.[0]?.resource?.entry
@@ -837,15 +837,15 @@ describe('MedicationStatement API (integration)', () => {
               date: '2026-05-22T10:00:00Z',
               type: {
                 coding: [{
-                  system: HealthcareBasicSections.PatientSummaryDocument.system,
-                  code: HealthcareBasicSections.PatientSummaryDocument.code,
+                  system: HealthcareCoreSections.PatientSummaryDocument.system,
+                  code: HealthcareCoreSections.PatientSummaryDocument.code,
                 }],
               },
               section: [
                 {
                   code: { coding: [{
-                    system: HealthcareBasicSections.HistoryOfMedicationUse.system,
-                    code: HealthcareBasicSections.HistoryOfMedicationUse.code,
+                    system: HealthcareCoreSections.HistoryOfMedicationUse.system,
+                    code: HealthcareCoreSections.HistoryOfMedicationUse.code,
                   }] },
                   entry: [{ reference: 'MedicationStatement/medication-digitaltwin-001' }],
                 },
@@ -976,7 +976,7 @@ describe('MedicationStatement API (integration)', () => {
         body: {
           thid: searchByTextThid,
           body: { resourceType: 'Parameters', parameter: [
-            { name: 'section', valueString: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue },
+            { name: 'section', valueString: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue },
             { name: 'date-from', valueDate: '2026-01-01' },
             { name: 'text', valueString: 'paracetamol normalizado' },
           ] },
@@ -1009,7 +1009,7 @@ describe('MedicationStatement API (integration)', () => {
         body: {
           thid: searchByDisplayThid,
           body: { resourceType: 'Parameters', parameter: [
-            { name: 'section', valueString: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue },
+            { name: 'section', valueString: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue },
             { name: 'date-from', valueDate: '2026-01-01' },
             { name: 'text', valueString: 'acetaminophen' },
           ] },
@@ -1041,7 +1041,7 @@ describe('MedicationStatement API (integration)', () => {
         body: {
           thid: searchByLocalTextThid,
           body: { resourceType: 'Parameters', parameter: [
-            { name: 'section', valueString: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue },
+            { name: 'section', valueString: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue },
             { name: 'date-from', valueDate: '2026-01-01' },
             { name: 'text', valueString: 'cada 8 horas' },
           ] },
@@ -1073,7 +1073,7 @@ describe('MedicationStatement API (integration)', () => {
         body: {
           thid: searchByCodeThid,
           body: { resourceType: 'Parameters', parameter: [
-            { name: 'section', valueString: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue },
+            { name: 'section', valueString: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue },
             { name: 'date-from', valueDate: '2026-01-01' },
             { name: 'text', valueString: medicationCode },
           ] },
@@ -1156,7 +1156,7 @@ describe('MedicationStatement API (integration)', () => {
       await tenantManager.getTenant(tenantVaultId);
 
       const subjectDid = 'did:web:api.acme.org:individual:subject-ips-plus-two-medications-001';
-      const ipsDocumentTypeToken = `${HealthcareBasicSections.PatientSummaryDocument.system}|${HealthcareBasicSections.PatientSummaryDocument.code}`;
+      const ipsDocumentTypeToken = `${HealthcareCoreSections.PatientSummaryDocument.system}|${HealthcareCoreSections.PatientSummaryDocument.code}`;
       const baseDocumentBundle = {
         resourceType: 'Bundle',
         type: 'document',
@@ -1168,8 +1168,8 @@ describe('MedicationStatement API (integration)', () => {
               status: 'final',
               type: {
                 coding: [{
-                  system: HealthcareBasicSections.PatientSummaryDocument.system,
-                  code: HealthcareBasicSections.PatientSummaryDocument.code,
+                  system: HealthcareCoreSections.PatientSummaryDocument.system,
+                  code: HealthcareCoreSections.PatientSummaryDocument.code,
                   display: 'Patient summary Document',
                 }],
               },
@@ -1181,8 +1181,8 @@ describe('MedicationStatement API (integration)', () => {
                 {
                   code: {
                     coding: [{
-                      system: HealthcareBasicSections.HistoryOfMedicationUse.system,
-                      code: HealthcareBasicSections.HistoryOfMedicationUse.code,
+                      system: HealthcareCoreSections.HistoryOfMedicationUse.system,
+                      code: HealthcareCoreSections.HistoryOfMedicationUse.code,
                       display: 'History of Medication Use',
                     }],
                   },
@@ -1210,7 +1210,7 @@ describe('MedicationStatement API (integration)', () => {
                   'MedicationStatement.medication-text': 'Aspirin 100 mg',
                   'MedicationStatement.effective': '2026-05-22T09:00:00Z',
                   'MedicationStatement.note': 'Baseline medication already present in the IPS example bundle.',
-                  'MedicationStatement.category': HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
+                  'MedicationStatement.category': HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
                 },
               },
             },
@@ -1255,7 +1255,7 @@ describe('MedicationStatement API (integration)', () => {
                     '@context': 'org.hl7.fhir.r4',
                     'Communication.subject': subjectDid,
                     'Communication.sent': '2026-05-22T09:00:00Z',
-                    'Composition.section': HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
+                    'Composition.section': HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
                   } },
                   subject: { reference: subjectDid },
                   sent: '2026-05-22T09:00:00Z',
@@ -1433,7 +1433,7 @@ describe('MedicationStatement API (integration)', () => {
       expect(Array.isArray(composition?.section)).toBe(true);
       expect(composition?.section?.length).toBe(1);
       expect(composition?.section?.[0]?.code?.coding?.[0]?.code).toBe(
-        HealthcareBasicSections.HistoryOfMedicationUse.code,
+        HealthcareCoreSections.HistoryOfMedicationUse.code,
       );
       expect(composition?.section?.[0]?.entry?.length).toBe(3);
 

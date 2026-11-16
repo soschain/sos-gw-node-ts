@@ -7,7 +7,8 @@ import type { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'sos-data-ut
 import type { RecordBase } from 'sos-data-utils-ts/confidential-storage';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
-import { DataCollectionIds, HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
+import { DataCollectionIds } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { createOperationOutcome } from '../utils/outcome';
 import {
@@ -72,7 +73,7 @@ const RESEARCHER_WORKING_SELECTION_TYPE = 'Composition:ResearcherWorkingSelectio
  * https://build.fhir.org/ig/HL7/fhir-ips/en/Bundle-bundle-ips-all-sections.json.html
  *
  * The gateway exposes those sections through the shared healthcare catalogs
- * published by `gdc-common-utils-ts`.
+ * published in the SOS operational healthcare section catalogs.
  */
 export const IPS_ALL_SECTIONS_EXAMPLE_URL =
   'https://build.fhir.org/ig/HL7/fhir-ips/en/Bundle-bundle-ips-all-sections.json.html' as const;
@@ -83,8 +84,8 @@ export const IPS_ALL_SECTIONS_EXAMPLE_URL =
  * ResearchSubject's canonical Composition.
  *
  * These are not IPS section tokens and they are not equivalent to
- * `HealthcareSummarySections`:
- * - `HealthcareSummarySections` is the public/documental section taxonomy
+ * `HealthcarePermissionSummarySections`:
+ * - `HealthcarePermissionSummarySections` is the public/documental section taxonomy
  *   expressed as LOINC tokens
  * - `DIGITAL_TWIN_RESOURCE_COLLECTION_IDS` is the private persistence taxonomy
  *   expressed as per-family collection suffixes such as `medications` or
@@ -584,7 +585,7 @@ export class CompositionManager implements IJobProcessor {
   private extractSummaryTypes(body: any): string[] {
     const explicitTypes = extractCompositionSearchTypes(body);
     if (explicitTypes.length > 0) return explicitTypes;
-    return [HealthcareBasicSections.PatientSummaryDocument.attributeValue];
+    return [HealthcareCoreSections.PatientSummaryDocument.attributeValue];
   }
 
   private filterDocumentReferenceMatches(
@@ -603,7 +604,7 @@ export class CompositionManager implements IJobProcessor {
     if (String(requestedBundleType || '').trim().toLowerCase() !== 'document') return false;
     if (!Array.isArray(requiredTypes) || requiredTypes.length === 0) return false;
 
-    const ipsCode = HealthcareBasicSections.PatientSummaryDocument.code;
+    const ipsCode = HealthcareCoreSections.PatientSummaryDocument.code;
     return requiredTypes.some((value) => extractTokenCode(value) === ipsCode);
   }
 

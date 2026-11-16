@@ -1,7 +1,7 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { readFileSync } from 'fs';
 import path from 'path';
-import { HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { CompositionAttesterModes } from 'gdc-common-utils-ts';
 import { EXAMPLE_KYC_CONTROLLER_UUID } from 'gdc-common-utils-ts/examples/shared';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
@@ -74,7 +74,7 @@ function getResearchAccessMedicationCode(): string {
  * display text is deliberately not treated as trusted research terminology.
  */
 export const RESEARCH_ACCESS_SEARCH_FIXTURE = Object.freeze({
-  section: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
+  section: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
   text: getResearchAccessMedicationCode(),
 });
 

@@ -1,4 +1,5 @@
-import { DataCollectionIds, HealthcareBasicSections } from 'gdc-common-utils-ts/constants/index';
+import { DataCollectionIds } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { buildFhirResourceFromIndexedClaims } from './fhir-resource-rehydration';
@@ -250,7 +251,7 @@ export async function buildConsolidatedIpsBundleDocument(
     '@context': Format.FHIR_API,
     'Composition.identifier': compositionIdentifier,
     'Composition.subject': params.subject,
-    'Composition.type': HealthcareBasicSections.PatientSummaryDocument.attributeValue,
+    'Composition.type': HealthcareCoreSections.PatientSummaryDocument.attributeValue,
     'Composition.date': pickLatestIsoDate(compositionDates),
     'Composition.section': compositionSectionTokens.join(','),
   };
@@ -274,8 +275,8 @@ export async function buildConsolidatedIpsBundleDocument(
     },
     type: {
       coding: [{
-        system: HealthcareBasicSections.PatientSummaryDocument.system,
-        code: HealthcareBasicSections.PatientSummaryDocument.code,
+        system: HealthcareCoreSections.PatientSummaryDocument.system,
+        code: HealthcareCoreSections.PatientSummaryDocument.code,
         display: 'Patient summary Document',
       }],
     },

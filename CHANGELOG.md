@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Resolve operational IPS core and permission-summary sections from the
+  published SOS Data owner in Communication, Composition and IPS assembly.
+  Preserve all wire descriptors, non-enumerable compatibility keys and the
+  distinct native URI-valued summary profile.
+
 - Use published SOS operational search/lifecycle constants and DSP metadata in
   Communication search, RelatedPerson purge/readback and discovery. Preserve
   existing wire values and authorization; pin AF 0.3.2, SOS Data 0.8.1 and the

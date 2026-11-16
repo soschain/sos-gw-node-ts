@@ -24,7 +24,8 @@ import { createServer, type Server } from 'node:http';
 import type { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
-import { buildCommunicationParticipantSearchParameters, buildCommunicationParticipantIndexAttributes, buildExampleCommunicationParticipantProjection, buildExampleCommunicationParticipantSearchInput, BundleEditableResourceTypes, BundleEditor, BundleOperations, CommunicationParticipantPrefixes, CompositionAttesterModes, CompositionClaim, ConfidentialDocumentIndex, ConsentDecisions, ConsentStatuses, DataCollectionIds, HealthcareBasicSections, ResourceTypesFhirR4 } from 'gdc-common-utils-ts';
+import { buildCommunicationParticipantSearchParameters, buildCommunicationParticipantIndexAttributes, buildExampleCommunicationParticipantProjection, buildExampleCommunicationParticipantSearchInput, BundleEditableResourceTypes, BundleEditor, BundleOperations, CommunicationParticipantPrefixes, CompositionAttesterModes, CompositionClaim, ConfidentialDocumentIndex, ConsentDecisions, ConsentStatuses, DataCollectionIds, ResourceTypesFhirR4 } from 'gdc-common-utils-ts';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-claims/communication-claims';
@@ -205,7 +206,7 @@ describe('CommunicationManager Unit Tests', () => {
                 [CommunicationClaim.Subject]: subjectDid,
                 [CommunicationClaim.Sender]: issuer,
                 [CommunicationClaim.Status]: communicationStatus,
-                [CommunicationClaim.Topic]: HealthcareBasicSections.AllergiesAndIntolerances.attributeValue,
+                [CommunicationClaim.Topic]: HealthcareCoreSections.AllergiesAndIntolerances.attributeValue,
                 [CommunicationClaim.ContentAttachmentType]: 'application/fhir+json',
                 [CommunicationClaim.ContentAttachmentData]: Buffer.from(JSON.stringify(attachedBundle), 'utf8').toString('base64'),
               } } },
@@ -546,7 +547,7 @@ describe('CommunicationManager Unit Tests', () => {
               parameter: [
                 { name: 'text', valueString: text },
                 { name: 'date-from', valueDate: '2026-01-01' },
-                { name: 'section', valueString: HealthcareBasicSections.Results.attributeValue },
+                { name: 'section', valueString: HealthcareCoreSections.Results.attributeValue },
               ],
             },
           } as any,
@@ -826,7 +827,7 @@ describe('CommunicationManager Unit Tests', () => {
         'Observation.code': 'http://snomed.info/sct|386661006',
         'Observation.effective-datetime': '2026-10-23T11:42:00Z',
         'Observation.meta.versionId': 'zG9EU4AWxfuVgFj41YxQMzyo4Y9neV8zDtN9ZvevfwRaPxYvgFMAvjXsjty9TzEyZAA9r',
-        [CompositionClaim.Section]: HealthcareBasicSections.AllergiesAndIntolerances.attributeValue,
+        [CompositionClaim.Section]: HealthcareCoreSections.AllergiesAndIntolerances.attributeValue,
         [CompositionClaim.Author]: EXAMPLE_PROVIDER_ORGANIZATION_AUTHORIZATION_URN_CDS,
         [CompositionClaim.Attester]: professionalAssignment,
         [CompositionClaim.AttesterMode]: CompositionAttesterModes.Professional,
@@ -3337,7 +3338,7 @@ describe('CommunicationManager Unit Tests', () => {
                   '@context': 'org.hl7.fhir.r4',
                   'Communication.subject': subjectDid,
                   'Communication.sent': '2026-05-22T10:00:00Z',
-                  [CompositionClaim.Section]: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
+                  [CompositionClaim.Section]: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
                 },
               },
               resource: {
@@ -3682,7 +3683,7 @@ describe('CommunicationManager Unit Tests', () => {
         .setDecision(ConsentDecisions.Permit)
         .setActorIdentifierList([EXAMPLE_PROFESSIONAL_DID])
         .setPurposeList([HealthcareConsentPurposes.Treatment])
-        .setSectionList([HealthcareBasicSections.PatientSummaryDocument.attributeValue])
+        .setSectionList([HealthcareCoreSections.PatientSummaryDocument.attributeValue])
         .doneEntry();
       const permissionBundle = permissionBundleEditor.buildJsonApi();
 

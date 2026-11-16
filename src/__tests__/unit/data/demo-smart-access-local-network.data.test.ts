@@ -6,7 +6,7 @@
  * aliases must never return to the research search surface.
  */
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
-import { HealthcareBasicSections } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import {
@@ -104,7 +104,7 @@ describe('demo smart access local-network builders', () => {
               method: 'GET',
               url:
                 `Bundle?type=document&composition.subject=${encodeURIComponent(subjectDid)}`
-                + `&composition.type=${encodeURIComponent(HealthcareBasicSections.PatientSummaryDocument.claim)}`,
+                + `&composition.type=${encodeURIComponent(HealthcareCoreSections.PatientSummaryDocument.claim)}`,
             },
           },
         ],
@@ -203,7 +203,7 @@ describe('demo smart access local-network builders', () => {
       body: {
         resourceType: 'Parameters',
         parameter: [
-          { name: 'section', valueString: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue },
+          { name: 'section', valueString: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue },
           { name: MedicationStatementClaim.Code, valueString: ibuprofenCode },
         ],
       },

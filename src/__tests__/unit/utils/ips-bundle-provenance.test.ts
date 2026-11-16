@@ -6,7 +6,8 @@
  * Authorization invariant: author remains the individual and attester remains the registered member.
  * Persistence invariant: summary export does not replace either reference with transport actorDid.
  */
-import { CompositionAttesterModes, CompositionClaim, HealthcareBasicSections, HL7_RELATED_PERSON_FUNCTIONAL_ROLES, ResourceTypesFhirR4 } from 'gdc-common-utils-ts';
+import { CompositionAttesterModes, CompositionClaim, HL7_RELATED_PERSON_FUNCTIONAL_ROLES, ResourceTypesFhirR4 } from 'gdc-common-utils-ts';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import {
@@ -37,7 +38,7 @@ describe('IPS Bundle personal provenance export', () => {
       [getSubjectScopedSectionId(EXAMPLE_SUBJECT_DID, 'individual', 'composition'), [{
         [CompositionClaim.Identifier]: 'urn:uuid:composition-personal-provenance',
         [CompositionClaim.Subject]: EXAMPLE_SUBJECT_DID,
-        [CompositionClaim.Section]: HealthcareBasicSections.AllergiesAndIntolerances.attributeValue,
+        [CompositionClaim.Section]: HealthcareCoreSections.AllergiesAndIntolerances.attributeValue,
         [CompositionClaim.Author]: EXAMPLE_SUBJECT_DID,
         [CompositionClaim.Attester]: memberAuthor,
         [CompositionClaim.AttesterMode]: CompositionAttesterModes.Personal,
@@ -46,7 +47,7 @@ describe('IPS Bundle personal provenance export', () => {
         id: EXAMPLE_ALLERGY_IDENTIFIER.split(':').at(-1),
         'AllergyIntolerance.identifier': EXAMPLE_ALLERGY_IDENTIFIER,
         'AllergyIntolerance.patient': EXAMPLE_SUBJECT_DID,
-        [CompositionClaim.Section]: HealthcareBasicSections.AllergiesAndIntolerances.attributeValue,
+        [CompositionClaim.Section]: HealthcareCoreSections.AllergiesAndIntolerances.attributeValue,
       }]],
       [getClinicalCreatorBindingsSectionId(), [{
         kind: FhirIpsCreatorKinds.IndividualMember,
@@ -66,7 +67,7 @@ describe('IPS Bundle personal provenance export', () => {
       tenantVaultId,
       subject: EXAMPLE_SUBJECT_DID,
       scope: 'individual',
-      requiredSections: [HealthcareBasicSections.AllergiesAndIntolerances.attributeValue],
+      requiredSections: [HealthcareCoreSections.AllergiesAndIntolerances.attributeValue],
       excludedSections: [],
       requiredTypes: [],
     });
@@ -100,7 +101,7 @@ describe('IPS Bundle personal provenance export', () => {
     const caregiverRole = `urn:uuid:${EXAMPLE_LICENSE_SEAT_UUID_SECONDARY}`;
     const caregiverDescriptor = HL7_RELATED_PERSON_FUNCTIONAL_ROLES.find(({ code }) => code === 'CAREGIVER')!;
     const caregiverRoleToken = `${caregiverDescriptor.codingSystem}|${caregiverDescriptor.code}`;
-    const vitalSigns = HealthcareBasicSections.VitalSigns.attributeValue;
+    const vitalSigns = HealthcareCoreSections.VitalSigns.attributeValue;
     const observationRecords = [
       [EXAMPLE_OBSERVATION_IDENTIFIER, EXAMPLE_PROVIDER_ORGANIZATION_AUTHORIZATION_URN_CDS, professionalRole],
       [EXAMPLE_OBSERVATION_IDENTIFIER_IPS, controllerRole, controllerRole],

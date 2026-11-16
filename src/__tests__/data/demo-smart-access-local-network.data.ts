@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
-import { HealthcareBasicSections } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
@@ -62,8 +62,8 @@ export const DEMO_SMART_ACCESS_LOCAL_IDS = Object.freeze({
 
 /** Two-section regression constraint used by the real local-network proof. */
 export const DEMO_SMART_SUMMARY_ALLOWED_SECTIONS = Object.freeze([
-  HealthcareBasicSections.HistoryOfMedicationUse.claim,
-  HealthcareBasicSections.ProblemList.claim,
+  HealthcareCoreSections.HistoryOfMedicationUse.claim,
+  HealthcareCoreSections.ProblemList.claim,
 ] as const);
 
 export const DEMO_SMART_ACCESS_LOCAL_EMAILS = Object.freeze({
@@ -282,7 +282,7 @@ export function buildDemoIndividualIpsSearchRequest(input: Readonly<{
   subjectDid: string;
 }>): Record<string, unknown> {
   const subjectDid = String(input.subjectDid || '').trim();
-  const compositionType = HealthcareBasicSections.PatientSummaryDocument.claim;
+  const compositionType = HealthcareCoreSections.PatientSummaryDocument.claim;
   return {
     thid: DEMO_SMART_ACCESS_LOCAL_IDS.individualBundleSearchThreadId,
     body: {
@@ -492,7 +492,7 @@ export function buildDemoDigitalTwinResearchSubjectSearchRequest(): Record<strin
     body: {
       resourceType: 'Parameters',
       parameter: [
-        { name: 'section', valueString: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue },
+        { name: 'section', valueString: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue },
         // Research projections intentionally remove free text; use the
         // preserved coded claim for deterministic discovery.
         { name: MedicationStatementClaim.Code, valueString: ibuprofenCode },

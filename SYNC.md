@@ -1,5 +1,19 @@
 # GDC Core to SOSChain GW synchronization
 
+## Adopted operational IPS section owners
+
+Use published SOS Data `HealthcareCoreSections` for the former operational
+basic macro and `HealthcarePermissionSummarySections` for the former summary
+macro. The complete 24 core properties (22 enumerable plus two compatibility
+aliases) and 16 permission-summary properties retain their original values
+and enumerability. Native `HealthcareSummarySections` uses a different,
+URI-qualified profile and remains unchanged. Collection mappings and other
+legacy operational catalogs are separate remaining migrations.
+
+The checked-in wire vector records the actual read-only historical
+module hash and source provenance:
+https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/constants/healthcare.ts
+
 ## Adopted operational search, lifecycle and DSP wire owners
 
 Communication search uses `GatewaySearchBundleTypes`, RelatedPerson purge and

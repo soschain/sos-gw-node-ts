@@ -10,11 +10,8 @@ import {
 import { TwinCompositionManager, TWIN_COMPOSITION_SECTION_RESOURCE_CONFIG } from '../../../managers/TwinCompositionManager';
 import { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
-import {
-  DataCollectionIds,
-  HealthcareBasicSections,
-  HealthcareSummarySections,
-} from 'gdc-common-utils-ts/constants/index';
+import { DataCollectionIds } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareCoreSections, HealthcarePermissionSummarySections } from 'sos-data-utils-ts/healthcare-sections';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
 import {
   COMPOSITION_BATCH_ENTRY_EXAMPLE,
@@ -164,9 +161,9 @@ describe('CompositionManager', () => {
 
   it('limits Subject/$summary to the sections carried by the authenticated SMART scope', async () => {
     const subjectDid = EXAMPLE_SUBJECT_DID;
-    const problemSection = HealthcareBasicSections.ProblemList.attributeValue;
-    const medicationSection = HealthcareBasicSections.HistoryOfMedicationUse.attributeValue;
-    const allergySection = HealthcareBasicSections.AllergiesAndIntolerances.attributeValue;
+    const problemSection = HealthcareCoreSections.ProblemList.attributeValue;
+    const medicationSection = HealthcareCoreSections.HistoryOfMedicationUse.attributeValue;
+    const allergySection = HealthcareCoreSections.AllergiesAndIntolerances.attributeValue;
 
     mockVaultRepository.listContainersInSection.mockImplementation(async (_vaultId: string, sectionId: string) => {
       if (sectionId === getSubjectScopedSectionId(subjectDid, 'individual', DataCollectionIds.composition)) {
@@ -177,7 +174,7 @@ describe('CompositionManager', () => {
           'Composition.section': [problemSection, medicationSection, allergySection].join(','),
           'Composition.date': '2026-10-05T00:00:00Z',
           'Composition.author': EXAMPLE_TENANT_SERVICE_DID,
-          'Composition.type': HealthcareBasicSections.PatientSummaryDocument.attributeValue,
+          'Composition.type': HealthcareCoreSections.PatientSummaryDocument.attributeValue,
         }] as any;
       }
       if (sectionId === getSubjectScopedSectionId(subjectDid, 'individual', DataCollectionIds.conditions)) {
@@ -482,10 +479,10 @@ describe('CompositionManager', () => {
             id: 'composition-summary-001',
             'Composition.identifier': 'composition-summary-001',
             'Composition.subject': subjectDid,
-            'Composition.section': HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
+            'Composition.section': HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
             'Composition.date': '2026-06-01T10:00:00Z',
             'Composition.author': 'did:web:provider.example.org',
-            'Composition.type': HealthcareBasicSections.PatientSummaryDocument.attributeValue,
+            'Composition.type': HealthcareCoreSections.PatientSummaryDocument.attributeValue,
           },
         ] as any;
       }
@@ -545,10 +542,10 @@ describe('CompositionManager', () => {
             id: 'composition-twin-summary-001',
             'Composition.identifier': 'urn:uuid:composition-twin-summary-001',
             'Composition.subject': subjectDid,
-            'Composition.section': HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
+            'Composition.section': HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
             'Composition.date': '2026-06-01T10:00:00Z',
             'Composition.author': 'did:web:provider.example.org',
-            'Composition.type': HealthcareBasicSections.PatientSummaryDocument.attributeValue,
+            'Composition.type': HealthcareCoreSections.PatientSummaryDocument.attributeValue,
           },
         ] as any;
       }
@@ -603,8 +600,8 @@ describe('CompositionManager', () => {
           id: 'composition-immunization-summary-001',
           'Composition.identifier': 'urn:uuid:composition-immunization-summary-001',
           'Composition.subject': subjectDid,
-          'Composition.section': HealthcareBasicSections.Immunizations.attributeValue,
-          'Composition.type': HealthcareBasicSections.PatientSummaryDocument.attributeValue,
+          'Composition.section': HealthcareCoreSections.Immunizations.attributeValue,
+          'Composition.type': HealthcareCoreSections.PatientSummaryDocument.attributeValue,
         }] as any;
       }
       if (sectionId === getSubjectScopedSectionId(subjectDid, 'individual', DataCollectionIds.immunizations)) {
@@ -668,8 +665,8 @@ describe('CompositionManager', () => {
           id: 'composition-role-author-summary-001',
           'Composition.identifier': 'urn:uuid:composition-role-author-summary-001',
           'Composition.subject': subjectDid,
-          'Composition.section': HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
-          'Composition.type': HealthcareBasicSections.PatientSummaryDocument.attributeValue,
+          'Composition.section': HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
+          'Composition.type': HealthcareCoreSections.PatientSummaryDocument.attributeValue,
           'Composition.author': EXAMPLE_TENANT_SERVICE_DID,
         }] as any;
       }
@@ -680,7 +677,7 @@ describe('CompositionManager', () => {
           'MedicationStatement.subject': subjectDid,
           'MedicationStatement.status': 'active',
           'MedicationStatement.medication-text': 'Section-authored medication',
-          'Composition.section': HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
+          'Composition.section': HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
           'Composition.author': EXAMPLE_TENANT_SERVICE_DID,
           'Composition.attester': practitionerRoleIdentifier,
           'Composition.attester-mode': CompositionAttesterModes.Professional,
@@ -747,13 +744,13 @@ describe('CompositionManager', () => {
             '@context': 'org.hl7.fhir.r4',
             'org.hl7.fhir.r4.Composition.identifier': 'urn:uuid:composition-twin-summary-api-001',
             'org.hl7.fhir.r4.Composition.subject': subjectDid,
-            'org.hl7.fhir.r4.Composition.section': HealthcareBasicSections.VitalSigns.attributeValue,
+            'org.hl7.fhir.r4.Composition.section': HealthcareCoreSections.VitalSigns.attributeValue,
             'org.hl7.fhir.r4.Composition.date': '2026-06-01T10:00:00Z',
             'org.hl7.fhir.r4.Composition.author': 'did:web:provider.example.org',
             'org.hl7.fhir.r4.Composition.attester': 'urn:uuid:attester-one,urn:uuid:attester-two',
             'org.hl7.fhir.r4.Composition.attester-mode': 'professional,legal',
             'org.hl7.fhir.r4.Composition.attester-time': '2026-06-01T10:01:00Z,2026-06-01T10:02:00Z',
-            'org.hl7.fhir.r4.Composition.type': HealthcareBasicSections.PatientSummaryDocument.attributeValue,
+            'org.hl7.fhir.r4.Composition.type': HealthcareCoreSections.PatientSummaryDocument.attributeValue,
           },
         ] as any;
       }
@@ -834,24 +831,24 @@ describe('CompositionManager', () => {
   });
 
   it('declares the searchable digital twin IPS section to resource map', () => {
-    expect(TWIN_COMPOSITION_SECTION_RESOURCE_CONFIG[HealthcareBasicSections.HistoryOfMedicationUse.attributeValue]).toEqual([
+    expect(TWIN_COMPOSITION_SECTION_RESOURCE_CONFIG[HealthcareCoreSections.HistoryOfMedicationUse.attributeValue]).toEqual([
       { collectionIds: [DataCollectionIds.medications], resourceType: 'MedicationStatement' },
     ]);
-    expect(TWIN_COMPOSITION_SECTION_RESOURCE_CONFIG[HealthcareBasicSections.VitalSigns.attributeValue]).toEqual([
+    expect(TWIN_COMPOSITION_SECTION_RESOURCE_CONFIG[HealthcareCoreSections.VitalSigns.attributeValue]).toEqual([
       { collectionIds: [DataCollectionIds.observations], resourceType: 'Observation' },
     ]);
-    expect(TWIN_COMPOSITION_SECTION_RESOURCE_CONFIG[HealthcareBasicSections.AdvanceDirectives.attributeValue]).toEqual([
+    expect(TWIN_COMPOSITION_SECTION_RESOURCE_CONFIG[HealthcareCoreSections.AdvanceDirectives.attributeValue]).toEqual([
       { collectionIds: [DataCollectionIds.consents], resourceType: 'Consent' },
     ]);
-    expect(TWIN_COMPOSITION_SECTION_RESOURCE_CONFIG[HealthcareSummarySections.PregnancyHistory.attributeValue]).toEqual([
+    expect(TWIN_COMPOSITION_SECTION_RESOURCE_CONFIG[HealthcarePermissionSummarySections.PregnancyHistory.attributeValue]).toEqual([
       { collectionIds: [DataCollectionIds.observations], resourceType: 'Observation' },
     ]);
   });
 
   it('searches text across several sections and resource types inside an inclusive date range', async () => {
     const subjectDid = REGISTERED_TWIN_SUBJECT;
-    const medicationSection = HealthcareBasicSections.HistoryOfMedicationUse.attributeValue;
-    const resultSection = HealthcareBasicSections.Results.attributeValue;
+    const medicationSection = HealthcareCoreSections.HistoryOfMedicationUse.attributeValue;
+    const resultSection = HealthcareCoreSections.Results.attributeValue;
     const medicationSectionId = getSubjectScopedSectionId(subjectDid, 'digitaltwin', 'medications');
     const observationSectionId = getSubjectScopedSectionId(subjectDid, 'digitaltwin', 'observations');
     const compositionSectionId = getSubjectScopedSectionId(subjectDid, 'digitaltwin', 'composition');
@@ -916,7 +913,7 @@ describe('CompositionManager', () => {
 
   it('searches an anonymous projection by its retained canonical code when the derived text index is absent', async () => {
     const subjectDid = REGISTERED_TWIN_SUBJECT;
-    const resultSection = HealthcareBasicSections.Results.attributeValue;
+    const resultSection = HealthcareCoreSections.Results.attributeValue;
     const observationSectionId = getSubjectScopedSectionId(subjectDid, 'digitaltwin', 'observations');
     const compositionSectionId = getSubjectScopedSectionId(subjectDid, 'digitaltwin', 'composition');
     mockVaultRepository.getAllSections.mockResolvedValue([observationSectionId, compositionSectionId] as any);
@@ -957,7 +954,7 @@ describe('CompositionManager', () => {
 
   it('returns a matching ResearchSubject when a consented leaf projection exists before a Composition is persisted', async () => {
     const subjectDid = REGISTERED_TWIN_SUBJECT;
-    const resultSection = HealthcareBasicSections.Results.attributeValue;
+    const resultSection = HealthcareCoreSections.Results.attributeValue;
     const observationSectionId = getSubjectScopedSectionId(subjectDid, 'digitaltwin', DataCollectionIds.observations);
     mockVaultRepository.getAllSections.mockResolvedValue([observationSectionId] as any);
     mockVaultRepository.listContainersInSection.mockImplementation(async (_vaultId: string, sectionId: string) => {
@@ -1004,7 +1001,7 @@ describe('CompositionManager', () => {
         body: {
           resourceType: 'Parameters',
           parameter: [
-            { name: 'section', valueString: HealthcareBasicSections.Results.attributeValue },
+            { name: 'section', valueString: HealthcareCoreSections.Results.attributeValue },
             { name: 'date-from', valueDate: '2026-08-20' },
             { name: 'date-to', valueDate: '2026-08-01' },
             { name: 'text', valueString: 'pressure' },
@@ -1018,7 +1015,7 @@ describe('CompositionManager', () => {
     {
       title: 'History of Medication Use / MedicationStatement',
       subjectDid: 'did:web:api.acme.org:research-subject:med-001',
-      sectionToken: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
+      sectionToken: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
       resourceType: 'MedicationStatement',
       sectionIdSuffix: 'medications',
       displayClaimKey: 'MedicationStatement.code-display',
@@ -1032,7 +1029,7 @@ describe('CompositionManager', () => {
     {
       title: 'Allergies and Intolerances / AllergyIntolerance',
       subjectDid: 'did:web:api.acme.org:research-subject:alg-001',
-      sectionToken: HealthcareBasicSections.AllergiesAndIntolerances.attributeValue,
+      sectionToken: HealthcareCoreSections.AllergiesAndIntolerances.attributeValue,
       resourceType: 'AllergyIntolerance',
       sectionIdSuffix: 'allergies',
       displayClaimKey: 'AllergyIntolerance.code-display',
@@ -1046,7 +1043,7 @@ describe('CompositionManager', () => {
     {
       title: 'Problem List / Condition',
       subjectDid: 'did:web:api.acme.org:research-subject:cond-001',
-      sectionToken: HealthcareBasicSections.ProblemList.attributeValue,
+      sectionToken: HealthcareCoreSections.ProblemList.attributeValue,
       resourceType: 'Condition',
       sectionIdSuffix: 'conditions',
       displayClaimKey: 'Condition.code-display',
@@ -1060,7 +1057,7 @@ describe('CompositionManager', () => {
     {
       title: 'Results / Observation',
       subjectDid: 'did:web:api.acme.org:research-subject:result-observation-001',
-      sectionToken: HealthcareBasicSections.Results.attributeValue,
+      sectionToken: HealthcareCoreSections.Results.attributeValue,
       resourceType: 'Observation',
       sectionIdSuffix: 'observations',
       displayClaimKey: 'Observation.code-display',
@@ -1074,7 +1071,7 @@ describe('CompositionManager', () => {
     {
       title: 'Results / DiagnosticReport',
       subjectDid: 'did:web:api.acme.org:research-subject:result-report-001',
-      sectionToken: HealthcareBasicSections.Results.attributeValue,
+      sectionToken: HealthcareCoreSections.Results.attributeValue,
       resourceType: 'DiagnosticReport',
       sectionIdSuffix: 'diagnostic-reports',
       displayClaimKey: 'DiagnosticReport.code-display',
@@ -1088,7 +1085,7 @@ describe('CompositionManager', () => {
     {
       title: 'Procedures / Procedure',
       subjectDid: 'did:web:api.acme.org:research-subject:proc-001',
-      sectionToken: HealthcareBasicSections.Procedures.attributeValue,
+      sectionToken: HealthcareCoreSections.Procedures.attributeValue,
       resourceType: 'Procedure',
       sectionIdSuffix: 'procedures',
       displayClaimKey: 'Procedure.code-display',
@@ -1102,7 +1099,7 @@ describe('CompositionManager', () => {
     {
       title: 'Immunizations / Immunization',
       subjectDid: 'did:web:api.acme.org:research-subject:imm-001',
-      sectionToken: HealthcareBasicSections.Immunizations.attributeValue,
+      sectionToken: HealthcareCoreSections.Immunizations.attributeValue,
       resourceType: 'Immunization',
       sectionIdSuffix: 'immunizations',
       displayClaimKey: 'Immunization.code-display',
@@ -1116,7 +1113,7 @@ describe('CompositionManager', () => {
     {
       title: 'Functional Status / Condition',
       subjectDid: 'did:web:api.acme.org:research-subject:func-001',
-      sectionToken: HealthcareBasicSections.FunctionalStatus.attributeValue,
+      sectionToken: HealthcareCoreSections.FunctionalStatus.attributeValue,
       resourceType: 'Condition',
       sectionIdSuffix: 'conditions',
       displayClaimKey: 'Condition.code-display',
@@ -1130,7 +1127,7 @@ describe('CompositionManager', () => {
     {
       title: 'Plan of Care / CarePlan',
       subjectDid: 'did:web:api.acme.org:research-subject:care-001',
-      sectionToken: HealthcareBasicSections.PlanOfCare.attributeValue,
+      sectionToken: HealthcareCoreSections.PlanOfCare.attributeValue,
       resourceType: 'CarePlan',
       sectionIdSuffix: 'care-plans',
       displayClaimKey: 'CarePlan.code-display',
@@ -1144,7 +1141,7 @@ describe('CompositionManager', () => {
     {
       title: 'Plan of Treatment / CarePlan',
       subjectDid: 'did:web:api.acme.org:research-subject:treatment-001',
-      sectionToken: HealthcareBasicSections.PlanOfTreatment.attributeValue,
+      sectionToken: HealthcareCoreSections.PlanOfTreatment.attributeValue,
       resourceType: 'CarePlan',
       sectionIdSuffix: 'care-plans',
       displayClaimKey: 'CarePlan.code-display',
@@ -1158,7 +1155,7 @@ describe('CompositionManager', () => {
     {
       title: 'Social History / Observation',
       subjectDid: 'did:web:api.acme.org:research-subject:social-001',
-      sectionToken: HealthcareBasicSections.SocialHistory.attributeValue,
+      sectionToken: HealthcareCoreSections.SocialHistory.attributeValue,
       resourceType: 'Observation',
       sectionIdSuffix: 'observations',
       displayClaimKey: 'Observation.code-display',
@@ -1172,7 +1169,7 @@ describe('CompositionManager', () => {
     {
       title: 'Vital Signs / Observation',
       subjectDid: 'did:web:api.acme.org:research-subject:vs-001',
-      sectionToken: HealthcareBasicSections.VitalSigns.attributeValue,
+      sectionToken: HealthcareCoreSections.VitalSigns.attributeValue,
       resourceType: 'Observation',
       sectionIdSuffix: 'observations',
       displayClaimKey: 'Observation.code-display',
@@ -1186,7 +1183,7 @@ describe('CompositionManager', () => {
     {
       title: 'Advance Directives / Consent',
       subjectDid: 'did:web:api.acme.org:research-subject:consent-001',
-      sectionToken: HealthcareBasicSections.AdvanceDirectives.attributeValue,
+      sectionToken: HealthcareCoreSections.AdvanceDirectives.attributeValue,
       resourceType: 'Consent',
       sectionIdSuffix: 'consents',
       displayClaimKey: 'Consent.code-display',
@@ -1200,7 +1197,7 @@ describe('CompositionManager', () => {
     {
       title: 'History of Past Illness / Condition',
       subjectDid: 'did:web:api.acme.org:research-subject:past-001',
-      sectionToken: HealthcareBasicSections.HistoryOfPastIllness.attributeValue,
+      sectionToken: HealthcareCoreSections.HistoryOfPastIllness.attributeValue,
       resourceType: 'Condition',
       sectionIdSuffix: 'conditions',
       displayClaimKey: 'Condition.code-display',
@@ -1214,7 +1211,7 @@ describe('CompositionManager', () => {
     {
       title: 'Pregnancy History / Observation',
       subjectDid: 'did:web:api.acme.org:research-subject:preg-001',
-      sectionToken: HealthcareSummarySections.PregnancyHistory.attributeValue,
+      sectionToken: HealthcarePermissionSummarySections.PregnancyHistory.attributeValue,
       resourceType: 'Observation',
       sectionIdSuffix: 'observations',
       displayClaimKey: 'Observation.code-display',
@@ -1228,7 +1225,7 @@ describe('CompositionManager', () => {
     {
       title: 'Goals and Preferences / Consent',
       subjectDid: 'did:web:api.acme.org:research-subject:goal-001',
-      sectionToken: HealthcareSummarySections.GoalsAndPreferences.attributeValue,
+      sectionToken: HealthcarePermissionSummarySections.GoalsAndPreferences.attributeValue,
       resourceType: 'Consent',
       sectionIdSuffix: 'consents',
       displayClaimKey: 'Consent.code-display',
@@ -1301,7 +1298,7 @@ describe('CompositionManager', () => {
               id: expectedCompositionId,
               'Composition.subject': subjectDid,
               'Composition.section': sectionToken,
-              'Composition.type': HealthcareBasicSections.PatientSummaryDocument.attributeValue,
+              'Composition.type': HealthcareCoreSections.PatientSummaryDocument.attributeValue,
             },
           ] as any;
         }
@@ -1332,7 +1329,7 @@ describe('CompositionManager', () => {
   );
 
   it('intersects multiple resource-family matches before returning ResearchSubjects', async () => {
-    const sectionToken = HealthcareBasicSections.Results.attributeValue;
+    const sectionToken = HealthcareCoreSections.Results.attributeValue;
     const subjectA = 'urn:uuid:00000000-0000-4000-8000-000000000201';
     const subjectB = 'urn:uuid:00000000-0000-4000-8000-000000000202';
     const observationA = getSubjectScopedSectionId(subjectA, 'digitaltwin', 'observations');
@@ -1396,7 +1393,7 @@ describe('CompositionManager', () => {
         body: {
           resourceType: 'Parameters',
           parameter: [
-            { name: 'Composition.section', valueString: HealthcareBasicSections.Results.attributeValue },
+            { name: 'Composition.section', valueString: HealthcareCoreSections.Results.attributeValue },
             { name: 'Observation.code-text', valueString: 'tension arterial' },
             { name: 'Observation.date', valueString: 'ge2026-01-01' },
           ],
@@ -1431,8 +1428,8 @@ describe('CompositionManager', () => {
           {
             id: 'comp-med-combo-1',
             'Composition.subject': subjectDid,
-            'Composition.section': HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
-            'Composition.type': HealthcareBasicSections.PatientSummaryDocument.attributeValue,
+            'Composition.section': HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
+            'Composition.type': HealthcareCoreSections.PatientSummaryDocument.attributeValue,
           },
         ] as any;
       }
@@ -1446,7 +1443,7 @@ describe('CompositionManager', () => {
         body: {
           resourceType: 'Parameters',
           parameter: [
-            { name: 'section', valueString: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue },
+            { name: 'section', valueString: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue },
             { name: 'MedicationStatement.code-display', valueString: 'paracetamol' },
             { name: 'MedicationStatement.code-text', valueString: 'paracetamol' },
           ],
@@ -1484,8 +1481,8 @@ describe('CompositionManager', () => {
           {
             id: 'comp-obs-combo-1',
             'Composition.subject': subjectDid,
-            'Composition.section': HealthcareBasicSections.VitalSigns.attributeValue,
-            'Composition.type': HealthcareBasicSections.PatientSummaryDocument.attributeValue,
+            'Composition.section': HealthcareCoreSections.VitalSigns.attributeValue,
+            'Composition.type': HealthcareCoreSections.PatientSummaryDocument.attributeValue,
           },
         ] as any;
       }
@@ -1499,7 +1496,7 @@ describe('CompositionManager', () => {
         body: {
           resourceType: 'Parameters',
           parameter: [
-            { name: 'section', valueString: HealthcareBasicSections.VitalSigns.attributeValue },
+            { name: 'section', valueString: HealthcareCoreSections.VitalSigns.attributeValue },
             { name: 'Observation.code-display', valueString: 'pressure' },
             { name: 'Observation.code-text', valueString: 'pressure' },
           ],
@@ -1532,8 +1529,8 @@ describe('CompositionManager', () => {
             id: selectionCompositionId,
             'Composition.identifier': selectionCompositionId,
             'Composition.subject': subjectDid,
-            'Composition.section': HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
-            'Composition.type': HealthcareBasicSections.PatientSummaryDocument.attributeValue,
+            'Composition.section': HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
+            'Composition.type': HealthcareCoreSections.PatientSummaryDocument.attributeValue,
             'Composition.author': OPERATIONAL_EMPLOYEE_DID,
             meta: { tag: [selectionTag] },
             tag: [selectionTag],
@@ -1542,8 +1539,8 @@ describe('CompositionManager', () => {
             id: `${selectionCompositionId}-another-employee`,
             'Composition.identifier': `${selectionCompositionId}-another-employee`,
             'Composition.subject': subjectDid,
-            'Composition.section': HealthcareBasicSections.HistoryOfMedicationUse.attributeValue,
-            'Composition.type': HealthcareBasicSections.PatientSummaryDocument.attributeValue,
+            'Composition.section': HealthcareCoreSections.HistoryOfMedicationUse.attributeValue,
+            'Composition.type': HealthcareCoreSections.PatientSummaryDocument.attributeValue,
             'Composition.author': `${OPERATIONAL_EMPLOYEE_DID}:another`,
             meta: { tag: [selectionTag] },
             tag: [selectionTag],
@@ -1561,7 +1558,7 @@ describe('CompositionManager', () => {
         body: {
           resourceType: 'Parameters',
           parameter: [
-            { name: 'section', valueString: HealthcareBasicSections.HistoryOfMedicationUse.attributeValue },
+            { name: 'section', valueString: HealthcareCoreSections.HistoryOfMedicationUse.attributeValue },
             { name: 'Composition.meta-tag', valueCoding: { system: 'urn:research:tag:score', code: '10' } },
           ],
         } as any,

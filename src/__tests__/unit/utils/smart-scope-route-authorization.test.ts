@@ -8,10 +8,8 @@ import {
   EXAMPLE_CLINICAL_SECTION_HISTORY_MEDICATION,
   EXAMPLE_SUBJECT_DID,
 } from 'gdc-common-utils-ts/examples/shared';
-import {
-  HealthcareBasicSections,
-  HealthcareTypeOfServiceSections,
-} from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareTypeOfServiceSections } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 
 describe('smart scope route authorization', () => {
   it('allows individual routes when one organization/Composition root scope is present', () => {
@@ -67,7 +65,7 @@ describe('smart scope route authorization', () => {
     expect(constrainSmartCompositionReadSections({
       subject: EXAMPLE_SUBJECT_DID,
       requestedSections: [
-        HealthcareBasicSections.AllergiesAndIntolerances.attributeValue,
+        HealthcareCoreSections.AllergiesAndIntolerances.attributeValue,
         EXAMPLE_CLINICAL_SECTION_HISTORY_MEDICATION,
       ],
       bearerPayload: {

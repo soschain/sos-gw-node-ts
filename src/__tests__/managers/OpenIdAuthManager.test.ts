@@ -34,7 +34,7 @@ import { buildClientAssertionFixture, buildClientAssertionJwt } from 'gdc-common
 import { addVC, createVP } from 'gdc-common-utils-ts/utils/vp-token';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { HealthcareActorRoles, getHealthcareRoleByClaim } from 'sos-data-utils-ts/healthcare-roles';
-import { HealthcareBasicSections } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { buildSmartCompositionReadScope } from 'gdc-common-utils-ts/utils/smart-scope';
 import {
@@ -506,7 +506,7 @@ describe('OpenIdAuthManager', () => {
     const memberPhone = '+34600111222';
     const role = 'v3-RoleCode|RESPRSN';
     const actorDid = `did:web:api.acme.org:family:${actorId}:${role}`;
-    const allergySection = HealthcareBasicSections.AllergiesAndIntolerances.attributeValue;
+    const allergySection = HealthcareCoreSections.AllergiesAndIntolerances.attributeValue;
     const requestedScope = buildSmartCompositionReadScope({ subjectDid, sections: '*' });
     const vpToken = buildUnsignedIndividualMemberIdentityVpJwt({
       clientId: actorDid,
@@ -742,7 +742,7 @@ describe('OpenIdAuthManager', () => {
     expect(response.body.access_token).toContain('.sig');
     expect(response.body.scope).toBe(buildSmartCompositionReadScope({
       subjectDid: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid,
-      sections: HealthcareBasicSections.AllergiesAndIntolerances.attributeValue,
+      sections: HealthcareCoreSections.AllergiesAndIntolerances.attributeValue,
     }));
     expect(response.body.scope).not.toContain('section=*');
     expect(response.body.ledger_verified).toBe(true);

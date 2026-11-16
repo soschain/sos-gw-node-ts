@@ -2,7 +2,8 @@ import { randomUUID } from 'crypto';
 import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import type { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import type { BundleJsonApi } from 'sos-data-utils-ts/bundle-contract';
-import { DataCollectionIds, HealthcareSummarySections } from 'gdc-common-utils-ts/constants/index';
+import { DataCollectionIds } from 'gdc-common-utils-ts/constants/index';
+import { HealthcarePermissionSummarySections } from 'sos-data-utils-ts/healthcare-sections';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { buildFhirClaimKeys, canonicalizeFhirClaims, getClaimValue, getFirstClaimValueByKeys, stripKnownFhirClaimContextPrefix } from '../utils/claims';
@@ -44,53 +45,53 @@ export const TWIN_RESOURCE_SEARCH_DATE_CLAIMS: Readonly<Record<string, string>> 
 export const TWIN_COMPOSITION_SECTION_RESOURCE_CONFIG: Readonly<
 Record<string, readonly TwinCompositionProjectionConfig[]>
 > = Object.freeze({
-  [HealthcareSummarySections.HistoryOfMedicationUse.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.HistoryOfMedicationUse.attributeValue]: Object.freeze([
     { collectionIds: [DataCollectionIds.medications], resourceType: ResourceTypesFhirR4.MedicationStatement },
   ]),
-  [HealthcareSummarySections.AllergiesAndIntolerances.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.AllergiesAndIntolerances.attributeValue]: Object.freeze([
     { collectionIds: [DataCollectionIds.allergies], resourceType: ResourceTypesFhirR4.AllergyIntolerance },
   ]),
-  [HealthcareSummarySections.ProblemList.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.ProblemList.attributeValue]: Object.freeze([
     { collectionIds: [DataCollectionIds.conditions], resourceType: ResourceTypesFhirR4.Condition },
   ]),
-  [HealthcareSummarySections.Results.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.Results.attributeValue]: Object.freeze([
     { collectionIds: [DataCollectionIds.observations], resourceType: ResourceTypesFhirR4.Observation },
     { collectionIds: [DataCollectionIds.diagnosticReports], resourceType: ResourceTypesFhirR4.DiagnosticReport },
   ]),
-  [HealthcareSummarySections.Procedures.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.Procedures.attributeValue]: Object.freeze([
     { collectionIds: [DataCollectionIds.procedures], resourceType: ResourceTypesFhirR4.Procedure },
   ]),
-  [HealthcareSummarySections.Immunizations.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.Immunizations.attributeValue]: Object.freeze([
     { collectionIds: [DataCollectionIds.immunizations], resourceType: ResourceTypesFhirR4.Immunization },
   ]),
-  [HealthcareSummarySections.FunctionalStatus.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.FunctionalStatus.attributeValue]: Object.freeze([
     { collectionIds: [DataCollectionIds.conditions], resourceType: ResourceTypesFhirR4.Condition },
   ]),
-  [HealthcareSummarySections.PlanOfCare.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.PlanOfCare.attributeValue]: Object.freeze([
     { collectionIds: [DataCollectionIds.carePlans], resourceType: ResourceTypesFhirR4.CarePlan },
   ]),
-  [HealthcareSummarySections.SocialHistory.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.SocialHistory.attributeValue]: Object.freeze([
     { collectionIds: [DataCollectionIds.observations], resourceType: ResourceTypesFhirR4.Observation },
   ]),
-  [HealthcareSummarySections.VitalSigns.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.VitalSigns.attributeValue]: Object.freeze([
     { collectionIds: [DataCollectionIds.observations], resourceType: ResourceTypesFhirR4.Observation },
   ]),
-  [HealthcareSummarySections.AdvanceDirectives.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.AdvanceDirectives.attributeValue]: Object.freeze([
     { collectionIds: [DataCollectionIds.consents], resourceType: ResourceTypesFhirR4.Consent },
   ]),
-  [HealthcareSummarySections.HistoryOfPastIllness.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.HistoryOfPastIllness.attributeValue]: Object.freeze([
     { collectionIds: [DataCollectionIds.conditions], resourceType: ResourceTypesFhirR4.Condition },
   ]),
-  [HealthcareSummarySections.PregnancyHistory.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.PregnancyHistory.attributeValue]: Object.freeze([
     { collectionIds: [DataCollectionIds.observations], resourceType: ResourceTypesFhirR4.Observation },
   ]),
-  [HealthcareSummarySections.GoalsAndPreferences.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.GoalsAndPreferences.attributeValue]: Object.freeze([
     { collectionIds: [DataCollectionIds.consents], resourceType: ResourceTypesFhirR4.Consent },
   ]),
-  [HealthcareSummarySections.Alert.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.Alert.attributeValue]: Object.freeze([
     { collectionIds: [DataCollectionIds.flags], resourceType: ResourceTypesFhirR4.Flag },
   ]),
-  [HealthcareSummarySections.MedicalDevices.attributeValue]: Object.freeze([
+  [HealthcarePermissionSummarySections.MedicalDevices.attributeValue]: Object.freeze([
     {
       collectionIds: [DataCollectionIds.deviceUseStatements],
       resourceType: ResourceTypesFhirR4.DeviceUseStatement,
