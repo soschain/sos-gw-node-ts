@@ -1,5 +1,46 @@
 # GDC Core to SOSChain GW synchronization
 
+## Indexed clinical converters: explicit owned profiles
+
+The native clinical conversion boundaries use `fhir-data-utils-ts/indexed-r4`.
+The gateway explicitly selects its fourteen semantic input families and five
+historical structural families; unsupported semantic types never select a
+generic fallback. The thirteen output families retain the existing GW
+rehydration overlays. EncounterHistory is admitted only through the structural
+compatibility profile, without an R4 conformance claim. Existing outer `.r5`
+routes that return R4-shaped content remain a separate compatibility limitation.
+
+The complete metadata map remains in `resource.meta.claims`. Native projection
+receives semantic claim columns only; GW bookkeeping stays outside that
+projection. Historical primitive-array columns retain their established CSV
+projection. Versioned/unversioned embedded-claim precedence, current native
+status, creator/attester checks and subject binding remain in CommunicationManager.
+
+Clinical claims can retain `system|business-value` identifiers while record
+identity and derived search copies keep the proven native business value.
+Historical raw embedded identifiers keep their existing precedence. The adapter
+never substitutes an internal resource id for a missing business identifier.
+Conflicting raw/token index records, including a token-only prior identity,
+require explicit migration rather than silent rekeying. These checks use the
+existing IVault index-query port; KMS and channel-encryption operations are unchanged.
+
+The output overlays still rebuild Identifier and code fields in their existing
+GW form. Consequently this cut does not claim lossless native output for
+identifier systems or multiple codings, nor complete FHIR schema conformance.
+The underlying pure profile's stronger round-trip behavior does not remove
+those independent gateway overlays.
+
+Read-only source comparison:
+[original document conversion](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/bundle-document-builder.ts)
+and [original native normalization](https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/utils/interoperable-resource-operation.ts).
+The explicit owned profile is documented in the
+[FHIR indexed compatibility guide](https://github.com/Fundacion-UNID/fhir-data-utils-ts/blob/main/docs/INDEXED_CLINICAL_COMPATIBILITY.md).
+Recorded synthetic fixtures exercise the actual prior gateway methods; new
+tests do not load the original package directly. The current dependency
+composition is an unpublished local FHIR candidate with unchanged committed
+manifest/lock bytes. Public release/pinning and the whole-project GDC boundary
+remain separate prerequisites for promotion.
+
 ## Public ping compact response and FHIR export
 
 Bootstrap passes its existing process-owned Antifraud `jwsToCompact` capability

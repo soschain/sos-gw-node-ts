@@ -4,7 +4,7 @@ import { normalizeReference, tokenToCoding } from './fhir-data-utils';
 import { determineResourceId } from './resource';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { DIGITAL_TWIN_SEARCH_CLAIM_PREFIX } from './digital-twin-research-projection';
-import { convertClaimsToFhirResource } from 'gdc-common-utils-ts/utils/bundle-document-builder';
+import { projectGatewayIndexedClaimsToNative } from './gateway-clinical-profile';
 
 const PATIENT_REFERENCE_RESOURCE_TYPES = new Set<string>([
   ResourceTypesFhirR4.AllergyIntolerance,
@@ -104,7 +104,7 @@ export function buildFhirResourceFromIndexedClaims(
   const language = normalizeReference(getClaimValue<string>(claims, `${resourceType}.language`));
   const userSelected = normalizeReference(getClaimValue<string>(claims, `${resourceType}.user-selected`));
 
-  const projected = convertClaimsToFhirResource(claims) as Record<string, any>;
+  const projected = projectGatewayIndexedClaimsToNative(resourceType, claims);
   const resource: Record<string, any> = {
     ...projected,
     resourceType,
