@@ -1,5 +1,22 @@
 # GDC Core to SOSChain GW synchronization
 
+## Public ping compact response and FHIR export
+
+Bootstrap passes its existing process-owned Antifraud `jwsToCompact` capability
+through discovery routing to ping. A static governed vector records the
+read-only published predecessor's UTF-8 JSON/base64url bytes for ping's fixed
+`alg: none`, uncompressed object payload and empty signature. The terminal dot
+and existing JSON/form response fields remain unchanged. This profile carries
+no signature or authenticity proof; it is not a general JWT or compressed
+payload migration.
+
+The FHIR branch now exports an owned typed Bundle with an OperationOutcome
+resource and a response status per entry, using the FHIR JSON media type.
+Previously, raw outcomes were passed to a helper expecting entry wrappers,
+which produced empty entries. The correction is isolated to ping's native
+export; storage profiles and manager behavior are unchanged. No dependency or
+version update is required, and the full project GDC boundary remains blocked.
+
 ## Discovery protected-record types
 
 The two protected section reads in discovery use
