@@ -1,5 +1,17 @@
 # GDC Core to SOSChain GW synchronization
 
+## Adopted existing composition and job owners
+
+Communication composition conversion now imports the existing
+`compositionFhirR4ToFlat` from FHIR Data. Host Offer/Order's inline `JobRequest`
+type uses SOS Data's confidential-job contract. These are owner substitutions;
+conversion, request fields and manager authorization remain unchanged.
+
+Read-only historical source references:
+
+- https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/convert/convert-composition.ts
+- https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/models/confidential-job.ts
+
 ## Adopted neutral credential and transcript ownership
 
 Credential consumers use Antifraud `VerifiableCredentialV2`, `CredentialProof`

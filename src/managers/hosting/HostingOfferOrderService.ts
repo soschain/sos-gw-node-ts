@@ -88,7 +88,7 @@ export class HostingOfferOrderService {
    * moving tenant keys or trusting browser-authored commercial evidence.
    */
   async processEmployeeLicenseOfferCreateEntry(
-    job: Pick<import('gdc-common-utils-ts/models/confidential-job').JobRequest, 'tenantId' | 'sector'>,
+    job: Pick<import('sos-data-utils-ts/confidential-job').JobRequest, 'tenantId' | 'sector'>,
     entry: BundleEntry,
   ): Promise<BundleEntry> {
     const tenantId = String(job.tenantId || '').trim();

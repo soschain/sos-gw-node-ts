@@ -25,7 +25,7 @@ import {
 } from 'gdc-common-utils-ts/utils/communication-participant-search';
 import { GatewaySearchBundleTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { normalizeClaimsFromFhirResource } from 'gdc-common-utils-ts/utils/interoperable-resource-operation';
-import { compositionFhirR4ToFlat } from 'gdc-common-utils-ts/convert/convert-composition';
+import { compositionFhirR4ToFlat } from 'fhir-data-utils-ts';
 import { buildClinicalDocumentSearchAttributes } from '../utils/clinical-document-search-attributes';
 import { requireClaimsOnlyResourceShape } from '../utils/fhir-flat-claims';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';

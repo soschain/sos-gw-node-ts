@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Resolve Communication composition conversion from the canonical FHIR owner
+  and host Offer/Order request types from SOS Data. Preserve conversion output
+  and the existing confidential-job boundary.
+
 - Use neutral Antifraud credential/proof models and W3C context, and resolve
   organization review transcripts and type markers from their owned runtime.
   Preserve signed JSON bytes, issuer/key/party bindings and existing denial
