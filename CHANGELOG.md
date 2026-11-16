@@ -1,5 +1,12 @@
 ## Unreleased
 
+- Inject the existing process-owned Antifraud crypto port into discovery ping.
+  Preserve its fixed unsigned UTF-8 JSON/base64url form response and ordinary
+  JSON output. Correct the negotiated FHIR batch response to contain the actual
+  OperationOutcome, response status and FHIR media type. Describe the compact
+  response as unsigned rather than claiming JARM authenticity. The remaining
+  Gateway GDC dependency boundary stays blocked.
+
 - Type discovery's protected CommunicationRequest and DocumentReference
   section reads with the existing SOS Data record contract. Preserve emitted
   route bytes and every storage, publication and authority check.

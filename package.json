@@ -21,6 +21,7 @@
     "prepublishOnly": "node -e \"console.error('ERROR: sos-gw-node-ts is a deployable service and must never be published to npm'); process.exit(1)\"",
     "check:project-boundaries": "node --test scripts/tests/no-gdc-dependencies.test.mjs",
     "test:subscription-runtime": "node --experimental-specifier-resolution=node --import ./scripts/register-tsnode.mjs --test --test-concurrency=1 scripts/runtime-tests/subscription-manager.test.mjs",
+    "test:ping-runtime": "node --experimental-specifier-resolution=node --import ./scripts/register-tsnode.mjs --test --test-concurrency=1 scripts/runtime-tests/discovery-ping.test.mjs",
     "start": "node --import ./scripts/register-tsnode.mjs build/main.js",
     "clean": "node scripts/clean-build.mjs",
     "build": "npm run clean && npm run build:swagger && tsc && node scripts/patch-esm-imports.mjs",
