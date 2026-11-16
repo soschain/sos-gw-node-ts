@@ -1,5 +1,11 @@
 ## Unreleased
 
+- Use the owned SOS IndividualCustomer response discriminator for Individual
+  creation, retaining the exact Customer wire tag and Person resource. Remove
+  an unreferenced internal healthcare re-export module; governance checks now
+  examine actual emergency-purpose and operational-section imports directly.
+  This candidate-only integration awaits public SOS Data/FHIR pins before main.
+
 - Move indexed clinical native conversion to explicit owned FHIR profiles:
   fourteen semantic and five separately selected structural input families,
   with thirteen R4-shaped compatibility output families. Preserve GW metadata

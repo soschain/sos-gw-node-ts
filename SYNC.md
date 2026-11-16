@@ -1,5 +1,25 @@
 # GDC Core to SOSChain GW synchronization
 
+## Individual Customer discriminator and unused healthcare facade
+
+Individual creation uses `GatewayResponseEntryTypes.IndividualCustomer` from
+the owned SOS application response contract. Its wire value stays `Customer`;
+the contained clinical identity remains the separate FHIR `Person` type. This
+is not a Schema.org standard type, inferred identity or new authorization.
+
+The former internal healthcare re-export file had no production import,
+re-export or maintained external SDK consumer. Two source-governance tests
+read it; they now inspect real emergency-purpose imports and all operational
+section consumers, retaining their literal value and descriptor controls.
+Historical changelog references remain history. Other remaining GDC consumers
+and the global dependency boundary are not closed by removing this file.
+
+The local candidate uses immutable SOS Data a67ad55 and FHIR ccbb555 outputs
+with unchanged committed manifest/lock and unrelated installed packages.
+Main integration still requires the cumulative public dependency pins.
+Original discriminator source:
+https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/constants/schemaorg.ts
+
 ## Indexed clinical converters: explicit owned profiles
 
 The native clinical conversion boundaries use `fhir-data-utils-ts/indexed-r4`.

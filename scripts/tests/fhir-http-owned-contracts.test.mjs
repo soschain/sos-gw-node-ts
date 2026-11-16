@@ -1,4 +1,5 @@
-// Flow contract: FHIR code-system identifiers use their canonical owner; search responses stringify registered SOS HTTP status values without importing example data into runtime.
+// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+// Actual emergency purpose imports and FHIR code-system wire values use their canonical owner; search responses stringify registered SOS HTTP status values.
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
@@ -6,14 +7,14 @@ import { AppointmentClaimsFhirApi, AppointmentStatus, FhirCodeSystems } from 'fh
 import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract'
 import ts from 'typescript'
 
-test('the shared FHIR code-system export uses its canonical owner', async () => {
-  const text = await readFile(new URL('../../src/shared/healthcare-constants.ts', import.meta.url), 'utf8')
-  const source = ts.createSourceFile('healthcare-constants.ts', text, ts.ScriptTarget.Latest, true)
+test('the production emergency consent purpose imports its canonical FHIR owner', async () => {
+  const text = await readFile(new URL('../../src/security/break-glass.ts', import.meta.url), 'utf8')
+  const source = ts.createSourceFile('break-glass.ts', text, ts.ScriptTarget.Latest, true)
   const owners = []
   for (const statement of source.statements) {
-    if (!ts.isExportDeclaration(statement) || !statement.exportClause || !ts.isNamedExports(statement.exportClause)) continue
-    for (const binding of statement.exportClause.elements) {
-      if ((binding.propertyName?.text ?? binding.name.text) === 'FhirCodeSystems') owners.push(statement.moduleSpecifier.text)
+    if (!ts.isImportDeclaration(statement) || !statement.importClause?.namedBindings || !ts.isNamedImports(statement.importClause.namedBindings)) continue
+    for (const binding of statement.importClause.namedBindings.elements) {
+      if ((binding.propertyName?.text ?? binding.name.text) === 'HealthcareConsentPurposes') owners.push(statement.moduleSpecifier.text)
     }
   }
   assert.deepEqual(owners, ['fhir-data-utils-ts'])
