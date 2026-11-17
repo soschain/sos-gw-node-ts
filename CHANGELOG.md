@@ -1,5 +1,10 @@
 ## Unreleased
 
+## 2.1.0 (2026-11-17)
+
+- Keep published JavaScript dependencies under native Node module resolution
+  while transpiling local TypeScript, preserving PKI key and signature behavior.
+
 - Preserve component Observation graphs through clinical import and research
   projection, including correlated references and consent-driven rebuilds.
   Component records retain their own clinical state without manufacturing one.
@@ -15,8 +20,8 @@
   Preserve its fixed unsigned UTF-8 JSON/base64url form response and ordinary
   JSON output. Correct the negotiated FHIR batch response to contain the actual
   OperationOutcome, response status and FHIR media type. Describe the compact
-  response as unsigned rather than claiming JARM authenticity. The remaining
-  Gateway independence is completed by the native-contract changes below.
+  response as unsigned. Complete gateway independence through the native
+  contracts described below.
 
 - Type discovery's protected CommunicationRequest and DocumentReference
   section reads with the existing SOS Data record contract. Preserve emitted

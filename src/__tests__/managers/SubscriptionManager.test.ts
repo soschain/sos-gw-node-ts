@@ -143,7 +143,8 @@ describe('SubscriptionManager independent R5 notification boundary', () => {
     const status = notification.entry[0].resource;
     expect(status.eventsSinceSubscriptionStart).toBe('1');
     expect(status.notificationEvent[0].eventNumber).toBe('1');
-    expect(status.notificationEvent[0].focus.reference).toBe(notification.entry[1].fullUrl);
+    expect(status.notificationEvent[0].focus.reference).toBe(`${resource.resourceType}/${resource.id}`);
+    expect(notification.entry[1].resource).toEqual(resource);
     const topics = await f.vaultRepository.getContainersInSection<any>(f.vaultId, getEnvSectionId('fhir-r5-subscription-topics'));
     expect(topics).toHaveLength(1);
     const stored = await mockKmsService.unprotectConfidentialData<any>(topics[0], f.vaultId);
