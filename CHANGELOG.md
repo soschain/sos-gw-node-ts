@@ -1,5 +1,20 @@
 ## Unreleased
 
+- Use the owned SOS IndividualCustomer response discriminator for Individual
+  creation, retaining the exact Customer wire tag and Person resource. Remove
+  an unreferenced internal healthcare re-export module; governance checks now
+  examine actual emergency-purpose and operational-section imports directly.
+  This candidate-only integration awaits public SOS Data/FHIR pins before main.
+
+- Move indexed clinical native conversion to explicit owned FHIR profiles:
+  fourteen semantic and five separately selected structural input families,
+  with thirteen R4-shaped compatibility output families. Preserve GW metadata
+  precedence, creator/subject guards and existing output overlays. Keep clinical
+  identifier systems separate from established business index keys, and reject
+  ambiguous raw/token index records before clinical writes. This is a local
+  candidate integration pending the cumulative public FHIR release and pin;
+  it does not close the remaining project GDC boundary or add native R5 output.
+
 - Inject the existing process-owned Antifraud crypto port into discovery ping.
   Preserve its fixed unsigned UTF-8 JSON/base64url form response and ordinary
   JSON output. Correct the negotiated FHIR batch response to contain the actual
