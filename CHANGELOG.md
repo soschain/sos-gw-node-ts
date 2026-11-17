@@ -4,7 +4,8 @@
   creation, retaining the exact Customer wire tag and Person resource. Remove
   an unreferenced internal healthcare re-export module; governance checks now
   examine actual emergency-purpose and operational-section imports directly.
-  This candidate-only integration awaits public SOS Data/FHIR pins before main.
+  This functional source is integrated on main. Public dependency pins and the
+  remaining GDC migration are required before service promotion.
 
 - Move indexed clinical native conversion to explicit owned FHIR profiles:
   fourteen semantic and five separately selected structural input families,

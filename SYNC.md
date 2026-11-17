@@ -16,7 +16,8 @@ and the global dependency boundary are not closed by removing this file.
 
 The local candidate uses immutable SOS Data a67ad55 and FHIR ccbb555 outputs
 with unchanged committed manifest/lock and unrelated installed packages.
-Main integration still requires the cumulative public dependency pins.
+The validated functional source is integrated on main. Service promotion still
+requires the cumulative public dependency pins and remaining boundary checks.
 Original discriminator source:
 https://github.com/Global-DataCare/gdc-common-utils-ts/blob/main/src/constants/schemaorg.ts
 
