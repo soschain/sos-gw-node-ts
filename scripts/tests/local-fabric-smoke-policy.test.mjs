@@ -29,5 +29,7 @@ test('the Fabric profile does not inherit unsigned Demo or a disabled verifier',
   const profile = readFileSync(resolve(root, 'scripts/prepare-consentaccess-local-fabric-env.sh'), 'utf8');
   assert.match(profile, /CLEARING_HOUSE_MODE=local/);
   assert.match(profile, /SECURITY_MODE=(?:strict|compat)/);
+  assert.match(profile, /^DEPLOYMENT_ENV=dev$/m);
+  assert.doesNotMatch(profile, /^DEPLOYMENT_ENV=local$/m);
   assert.doesNotMatch(profile, /REPLAY_PROTECTION_PROVIDER=none/);
 });

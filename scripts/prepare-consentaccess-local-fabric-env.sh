@@ -88,7 +88,7 @@ cat >> "${OUT_ENV}" <<EOF
 # - consent lifecycle writes go to health-care-local
 NETWORK_MODE=${NETWORK_MODE_VALUE}
 NODE_ENV=test
-DEPLOYMENT_ENV=local
+DEPLOYMENT_ENV=dev
 SECURITY_MODE=strict
 CLEARING_HOUSE_MODE=local
 AUTH_TOKEN_VERIFIER=trusted-oidc

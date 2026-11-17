@@ -109,7 +109,7 @@ export async function runLocalFabricImageProof(config) {
     }
     if (!redisReady) throw new Error('The owned durable replay service did not become ready.');
     const hostPort = await freePort(); const baseUrl = `http://127.0.0.1:${hostPort}`; const audience = driverConfig.oidcAudience || 'local-image-gateway';
-    const overrides = { NODE_ENV: 'test', DEPLOYMENT_ENV: 'local', NETWORK_MODE: 'test-network', SECURITY_MODE: 'strict',
+    const overrides = { NODE_ENV: 'test', DEPLOYMENT_ENV: 'dev', NETWORK_MODE: 'test-network', SECURITY_MODE: 'strict',
       DB_PROVIDER: 'mem', STORAGE_PROVIDER: 'mem', KMS_PROVIDER: 'memory', QUEUE_PROVIDER: 'mem', CLEARING_HOUSE_MODE: 'local',
       REPLAY_PROTECTION_PROVIDER: 'redis', REDIS_URL: `redis://${redisName}:6379`,
       AUTH_TOKEN_VERIFIER: 'trusted-oidc', OIDC_TRUSTED_PROVIDERS_JSON: JSON.stringify([{ iss: oracle.advertisedOrigin, aud: audience }]),
