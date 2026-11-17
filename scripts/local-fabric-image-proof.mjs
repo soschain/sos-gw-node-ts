@@ -136,7 +136,7 @@ export async function runLocalFabricImageProof(config) {
     if (typeof prepared.runRequiredStages !== 'function') throw new Error('The external SDK driver has not completed the required Fabric image stages.');
     const mintOidc = options => issuer.mintOidc({ ...options, issuer: oracle.advertisedOrigin, audience });
     const idToken = await mintOidc({ subject: 'fixture-controller-account', email: driverConfig.controllerEmail || e.firstContactEmail });
-    const results = await prepared.runRequiredStages({ issuer, idToken, mintOidc, service: driverConfig.service, audience: prepared.hostDidDocument.id,
+    const results = await prepared.runRequiredStages({ issuer, idToken, mintOidc, service: { ...driverConfig.service, url: baseUrl }, audience: prepared.hostDidDocument.id,
       evaluateFabric, readRoleLicense: id => evaluateFabric({ channel: identityChannel, chaincode: 'rolelicense-sc', functionName: 'ReadRoleLicense', args: [id] }) });
     validateRequiredStageReceipts(results.stages);
     receipt.results = results;
