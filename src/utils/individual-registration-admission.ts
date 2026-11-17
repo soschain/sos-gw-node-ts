@@ -39,6 +39,14 @@ export type IndividualRegistrationAdmission = Readonly<{
   sector: string;
   /** Self registration is bound again after document-derived claims are merged. */
   verifiedControllerIdentifiers?: readonly string[];
+  /** Server-derived creation provenance; never a controller grant or a clinical consent. */
+  professionalCreator?: Readonly<{
+    actorDid: string;
+    clientId: string;
+    authorIdentifier: string;
+    ownerIdentifier: string;
+    role: string;
+  }>;
 }>;
 
 function deny(): never {
@@ -178,7 +186,14 @@ export async function admitIndividualRegistration(input: {
       || group['Group.managing-entity']?.[0] !== organization) continue;
     const memberDocument: any = await repository.get<any>(collectionName, buildGroupMemberProjectionId(groupId, practitioner), buildGroupMemberSectionId(groupId));
     const member: FlatClaims | undefined = memberDocument ? await readClaims(memberDocument) : undefined;
-    if (member?.['Group.member']?.[0] === practitioner) return { sector };
+    if (member?.['Group.member']?.[0] === practitioner) return {
+      sector,
+      professionalCreator: {
+        actorDid, clientId, authorIdentifier: binding.authorIdentifier,
+        ownerIdentifier: expectedOrganizationOwner,
+        role: normalizeCodeSystemAndValue(identity.role),
+      },
+    };
   }
   return deny();
 }

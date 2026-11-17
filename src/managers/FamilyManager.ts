@@ -75,12 +75,14 @@ import { RelatedPersonClaim } from 'fhir-data-utils-ts';
 import { getSubjectScopedSectionId } from '../utils/individual-sections';
 import { validateFhirPayloadByVersion } from '../utils/fhir-ingestion';
 import { REGISTERED_PROFILE_ACCOUNT_DIRECTORY_META } from '../utils/secure-route-bearer-binding';
-import { admitIndividualRegistration, assertAdmittedIndividualRegistrationClaims } from '../utils/individual-registration-admission';
+import { admitIndividualRegistration, assertAdmittedIndividualRegistrationClaims, type IndividualRegistrationAdmission } from '../utils/individual-registration-admission';
 
 type FamilyRegistrationContent = {
   status: EntityLifecycleStatus;
   claims: ClaimsRecord;
   contained: IncludedResource[];
+  /** Encrypted provenance of the already-authorized creator, separate from controller activation. */
+  professionalCreator?: IndividualRegistrationAdmission['professionalCreator'];
 };
 
 const INDIVIDUAL_SECTION = getEnvSectionId(SUBJECT_SECTION_INDIVIDUAL);
@@ -635,6 +637,7 @@ export class FamilyManager {
         status: EntityLifecycleStatus.Pending,
         claims: processedClaims,
         contained: [person, processedService].filter(Boolean) as IncludedResource[],
+        ...(admission.professionalCreator ? { professionalCreator: admission.professionalCreator } : {}),
       } satisfies FamilyRegistrationContent,
     };
     const secureDoc = await this.kmsService.protectConfidentialData(registrationDoc, tenantVaultId);
@@ -841,8 +844,7 @@ export class FamilyManager {
     }).claims as ClaimsRecord;
   }
 
-  /** Responsibility confirmation belongs to the verified stored controller, never the proposing professional. */
-  private assertVerifiedIndividualController(job: JobRequest, claims: ClaimsRecord): void {
+  private isVerifiedIndividualController(job: JobRequest, claims: ClaimsRecord): boolean {
     const authenticated = new Set(getAuthenticatedJobActorIdentifiers(job));
     const emailValues = splitIndexedEmails(claims[SchemaOrgOrganizationClaim.OwnerEmail] || claims[SchemaOrgPersonClaim.Email]);
     const phoneValues = splitIndexedPhones(claims[SchemaOrgOrganizationClaim.OwnerTelephone] || claims[SchemaOrgPersonClaim.Telephone]);
@@ -850,9 +852,27 @@ export class FamilyManager {
       ...emailValues.map(contact => buildStableActorIdentifier({ contactKind: StableActorContactKinds.Email, contact })),
       ...phoneValues.map(contact => buildStableActorIdentifier({ contactKind: StableActorContactKinds.Phone, contact })),
     ];
-    if (!expected.some(identifier => authenticated.has(identifier))) {
-      throw new ManagerError('Only the verified proposed controller may confirm this individual Offer.', IssueType.Forbidden);
-    }
+    return expected.some(identifier => authenticated.has(identifier));
+  }
+
+  /** An admitted creator may complete this registration; controller activation and access consent remain separate. */
+  private async assertIndividualOrderCreator(job: JobRequest, content: FamilyRegistrationContent): Promise<void> {
+    if (this.isVerifiedIndividualController(job, content.claims)) return;
+    const recorded = content.professionalCreator;
+    const deny = (): never => {
+      throw new ManagerError('Individual Order requires its verified controller or its recorded, currently authorized professional creator.', IssueType.Forbidden);
+    };
+    if (!recorded || !recorded.actorDid || !recorded.clientId || !recorded.authorIdentifier
+      || !recorded.ownerIdentifier || !recorded.role
+      || recorded.actorDid !== job.content?.iss
+      || recorded.clientId !== String((job.content as any)?.client_id || '').trim()) return deny();
+    const current = (await admitIndividualRegistration({
+      job, claims: content.claims, vaultRepository: this.vaultRepository,
+      kmsService: this.kmsService, tenantManager: this.tenantsCacheManager,
+    })).professionalCreator;
+    if (!current || current.actorDid !== recorded.actorDid || current.clientId !== recorded.clientId
+      || current.authorIdentifier !== recorded.authorIdentifier || current.ownerIdentifier !== recorded.ownerIdentifier
+      || current.role !== recorded.role) return deny();
   }
 
   private async processFamilyOrderEntry(job: JobRequest, entry: BundleEntry, environment?: string): Promise<(BundleEntry | ErrorEntry)[]> {
@@ -901,7 +921,7 @@ export class FamilyManager {
 
     const secureDoc = results[0] as ConfidentialStorageDoc;
     const decryptedContent = await this.kmsService.unprotectConfidentialData<FamilyRegistrationContent>(secureDoc, tenantVaultId);
-    this.assertVerifiedIndividualController(job, decryptedContent.claims);
+    await this.assertIndividualOrderCreator(job, decryptedContent);
     if (decryptedContent?.status !== EntityLifecycleStatus.Pending) {
       if (decryptedContent?.status === EntityLifecycleStatus.Active) {
         return this.repairActiveFamilyOrderController({

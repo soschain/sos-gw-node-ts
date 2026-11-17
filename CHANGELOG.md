@@ -197,10 +197,13 @@
 - Derive hosted Individual Organization DIDs from the configured provider and
   persisted UUID on new registration and replay, preserving public card aliases.
   Reject non-UUID historical rows that need identity migration.
-- Require the verified proposed controller to confirm an individual Offer before
-  initial activation or controller-seat issuance, including active Order replay.
-  A professional's registration capability does not accept responsibility for
-  the proposed controller.
+- Preserve the admitted professional creator in encrypted registration state.
+  That same creator can complete its individual Order only while its registered
+  device, licence and organization registration permission remain current.
+  Order creates the controller assignment and issued seat; controller device
+  activation and acceptance of clinical access permissions remain separate.
+  Historical Offers without recorded creator provenance retain their verified
+  controller continuation. Replays cannot create another assignment or grant.
 - Use independent SOS response/routing catalogs and included-resource contracts
   without changing entry discriminators or terminal response correlation.
 - Consume clinical creator profile data from SOS Data and portable binding,

@@ -219,6 +219,24 @@ Its simulated webhook signature validation is enabled only in that profile.
 Directly injected unit doubles can still exercise deterministic OTP behavior;
 those tests do not authenticate a real webhook or establish provider readiness.
 
+## Individual registration and controller activation
+
+A currently authorized professional can propose a human or animal registration
+and complete the Order for that same registration. The gateway stores the
+creator reference inside encrypted registration content and rechecks the
+registered device, active licence, organization Group membership and current
+registration Consent before allowing this continuation. Request metadata cannot
+provide the stored creator reference. An older Offer without that reference can
+be continued only by its verified proposed controller.
+
+Order creates the individual, its controller assignment and the first issued
+controller licence. It does not register the controller's device, create a
+controller session or approve the professional's clinical access. The controller
+uses the portal and the email or phone contact bound to the licence for its own
+activation. Access permissions requiring controller approval remain pending
+until that separate authorized decision. Controller activation metadata is not
+an invitation to an employee or family member.
+
 ## Registered device ledger bindings
 
 Professional device enrolment records the current professional assignment and
