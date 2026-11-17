@@ -25,17 +25,13 @@
   creation, retaining the exact Customer wire tag and Person resource. Remove
   an unreferenced internal healthcare re-export module; governance checks now
   examine actual emergency-purpose and operational-section imports directly.
-  This functional source is integrated on main. Public dependency pins and the
-  remaining GDC migration are required before service promotion.
 
 - Move indexed clinical native conversion to explicit owned FHIR profiles:
   fourteen semantic and five separately selected structural input families,
   with thirteen R4-shaped compatibility output families. Preserve GW metadata
   precedence, creator/subject guards and existing output overlays. Keep clinical
   identifier systems separate from established business index keys, and reject
-  ambiguous raw/token index records before clinical writes. This is a local
-  candidate integration pending the cumulative public FHIR release and pin;
-  it does not close the remaining project GDC boundary or add native R5 output.
+  ambiguous raw/token index records before clinical writes.
 
 - Inject the existing process-owned Antifraud crypto port into discovery ping.
   Preserve its fixed unsigned UTF-8 JSON/base64url form response and ordinary
@@ -48,7 +44,7 @@
   section reads with the existing SOS Data record contract. Preserve emitted
   route bytes and every storage, publication and authority check.
 
-- Use public FHIR 0.7.1 R5 subscription event selection and notification
+- Use public FHIR R5 subscription event selection and notification
   construction. Project historical topic filter `resourceType` spelling at
   this boundary, deny unsupported modifiers, and persist caller-owned UUID
   entry identities, timestamp and serialized notification bytes with the
@@ -59,9 +55,8 @@
 - Resolve FHIR code-system identifiers and appointment fixtures from the
   canonical FHIR package, and search-response HTTP status values from SOS Data.
   Preserve successful response strings and remove unused legacy clinical
-  catalog forwarders. Pin public SOS Data 0.8.2 and Antifraud Data 0.3.3 so
-  existing response envelopes and neutral credential canonicalizer types
-  resolve after a clean install.
+  catalog forwarders. Keep response envelopes and credential canonicalizer
+  types under their independent package owners.
 
 - Persist a bound pending state while reconciling the configured host DID.
   Restart retries publish the exact stored self-credentials before clearing
@@ -89,8 +84,7 @@
 
 - Use published SOS operational search/lifecycle constants and DSP metadata in
   Communication search, RelatedPerson purge/readback and discovery. Preserve
-  existing wire values and authorization; pin AF 0.3.2, SOS Data 0.8.1 and the
-  development-only Node SDK 0.5.1 with all other direct versions retained.
+  existing wire values and authorization.
 
 - Resolve queued actor DID identifier extraction from the neutral Antifraud
   identity owner, preserving existing contact binding and rejection behavior.
@@ -202,8 +196,7 @@
   flags cannot supply that proof.
 - Derive hosted Individual Organization DIDs from the configured provider and
   persisted UUID on new registration and replay, preserving public card aliases.
-  Reject non-UUID historical rows that need identity migration. Focused manager
-  and API provenance tests pass; cumulative backend and network gates remain pending.
+  Reject non-UUID historical rows that need identity migration.
 - Require the verified proposed controller to confirm an individual Offer before
   initial activation or controller-seat issuance, including active Order replay.
   A professional's registration capability does not accept responsibility for
@@ -217,10 +210,6 @@
   neutral DIDComm envelope contracts, SOS message entries and wire formats, and
   FHIR's native Communication projection and claim-key normalization. Preserve
   existing field spellings and require verification independently of data shapes.
-- Validate these response/clinical/OpenID/message slices with the type check,
-  14 scoped ownership guards and 22 backend consumer suites (399 assertions,
-  no pending cases). The full project dependency guard remains red; browser and
-  configured network journeys still require cumulative acceptance.
 - Use neutral Antifraud person, organization, service, action and commerce claim
   catalogs across onboarding, identity, indexed search and order flows. Preserve
   each stored wire key, including identifier references versus identifier values,
@@ -248,11 +237,9 @@
   Dentistry in clinical creator metadata while excluding Controller authority
   and preserving reverse-DNS occupation values and persisted Consent identifiers.
 
-- Remove the unused frozen SDK client dependency and its Jest, TypeScript and
-  emitted-import resolution entries. Remaining GDC imports and transitive paths
-  are still tracked separately; this is not complete dependency independence.
-- Add the complete declaration/source/registry independence gate. It remains
-  red during migration and must pass before service promotion.
+- Remove the inherited SDK client dependency and its Jest, TypeScript and
+  emitted-import resolution entries. Check direct and transitive independence
+  through declarations, source/emitted imports and the registry lock.
 
 - Use the neutral Antifraud cryptography engine and key/byte contracts for
   Gateway bootstrap, KMS, key handling and consuming tests. Preserve caller-
@@ -267,11 +254,9 @@
 - Consume standard OperationOutcome issue codes from FHIR utilities and the
   runtime ManagerError/status policy from SOS SDK Core in production and tests.
   Unknown runtime issue codes now fail with exception/500 rather than reading
-  inherited mapping properties. Corrected registry pins remain pending.
+  inherited mapping properties.
 - Resolve the Fabric submit test's module URL with `fileURLToPath` so its commit
   success/failure checks run on Windows as well as Unix.
-- Refresh stale source-manifest pin assertions. Document that this assertion
-  does not prove unpublished API availability or a GDC-free registry graph.
 
 - Import canonical FHIR resource names and Consent, Composition, Communication,
   RelatedPerson and Task claim vocabularies from FHIR data utilities. Read-only
@@ -282,7 +267,6 @@
 - Consume neutral UUID normalization and base58 encoding directly from
   Antifraud data utilities in Gateway storage, versioning and identity flows.
   Reject encoded employee identities unless they contain exactly 16 bytes.
-  Replacement registry pins and full dependency removal remain pending.
 
 - Retire the inherited release-chain command, which could mutate and publish
   sibling libraries. The command now stops without changing packages; shared
