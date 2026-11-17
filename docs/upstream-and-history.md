@@ -2,8 +2,9 @@
 
 ## GW CORE
 
-SOSCHAIN Gateway extends the open-source GW CORE gateway developed in the
-Global Data Care ecosystem:
+SOSCHAIN Gateway derives from the open-source GW CORE gateway developed in the
+Global Data Care ecosystem. Current shared runtime contracts belong to the
+independent Antifraud, FHIR and SOS packages:
 
 - [GW CORE repository](https://github.com/Global-DataCare/gwtemplate-node-ts)
 - [GW CORE v1 documentation](https://github.com/Global-DataCare/gwtemplate-node-ts/tree/main/docs-v1)
@@ -23,9 +24,8 @@ earlier design is implemented by the current gateway.
 
 ## Shared repositories
 
-- [gdc-common-utils-ts](https://github.com/Global-DataCare/gdc-common-utils-ts)
-- [gdc-sdk-core-ts](https://github.com/Global-DataCare/gdc-sdk-core-ts)
-- [gdc-sdk-node-ts](https://github.com/Global-DataCare/gdc-sdk-node-ts)
+- [antifraud-data-utils-ts](https://github.com/antifraudservices/antifraud-data-utils-ts)
+- [antifraud-sdk-node-ts](https://github.com/antifraudservices/antifraud-sdk-node-ts)
 - [fhir-data-utils-ts](https://github.com/Fundacion-UNID/fhir-data-utils-ts)
 - [sos-data-utils-ts](https://github.com/soschain/sos-data-utils-ts)
 - [sos-sdk-core-ts](https://github.com/soschain/sos-sdk-core-ts)

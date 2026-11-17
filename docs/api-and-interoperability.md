@@ -21,15 +21,27 @@ leak internal claims or storage metadata.
 
 ## SDK and data repositories
 
+- [antifraud-data-utils-ts](https://github.com/antifraudservices/antifraud-data-utils-ts)
+- [antifraud-sdk-node-ts](https://github.com/antifraudservices/antifraud-sdk-node-ts)
 - [fhir-data-utils-ts](https://github.com/Fundacion-UNID/fhir-data-utils-ts)
 - [sos-data-utils-ts](https://github.com/soschain/sos-data-utils-ts)
 - [sos-sdk-core-ts](https://github.com/soschain/sos-sdk-core-ts)
-- [gdc-common-utils-ts](https://github.com/Global-DataCare/gdc-common-utils-ts)
-- [gdc-sdk-core-ts](https://github.com/Global-DataCare/gdc-sdk-core-ts)
-- [gdc-sdk-node-ts](https://github.com/Global-DataCare/gdc-sdk-node-ts)
 
 Integrators should use published package versions and the generated gateway
 OpenAPI contract. A client method never widens server-side authorization.
+
+## Signed device enrollment
+
+Use `sos-sdk-node-ts` 0.6.0 or later for native device enrollment. Before a device
+is registered, its signed inner JWS commits to the reply encryption key through
+`skid`. The outer JWE carries that same public ML-KEM key and identifier. The
+gateway verifies their exact thumbprint binding before accepting the request.
+Registered requests use the encryption key in the current device registration.
+
+Responses contain a communication-key signature inside the encrypted envelope.
+Clients verify the provider signing key before reading the response payload.
+The SDK owns this transport; applications retain the normal activation, account
+and device-enrollment steps.
 
 ## Device registration recovery
 
