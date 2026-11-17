@@ -22,3 +22,12 @@ test('complete native image gate requires real allow/deny and both ledger readba
   assert.throws(() => validateRequiredStageReceipts({ ...complete, roleLicense: { status: 'passed', readbackVerified: false } }));
   assert.throws(() => validateRequiredStageReceipts({ ...complete, roleLicense: { status: 'passed', readbackVerified: 'true' } }));
 });
+
+test('reviewer startup trust is explicit public metadata distinct from the ICA', async () => {
+  const { validateFixtureReviewerTrust } = await load();
+  const publicTrust = { issuer: 'did:web:example.invalid:organization', actorDid: 'did:web:example.invalid:organization:employee:reviewer:RESPRSN', role: 'RESPRSN', status: 'active', jwk: { kty: 'AKP', alg: 'ML-DSA-65', kid: 'synthetic-governance-key', pub: 'c3ludGhldGljLXB1YmxpYy1tYXRlcmlhbA' } };
+  assert.doesNotThrow(() => validateFixtureReviewerTrust(publicTrust, 'did:web:example.invalid:ica'));
+  for (const mutation of [{ issuer: 'did:web:example.invalid:ica' }, { status: 'inactive' }, { role: 'doctor' }, { jwk: { ...publicTrust.jwk, d: 'private' } }, { jwk: { ...publicTrust.jwk, seed: 'private' } }, { jwk: { ...publicTrust.jwk, k: 'private' } }, { jwk: { ...publicTrust.jwk, secretKeyBytes: 'private' } }, { sign: () => {} }, { jwk: { ...publicTrust.jwk, alg: 'ES384' } }]) {
+    assert.throws(() => validateFixtureReviewerTrust({ ...publicTrust, ...mutation }, 'did:web:example.invalid:ica'));
+  }
+});

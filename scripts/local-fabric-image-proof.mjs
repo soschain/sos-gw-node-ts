@@ -9,6 +9,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createLocalFabricFixtureIssuer } from './local-fabric-fixture-issuer.mjs';
 import { startLocalFabricFixtureStatusServer } from './local-fabric-fixture-status.mjs';
 import { REPOSITORY_SAFE_EXAMPLES as e } from 'sos-data-utils-ts/repository-privacy';
+import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprints';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 
 export function validateImageProofConfig(config) {
@@ -22,6 +23,20 @@ export function validateRequiredStageReceipts(stages) {
   }
   if (stages.consentAccess.readbackVerified !== true || stages.roleLicense.readbackVerified !== true
     || stages.smartIps.allowed !== true || stages.smartIps.denied !== true) throw new Error('The image gate requires actual ledger readback and SMART allowed/denied results.');
+}
+/** The fixture controller is an explicit local reviewer, independently trusted from the ICA. */
+export function validateFixtureReviewerTrust(trust, icaIssuer) {
+  const keys = new Set(['issuer', 'actorDid', 'role', 'status', 'jwk', 'jwkThumbprints']);
+  if (!trust || Object.keys(trust).some(key => !keys.has(key)) || typeof trust.issuer !== 'string' || !trust.issuer.startsWith('did:web:')
+    || trust.issuer === icaIssuer || typeof trust.actorDid !== 'string' || !trust.actorDid.startsWith(`${trust.issuer}:employee:`)
+    || trust.role !== HealthcareActorRoles.Controller || trust.status !== 'active'
+    || trust.jwk?.kty !== 'AKP' || trust.jwk?.alg !== 'ML-DSA-65' || typeof trust.jwk?.kid !== 'string' || !trust.jwk.kid
+    || typeof trust.jwk?.pub !== 'string' || !trust.jwk.pub
+    || Object.keys(trust.jwk).some(key => !['kty', 'alg', 'kid', 'pub', 'use', 'key_ops'].includes(key))
+    || (trust.jwk.use !== undefined && trust.jwk.use !== 'sig')
+    || (trust.jwk.key_ops !== undefined && (!Array.isArray(trust.jwk.key_ops) || trust.jwk.key_ops.some(operation => operation !== 'verify')))) {
+    throw new Error('The local reviewer requires separate, public-only ML-DSA-65 trust metadata.');
+  }
 }
 const execute = (cmd, args, options = {}) => execFileSync(cmd, args, { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, ...options });
 function parseEnv(path) {
@@ -46,7 +61,7 @@ async function waitReady(baseUrl) {
 export async function runLocalFabricImageProof(config) {
   validateImageProofConfig(config);
   const driverModule = await import(pathToFileURL(realpathSync(config.driverModule)).href);
-  if (typeof driverModule.prepareStrictSdkDriver !== 'function') throw new Error('Select the reviewed external SDK interoperability driver.');
+  if (typeof driverModule.prepareStrictSdkDriver !== 'function' || typeof driverModule.prepareNativeFixtureReview !== 'function') throw new Error('Select the reviewed external SDK interoperability driver.');
   const driverConfig = JSON.parse(readFileSync(config.driverConfig, 'utf8'));
   if (!driverConfig.ctx?.tenantId || !driverConfig.ctx?.jurisdiction || !driverConfig.ctx?.sector || !driverConfig.hostCtx?.jurisdiction) throw new Error('The driver must supply canonical local route contexts.');
   const evidenceRoot = process.env.LOCAL_FABRIC_EVIDENCE_DIR;
@@ -55,7 +70,7 @@ export async function runLocalFabricImageProof(config) {
   const runDir = mkdtempSync(join(resolve(evidenceRoot), 'image-proof-'));
   const privateDir = mkdtempSync(join(runDir, 'custody-'));
   const runId = randomUUID(); const containers = [];
-  let oracle; let prepared; let imageId;
+  let oracle; let prepared; let imageId; let fixtureReview;
   const receipt = { runId, scope: 'local-image-with-real-fabric', completed: false, cloudMutations: false };
   try {
     const image = JSON.parse(execute('docker', ['image', 'inspect', config.image]))[0];
@@ -95,7 +110,13 @@ export async function runLocalFabricImageProof(config) {
     execute('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1', '-subj', '/CN=localhost',
       '-addext', 'subjectAltName=DNS:localhost,DNS:host.docker.internal,IP:127.0.0.1', '-keyout', tlsKey, '-out', tlsCert], { stdio: 'ignore' });
     const issuer = await createLocalFabricFixtureIssuer({ profile: 'local-fabric', deferIssuance: true });
-    oracle = await startLocalFabricFixtureStatusServer({ profile: 'local-fabric', issuer, key: readFileSync(tlsKey), cert: readFileSync(tlsCert), advertisedHostname: 'host.docker.internal' });
+    const hostPort = await freePort(); const baseUrl = `http://127.0.0.1:${hostPort}`; const audience = driverConfig.oidcAudience || 'local-image-gateway';
+    fixtureReview = await driverModule.prepareNativeFixtureReview({ ...driverConfig, baseUrl, networkMode: 'test-network', securityMode: 'strict', clearingHouseMode: 'local', replayBackend: 'redis' });
+    validateFixtureReviewerTrust(fixtureReview.publicTrust, issuer.issuerDid);
+    const statusIssuer = { issuerDid: issuer.issuerDid, jwks: issuer.jwks,
+      get credentials() { return [...issuer.credentials, ...fixtureReview.credentials]; },
+      status(id) { const reviewed = fixtureReview.status(id); return reviewed === 'unknown' ? issuer.status(id) : reviewed; } };
+    oracle = await startLocalFabricFixtureStatusServer({ profile: 'local-fabric', issuer: statusIssuer, key: readFileSync(tlsKey), cert: readFileSync(tlsCert), advertisedHostname: 'host.docker.internal' });
     const startContainer = args => {
       const name = args[args.indexOf('--name') + 1]; containers.push(name);
       return execute('docker', ['run', '-d', '--label', `soschain.local-image-proof=${runId}`, ...args]).trim();
@@ -108,12 +129,14 @@ export async function runLocalFabricImageProof(config) {
       await new Promise(resolve => setTimeout(resolve, 200));
     }
     if (!redisReady) throw new Error('The owned durable replay service did not become ready.');
-    const hostPort = await freePort(); const baseUrl = `http://127.0.0.1:${hostPort}`; const audience = driverConfig.oidcAudience || 'local-image-gateway';
     const overrides = { NODE_ENV: 'test', DEPLOYMENT_ENV: 'dev', NETWORK_MODE: 'test-network', SECURITY_MODE: 'strict',
       DB_PROVIDER: 'mem', STORAGE_PROVIDER: 'mem', KMS_PROVIDER: 'memory', QUEUE_PROVIDER: 'mem', CLEARING_HOUSE_MODE: 'local',
+      SMART_TOKEN_LEGACY: 'true', LEGACY_SIGN_ALG: 'ES384',
       REPLAY_PROTECTION_PROVIDER: 'redis', REDIS_URL: `redis://${redisName}:6379`,
       AUTH_TOKEN_VERIFIER: 'trusted-oidc', OIDC_TRUSTED_PROVIDERS_JSON: JSON.stringify([{ iss: oracle.advertisedOrigin, aud: audience }]),
-      CREDENTIAL_TRUSTED_ISSUERS_JSON: JSON.stringify({ [issuer.issuerDid]: { status: 'active', jwks: issuer.jwks, statusEndpointTemplate: oracle.statusEndpointTemplate, statusRequestType: oracle.statusRequestType } }),
+      CREDENTIAL_TRUSTED_ISSUERS_JSON: JSON.stringify({ [issuer.issuerDid]: { status: 'active', jwks: issuer.jwks, statusEndpointTemplate: oracle.statusEndpointTemplate, statusRequestType: oracle.statusRequestType }, [fixtureReview.publicTrust.issuer]: { status: 'active', jwks: { keys: [fixtureReview.publicTrust.jwk] }, statusEndpointTemplate: oracle.statusEndpointTemplate, statusRequestType: oracle.statusRequestType } }),
+      HOST_ORGANIZATION_AUTHORIZATION_ISSUERS: fixtureReview.publicTrust.issuer,
+      HOST_ORGANIZATION_AUTHORIZATION_SIGNERS: JSON.stringify([{ issuer: fixtureReview.publicTrust.issuer, actorDid: fixtureReview.publicTrust.actorDid, role: fixtureReview.publicTrust.role, status: fixtureReview.publicTrust.status, jwkThumbprints: [toJwkThumbprintSha256Urn(fixtureReview.publicTrust.jwk)] }]),
       CLEARING_HOUSE_REQUESTERS_JSON: '{}', GXDCH_TENANTS_JSON: '{}', DEV_SEED: 'true',
       ICA_MODE: 'external', ICA_URL_EXTERNAL: oracle.advertisedOrigin, ICA_DID_WEB: issuer.issuerDid, ICA_JURISDICTION: driverConfig.hostCtx.jurisdiction,
       JSON_LEGACY: 'false', FHIR_LEGACY: 'false', DIDCOMM_PLAIN: 'false', DEMO_ALLOW_INSECURE_BEARER: 'false',
@@ -127,7 +150,7 @@ export async function runLocalFabricImageProof(config) {
     const gateway = startContainer(['--name', `sos-image-proof-${runId}`, '--network', config.dockerNetwork,
       '--env-file', runtimeEnv, '-p', `127.0.0.1:${hostPort}:3000`, '-v', `${tlsCert}:/run/local-fabric-fixture/tls-cert.pem:ro`, imageId]);
     await waitReady(baseUrl);
-    prepared = await driverModule.prepareStrictSdkDriver({ ...driverConfig, baseUrl,
+    prepared = await driverModule.prepareStrictSdkDriver({ ...driverConfig, baseUrl, fixtureReview,
       hostDidDocumentUrl: `${baseUrl}/host/cds-${driverConfig.hostCtx.jurisdiction}/v1/test-network/.well-known/did.json`,
       tenantDidDocumentUrl: `${baseUrl}/${encodeURIComponent(driverConfig.ctx.tenantId)}/cds-${encodeURIComponent(driverConfig.ctx.jurisdiction)}/v1/${encodeURIComponent(driverConfig.ctx.sector)}/.well-known/did.json`,
       identityChannel, dataChannel, gatewayBuildRoot: driverConfig.gatewayBuildRoot || resolve(fileURLToPath(new URL('../build', import.meta.url))),
