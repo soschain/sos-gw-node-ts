@@ -3,7 +3,9 @@
 // a Demo ICA, plaintext bearer or health-only run cannot prove strict operation.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, writeFileSync, chmodSync, existsSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '../..');
 const smoke = () => readFileSync(resolve(root, 'scripts/smoke-docker-local-network.sh'), 'utf8');
@@ -32,4 +34,18 @@ test('the Fabric profile does not inherit unsigned Demo or a disabled verifier',
   assert.match(profile, /^DEPLOYMENT_ENV=dev$/m);
   assert.doesNotMatch(profile, /^DEPLOYMENT_ENV=local$/m);
   assert.doesNotMatch(profile, /REPLAY_PROTECTION_PROVIDER=none/);
+});
+
+test('an absent prepared peer fails before any reset or automatic bootstrap', () => {
+  const dir=mkdtempSync(resolve(tmpdir(),'sos-fabric-smoke-policy-'));
+  try {
+    const npmLog=resolve(dir,'npm-invoked');
+    for(const [name,body] of [['docker','#!/bin/sh\nexit 0\n'],['npm',`#!/bin/sh\nprintf called > '${npmLog}'\nexit 99\n`]]){
+      writeFileSync(resolve(dir,name),body);chmodSync(resolve(dir,name),0o700);
+    }
+    const result=spawnSync('bash',[resolve(root,'scripts/smoke-docker-local-network.sh')],{encoding:'utf8',env:{...process.env,PATH:`${dir}:${process.env.PATH}`,IMAGE_NAME:'synthetic-selected-image',STRICT_FABRIC_DRIVER_MODULE:'synthetic-driver',STRICT_FABRIC_DRIVER_CONFIG:'synthetic-config',LOCAL_REDIS_IMAGE:'synthetic-replay-image',LOCAL_FABRIC_EVIDENCE_DIR:dir,SKIP_FABRIC_PREP:'false'}});
+    assert.equal(result.status,2,result.stderr);
+    assert.equal(existsSync(npmLog),false,'smoke must not bootstrap or reset a Fabric stack');
+    assert.match(result.stderr,/prepared.*peer|peer.*prepared/i);
+  } finally {rmSync(dir,{recursive:true,force:true});}
 });

@@ -301,6 +301,10 @@ describe('KmsService', () => {
   });
   
   describe('encodeResponse', () => {
+    beforeEach(() => {
+      mockCryptoService.signDataJws.mockResolvedValue({protected:'signed',payload:'response',signature:'jwt'});
+      mockCryptoService.jwsToCompact.mockReturnValue('signed.response.jwt');
+    });
     it('should use encryptJweToCompact for a single recipient', async () => {
       const payload = { message: 'response' };
       const senderId = 'host';
@@ -313,11 +317,12 @@ describe('KmsService', () => {
       const result = await kmsService.encodeResponse(payload, recipientJwks, senderId);
 
       expect(mockCryptoService.encryptJweToCompact).toHaveBeenCalledWith(
-        payload,
-        expect.objectContaining({ skid: 'mock-kem-kid' }),
+        'signed.response.jwt',
+        expect.objectContaining({ skid: 'mock-kem-kid', cty: 'JWS' }),
         expect.any(Object),
         recipientJwks[0]
       );
+      expect(mockCryptoService.signDataJws).toHaveBeenCalledWith(payload, expect.objectContaining({kid:'mock-dsa-kid',alg:'ML-DSA-65'}), mockMldsaSecretKey);
       expect(result).toBe(mockCompactJwe);
     });
 
@@ -333,8 +338,8 @@ describe('KmsService', () => {
       const result = await kmsService.encodeResponse(payload, recipientJwks, senderId);
 
       expect(mockCryptoService.encryptJwe).toHaveBeenCalledWith(
-        payload,
-        expect.objectContaining({ skid: 'mock-kem-kid' }),
+        'signed.response.jwt',
+        expect.objectContaining({ skid: 'mock-kem-kid', cty: 'JWS' }),
         expect.any(Object),
         recipientJwks
       );

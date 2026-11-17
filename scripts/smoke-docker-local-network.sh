@@ -27,11 +27,8 @@ export ENV_FILE="${ENV_FILE:-${ROOT_DIR}/.env.local-fabric}"
 for executable in docker node npm openssl; do command -v "$executable" >/dev/null || { echo "Missing $executable" >&2; exit 2; }; done
 docker image inspect "$IMAGE_NAME" >/dev/null
 if ! docker ps --format '{{.Names}}' | grep -qx 'gdc-peer0-host1'; then
-  if [[ "${SKIP_FABRIC_PREP:-false}" == 'true' ]]; then echo 'The explicitly selected local Fabric peer is absent.' >&2; exit 2; fi
-  # Prepare the existing canonical local infrastructure only, without launching
-  # a second application or admitting a synthetic tenant through legacy APIs.
-  BASE_ENV_FILE="${BASE_ENV_FILE:-${ROOT_DIR}/env.local-network.example}" \
-    npm run local:fabric:bootstrap -- --prepare-only --no-bootstrap-tenant
+  echo 'The explicitly prepared local Fabric peer is absent. Prepare an isolated owned stack separately (npm run local:fabric:stack); this image gate never bootstraps or resets Fabric.' >&2
+  exit 2
 fi
 NETWORK_MODE_VALUE=test-network \
 BASE_ENV_FILE="${BASE_ENV_FILE:-${ROOT_DIR}/env.local-network.example}" \

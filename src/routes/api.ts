@@ -1,3 +1,4 @@
+import {assertBootstrapReplyKeyBinding} from '../auth/bootstrap-reply-key';
 import {isLocalDemoSecurityMode} from '../security/runtime-security-policy';
 import type { GaiaXComplianceManager } from '../managers/GaiaXComplianceManager';
 import type { TenantPresentationVerificationManager } from '../managers/TenantPresentationVerificationManager';
@@ -4884,6 +4885,9 @@ export function createApiRouter(
             embeddedSigningKey,
             cryptographyService,
           );
+          // The outer JWE alone cannot authorize a response recipient. Bind its
+          // exact public KEM bytes to the already-verified inner signature.
+          assertBootstrapReplyKeyBinding(decodedJws.protected, decodedJob.content?.meta?.jwe?.header);
         }
         // The Bearer token (e.g., Firebase id_token) is still an HTTP concern, but some identity endpoints
         // need it during async processing. We propagate it into the decoded payload meta for the worker.
