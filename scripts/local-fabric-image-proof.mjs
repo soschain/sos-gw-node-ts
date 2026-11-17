@@ -38,6 +38,16 @@ export function validateFixtureReviewerTrust(trust, icaIssuer) {
     throw new Error('The local reviewer requires separate, public-only ML-DSA-65 trust metadata.');
   }
 }
+/** Bind only channels already present in the owned prepared Fabric plan. */
+export function buildPreparedLedgerEnvironment({ identityChannel, dataChannel, channels, sector }) {
+  if (!(channels instanceof Set) || !channels.has(identityChannel) || !channels.has(dataChannel)
+    || typeof identityChannel !== 'string' || !identityChannel || typeof dataChannel !== 'string' || !dataChannel
+    || typeof sector !== 'string' || !/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/.test(sector)) {
+    throw new Error('The local image requires prepared ledger channels and an explicit business sector.');
+  }
+  return { LEDGER_IDENTITY_CHANNEL_DEFAULT: identityChannel, LEDGER_ORGANIZATION_IDENTITY_CHANNEL_DEFAULT: identityChannel,
+    LEDGER_DATA_CHANNEL_DEFAULT: dataChannel, DEFAULT_SECTOR: sector };
+}
 const execute = (cmd, args, options = {}) => execFileSync(cmd, args, { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, ...options });
 function parseEnv(path) {
   const entries = new Map();
@@ -129,7 +139,8 @@ export async function runLocalFabricImageProof(config) {
       await new Promise(resolve => setTimeout(resolve, 200));
     }
     if (!redisReady) throw new Error('The owned durable replay service did not become ready.');
-    const overrides = { NODE_ENV: 'test', DEPLOYMENT_ENV: 'dev', NETWORK_MODE: 'test-network', SECURITY_MODE: 'strict',
+    const overrides = { ...buildPreparedLedgerEnvironment({ identityChannel, dataChannel, channels, sector: driverConfig.ctx.sector }),
+      NODE_ENV: 'test', DEPLOYMENT_ENV: 'dev', NETWORK_MODE: 'test-network', SECURITY_MODE: 'strict',
       DB_PROVIDER: 'mem', STORAGE_PROVIDER: 'mem', KMS_PROVIDER: 'memory', QUEUE_PROVIDER: 'mem', CLEARING_HOUSE_MODE: 'local',
       SMART_TOKEN_LEGACY: 'true', LEGACY_SIGN_ALG: 'ES384',
       REPLAY_PROTECTION_PROVIDER: 'redis', REDIS_URL: `redis://${redisName}:6379`,

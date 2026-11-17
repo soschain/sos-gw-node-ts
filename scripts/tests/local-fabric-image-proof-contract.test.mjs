@@ -31,3 +31,15 @@ test('reviewer startup trust is explicit public metadata distinct from the ICA',
     assert.throws(() => validateFixtureReviewerTrust({ ...publicTrust, ...mutation }, 'did:web:example.invalid:ica'));
   }
 });
+
+test('actual Docker environment binds the prepared identity and data channels and selected sector', async () => {
+  const { buildPreparedLedgerEnvironment } = await load();
+  const prepared = { identityChannel: 'identity-local', dataChannel: 'health-tech-na', channels: new Set(['identity-local', 'health-tech-na', 'health-tech-na-research']), sector: 'health-tech' };
+  assert.deepEqual(buildPreparedLedgerEnvironment(prepared), {
+    LEDGER_IDENTITY_CHANNEL_DEFAULT: 'identity-local', LEDGER_ORGANIZATION_IDENTITY_CHANNEL_DEFAULT: 'identity-local',
+    LEDGER_DATA_CHANNEL_DEFAULT: 'health-tech-na', DEFAULT_SECTOR: 'health-tech',
+  });
+  assert.throws(() => buildPreparedLedgerEnvironment({ ...prepared, dataChannel: 'unprepared-channel' }));
+  assert.throws(() => buildPreparedLedgerEnvironment({ ...prepared, identityChannel: 'unprepared-identity' }));
+  assert.throws(() => buildPreparedLedgerEnvironment({ ...prepared, sector: '' }));
+});
