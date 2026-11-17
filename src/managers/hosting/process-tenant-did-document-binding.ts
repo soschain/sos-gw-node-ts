@@ -8,7 +8,7 @@ import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-stor
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
-import { OrganizationDidBindingEntryTypes } from 'gdc-common-utils-ts/utils/organization-did-binding';
+import { OrganizationDidBindingEntryTypes } from 'sos-data-utils-ts/organization-did-binding';
 import type { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import type { IHostingTenantRegistry } from '../IHostingTenantRegistry';

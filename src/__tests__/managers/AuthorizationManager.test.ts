@@ -8,10 +8,11 @@ import { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';
+import { normalizeControllerAlias as normalizeSameAsHash } from 'antifraud-data-utils-ts/public-aliases';
 import { getTenantVaultId } from '../../utils/tenant';
 import { getEnvSectionId } from '../../utils/section-env';
-import { encodeHexToMultibase58btc } from 'gdc-common-utils-ts/utils/multibase58';
+import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
+import { parse as parseUuid } from 'uuid';
 import {
   buildDeterministicIdTokenFixture,
   buildDeterministicSignedJwt,
@@ -169,6 +170,7 @@ describe('AppAuthorizationManager', () => {
     it('should fall back to one signed controller proof bearer when id_token verification fails', async () => {
       const fixture = await buildDeterministicVpTokenFixture({
         seed: 'gw-controller-proof-bearer-seed-001',
+        extraPayload: { iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 600 },
         issuerDid: 'did:web:controller.demo.example',
         audience: 'did:web:gw.demo.example#tenant_lifecycle',
         credentials: [
@@ -199,6 +201,7 @@ describe('AppAuthorizationManager', () => {
     it('keeps projected public JWK verification only outside tenant DCR scope', async () => {
       const fixture = await buildDeterministicVpTokenFixture({
         seed: 'gw-controller-proof-request-meta-seed-001',
+        extraPayload: { iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 600 },
         issuerDid: 'did:web:controller.demo.example',
         audience: 'did:web:gw.demo.example',
         includePublicJwkInHeader: false,
@@ -221,6 +224,7 @@ describe('AppAuthorizationManager', () => {
     it('verifies a post-DCR controller proof with the registered key', async () => {
       const fixture = await buildDeterministicVpTokenFixture({
         seed: 'gw-controller-proof-registered-seed-001',
+        extraPayload: { iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 600 },
         issuerDid: 'did:web:controller.registered.example',
         audience: 'did:web:gw.demo.example',
         includePublicJwkInHeader: false,
@@ -267,6 +271,7 @@ describe('AppAuthorizationManager', () => {
       const operationalControllerDid = 'did:web:sos-gw.unid.online:controller:bootstrap';
       const fixture = await buildDeterministicVpTokenFixture({
         seed: 'sos-controller-proof-legacy-activate-alias-seed-001',
+        extraPayload: { iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 600 },
         issuerDid: portalControllerDid,
         audience: 'did:web:sos-gw.unid.online',
         includePublicJwkInHeader: false,
@@ -482,7 +487,7 @@ describe('AppAuthorizationManager', () => {
   describe('resolveEmployeeActivationCode', () => {
     it('resolves one active employee licence by sector-routed portable URN and verified email', async () => {
       const employeeUuid = '00112233-4455-6677-8899-aabbccddeeff';
-      const employeeMemberId = encodeHexToMultibase58btc(employeeUuid);
+      const employeeMemberId = encodeBase58btc(parseUuid(employeeUuid));
       const employeeRoleCode = '2250';
       const organizationOfficialId = 'Example-123';
       const professionalEmail = 'veterinarian.doe@example.org';
@@ -513,7 +518,7 @@ describe('AppAuthorizationManager', () => {
 
     it('does not resolve a licence when the neutral organization, employee, role or verified contact differs', async () => {
       const employeeUuid = '00112233-4455-6677-8899-aabbccddeeff';
-      const portableEmployeeUrn = `urn:cds-ca-bc:v1:organization:bn:Different-Organization:member:${encodeHexToMultibase58btc(employeeUuid)}:2250`;
+      const portableEmployeeUrn = `urn:cds-ca-bc:v1:organization:bn:Different-Organization:member:${encodeBase58btc(parseUuid(employeeUuid))}:2250`;
       const license = {
         id: 'employee-license', tenantId: 'animal-provider', status: 'active', plan: 'annual',
         orderId: 'employee-order', userClass: 'employee', type: 'web', renewalCycle: null,
@@ -534,7 +539,7 @@ describe('AppAuthorizationManager', () => {
 
     it('rejects a neutral employee URN whose jurisdiction differs from the routed provider index', async () => {
       const employeeUuid = '00112233-4455-6677-8899-aabbccddeeff';
-      const portableEmployeeUrn = `urn:cds-es:v1:organization:bn:Example-123:member:${encodeHexToMultibase58btc(employeeUuid)}:2250`;
+      const portableEmployeeUrn = `urn:cds-es:v1:organization:bn:Example-123:member:${encodeBase58btc(parseUuid(employeeUuid))}:2250`;
 
       await expect(manager.resolveEmployeeActivationCode(
         portableEmployeeUrn,

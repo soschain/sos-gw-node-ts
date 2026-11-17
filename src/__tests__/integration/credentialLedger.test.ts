@@ -1,3 +1,4 @@
+// Flow contract: explicit local Demo uses memory ledger records to prove unchanged synchronous/asynchronous status and history APIs; it does not claim Fabric or cryptographic identity verification.
 // src/__tests__/integration/credentialLedger.test.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
@@ -8,6 +9,13 @@ import { BlockchainAdapterMem } from '../../adapters/BlockchainAdapterMem';
 import { startServer, resetServerConfig } from '../../server';
 
 describe('Credential ledger endpoints (demo, mem)', () => {
+  const originalEnv = process.env;
+  beforeEach(() => {
+    process.env = { ...originalEnv, NODE_ENV: 'test', DEPLOYMENT_ENV: 'local', SECURITY_MODE: 'demo', NETWORK_MODE: 'test',
+      KMS_PROVIDER: 'memory', AUTH_TOKEN_VERIFIER: 'demo', CLEARING_HOUSE_MODE: 'stub', REPLAY_PROTECTION_PROVIDER: 'mem' };
+    resetServerConfig();
+  });
+  afterEach(() => { process.env = originalEnv; resetServerConfig(); });
   it('keeps the active test runtime off Fabric when only higher modes map to Fabric', async () => {
     const keys = [
       'NETWORK_MODE',

@@ -20,24 +20,24 @@ import {
   EXAMPLE_SUBJECT_DID,
   EXAMPLE_PRIVATE_INDIVIDUAL_UUID,
   EXAMPLE_TENANT_IDENTIFIER,
-} from 'gdc-common-utils-ts/examples/shared';
-import { EXAMPLE_ALTERNATE_PORTAL_INDIVIDUAL_DID } from 'gdc-common-utils-ts/examples/subject-identity-binding';
+} from 'sos-data-utils-ts/gateway-flow-examples';
+import { EXAMPLE_ALTERNATE_PORTAL_INDIVIDUAL_DID } from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import { DeviceBindingStatuses, DeviceUserClasses } from 'sos-data-utils-ts/device-license-contract';
 import { getHealthcareRoleByClaim, HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { normalizeClinicalCreatorBinding } from 'sos-sdk-core-ts/clinical-creator';
-import { buildSmartCompositionReadScope } from 'gdc-common-utils-ts/utils/smart-scope';
-import { CompositionClaim } from 'gdc-common-utils-ts/models/interoperable-claims/composition-claims';
-import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-claims/communication-claims';
+import { buildSmartCompositionReadScope } from "sos-data-utils-ts/consent-smart-scopes";
+import { CompositionClaim } from "fhir-data-utils-ts/claims";
+import { CommunicationClaim } from "fhir-data-utils-ts/claims";
 import {
   buildUhcRepresentedClinicalRepository,
   readUhcRepresentedClinicalProvenance,
 } from '../../../extensions/uhc/represented-clinical-provenance';
 import { getClinicalCreatorBindingsSectionId } from '../../../utils/clinical-creator-binding';
 import { getTenantVaultId } from '../../../utils/tenant';
-import { Sector } from 'gdc-common-utils-ts/constants/Schemas';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/index';
-import { BundleTypes } from 'gdc-common-utils-ts/models/bundle-editor-types';
+import { GatewaySector as Sector } from 'sos-data-utils-ts/gateway-sector-contract';
+import { ResourceTypesFhirR4 } from "fhir-data-utils-ts/constants";
+import { BundleTypes } from 'sos-data-utils-ts/bundle-contract';
 
 const tenantVaultId = getTenantVaultId(Sector.HEALTH_CARE, EXAMPLE_TENANT_IDENTIFIER);
 const controllerRoleClaim = getHealthcareRoleByClaim(HealthcareActorRoles.Controller)!.claim;

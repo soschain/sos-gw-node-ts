@@ -4,10 +4,10 @@ import { createHash } from 'crypto';
 import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { HealthcareActorRoleCodes } from 'sos-data-utils-ts/healthcare-roles';
 import { HL7_CODING_SYSTEM_V3_ROLE_CODE } from 'fhir-data-utils-ts';
-import { SecureIdTypesIndividual } from 'gdc-common-utils-ts/constants/identity-identifiers';
+import { SecureIdTypesIndividual } from 'sos-data-utils-ts/identity-identifiers';
 import {
   buildSecureIdValueIndividual,
-} from 'gdc-common-utils-ts/utils/did';
+} from 'sos-data-utils-ts/hosted-did';
 
 import { v4 as uuidv4 } from 'uuid';
 import { IServerConfig } from '../config';

@@ -12,7 +12,7 @@ const credential = { credentialSubject: { memberOf: { identifier: { additionalTy
 describe('tenant representative legal identifier binding', () => {
   it('routes actual lifecycle binding through the GW owner instead of legacy helpers', () => {
     const source = readFileSync(resolve('src/managers/hosting/HostingLifecycleService.ts'), 'utf8');
-    expect(source.includes('gdc-common-utils-ts/utils/activation-policy')).toBe(false);
+    expect(source.includes('sos-data-utils-ts/activation-policy')).toBe(false);
     expect(source).toContain('readRepresentativeOrganizationIdentifier');
     expect(source).toContain('matchesTenantLegalIdentifier');
   });

@@ -11,7 +11,15 @@ import { getEnvSectionId } from '../../utils/section-env';
 import { JobStatus, type JobRequest } from 'sos-data-utils-ts/confidential-job';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
-import { buildFhirParametersResourceFromSearchParams, buildGwCoreTenantResourceActionPath, DeviceAppTypes, DeviceUserClasses, EXAMPLE_API_ORGANIZATION_DID, EXAMPLE_BUNDLE_RESOURCE_TYPE, EXAMPLE_BUNDLE_TYPE_BATCH, EXAMPLE_CONTENT_TYPE_APPLICATION_JSON, EXAMPLE_EMAIL_CONTROLLER_ORG, EXAMPLE_HEALTHCARE_ACTOR_ROLE_GENERALIST_MEDICAL_PRACTITIONER, EXAMPLE_JOB_IDENTIFIER_LICENSE_SEARCH, EXAMPLE_JURISDICTION, EXAMPLE_LICENSE_OFFER_ID, EXAMPLE_LICENSE_RUNTIME_DEFAULTS, EXAMPLE_LICENSE_SEAT_UUID_ACTIVE, EXAMPLE_LICENSE_SEAT_UUID_AVAILABLE, EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE, EXAMPLE_LICENSE_SUBJECT_ID_AVAILABLE, EXAMPLE_ROUTE_VERSION, EXAMPLE_SECTOR, EXAMPLE_SERVICE_PUBLIC_DID, EXAMPLE_TENANT_IDENTIFIER, EXAMPLE_THREAD_IDENTIFIER_LICENSE_SEARCH, LicenseListSearchEditor, LicenseCategories, Resource, Section, Format, JobAction, LicenseStatuses } from 'gdc-common-utils-ts';
+import { buildTenantResourceActionPath } from 'sos-sdk-core-ts/gateway-routing';
+import { GatewayRouteSections, GatewayRouteFormats } from 'sos-data-utils-ts/gateway-response-contract';
+import { GatewayResourceTypes, GatewayJobActions } from 'sos-data-utils-ts/gateway-profile-values';
+import { buildFhirParametersResourceFromSearchParams } from 'fhir-data-utils-ts/fhir-parameters';
+import { EXAMPLE_BUNDLE_RESOURCE_TYPE, EXAMPLE_BUNDLE_TYPE_BATCH, EXAMPLE_CONTENT_TYPE_APPLICATION_JSON, EXAMPLE_HEALTHCARE_ACTOR_ROLE_GENERALIST_MEDICAL_PRACTITIONER, EXAMPLE_JOB_IDENTIFIER_LICENSE_SEARCH, EXAMPLE_LICENSE_OFFER_ID, EXAMPLE_LICENSE_RUNTIME_DEFAULTS, EXAMPLE_LICENSE_SUBJECT_ID_AVAILABLE, EXAMPLE_SERVICE_PUBLIC_DID, EXAMPLE_THREAD_IDENTIFIER_LICENSE_SEARCH } from 'sos-data-utils-ts/gateway-resource-flow-examples';
+import { EXAMPLE_API_ORGANIZATION_DID, EXAMPLE_EMAIL_CONTROLLER_ORG, EXAMPLE_JURISDICTION, EXAMPLE_LICENSE_SEAT_UUID_ACTIVE, EXAMPLE_LICENSE_SEAT_UUID_AVAILABLE, EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE, EXAMPLE_ROUTE_VERSION, EXAMPLE_SECTOR, EXAMPLE_TENANT_IDENTIFIER } from 'sos-data-utils-ts/gateway-flow-examples';
+import { LicenseListSearchEditor } from 'sos-sdk-core-ts/license-list-search';
+import { LicenseCategories } from 'sos-data-utils-ts/license-commercial-contract';
+import { DeviceAppTypes, DeviceUserClasses, LicenseStatuses } from "sos-data-utils-ts/device-license-contract";
 import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   SearchResponseProfileEnvironment,
@@ -41,10 +49,10 @@ const TEST_LICENSE_SEARCH_SELECTOR = Object.freeze({
   jurisdiction: EXAMPLE_JURISDICTION,
   version: EXAMPLE_ROUTE_VERSION,
   sector: TEST_SECTOR,
-  section: Section.entity,
-  format: Format.Schema,
-  resourceType: Resource.License,
-  action: JobAction._search,
+  section: GatewayRouteSections.Entity,
+  format: GatewayRouteFormats.SchemaOrg,
+  resourceType: GatewayResourceTypes.License,
+  action: GatewayJobActions._search,
 } as const);
 
 /**
@@ -278,7 +286,7 @@ describe('LicenseManager (_search)', () => {
     const response = await manager.process(newJobSearchLicense({
       request: {
         method: HttpRequestMethods.Post,
-        url: buildGwCoreTenantResourceActionPath(TEST_LICENSE_SEARCH_SELECTOR),
+        url: buildTenantResourceActionPath(TEST_LICENSE_SEARCH_SELECTOR),
       },
       resource: buildFhirParametersResourceFromSearchParams({
         status: LicenseStatuses.Available,

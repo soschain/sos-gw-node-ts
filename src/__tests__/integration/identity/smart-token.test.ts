@@ -1,4 +1,7 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import { randomUUID } from 'node:crypto';
+import { buildIndividualMemberDidWeb, buildSecureIdValueMember } from 'sos-data-utils-ts/hosted-did';
+import { SecureIdTypesIndividual } from 'sos-data-utils-ts/identity-identifiers';
 import { resolveHostPhysicalCollectionName } from '../../../config/storage-layout';
 // SMART token issuance separates trusted individual self-read,
 // same-tenant employee access and bilateral inter-tenant research access.
@@ -24,22 +27,24 @@ import {
   EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_SMART_SCOPE,
   EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_VALID_FROM,
   EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_VALID_UNTIL,
-} from 'gdc-common-utils-ts/examples/inter-tenant-access-contract';
-import { ClaimInterTenantAccessContract } from 'gdc-common-utils-ts/models/inter-tenant-access-contract';
-import { buildInterTenantAccessContractCredential } from 'gdc-common-utils-ts/utils/inter-tenant-access-contract';
-import { buildClientAssertionFixture, buildClientAssertionJwt } from 'gdc-common-utils-ts/utils/client-assertion';
-import { addVC, createVP } from 'gdc-common-utils-ts/utils/vp-token';
+} from 'sos-data-utils-ts/gateway-resource-flow-examples';
+import { ClaimInterTenantAccessContract } from 'sos-data-utils-ts/inter-tenant-access-contract';
+import { buildInterTenantAccessContractCredential } from 'sos-data-utils-ts/inter-tenant-access-contract';
+import { buildClientAssertionFixture, buildClientAssertionJwt } from 'antifraud-sdk-node-ts/examples/client-assertion';
+import { addVC, createVP } from 'sos-data-utils-ts/vp-token';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
-import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'fhir-data-utils-ts';
 import {
   EXAMPLE_ALTERNATE_PORTAL_INDIVIDUAL_DID,
   EXAMPLE_PORTAL_INDIVIDUAL_DID,
   EXAMPLE_SUBJECT_IDENTITY_BINDING_CREDENTIAL,
   EXAMPLE_TRUSTED_HEALTH_PORTAL_DID,
-} from 'gdc-common-utils-ts/examples/subject-identity-binding';
+} from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import {
+  EXAMPLE_INDIVIDUAL_CONTROLLER_ROLE_TYPE,
+  EXAMPLE_INDIVIDUAL_CONTROLLER_ROLE_VALUE,
   EXAMPLE_ACCOUNT_OWNER_ID,
   EXAMPLE_CONTROLLER_DID,
   EXAMPLE_DEVICE_CLIENT_ID,
@@ -49,7 +54,7 @@ import {
   EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
   EXAMPLE_SUBJECT_DID,
   EXAMPLE_SUBJECT_DID_SECONDARY,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import { OpenIdAuthManager } from '../../../managers/OpenIdAuthManager';
 import { buildResearchStudyControllerImportScope } from '../../../managers/ResearchStudyConsentManager';
 import { DeviceBindingStatuses } from 'sos-data-utils-ts/device-license-contract';
@@ -250,6 +255,7 @@ describe('SMART token issuance (integration)', () => {
       );
       const clientId = `${actorDid}:device:client-001`;
       const clientAssertion = await buildClientAssertionJwt({
+        additionalClaims: { jti: randomUUID() },
         clientId,
         audience: EXAMPLE_HOSTING_OPERATOR_DID,
       });
@@ -355,7 +361,7 @@ describe('SMART token issuance (integration)', () => {
       await vaultRepository.put(hostCollectionName, [secureTenantRecord as any], getEnvSectionId('tenants'));
       await tenantManager.getTenant(tenantVaultId);
 
-      const subject = 'did:web:api.acme.org:individual:123';
+      const subject = EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid;
       const individualRulesSectionId = getIndividualSectionId(subject, 'rules');
       await vaultRepository.put(tenantVaultId, [{
         ...testConsentRulePermitOrgDid,
@@ -374,6 +380,7 @@ describe('SMART token issuance (integration)', () => {
       addVC(vpPayload, EXAMPLE_INTER_TENANT_DIGITAL_TWIN_CONTRACT_CREDENTIAL);
       const clientId = 'did:web:lab.example:employee:researcher1@lab.org:device:client-002';
       const clientAssertion = await buildClientAssertionJwt({
+        additionalClaims: { jti: randomUUID() },
         clientId,
         audience: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerOrganizationDid,
       });
@@ -497,6 +504,7 @@ describe('SMART token issuance (integration)', () => {
       };
       const clientId = 'did:web:lab.example:employee:researcher1@lab.org:device:client-003';
       const clientAssertion = await buildClientAssertionJwt({
+        additionalClaims: { jti: randomUUID() },
         clientId,
         audience: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerOrganizationDid,
       });
@@ -546,7 +554,8 @@ describe('SMART token issuance (integration)', () => {
 
       expect(finalPayload?.access_token).toBeDefined();
       expect(finalPayload?.subject).toBe(subject);
-      expect(finalPayload?.ledger_verified).toBe(true);
+      // This external bearer path does not perform a Fabric ledger verification.
+      expect(finalPayload?.ledger_verified).toBe(false);
     } finally {
       queueAdapter.stop();
     }
@@ -623,6 +632,7 @@ describe('SMART token issuance (integration)', () => {
       };
       const clientId = 'did:web:lab.example:employee:researcher1@lab.org:device:client-004';
       const clientAssertion = await buildClientAssertionJwt({
+        additionalClaims: { jti: randomUUID() },
         clientId,
         audience: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerOrganizationDid,
       });
@@ -673,7 +683,8 @@ describe('SMART token issuance (integration)', () => {
       expect(finalPayload?.access_token).toBeDefined();
       expect(finalPayload?.subject).toMatch(/^urn:uuid:/);
       expect(finalPayload?.subject).not.toBe(subject);
-      expect(finalPayload?.ledger_verified).toBe(true);
+      // This external bearer path does not perform a Fabric ledger verification.
+      expect(finalPayload?.ledger_verified).toBe(false);
     } finally {
       queueAdapter.stop();
     }
@@ -722,6 +733,7 @@ describe('SMART token issuance (integration)', () => {
       await tenantManager.getTenant(tenantVaultId);
 
       const assertion = await buildClientAssertionFixture({
+        additionalClaims: { jti: randomUUID() },
         clientId: EXAMPLE_DEVICE_CLIENT_ID,
         audience: EXAMPLE_HOSTING_OPERATOR_DID,
       });
@@ -729,14 +741,18 @@ describe('SMART token issuance (integration)', () => {
         contactKind: 'email',
         contact: EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL,
       });
+      const actorDid = buildIndividualMemberDidWeb({individualDidWeb:EXAMPLE_SUBJECT_DID,
+        memberId:buildSecureIdValueMember({secureIdTypeMember:SecureIdTypesIndividual.Email,privateIdValueMember:EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL}),
+        roleType:EXAMPLE_INDIVIDUAL_CONTROLLER_ROLE_TYPE,roleValue:EXAMPLE_INDIVIDUAL_CONTROLLER_ROLE_VALUE});
       const profile = await kmsService.protectConfidentialData({
         id: EXAMPLE_DEVICE_CLIENT_ID,
+        status: DeviceBindingStatuses.Active,
         sequence: 0,
         content: {
           clientId: EXAMPLE_DEVICE_CLIENT_ID,
           status: DeviceBindingStatuses.Active,
-          actorDid: EXAMPLE_CONTROLLER_DID,
-          profileDid: EXAMPLE_CONTROLLER_DID,
+          actorDid: actorDid,
+          profileDid: actorDid,
           authorizedSubjectDid: EXAMPLE_SUBJECT_DID,
           authenticatedSubject: EXAMPLE_ACCOUNT_OWNER_ID,
           authenticatedEmail: EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL,
@@ -747,11 +763,15 @@ describe('SMART token issuance (integration)', () => {
       const controllerSeats = await Promise.all([
         {
           id: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
+          status: DeviceBindingStatuses.Active,
           sequence: 0,
           content: {
             id: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
             status: DeviceBindingStatuses.Active,
             userClass: LICENSE_USER_CLASS_INDIVIDUAL,
+            exp: Math.floor(Date.now()/1000)+3600,
+            issuedToEmail: EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL,
+            deviceBindings: [{clientId:EXAMPLE_DEVICE_CLIENT_ID,status:DeviceBindingStatuses.Active}],
             subjectId: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
             authorizedSubjectDid: EXAMPLE_SUBJECT_DID,
             activatedBy: stableActorIdentifier,
@@ -760,11 +780,15 @@ describe('SMART token issuance (integration)', () => {
         },
         {
           id: EXAMPLE_LICENSE_SEAT_UUID_SECONDARY,
+          status: DeviceBindingStatuses.Active,
           sequence: 0,
           content: {
             id: EXAMPLE_LICENSE_SEAT_UUID_SECONDARY,
             status: DeviceBindingStatuses.Active,
             userClass: LICENSE_USER_CLASS_INDIVIDUAL,
+            exp: Math.floor(Date.now()/1000)+3600,
+            issuedToEmail: EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL,
+            deviceBindings: [{clientId:EXAMPLE_DEVICE_CLIENT_ID,status:DeviceBindingStatuses.Active}],
             subjectId: EXAMPLE_LICENSE_SEAT_UUID_SECONDARY,
             authorizedSubjectDid: EXAMPLE_SUBJECT_DID_SECONDARY,
             activatedBy: stableActorIdentifier,
@@ -797,13 +821,13 @@ describe('SMART token issuance (integration)', () => {
         headers: { 'content-type': 'application/json', authorization: 'Bearer mock' },
         body: {
           thid: EXAMPLE_LICENSE_SEAT_UUID_SECONDARY,
-          iss: EXAMPLE_CONTROLLER_DID,
+          iss: actorDid,
           aud: EXAMPLE_HOSTING_OPERATOR_DID,
           body: {
             client_id: EXAMPLE_DEVICE_CLIENT_ID,
             client_assertion: assertion.jwt,
             client_assertion_type: 'private_key_jwt',
-            sub: EXAMPLE_CONTROLLER_DID,
+            sub: actorDid,
             purpose: HealthcareConsentPurposes.Treatment,
             scope: `${ServiceCapability.IndexReader}?subject=${EXAMPLE_PORTAL_INDIVIDUAL_DID}&section=*`,
             acr_values: 'urn:antifraud:acr:openid4vp:individual',

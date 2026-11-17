@@ -4,7 +4,7 @@ import { normalizeReference, tokenToCoding } from './fhir-data-utils';
 import { determineResourceId } from './resource';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { DIGITAL_TWIN_SEARCH_CLAIM_PREFIX } from './digital-twin-research-projection';
-import { convertClaimsToFhirResource } from 'gdc-common-utils-ts/utils/bundle-document-builder';
+import { convertClaimsToFhirResource } from 'fhir-data-utils-ts/clinical-resource-adapters';
 
 const PATIENT_REFERENCE_RESOURCE_TYPES = new Set<string>([
   ResourceTypesFhirR4.AllergyIntolerance,

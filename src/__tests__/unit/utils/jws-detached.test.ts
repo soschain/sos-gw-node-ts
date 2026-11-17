@@ -1,10 +1,10 @@
 // Flow contract: detached signatures bind exact payload bytes and reject a changed payload or wrong key.
 import { externalClientSignerJwk } from '../../data/external-client.data';
-import * as mlDsa from '@noble/post-quantum/ml-dsa';
+import * as mlDsa from '@noble/post-quantum/ml-dsa.js';
 import { withKid } from '../../../gdc-backend-utils-node/jwk-thumbprint';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { Content } from "antifraud-data-utils-ts/cryptography";
 import { MldsaPublicJwk } from 'antifraud-data-utils-ts/cryptography';
-import { encodeHeader, encodePayload, encodeSignature, decodeHeader } from 'gdc-common-utils-ts/utils/jwt';
+import { encodeHeader, encodePayload, encodeSignature, decodeHeader } from 'sos-data-utils-ts/jwt';
 
 // Define a type for the private key for clarity and type safety.
 type MldsaPrivateJwk = MldsaPublicJwk & { priv: string };

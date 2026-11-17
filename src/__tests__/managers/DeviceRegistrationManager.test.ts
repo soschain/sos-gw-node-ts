@@ -10,7 +10,7 @@ import { DCR_REPLAY_PUBLIC_KEYS } from '../data/dcr-replay-public-keys';
 import cloneDeep from 'lodash.clonedeep';
 import { validate as uuidValidate } from 'uuid';
 import { BundleEntryResponse, BundleJsonApi, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
-import { DeviceRegistrationManager } from '../../managers/DeviceRegistrationManager';
+import {jest as esmJest} from '@jest/globals';
 import { DCR_REGISTRATION_JOB } from '../data/example-jobs';
 import { VaultMemRepository } from '../../database/repositories/vault/vault.mem.repository';
 import { mockKmsService } from '../mocks/kms.mock';
@@ -21,9 +21,9 @@ import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
 import type { EntityConfig } from '../../gdc-backend-utils-node/models/entity';
 import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { ManageAssetCryptographicKey } from '../../blockchain/fabric/v3/manageAssetCryptographicKey';
-import { ManageAssetSubjectKeyBinding } from '../../blockchain/fabric/v3/manageAssetSubjectKeyBinding';
-import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';
+
+
+import {normalizeControllerAlias as normalizeSameAsHash} from 'antifraud-data-utils-ts/public-aliases';
 import { DeviceBindingStatuses } from 'sos-data-utils-ts/device-license-contract';
 import { IdentityAuthActions, IdentityAuthRequestFields, IdentityDcrMetadataFields } from 'sos-data-utils-ts/identity-auth-wire-contract';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
@@ -42,11 +42,11 @@ import {
   EXAMPLE_PRIVATE_INDIVIDUAL_UUID,
   EXAMPLE_SUBJECT_DID,
   ExampleHttpStatusText,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import {
   EXAMPLE_EMPLOYEE_ACTIVE_DEVICE_BINDINGS,
   EXAMPLE_LICENSE_ACTIVE_RECORD,
-} from 'gdc-common-utils-ts/examples/license';
+} from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { getClinicalCreatorBindingsSectionId } from '../../utils/clinical-creator-binding';
 import { testIndividualControllerDcrIdentity } from '../data/identity.data';
@@ -74,8 +74,14 @@ const CANONICAL_INDIVIDUAL_CONTROLLER_SUBJECT_DID = testIndividualControllerDcrI
 const CANONICAL_INDIVIDUAL_CONTROLLER_ACTOR_DID = testIndividualControllerDcrIdentity.actorDid
   .replace(testIndividualControllerDcrIdentity.subjectDid, CANONICAL_INDIVIDUAL_CONTROLLER_SUBJECT_DID);
 
+const unexpectedFabric=()=>{throw new Error('Unexpected Fabric transport in isolated host/device unit.');};
+esmJest.unstable_mockModule('@hyperledger/fabric-gateway',()=>({connect:unexpectedFabric,signers:{newPrivateKeySigner:unexpectedFabric},checkpointers:{inMemory:unexpectedFabric,file:unexpectedFabric}}));
+const {DeviceRegistrationManager}=await import('../../managers/DeviceRegistrationManager');
+const {ManageAssetCryptographicKey}=await import('../../blockchain/fabric/v3/manageAssetCryptographicKey');
+const {ManageAssetSubjectKeyBinding}=await import('../../blockchain/fabric/v3/manageAssetSubjectKeyBinding');
+const {ManageAssetProfessionalAssignment}=await import('../../blockchain/fabric/v3/manageAssetProfessionalAssignment');
 describe('DeviceRegistrationManager', () => {
-  let manager: DeviceRegistrationManager;
+  let manager: InstanceType<typeof DeviceRegistrationManager>;
   let vaultRepository: VaultMemRepository;
   const originalNetworkMode = process.env.NETWORK_MODE;
   const originalLedgerEnabled = process.env.LEDGER_ENABLED;
@@ -714,6 +720,7 @@ describe('DeviceRegistrationManager', () => {
       const registerKeySpy = jest.spyOn(ManageAssetCryptographicKey.prototype, 'registerKey').mockResolvedValue({} as any);
       const keySubmitSpy = jest.spyOn(ManageAssetCryptographicKey.prototype, 'submit').mockResolvedValue({} as any);
       const bindingSpy = jest.spyOn(ManageAssetSubjectKeyBinding.prototype, 'upsertSubjectKeyBinding').mockResolvedValue({} as any);
+      const assignmentSpy=jest.spyOn(ManageAssetProfessionalAssignment.prototype,'upsertProfessionalAssignment').mockResolvedValue({} as any);
 
       const job = cloneDeep(DCR_REGISTRATION_JOB);
       job.jurisdiction = 'ES';
@@ -927,6 +934,7 @@ describe('DeviceRegistrationManager', () => {
       expect(updatedLicenseContent.deviceId).toBe(previousDeviceId);
       expect((updatedLicenseContent.deviceBindings || []).filter((binding: any) => binding.status === 'active')).toHaveLength(2);
 
+      expect(assignmentSpy).toHaveBeenCalledTimes(1);
       expect(registerKeySpy).toHaveBeenCalledTimes(2);
       expect(keySubmitSpy).not.toHaveBeenCalled();
       expect(bindingSpy).toHaveBeenCalled();

@@ -4,13 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  Checkpointer,
-  checkpointers,
-  connect,
-} from '@hyperledger/fabric-gateway';
+import type {Checkpointer} from '@hyperledger/fabric-gateway';
 import { newConnectOptions, newGrpcConnection } from './connect';
-import { channelName } from './fabric-config';
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
@@ -90,9 +85,11 @@ const applyWritesToOffChainStore: Store = async (data) => {
 };
 
 export async function main(clientMspId: string): Promise<void> {
+  const {channelName}=await import('./fabric-config');
   assertFabricChannelAllowed(channelName);
   const client = await newGrpcConnection(clientMspId);
   const connectOptions = await newConnectOptions(client, clientMspId);
+  const {connect,checkpointers}=await import('@hyperledger/fabric-gateway');
   const gateway = connect(connectOptions);
 
   try {

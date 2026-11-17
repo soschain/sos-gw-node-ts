@@ -15,7 +15,7 @@ import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import {
   ClaimsFirstAnimalInsuranceConsent,
   validateAnimalInsuranceConsentOdrlParity,
-} from 'vet-data-utils-ts/insurance-consent';
+} from 'sos-data-utils-ts/animal-insurance-consent';
 
 export const requiredConsentClaims = [
   ClaimConsent.decision,

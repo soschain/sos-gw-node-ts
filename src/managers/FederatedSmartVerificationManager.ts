@@ -2,22 +2,21 @@
 
 import { createHash } from 'node:crypto';
 import {
-  calculateJwkThumbprint,
   decodeJwt,
   decodeProtectedHeader,
-  importJWK,
-  jwtVerify,
   type JWK,
   type JWTPayload,
 } from 'jose';
-import { SmartIntrospectionExtensionFields } from 'gdc-common-utils-ts/utils/smart-authorization-profile';
+import { SmartIntrospectionExtensionFields } from 'sos-data-utils-ts/smart-authorization-profile';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import type { DidDocument, VerificationMethod } from '../gdc-backend-utils-node/models/did';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { ITenantsManager } from './ITenantsManager';
-import type { IClearingHouseService } from '../services/ClearingHouseService';
+import { verifyPinnedJwt, type IClearingHouseService } from '../services/ClearingHouseService';
+import type { ICryptography } from 'antifraud-data-utils-ts/cryptography';
+import { tryGetJwkThumbprint } from '../utils/ledger-organization-registration-helpers';
 import type { IReplayProtectionStore } from '../adapters/replay-protection-store';
 import { getEnvSectionId } from '../utils/section-env';
 import { getTenantVaultId } from '../utils/tenant';
@@ -43,6 +42,7 @@ export type FederatedSmartVerificationResult = Readonly<{
 
 type FederatedSmartVerificationDependencies = Readonly<{
   kmsService: IKmsService;
+  cryptography?: ICryptography;
   tenantsManager: ITenantsManager;
   vaultRepository: IVaultRepository;
   clearingHouseService: IClearingHouseService;
@@ -198,7 +198,7 @@ export class FederatedSmartVerificationManager {
     }
   }
 
-  private async verifyRegisteredClientAssertion(input: {
+  public async verifyRegisteredClientAssertion(input: {
     compact: string;
     requestUrl: string;
     tenantDid: string;
@@ -214,7 +214,7 @@ export class FederatedSmartVerificationManager {
       clientId,
       getEnvSectionId('device-profiles'),
     );
-    if (!profileDocument || String(profileDocument.status || 'active') !== 'active') {
+    if (!profileDocument || profileDocument.status !== 'active') {
       throw new ManagerError('EHR client registration is missing or inactive.', IssueType.Forbidden);
     }
     const profile = await this.dependencies.kmsService.unprotectConfidentialData<any>(
@@ -237,17 +237,16 @@ export class FederatedSmartVerificationManager {
     let verifiedPayload: JWTPayload | undefined;
     for (const candidate of candidates) {
       try {
-        if (header.jwk && await calculateJwkThumbprint(header.jwk as JWK) !== await calculateJwkThumbprint(candidate)) {
-          continue;
+        if (header.jwk) {
+          const presentedThumbprint = tryGetJwkThumbprint(header.jwk as any);
+          const registeredThumbprint = tryGetJwkThumbprint(candidate as any);
+          if (!presentedThumbprint || !registeredThumbprint || presentedThumbprint !== registeredThumbprint) continue;
         }
-        const result = await jwtVerify(input.compact, await importJWK(candidate, algorithm), {
-          issuer: clientId,
-          subject: clientId,
-          audience: [input.requestUrl, input.tenantDid],
-          algorithms: [algorithm],
-          currentDate: new Date(this.now() * 1000),
+        const payload = await verifyPinnedJwt(input.compact, { keys: [candidate] }, clientId, this.now(), {
+          audience: input.requestUrl, cryptography: this.dependencies.cryptography, allowMissingKid: true,
         });
-        verifiedPayload = result.payload;
+        if (payload.sub !== clientId) continue;
+        verifiedPayload = payload;
         break;
       } catch {
         // Continue only through keys registered to this exact client.
@@ -255,6 +254,11 @@ export class FederatedSmartVerificationManager {
     }
     if (!verifiedPayload) {
       throw new ManagerError('EHR client assertion is not signed by its registered key.', IssueType.Security);
+    }
+    if (typeof verifiedPayload.iat !== 'number' || typeof verifiedPayload.exp !== 'number'
+      || verifiedPayload.exp <= this.now() || verifiedPayload.iat > this.now() + 30
+      || verifiedPayload.exp - verifiedPayload.iat > 300) {
+      throw new ManagerError('EHR assertion requires a current, bounded validity period.', IssueType.Security);
     }
     const assertionId = String(verifiedPayload.jti || '').trim();
     if (!assertionId) {
@@ -285,17 +289,17 @@ export class FederatedSmartVerificationManager {
     }
     const document = await this.resolveIssuerDidDocument(issuer);
     const keyId = String(header.kid || '').trim();
-    const verificationMethod = (document.verificationMethod || []).find((method) => method.id === keyId);
-    const relationshipAccepted = relationshipContains((document as any).assertionMethod, keyId)
-      || relationshipContains((document as any).authentication, keyId);
-    if (!verificationMethod?.publicKeyJwk || !relationshipAccepted) {
+    if (document.id !== issuer) throw new ManagerError('Index DID does not match its trusted issuer.', IssueType.Security);
+    const methods = (document.verificationMethod || []).filter(method => method.id === keyId || method.publicKeyJwk?.kid === keyId);
+    const verificationMethod = methods.length === 1 ? methods[0] : undefined;
+    const relationshipAccepted = verificationMethod && (
+      relationshipContains((document as any).assertionMethod, verificationMethod.id)
+      || relationshipContains((document as any).authentication, verificationMethod.id));
+    if (!keyId || !verificationMethod?.publicKeyJwk || verificationMethod.controller !== issuer || !relationshipAccepted) {
       throw new ManagerError('Federated SMART signing key is not authorized by the issuer DID.', IssueType.Security);
     }
-    const { payload } = await jwtVerify(compact, await importJWK(verificationMethod.publicKeyJwk as JWK, algorithm), {
-      issuer,
-      audience: issuer,
-      algorithms: [algorithm],
-      currentDate: new Date(this.now() * 1000),
+    const payload = await verifyPinnedJwt(compact, { keys: [{ ...verificationMethod.publicKeyJwk, kid: keyId } as JWK] }, issuer, this.now(), {
+      audience: issuer, cryptography: this.dependencies.cryptography,
     });
     const audience = readAudience(payload);
     const subject = String(payload.sub || '').trim();
@@ -313,7 +317,7 @@ export class FederatedSmartVerificationManager {
     if (!Number.isFinite(expiresAt) || expiresAt <= this.now()) {
       throw new ManagerError('Federated SMART token is expired.', IssueType.Forbidden);
     }
-    if (payload.ledger_verified !== true || consentIdentifiers.length === 0) {
+    if (payload.ledger_verified !== true || (consentIdentifiers.length === 0 && payload.acr !== 'urn:antifraud:acr:openid4vp:individual')) {
       throw new ManagerError('Federated SMART token lacks verified consent evidence.', IssueType.Forbidden);
     }
     if (sha256Hex(presentation) !== presentationHash) {

@@ -1,13 +1,10 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
+import { extractBundleSearchResources } from "sos-sdk-core-ts/gateway-response-reader";
 import { SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import {
-  EXAMPLE_API_ORGANIZATION_DID,
-  EXAMPLE_LICENSE_INVOICE_ID,
-  EXAMPLE_LICENSE_PAYMENT_METHOD_INVOICE,
-  EXAMPLE_LICENSE_PURCHASE_INPUT,
-} from 'gdc-common-utils-ts';
+import { EXAMPLE_LICENSE_PAYMENT_METHOD_INVOICE, EXAMPLE_LICENSE_PURCHASE_INPUT } from 'sos-data-utils-ts/gateway-resource-flow-examples';
+import { EXAMPLE_LICENSE_INVOICE_ID } from 'sos-data-utils-ts/gateway-flow-examples';
 import type { StoryHarness } from './helpers/story-flow';
 import {
   installBasicJsonFetchMock,
@@ -17,6 +14,7 @@ import {
   stopStoryServer,
 } from './helpers/story-flow';
 import { invokeExpress } from './helpers/invokeExpress';
+import { configureAuthenticatedTestActor, configureAuthenticatedTenantController } from './helpers/authenticated-test-actor';
 import {
   ORGANIZATION_LICENSE_OFFER_REQUEST,
   ORGANIZATION_LICENSE_SEARCH_REQUEST,
@@ -32,11 +30,14 @@ describe('Professional license Offer/Order route story', () => {
   let harness: StoryHarness;
   let tenantId: string;
   let originalFetch: typeof global.fetch;
+  let authenticatedActor: Awaited<ReturnType<typeof configureAuthenticatedTestActor>>;
 
   beforeAll(async () => {
     originalFetch = installBasicJsonFetchMock();
+    authenticatedActor = await configureAuthenticatedTestActor({actorDid:'did:web:controller.example.com'});
     harness = await startStoryServer();
-    tenantId = await onboardTenantViaActivateAndOrder(harness.app, harness.queueAdapter);
+    tenantId = await onboardTenantViaActivateAndOrder(harness.app, harness.queueAdapter, authenticatedActor.authorizationHeader);
+    authenticatedActor = await configureAuthenticatedTenantController({app:harness.app,tenantId,jurisdiction:'es',sector:'health-care'});
   });
 
   afterAll(async () => {
@@ -47,11 +48,13 @@ describe('Professional license Offer/Order route story', () => {
   it('creates no serials in Offer and materializes the requested seats only after verified Order', async () => {
     const inventoryUrl = `/${tenantId}/cds-es/v1/health-care/entity/org.schema/License/_search`;
     const inventoryPayload = structuredClone(ORGANIZATION_LICENSE_SEARCH_REQUEST) as any;
+    inventoryPayload.jti = randomUUID();
+    inventoryPayload.iss = authenticatedActor.actorDid;
     inventoryPayload.aud = tenantId;
     const inventoryBeforeSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: inventoryUrl,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: inventoryPayload,
     });
     expect(inventoryBeforeSubmit.status).toBe(202);
@@ -64,14 +67,15 @@ describe('Professional license Offer/Order route story', () => {
     const inventoryBefore = extractBundleSearchResources(inventoryBeforePoll.body).length;
 
     const offerPayload = structuredClone(ORGANIZATION_LICENSE_OFFER_REQUEST) as any;
-    offerPayload.iss = EXAMPLE_API_ORGANIZATION_DID;
+    offerPayload.jti = randomUUID();
+    offerPayload.iss = authenticatedActor.actorDid;
     offerPayload.aud = tenantId;
     const offerUrl = `/${tenantId}/cds-es/v1/health-care/entity/org.schema/Offer/_create`;
 
     const offerSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: offerUrl,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: offerPayload,
     });
     expect(offerSubmit.status).toBe(202);
@@ -88,7 +92,8 @@ describe('Professional license Offer/Order route story', () => {
     expect(offerClaims?.[SchemaOrgOfferClaim.SerialNumber]).toBeUndefined();
 
     const orderPayload = structuredClone(ORGANIZATION_ORDER_REQUEST) as any;
-    orderPayload.iss = EXAMPLE_API_ORGANIZATION_DID;
+    orderPayload.jti = randomUUID();
+    orderPayload.iss = authenticatedActor.actorDid;
     orderPayload.aud = tenantId;
     orderPayload.body.data[0].resource.meta.claims = {
       ...orderPayload.body.data[0].resource.meta.claims,
@@ -100,7 +105,7 @@ describe('Professional license Offer/Order route story', () => {
     const orderSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: '/host/cds-es/v1/test/registry/org.schema/Order/_batch',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: orderPayload,
     });
     expect(orderSubmit.status).toBe(202);
@@ -110,12 +115,14 @@ describe('Professional license Offer/Order route story', () => {
     expect(orderPoll.body.data[0].response.status).toBe('201');
 
     const inventoryAfterPayload = structuredClone(ORGANIZATION_LICENSE_SEARCH_REQUEST) as any;
+    inventoryAfterPayload.jti = randomUUID();
+    inventoryAfterPayload.iss = authenticatedActor.actorDid;
     inventoryAfterPayload.thid = `${inventoryPayload.thid}-after-order`;
     inventoryAfterPayload.aud = tenantId;
     const inventoryAfterSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: inventoryUrl,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: inventoryAfterPayload,
     });
     expect(inventoryAfterSubmit.status).toBe(202);

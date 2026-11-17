@@ -1,20 +1,13 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { createHash } from 'crypto';
-import {
-  addVCs,
-  buildJwtCompact,
-  createVP,
-  prepareJwtBytesForSignature,
-  prepareJwtForSignature,
-  type VpCredentialInput,
-  type VpTokenPayload,
-} from 'gdc-common-utils-ts';
+import { addVCs, createVP, type VpCredentialInput, type VpTokenPayload } from 'sos-data-utils-ts/vp-token';
+import { buildJwtCompact, prepareJwtBytesForSignature, prepareJwtForSignature } from 'sos-data-utils-ts/jwt';
 import {
   deriveDeterministicEcJwkPair,
   type DeterministicEcJwkAlgorithm as DeterministicJwtAlgorithm,
   type DeterministicEcJwkPair,
-} from 'gdc-common-utils-ts/utils/deterministic-jwk';
+} from 'antifraud-sdk-node-ts/examples/deterministic-signing-key';
 import type { ITokenVerifier, VerificationResult } from '../../auth/ITokenVerifier';
 import { importJWK, jwtVerify, SignJWT, type JWK, type JWTPayload, type KeyLike } from 'jose';
 

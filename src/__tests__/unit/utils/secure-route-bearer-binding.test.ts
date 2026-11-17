@@ -10,7 +10,7 @@ import {
   SmartPostDcrActions,
 } from 'sos-data-utils-ts/identity-auth-wire-contract';
 import { GatewayRouteFormats, GatewayRouteSections } from 'sos-data-utils-ts/gateway-response-contract';
-import { SecureIdTypesIndividual } from 'gdc-common-utils-ts/constants/identity-identifiers';
+import { SecureIdTypesIndividual } from 'sos-data-utils-ts/identity-identifiers';
 import {
   EXAMPLE_ACCOUNT_OWNER_ID,
   EXAMPLE_DEVICE_CLIENT_ID,
@@ -19,11 +19,11 @@ import {
   EXAMPLE_HOSTED_INDIVIDUAL_DID,
   EXAMPLE_INDIVIDUAL_CONTROLLER_ROLE_TYPE,
   EXAMPLE_INDIVIDUAL_CONTROLLER_ROLE_VALUE,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import {
   buildIndividualMemberDidWeb,
   buildSecureIdValueMember,
-} from 'gdc-common-utils-ts/utils/did';
+} from 'sos-data-utils-ts/hosted-did';
 
 describe('secure route bearer binding', () => {
   it.each(Object.values(SmartPostDcrActions))(

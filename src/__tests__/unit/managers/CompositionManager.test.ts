@@ -18,11 +18,11 @@ import {
   COMPOSITION_SEARCH_BUNDLE_EXAMPLE,
   COMPOSITION_SEARCH_PARAMETERS_EXAMPLE,
 } from '../../../api-examples';
-import { buildOrganizationDidWeb, buildProfessionalDidWeb } from 'gdc-common-utils-ts/utils/did';
-import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
+import { buildOrganizationDidWeb, buildProfessionalDidWeb } from 'sos-data-utils-ts/hosted-did';
+import { extractBundleSearchResources } from "sos-sdk-core-ts/gateway-response-reader";
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
-import { CompositionAttesterModes } from 'gdc-common-utils-ts';
+import { CompositionAttesterModes } from "fhir-data-utils-ts/claims";
 import {
   EXAMPLE_HOST_PUBLIC_HOSTNAME,
   EXAMPLE_HEALTHCARE_ACTOR_ROLE_PHYSICIAN,
@@ -34,13 +34,13 @@ import {
   EXAMPLE_SUBJECT_DID,
   EXAMPLE_TENANT_SERVICE_DID,
   EXAMPLE_TENANT_ROUTE_CONTEXT,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import {
   ExampleEmployeeEmails,
   ExampleEmployeeRoles,
-} from 'gdc-common-utils-ts/examples/employee';
+} from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import { getDigitalTwinSubjectAliasSectionId } from '../../../utils/digital-twin-research-projection';
-import { EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_PROVIDER_ORGANIZATION_URN } from 'gdc-common-utils-ts/examples/inter-tenant-access-contract';
+import { EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_PROVIDER_ORGANIZATION_URN } from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import { getClinicalCreatorBindingsSectionId } from '../../../utils/ips-bundle';
 
 const HOSTED_ORGANIZATION_DID = buildOrganizationDidWeb({

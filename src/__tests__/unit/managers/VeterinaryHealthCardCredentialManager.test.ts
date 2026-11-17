@@ -1,12 +1,10 @@
 // Flow contract: an authorized internal projection signs only an authoritative FHIR readback, uses the tenant ES256 credential key for standard SHC, and adds one exact-byte RFC 7797 ML-DSA companion proof per resolved attester key.
 import { jest } from '@jest/globals';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
-import { BundleTypes } from 'gdc-common-utils-ts/models/bundle-editor-types';
-import { Content } from 'gdc-common-utils-ts/utils/content';
-import {
-  PostQuantumCompanionProofPrefix,
-  SmartHealthCardQrPrefix,
-} from 'vet-data-utils-ts/shc';
+import { BundleTypes } from 'sos-data-utils-ts/bundle-contract';
+import { Content } from "antifraud-data-utils-ts/cryptography";
+import {PostQuantumDetachedProofPrefix} from 'antifraud-data-utils-ts/cryptography';
+import {SoschainSmartHealthCardQrPrefix} from 'sos-data-utils-ts/clinical-document-shc';
 import { VeterinaryHealthCardCredentialManager } from '../../../managers/VeterinaryHealthCardCredentialManager';
 
 const CredentialAlgorithms = Object.freeze({
@@ -54,11 +52,11 @@ describe('VeterinaryHealthCardCredentialManager', () => {
     expect(kms.createDetachedJwsForBytes).toHaveBeenCalledWith(
       exactPayload, 'attester-pqc', 'attester-vault', 'vc_sign',
     );
-    expect(result.shcQr.every(value => value.startsWith(SmartHealthCardQrPrefix))).toBe(true);
+    expect(result.shcQr.every(value => value.startsWith(SoschainSmartHealthCardQrPrefix))).toBe(true);
     expect(result.pqcCompanionProofs).toHaveLength(1);
-    expect(result.pqcCompanionProofs[0]).toMatch(new RegExp(`^${PostQuantumCompanionProofPrefix}`));
+    expect(result.pqcCompanionProofs[0]).toMatch(new RegExp(`^${PostQuantumDetachedProofPrefix}`));
     expect(result.pqcQr).toHaveLength(1);
-    expect(result.pqcQr[0].every(value => value.startsWith(PostQuantumCompanionProofPrefix))).toBe(true);
+    expect(result.pqcQr[0].every(value => value.startsWith(PostQuantumDetachedProofPrefix))).toBe(true);
   });
 
   it('fails closed when the tenant has no dedicated ES256 credential key', async () => {

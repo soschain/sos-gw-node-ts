@@ -1,5 +1,6 @@
+// Flow contract: consume independent canonical clinical, identity and transport contracts while preserving the existing authorization and persistence assertions.
 
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { Content } from "antifraud-data-utils-ts/cryptography";
 
 // This file contains constants and fixtures for cryptographic tests,
 // ensuring reproducibility and avoiding "magic values".

@@ -1,5 +1,5 @@
 // Flow contract: internal hosted and public VetChain professional DIDs yield the same tenant, email hash and role without using the hostname as authority.
-import { buildHostedProviderDidWeb, buildProfessionalDidWeb } from 'gdc-common-utils-ts/utils/did';
+import { buildHostedProviderDidWeb, buildProfessionalDidWeb } from 'sos-data-utils-ts/hosted-did';
 import { parseProfessionalDidIdentity } from '../../../utils/professional-did-identity';
 
 describe('professional DID identity extraction', () => {

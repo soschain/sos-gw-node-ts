@@ -1,9 +1,10 @@
+// Flow contract: preserve the existing authorization, request and persistence expectations while using independent neutral helper contracts.
 // src/__tests__/unit/database/storage/mem.storage.adapter.test.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { StorageMemAdapter } from '../../../../database/storage/mem.storage.adapter';
 import { sha3_384 } from '@noble/hashes/sha3.js';
-import { encodeMultibase58btc } from 'gdc-common-utils-ts/utils/multibase58';
+import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
 
 describe('StorageMemAdapter', () => {
   let adapter: StorageMemAdapter;
@@ -23,7 +24,7 @@ describe('StorageMemAdapter', () => {
     const multihashBytes = new Uint8Array(prefix.length + digest.length);
     multihashBytes.set(prefix);
     multihashBytes.set(digest, prefix.length);
-    const expectedHash = encodeMultibase58btc(multihashBytes);
+    const expectedHash = encodeBase58btc(multihashBytes);
 
     // 2. Assert the result from the adapter is correct.
     expect(result.encodedMultiHash).toBe(expectedHash);

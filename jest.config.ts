@@ -8,17 +8,15 @@ const collectCoverage = process.env.COVERAGE === '1';
 
 const esmNodeModules = [
   'antifraud-data-utils-ts',
-  'gdc-common-utils-ts',
-  'gdc-sdk-core-ts',
+  '@ipld/dag-json',
+  'multiformats',
+  'cborg',
   'fhir-data-utils-ts',
   'tasks-core-node-ts',
   'sos-data-utils-ts',
   'sos-sdk-core-ts',
   'sos-sdk-node-ts',
   'terminology-sdk-node-ts',
-  'uhc-sdk-core-ts',
-  'vet-data-utils-ts',
-  'vet-sdk-core-ts',
   '@noble/ciphers',
   '@noble/hashes',
   '@noble/post-quantum',
@@ -34,6 +32,7 @@ const esmNodeModules = [
 ];
 
 const config: JestConfigWithTsJest = {
+  resolver: '<rootDir>/scripts/jest-published-esm-resolver.cjs',
   testEnvironment: 'node',
   injectGlobals: true,   // make describe/it/expect/jest global
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
@@ -76,14 +75,10 @@ const config: JestConfigWithTsJest = {
   // Jest/ts-jest resolves TS sources directly, so we strip the .js extension for relative imports.
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
-    '^gdc-common-utils-ts$': '<rootDir>/node_modules/gdc-common-utils-ts/dist/index.js',
-    '^gdc-common-utils-ts/(.*)$': '<rootDir>/node_modules/gdc-common-utils-ts/dist/$1.js',
     '^sos-data-utils-ts$': '<rootDir>/node_modules/sos-data-utils-ts/dist/index.js',
     '^sos-data-utils-ts/(.*)$': '<rootDir>/node_modules/sos-data-utils-ts/dist/$1.js',
     '^sos-sdk-node-ts$': '<rootDir>/node_modules/sos-sdk-node-ts/dist/index.js',
     '^sos-sdk-node-ts/(.*)$': '<rootDir>/node_modules/sos-sdk-node-ts/dist/$1.js',
-    '^vet-sdk-core-ts$': '<rootDir>/node_modules/vet-sdk-core-ts/dist/index.js',
-    '^vet-sdk-core-ts/(.*)$': '<rootDir>/node_modules/vet-sdk-core-ts/dist/$1.js',
     '^@noble/post-quantum/ml-dsa$': '@noble/post-quantum/ml-dsa.js',
     '^@noble/post-quantum/ml-kem$': '@noble/post-quantum/ml-kem.js',
   },

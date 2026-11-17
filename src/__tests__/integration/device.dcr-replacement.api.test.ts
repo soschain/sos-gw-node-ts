@@ -1,16 +1,16 @@
-// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+// Flow contract: API DCR preserves verified initial-token claims, current wallet bindings and multi-device persistence; injected decoder/signature collaborators are not a complete cryptographic journey.
 import { DCR_REPLAY_PUBLIC_KEYS } from '../data/dcr-replay-public-keys';
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 // TDD contract: Device DCR accepts only verified initial-access claims and a valid nested signature.
 process.env.DEV_SEED = 'true';
 process.env.NODE_ENV = 'test';
-process.env.SECURITY_MODE = 'demo';
+process.env.SECURITY_MODE = 'compat';
 process.env.NETWORK_MODE = 'local-network';
 process.env.JSON_LEGACY = 'true';
 process.env.FHIR_LEGACY = 'true';
 process.env.DIDCOMM_PLAIN = 'true';
-process.env.DEMO_ALLOW_INSECURE_BEARER = 'true';
+process.env.DEMO_ALLOW_INSECURE_BEARER = 'false';
 process.env.DB_PROVIDER = 'mem';
 process.env.STORAGE_PROVIDER = 'mem';
 process.env.QUEUE_PROVIDER = 'mem';
@@ -61,8 +61,8 @@ import {
   EXAMPLE_KYC_CONTROLLER_USER_UUID,
   EXAMPLE_KYC_CONTROLLER_UUID,
   EXAMPLE_PRIVATE_INDIVIDUAL_UUID,
-} from 'gdc-common-utils-ts/examples/shared';
-import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';
+} from 'sos-data-utils-ts/gateway-flow-examples';
+import { normalizeControllerAlias as normalizeSameAsHash } from 'antifraud-data-utils-ts/public-aliases';
 import type { AppAuthorizationManager } from '../../managers/AppAuthorizationManager';
 import {
   DEVICE_REGISTRATION_REQUEST,
@@ -81,6 +81,7 @@ import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract
 import { testIndividualControllerDcrIdentity } from '../data/identity.data';
 import { getClinicalCreatorBindingsSectionId } from '../../utils/clinical-creator-binding';
 
+const routeResponseEncryptionKey=DCR_REPLAY_PUBLIC_KEYS.find(key=>key.kty==='OKP')!;
 describe('Device DCR multi-device route story', () => {
   let app: express.Express;
   let queueAdapter: QueueAdapterMem;
@@ -119,12 +120,12 @@ describe('Device DCR multi-device route story', () => {
     await kmsService.init();
 
     const mockConfig: any = {
-      securityMode: 'demo',
+      securityMode: 'compat',
       networkMode: 'local-network',
       fhirLegacy: true,
       jsonLegacy: true,
       didcommPlainEnabled: true,
-      demoAllowInsecureBearer: true,
+      demoAllowInsecureBearer: false,
       nodeEnv: 'test',
       port: 3000,
       apiHostname: 'host',
@@ -256,7 +257,7 @@ describe('Device DCR multi-device route story', () => {
               kid: deviceJwkMldsa.kid,
               jwk: deviceJwkMldsa,
             },
-            signature: DEVICE_REGISTRATION_REQUEST.jti,
+            signature: Buffer.from(DEVICE_REGISTRATION_REQUEST.jti).toString('base64url'),
           },
           jwe: { header: { jwk: deviceJwkMlkem } },
         },
@@ -564,6 +565,10 @@ describe('Device DCR multi-device route story', () => {
       },
     };
     jest.spyOn(cryptographyService, 'verifyDetachedJws').mockResolvedValue(true);
+    // This manager journey injects the signature verifier; the decoder still
+    // supplies the complete signed-envelope profile and the actual wallet key.
+    Object.assign(dcrRequest.body,{jwks:{keys:structuredClone(DCR_REPLAY_PUBLIC_KEYS)}});
+    Object.assign(dcrRequest,{meta:{jws:{protected:{alg:deviceJwkMldsa.alg,kid:deviceJwkMldsa.kid,jwk:deviceJwkMldsa},signature:Buffer.from(dcrRequest.jti).toString('base64url')},jwe:{header:{skid:routeResponseEncryptionKey.kid,jwk:routeResponseEncryptionKey}}}});
     jest.spyOn(kmsService, 'decodeRequest').mockResolvedValue({ content: dcrRequest } as any);
 
     const submit = await invokeExpress(app, {
@@ -649,6 +654,10 @@ describe('Device DCR multi-device route story', () => {
     };
     Object.assign(dcrRequest.body, { jwks: { keys: structuredClone(DCR_REPLAY_PUBLIC_KEYS) } });
     jest.spyOn(cryptographyService, 'verifyDetachedJws').mockResolvedValue(true);
+    // This manager journey injects the signature verifier; the decoder still
+    // supplies the complete signed-envelope profile and the actual wallet key.
+    Object.assign(dcrRequest.body,{jwks:{keys:structuredClone(DCR_REPLAY_PUBLIC_KEYS)}});
+    Object.assign(dcrRequest,{meta:{jws:{protected:{alg:deviceJwkMldsa.alg,kid:deviceJwkMldsa.kid,jwk:deviceJwkMldsa},signature:Buffer.from(dcrRequest.jti).toString('base64url')},jwe:{header:{skid:routeResponseEncryptionKey.kid,jwk:routeResponseEncryptionKey}}}});
     jest.spyOn(kmsService, 'decodeRequest').mockResolvedValue({ content: dcrRequest } as any);
 
     const submit = await invokeExpress(app, {
@@ -689,7 +698,7 @@ describe('Device DCR multi-device route story', () => {
     expect(firstResult).toMatchObject({ body: { data: [{ response: { status: '201' }, resource: { client_id: firstClientId } }] } });
     const beforeLicense = await vaultRepository.get<ConfidentialStorageDoc>(tenantVaultId, license.id, getEnvSectionId('device-licenses'));
     const registeredKeys = jest.mocked(ManageAssetCryptographicKey.prototype.registerKey).mock.calls.length;
-    const replayRequest = { ...dcrRequest, thid: dcrRequest.thid + '-same-installation-retry' };
+    const replayRequest = { ...dcrRequest, jti: dcrRequest.jti+'-same-installation-retry', thid: dcrRequest.thid + '-same-installation-retry' };
     jest.mocked(kmsService.decodeRequest).mockResolvedValue({ content: replayRequest } as any);
     const secondSubmit = await invokeExpress(app, {
       method: HttpRequestMethods.Post,
@@ -709,7 +718,11 @@ describe('Device DCR multi-device route story', () => {
     expect(secondResult).toMatchObject({ body: { data: [{ response: { status: '201' }, resource: { client_id: firstClientId } }] } });
     expect(await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(tenantVaultId, getEnvSectionId('device-profiles'))).toEqual(beforeProfiles);
     expect(await vaultRepository.get<ConfidentialStorageDoc>(tenantVaultId, license.id, getEnvSectionId('device-licenses'))).toEqual(beforeLicense);
-    expect(jest.mocked(ManageAssetCryptographicKey.prototype.registerKey).mock.calls).toHaveLength(registeredKeys);
+    // Current-state recovery may resynchronize the existing public ledger
+    // projection. It must repeat exactly the admitted keys and payloads,
+    // while the protected wallet profile and licence above remain identical.
+    const keyWrites=jest.mocked(ManageAssetCryptographicKey.prototype.registerKey).mock.calls;
+    expect(keyWrites.slice(registeredKeys)).toEqual(keyWrites.slice(0,registeredKeys));
   });
 
 });

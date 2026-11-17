@@ -8,28 +8,27 @@ set -euo pipefail
 # 4) wait daemon call trigger and print logs
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-UHC_CORE_DIST_INDEX="$SCRIPT_DIR/../../uhc-sdk-core-ts/dist/index.js"
 
 BASE_URL="${BASE_URL:-http://localhost:3300}"
 AUTH_BEARER="${AUTH_BEARER:-demo-token}"
 CONTENT_TYPE="${CONTENT_TYPE:-application/json}"
 TEST_TASK_FORMAT="${TEST_TASK_FORMAT:-org.hl7.fhir.api}"
 
-UHC_DEMO_CONTEXT_JSON="$(
-  node --input-type=module -e "import { buildUhcVoiceReminderDemoContext } from 'file://${UHC_CORE_DIST_INDEX}'; process.stdout.write(JSON.stringify(buildUhcVoiceReminderDemoContext()));"
+REMINDER_DEMO_CONTEXT_JSON="$(
+  (cd "$SCRIPT_DIR/.." && node --input-type=module -e 'import {buildVoiceReminderDemoContext} from "sos-data-utils-ts/gateway-resource-flow-examples"; process.stdout.write(JSON.stringify(buildVoiceReminderDemoContext()));')
 )"
 
-DEMO_TENANT_ID="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.tenantId')"
-DEMO_JURISDICTION="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.jurisdiction')"
-DEMO_SECTOR="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.sector')"
-DEMO_HOST_REGISTRY_NETWORK="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.hostRegistryNetwork')"
-DEMO_SUBJECT_ID="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.subjectId')"
-DEMO_SUBJECT_ALIAS="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.subjectAlias')"
-DEMO_SUBJECT_EMAIL="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.subjectEmail')"
-DEMO_SUBJECT_IDENTIFIER_TYPE="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.subjectIdentifierType')"
-DEMO_SUBJECT_IDENTIFIER_VALUE="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.subjectIdentifierValue')"
-DEMO_OWNER_ID="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.ownerId')"
-DEMO_CONTROLLER_EMAIL="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.controllerEmail // empty')"
+DEMO_TENANT_ID="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.tenantId')"
+DEMO_JURISDICTION="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.jurisdiction')"
+DEMO_SECTOR="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.sector')"
+DEMO_HOST_REGISTRY_NETWORK="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.hostRegistryNetwork')"
+DEMO_SUBJECT_ID="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.subjectId')"
+DEMO_SUBJECT_ALIAS="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.subjectAlias')"
+DEMO_SUBJECT_EMAIL="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.subjectEmail')"
+DEMO_SUBJECT_IDENTIFIER_TYPE="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.subjectIdentifierType')"
+DEMO_SUBJECT_IDENTIFIER_VALUE="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.subjectIdentifierValue')"
+DEMO_OWNER_ID="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.ownerId')"
+DEMO_CONTROLLER_EMAIL="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.controllerEmail // empty')"
 
 JURISDICTION="${JURISDICTION:-$DEMO_JURISDICTION}"
 TENANT_ID="${TENANT_ID:-$DEMO_TENANT_ID}"

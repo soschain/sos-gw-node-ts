@@ -4,7 +4,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Request, Response } from 'express';
 import { createOperationOutcome } from '../../../utils/outcome';
-import { compactJWT } from 'gdc-common-utils-ts/utils/jwt';
+import { compactJWT } from 'sos-data-utils-ts/jwt';
 import { convertPrimaryDocToFhirBundle } from '../../../utils/jsonapi';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';

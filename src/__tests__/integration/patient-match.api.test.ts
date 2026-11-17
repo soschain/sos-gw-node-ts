@@ -1,7 +1,9 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import {registeredRouteFixture} from './helpers/registered-route-fixture';
+import {VaultMemRepository} from '../../database/repositories/vault/vault.mem.repository';
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 // Flow contract: 1. provision a real in-memory tenant; 2. persist one encrypted Animal identity and its encrypted exact-match pointer; 3. submit authenticated POST Patient/$match with the original ISO chip; 4. poll the asynchronous response; 5. prove a zero-or-one certain FHIR match exposes only the public card. Authorization invariant: a locally verified bearer is mandatory and identifier resolution grants no clinical/contact permission. Persistence invariant: chip and card stay inside encrypted tenant storage while neither is supplied to Fabric and no caller-derived hash crosses the API.
-import { buildSubjectIdentityBundleEntry } from 'gdc-common-utils-ts/utils/subject-identity';
+import { buildSubjectIdentityBundleEntry } from 'sos-data-utils-ts/subject-identity';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { invokeExpress } from './helpers/invokeExpress';
@@ -216,7 +218,10 @@ describe('Patient $match strict encrypted transport', () => {
       getTenantAuthorizationStatus: jest.fn(async () => 'active'),
     } as any;
     const requesterEncryptionJwk = { kty: 'OKP', crv: 'X25519', x: 'requester', kid: 'enc-1' };
+    const vault=new VaultMemRepository();
     const kmsService = {
+      getHmacBase64Url:jest.fn(async(value:string)=>value),
+      unprotectConfidentialData:jest.fn(async(doc:any)=>doc.content),
       decodeRequest: jest.fn().mockResolvedValue({
         id: 'job-1',
         sequence: 0,
@@ -236,6 +241,8 @@ describe('Patient $match strict encrypted transport', () => {
         },
       }),
     } as any;
+    const unsignedDecoded=await kmsService.decodeRequest();
+    kmsService.decodeRequest.mockResolvedValue(await registeredRouteFixture(unsignedDecoded,vault,getTenantVaultId('health-care','clinic'),kmsService));
     const directPatientMatchProcessor = { process: jest.fn(async () => 'compact.response.jwe') };
     const appAuthManager = {
       verifyBearerToken: jest.fn(async () => ({ payload: { sub: 'did:web:professional.example' } })),
@@ -248,7 +255,7 @@ describe('Patient $match strict encrypted transport', () => {
       tenantRegistry,
       kmsService,
       { set: jest.fn() } as any,
-      { query: jest.fn() } as any,
+      vault,
       { verifyDetachedJws: jest.fn() } as any,
       'http://localhost:3000',
       appAuthManager,

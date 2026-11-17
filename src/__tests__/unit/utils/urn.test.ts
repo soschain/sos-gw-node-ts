@@ -8,7 +8,7 @@ import {
     resolveRoleBearingEmployeeUrn,
 } from "../../../utils/urn";
 import { URN_NAMESPACE, URN_VERSION } from "../../data/urn.data";
-import { normalizeSameAsHash } from 'gdc-common-utils-ts/utils/same-as';
+import { normalizeControllerAlias as normalizeSameAsHash } from 'antifraud-data-utils-ts/public-aliases';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';

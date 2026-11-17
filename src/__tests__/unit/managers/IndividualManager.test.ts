@@ -25,7 +25,7 @@ import {
 import { BundleEntry, BundleEntryResponse, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
-import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
+import { extractBundleSearchResources } from "sos-sdk-core-ts/gateway-response-reader";
 
 
 const uuidMock = {

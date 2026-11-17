@@ -3,7 +3,7 @@
 
 import { jest } from '@jest/globals';
 import { KmsService } from '../../../services/KmsService';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { Content } from "antifraud-data-utils-ts/cryptography";
 import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { MldsaPublicJwk, MlkemPublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import { JWK } from '../../../gdc-backend-utils-node/models/jwk';

@@ -1,4 +1,6 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import { createHash, randomUUID } from 'node:crypto';
+import type { ClearingHouseVerificationRequest } from '../../services/ClearingHouseService';
 // private_key_jwt proves possession of the DCR-registered device key.
 // Only the exact individual RESPRSN profile may continue without a vp_token;
 // professional, delegated and member authorization keeps its credential proof.
@@ -27,31 +29,35 @@ import {
   EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_SMART_SCOPE,
   EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_VALID_FROM,
   EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_VALID_UNTIL,
-} from 'gdc-common-utils-ts/examples/inter-tenant-access-contract';
-import { ClaimInterTenantAccessContract } from 'gdc-common-utils-ts/models/inter-tenant-access-contract';
-import { buildInterTenantAccessContractCredential } from 'gdc-common-utils-ts/utils/inter-tenant-access-contract';
-import { buildClientAssertionFixture, buildClientAssertionJwt } from 'gdc-common-utils-ts/utils/client-assertion';
-import { addVC, createVP } from 'gdc-common-utils-ts/utils/vp-token';
+} from 'sos-data-utils-ts/gateway-resource-flow-examples';
+import { ClaimInterTenantAccessContract } from 'sos-data-utils-ts/inter-tenant-access-contract';
+import { buildInterTenantAccessContractCredential } from 'sos-data-utils-ts/inter-tenant-access-contract';
+import { buildDeterministicSignedJwt } from '../utils/deterministic-jwt-fixtures';
+import { validate as validateUuid } from 'uuid';
+import { addVC, createVP } from 'sos-data-utils-ts/vp-token';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { HealthcareActorRoles, getHealthcareRoleByClaim } from 'sos-data-utils-ts/healthcare-roles';
 import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
-import { buildSmartCompositionReadScope } from 'gdc-common-utils-ts/utils/smart-scope';
+import { buildSmartCompositionReadScope } from 'sos-data-utils-ts/consent-smart-scopes';
 import {
   buildUnsignedIndividualControllerIdentityVpJwt,
   buildUnsignedIndividualMemberIdentityVpJwt,
   getIndividualControllerIdentityVC,
-} from 'gdc-common-utils-ts/utils/individual-smart';
-import { buildUnsignedProfessionalIdentityVpJwt } from 'gdc-common-utils-ts/utils/professional-smart';
-import { buildHostedProviderDidWeb, buildProfessionalDidWeb } from 'gdc-common-utils-ts/utils/did';
-import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
+} from 'sos-data-utils-ts/individual-smart';
+import { buildUnsignedProfessionalIdentityVpJwt } from 'sos-data-utils-ts/professional-smart';
+import { buildHostedProviderDidWeb, buildProfessionalDidWeb, buildIndividualMemberDidWeb, buildSecureIdValueMember } from 'sos-data-utils-ts/hosted-did';
+import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'fhir-data-utils-ts';
 import {
   EXAMPLE_ALTERNATE_PORTAL_INDIVIDUAL_DID,
   EXAMPLE_PORTAL_INDIVIDUAL_DID,
   EXAMPLE_SUBJECT_IDENTITY_BINDING_CREDENTIAL,
   EXAMPLE_TRUSTED_HEALTH_PORTAL_DID,
-} from 'gdc-common-utils-ts/examples/subject-identity-binding';
+} from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import {
+  EXAMPLE_API_ORGANIZATION_DID,
+  EXAMPLE_INDIVIDUAL_CONTROLLER_ROLE_TYPE,
+  EXAMPLE_INDIVIDUAL_CONTROLLER_ROLE_VALUE,
   EXAMPLE_ACCOUNT_OWNER_ID,
   EXAMPLE_CONTROLLER_DID,
   EXAMPLE_DEVICE_CLIENT_ID,
@@ -61,15 +67,16 @@ import {
   EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
   EXAMPLE_SUBJECT_DID,
   EXAMPLE_TENANT_ROUTE_CONTEXT,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import {
   IdentityAuthResourceTypes,
   SmartPostDcrActions,
 } from 'sos-data-utils-ts/identity-auth-wire-contract';
 import { GatewayRouteFormats, GatewayRouteSections } from 'sos-data-utils-ts/gateway-response-contract';
+import { SecureIdTypesIndividual } from 'sos-data-utils-ts/identity-identifiers';
 import { DeviceBindingStatuses } from 'sos-data-utils-ts/device-license-contract';
 import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { EXAMPLE_DEVICE_BOUND_SMART_DIDCOMM_MESSAGE } from 'gdc-common-utils-ts/examples/didcomm-identity';
+import { EXAMPLE_DEVICE_BOUND_SMART_DIDCOMM_MESSAGE } from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { decodeJwt } from 'jose';
 import {
@@ -86,7 +93,7 @@ import { parseProfessionalDidIdentity } from '../../utils/professional-did-ident
 import { LICENSE_USER_CLASS_INDIVIDUAL } from '../../constants/domain';
 import {
   EXAMPLE_ORG_ACTIVATION_CONTROLLER_CREDENTIAL,
-} from 'gdc-common-utils-ts/examples/ica-activation-proof';
+} from 'sos-data-utils-ts/gateway-resource-flow-examples';
 
 const EXAMPLE_INTER_TENANT_DIGITAL_TWIN_SCOPE =
   `${ServiceCapability.DigitalTwinReader}?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}`;
@@ -94,7 +101,7 @@ const EXAMPLE_INTER_TENANT_DIGITAL_TWIN_SCOPE =
 const SAME_TENANT_ID = '704457076';
 const SAME_TENANT_EMPLOYEE_EMAIL = 'doctor@vetchain.example';
 const SAME_TENANT_EMPLOYEE_ROLE = 'ISCO-08|2250';
-const SAME_TENANT_RESEARCH_SUBJECT = 'did:web:api.acme.org:research-subject:any';
+const SAME_TENANT_RESEARCH_SUBJECT = `${EXAMPLE_API_ORGANIZATION_DID}:research-subject:any`;
 const SAME_TENANT_PUBLIC_ORGANIZATION_DID = buildHostedProviderDidWeb({
   hostDomain: 'vetchain.app', sector: 'animal-care', providerTaxId: SAME_TENANT_ID,
 });
@@ -125,6 +132,21 @@ const EXAMPLE_INTER_TENANT_DIGITAL_TWIN_CONTRACT_CREDENTIAL =
       proof: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CREDENTIAL.proof,
     },
   }) as unknown as Record<string, unknown>;
+
+/** Real fixture assertions keep one registered key per client and a fresh replay identifier per request. */
+async function buildSmartClientFixture(input: {clientId:string;audience:string}) {
+  const now=Math.floor(Date.now()/1000);
+  const signed=await buildDeterministicSignedJwt({seed:SAFE.resourceUuid,purpose:input.clientId,payload:{
+    iss:input.clientId,sub:input.clientId,aud:input.audience,
+    iat:now,exp:now+300,jti:randomUUID(),
+  }});
+  return {jwt:signed.compactToken,publicJwk:signed.publicJwk};
+}
+function fixtureIndividualControllerDid(email=String(EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL)) {
+  return buildIndividualMemberDidWeb({individualDidWeb:EXAMPLE_SUBJECT_DID,
+    memberId:buildSecureIdValueMember({secureIdTypeMember:SecureIdTypesIndividual.Email,privateIdValueMember:email}),
+    roleType:EXAMPLE_INDIVIDUAL_CONTROLLER_ROLE_TYPE,roleValue:EXAMPLE_INDIVIDUAL_CONTROLLER_ROLE_VALUE});
+}
 
 function buildMockCompactJws() {
   return jest.fn<Promise<string>, Parameters<IKmsService['createCompactJws']>>(async (payload: object) => (
@@ -160,19 +182,19 @@ function buildAliasedIndividualSelfReadManager(): OpenIdAuthManager {
     }]),
   } as unknown as jest.Mocked<IVaultRepository>;
   const clearingHouse = {
-    verifyVpToken: jest.fn().mockResolvedValue({
+    verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
       acr: 'urn:antifraud:acr:openid4vp:individual',
       amr: ['openid4vp', 'vc'],
-      vpHash: 'hash',
+      vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
       ledgerVerified: true,
-    }),
+    })),
   } as unknown as jest.Mocked<IClearingHouseService>;
   return new OpenIdAuthManager(kmsService, tenants, vault, clearingHouse);
 }
 
 function buildAliasedIndividualSelfReadJob(vpToken: string): JobRequest {
   return {
-    tenantId: 'acme',
+    tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
     jurisdiction: 'ES',
     sector: 'health-care',
     section: 'identity',
@@ -232,7 +254,7 @@ function buildSameTenantDigitalTwinManager(input: Readonly<{
     })),
   } as unknown as jest.Mocked<IKmsService>;
   const tenants = {
-    getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' }),
+    getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID }),
     tenantExists: jest.fn().mockResolvedValue(true),
     getCollectionName: jest.fn().mockResolvedValue(`animal-care_${SAME_TENANT_ID}`),
   } as unknown as jest.Mocked<TenantsCacheManager>;
@@ -254,9 +276,9 @@ function buildSameTenantDigitalTwinManager(input: Readonly<{
     }),
   } as unknown as jest.Mocked<IVaultRepository>;
   const clearingHouse = {
-    verifyVpToken: jest.fn().mockResolvedValue({
-      acr: 'urn:antifraud:acr:openid4vp:employee', amr: ['openid4vp', 'vc'], vpHash: 'hash', ledgerVerified: true,
-    }),
+    verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
+      acr: 'urn:antifraud:acr:openid4vp:employee', amr: ['openid4vp', 'vc'], vpHash: createHash('sha256').update(request.vpToken).digest('hex'), ledgerVerified: true,
+    })),
   } as unknown as jest.Mocked<IClearingHouseService>;
   return new OpenIdAuthManager(kmsService, tenants, vault, clearingHouse);
 }
@@ -271,7 +293,7 @@ function buildSameTenantDigitalTwinJob(
     resourceType: 'smart', action: 'token', id: '', sequence: 0, status: 'DRAFT' as any,
     createdAtTimestamp: Date.now(),
     content: {
-      thid: 'same-tenant-digital-twin', iss: 'did:web:device.example', aud: 'did:web:api.acme.org',
+      thid: 'same-tenant-digital-twin', iss: 'did:web:device.example', aud: EXAMPLE_API_ORGANIZATION_DID,
       body: {
         sub: actorDid,
         scope: `${ServiceCapability.DigitalTwinReader}?subject=${subject}`,
@@ -321,7 +343,7 @@ function buildResearchStudyScopedManager(input: Readonly<{
     }),
   } as unknown as jest.Mocked<IKmsService>;
   const tenants = {
-    getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' }),
+    getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID }),
     tenantExists: jest.fn().mockResolvedValue(true),
     getCollectionName: jest.fn().mockResolvedValue(`animal-care_${SAME_TENANT_ID}`),
     getTenantJurisdiction: jest.fn().mockResolvedValue('CA-BC'),
@@ -351,9 +373,9 @@ function buildResearchStudyScopedManager(input: Readonly<{
     }),
   } as unknown as jest.Mocked<IVaultRepository>;
   const clearingHouse = {
-    verifyVpToken: jest.fn().mockResolvedValue({
-      acr: 'urn:antifraud:acr:openid4vp:employee', amr: ['openid4vp', 'vc'], vpHash: 'hash', ledgerVerified: true,
-    }),
+    verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
+      acr: 'urn:antifraud:acr:openid4vp:employee', amr: ['openid4vp', 'vc'], vpHash: createHash('sha256').update(request.vpToken).digest('hex'), ledgerVerified: true,
+    })),
   } as unknown as jest.Mocked<IClearingHouseService>;
   const manager = new OpenIdAuthManager(kmsService, tenants, vault, clearingHouse);
   (manager as any).validateClientAssertion = jest.fn().mockResolvedValue(
@@ -369,7 +391,7 @@ function buildResearchStudyScopedJob(actorDid: string, vpToken: string): JobRequ
     resourceType: 'smart', action: 'token', id: '', sequence: 0, status: 'DRAFT' as any,
     createdAtTimestamp: Date.now(),
     content: {
-      thid: 'research-study-smart-token', iss: 'did:web:device.example', aud: 'did:web:api.acme.org',
+      thid: 'research-study-smart-token', iss: 'did:web:device.example', aud: EXAMPLE_API_ORGANIZATION_DID,
       body: {
         client_id: fixture.clientId,
         client_assertion: 'registered-private-key-jwt',
@@ -393,7 +415,7 @@ function buildControllerResearchStudyManager(): OpenIdAuthManager {
   } as unknown as jest.Mocked<IKmsService>;
   const tenants = {
     getDidDocument: jest.fn().mockResolvedValue({
-      id: 'did:web:api.acme.org',
+      id: EXAMPLE_API_ORGANIZATION_DID,
       controller: [SAME_TENANT_CONTROLLER_DID],
     }),
     tenantExists: jest.fn().mockResolvedValue(true),
@@ -411,12 +433,12 @@ function buildControllerResearchStudyManager(): OpenIdAuthManager {
     listContainersInSection: jest.fn().mockResolvedValue([]),
   } as unknown as jest.Mocked<IVaultRepository>;
   const clearingHouse = {
-    verifyVpToken: jest.fn().mockResolvedValue({
+    verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
       acr: 'urn:antifraud:acr:openid4vp:organization',
       amr: ['openid4vp', 'vc'],
-      vpHash: 'hash',
+      vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
       ledgerVerified: true,
-    }),
+    })),
   } as unknown as jest.Mocked<IClearingHouseService>;
   return new OpenIdAuthManager(kmsService, tenants, vault, clearingHouse);
 }
@@ -446,7 +468,7 @@ function buildControllerResearchStudyJob(
     resourceType: 'smart', action: 'token', id: '', sequence: 0, status: 'DRAFT' as any,
     createdAtTimestamp: Date.now(),
     content: {
-      thid: 'controller-research-study-smart-token', iss: SAME_TENANT_CONTROLLER_DID, aud: 'did:web:api.acme.org',
+      thid: 'controller-research-study-smart-token', iss: SAME_TENANT_CONTROLLER_DID, aud: EXAMPLE_API_ORGANIZATION_DID,
       body: {
         sub: SAME_TENANT_CONTROLLER_DID,
         scope: `organization/ResearchSubject.c?study=${study}`,
@@ -501,11 +523,11 @@ describe('OpenIdAuthManager', () => {
   });
 
   it('issues only consented sections to an accepted individual member VP', async () => {
-    const subjectDid = 'did:web:api.acme.org:individual:subject-example';
+    const subjectDid = `${EXAMPLE_API_ORGANIZATION_DID}:individual:subject-example`;
     const actorId = 'firebase-member-001';
     const memberPhone = '+34600111222';
     const role = 'v3-RoleCode|RESPRSN';
-    const actorDid = `did:web:api.acme.org:family:${actorId}:${role}`;
+    const actorDid = `${EXAMPLE_API_ORGANIZATION_DID}:family:${actorId}:${role}`;
     const allergySection = HealthcareCoreSections.AllergiesAndIntolerances.attributeValue;
     const requestedScope = buildSmartCompositionReadScope({ subjectDid, sections: '*' });
     const vpToken = buildUnsignedIndividualMemberIdentityVpJwt({
@@ -525,7 +547,10 @@ describe('OpenIdAuthManager', () => {
       [ClaimConsent.action]: allergySection,
       [ClaimConsent.purpose]: HealthcareConsentPurposes.Treatment,
     }];
-    const licenses = [{ content: {
+    const licenses = [{ id: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE, status: DeviceBindingStatuses.Active, content: {
+      id: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
+      userClass: LICENSE_USER_CLASS_INDIVIDUAL,
+      exp: Math.floor(Date.now() / 1000) + 3600,
       status: 'active',
       subjectId: actorId,
       authorizedSubjectDid: subjectDid,
@@ -547,22 +572,22 @@ describe('OpenIdAuthManager', () => {
         createCompactJws: buildMockCompactJws(),
       } as unknown as jest.Mocked<IKmsService>,
       {
-        getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' }),
+        getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID }),
         tenantExists: jest.fn().mockResolvedValue(true),
       } as unknown as jest.Mocked<TenantsCacheManager>,
       vault,
-      { verifyVpToken: jest.fn().mockResolvedValue({
+      { verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
         acr: 'urn:antifraud:acr:openid4vp:individual',
         amr: ['openid4vp', 'vc'],
-        vpHash: 'hash',
+        vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
         ledgerVerified: true,
-      }) } as unknown as jest.Mocked<IClearingHouseService>,
+      })) } as unknown as jest.Mocked<IClearingHouseService>,
     );
 
     const response = await manager.process({
-      tenantId: 'acme', jurisdiction: 'ES', sector: 'health-care',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId, jurisdiction: 'ES', sector: 'health-care',
       section: 'identity', format: 'openid', resourceType: 'smart', action: 'token',
-      content: { thid: 'member-smart-token-test', iss: actorDid, aud: 'did:web:api.acme.org', body: {
+      content: { thid: 'member-smart-token-test', iss: actorDid, aud: EXAMPLE_API_ORGANIZATION_DID, body: {
         sub: actorDid,
         scope: requestedScope,
         purpose: HealthcareConsentPurposes.Treatment,
@@ -578,7 +603,7 @@ describe('OpenIdAuthManager', () => {
   });
 
   it('permits a provider-issued controller VC only for its exact animal without a self-consent', async () => {
-    const issuerDid = 'did:web:api.acme.org';
+    const issuerDid = EXAMPLE_API_ORGANIZATION_DID;
     const subjectDid = `${issuerDid}:individual:animal-001`;
     const role = 'v3-RoleCode|RESPRSN';
     const actorDid = `${subjectDid}:family:firebase-controller-001:${role}`;
@@ -620,17 +645,17 @@ describe('OpenIdAuthManager', () => {
         getContainersInSection: jest.fn().mockResolvedValue([]),
       } as unknown as jest.Mocked<IVaultRepository>,
       {
-        verifyVpToken: jest.fn().mockResolvedValue({
+        verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
           acr: 'urn:antifraud:acr:openid4vp:individual',
           amr: ['openid4vp', 'vc'],
-          vpHash: 'hash',
+          vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
           ledgerVerified: true,
-        }),
+        })),
       } as unknown as jest.Mocked<IClearingHouseService>,
     );
 
     const response = await manager.process({
-      tenantId: 'acme', jurisdiction: 'CA-BC', sector: 'animal-care',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId, jurisdiction: 'CA-BC', sector: 'animal-care',
       section: 'identity', format: 'openid', resourceType: 'smart', action: 'token',
       content: { thid: 'controller-smart-token-test', iss: actorDid, aud: issuerDid, body: {
         sub: actorDid,
@@ -669,7 +694,7 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -695,12 +720,12 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockClearingHouse: jest.Mocked<IClearingHouseService> = {
-      verifyVpToken: jest.fn().mockResolvedValue({
+      verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
         acr: 'urn:antifraud:acr:openid4vp:employee',
         amr: ['openid4vp', 'vc'],
-        vpHash: 'hash',
+        vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
         ledgerVerified: true,
-      }),
+      })),
     };
 
     const manager = new OpenIdAuthManager(
@@ -711,7 +736,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     const job: JobRequest = {
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'es',
       sector: 'health-care',
       section: 'identity',
@@ -726,10 +751,10 @@ describe('OpenIdAuthManager', () => {
         jti: 'jti',
         thid: 'thid',
         iss: 'did:web:device.example',
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         body: {
-          sub: 'did:web:api.acme.org:employee:doctor1@acme.org:ISCO-08|2211',
-          scope: 'organization/Composition.rs?subject=did:web:api.acme.org:individual:123&section=*',
+          sub: `${EXAMPLE_API_ORGANIZATION_DID}:employee:doctor1@acme.org:ISCO-08|2211`,
+          scope: `organization/Composition.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}&section=*`,
           purpose: 'TREAT',
           expires_in: 300,
           vp_token: 'vp',
@@ -753,8 +778,8 @@ describe('OpenIdAuthManager', () => {
     expect(accessTokenPayload.exp).toBeLessThanOrEqual(Math.floor(Date.parse(consentPeriodEnd) / 1000));
     expect(mockKmsService.createCompactJws).toHaveBeenCalledWith(
       expect.objectContaining({
-        iss: 'did:web:api.acme.org',
-        aud: 'did:web:api.acme.org',
+        iss: EXAMPLE_API_ORGANIZATION_DID,
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         scope: response.body.scope,
       }),
       'tenant-sig-kid',
@@ -793,7 +818,7 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -825,12 +850,12 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockClearingHouse: jest.Mocked<IClearingHouseService> = {
-      verifyVpToken: jest.fn().mockResolvedValue({
+      verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
         acr: 'urn:antifraud:acr:openid4vp:employee',
         amr: ['openid4vp', 'vc'],
-        vpHash: 'hash',
+        vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
         ledgerVerified: true,
-      }),
+      })),
     };
 
     const manager = new OpenIdAuthManager(
@@ -841,7 +866,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     const response = await manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -855,10 +880,10 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: 'did:web:device.example',
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         body: {
-          sub: 'did:web:api.acme.org:employee:doctor1@acme.org:ISCO-08|2211',
-          scope: 'organization/Composition.rs?subject=did:web:api.acme.org:individual:123&section=http://loinc.org|48765-2',
+          sub: `${EXAMPLE_API_ORGANIZATION_DID}:employee:doctor1@acme.org:ISCO-08|2211`,
+          scope: `organization/Composition.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}&section=http://loinc.org|48765-2`,
           purpose: 'TREAT',
           vp_token: 'vp',
           acr_values: 'urn:antifraud:acr:openid4vp:employee',
@@ -890,7 +915,7 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -919,12 +944,12 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockClearingHouse: jest.Mocked<IClearingHouseService> = {
-      verifyVpToken: jest.fn().mockResolvedValue({
+      verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
         acr: 'urn:antifraud:acr:openid4vp:employee',
         amr: ['openid4vp', 'vc'],
-        vpHash: 'hash',
+        vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
         ledgerVerified: true,
-      }),
+      })),
     };
 
     const manager = new OpenIdAuthManager(
@@ -935,7 +960,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     const response = await manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -949,10 +974,10 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: 'did:web:device.example',
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         body: {
-          sub: 'did:web:api.acme.org:employee:doctor1@acme.org:ISCO-08|2211',
-          scope: 'organization/Composition.rs?subject=did:web:api.acme.org:individual:123&section=LOINC|10160-0',
+          sub: `${EXAMPLE_API_ORGANIZATION_DID}:employee:doctor1@acme.org:ISCO-08|2211`,
+          scope: `organization/Composition.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}&section=LOINC|10160-0`,
           purpose: 'TREAT',
           vp_token: 'vp',
           acr_values: 'urn:antifraud:acr:openid4vp:employee',
@@ -984,7 +1009,7 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -1019,7 +1044,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     await expect(manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -1033,10 +1058,10 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: 'did:web:device.example',
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         body: {
-          sub: 'did:web:api.acme.org:employee:doctor1@acme.org:ISCO-08|2211',
-          scope: 'patient/Composition.rs?subject=did:web:api.acme.org:individual:123&section=LOINC|48765-2',
+          sub: `${EXAMPLE_API_ORGANIZATION_DID}:employee:doctor1@acme.org:ISCO-08|2211`,
+          scope: `patient/Composition.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}&section=LOINC|48765-2`,
           purpose: 'TREAT',
           vp_token: 'vp',
           acr_values: 'urn:antifraud:acr:openid4vp:employee',
@@ -1066,7 +1091,7 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -1101,7 +1126,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     await expect(manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -1115,7 +1140,7 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: 'did:web:device.example',
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         body: {
           sub: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONSUMER_PROFESSIONAL_DID,
           scope: `patient/ResearchSubject.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}`,
@@ -1148,7 +1173,7 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -1172,12 +1197,12 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockClearingHouse: jest.Mocked<IClearingHouseService> = {
-      verifyVpToken: jest.fn().mockResolvedValue({
+      verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
         acr: 'urn:antifraud:acr:openid4vp:employee',
         amr: ['openid4vp', 'vc'],
-        vpHash: 'hash',
+        vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
         ledgerVerified: true,
-      }),
+      })),
     };
 
     const manager = new OpenIdAuthManager(
@@ -1187,7 +1212,7 @@ describe('OpenIdAuthManager', () => {
       mockClearingHouse,
     );
     const response = await manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -1201,10 +1226,10 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: 'did:web:device.example',
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         body: {
-          sub: 'did:web:api.acme.org:employee:doctor1@acme.org:ISCO-08|2211',
-          scope: 'organization/Composition.rs?subject=did:web:api.acme.org:individual:123&section=LOINC|48765-2',
+          sub: `${EXAMPLE_API_ORGANIZATION_DID}:employee:doctor1@acme.org:ISCO-08|2211`,
+          scope: `organization/Composition.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}&section=LOINC|48765-2`,
           purpose: 'TREAT',
           vp_token: 'vp',
           acr_values: 'urn:antifraud:acr:openid4vp:employee',
@@ -1235,7 +1260,7 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -1259,12 +1284,12 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockClearingHouse: jest.Mocked<IClearingHouseService> = {
-      verifyVpToken: jest.fn().mockResolvedValue({
+      verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
         acr: 'urn:antifraud:acr:openid4vp:employee',
         amr: ['openid4vp', 'vc'],
-        vpHash: 'hash',
+        vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
         ledgerVerified: true,
-      }),
+      })),
     };
 
     const manager = new OpenIdAuthManager(
@@ -1274,7 +1299,7 @@ describe('OpenIdAuthManager', () => {
       mockClearingHouse,
     );
     const response = await manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -1288,10 +1313,10 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: 'did:web:device.example',
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         body: {
-          sub: 'did:web:api.acme.org:employee:doctor1@acme.org:ISCO-08|2211',
-          scope: 'organization/Composition.rs?subject=did:web:api.acme.org:individual:123&section=LOINC|48765-2',
+          sub: `${EXAMPLE_API_ORGANIZATION_DID}:employee:doctor1@acme.org:ISCO-08|2211`,
+          scope: `organization/Composition.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}&section=LOINC|48765-2`,
           purpose: 'TREAT',
           vp_token: 'vp',
           acr_values: 'urn:antifraud:acr:openid4vp:employee',
@@ -1322,7 +1347,7 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -1346,12 +1371,12 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockClearingHouse: jest.Mocked<IClearingHouseService> = {
-      verifyVpToken: jest.fn().mockResolvedValue({
+      verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
         acr: 'urn:antifraud:acr:openid4vp:employee',
         amr: ['openid4vp', 'vc'],
-        vpHash: 'hash',
+        vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
         ledgerVerified: true,
-      }),
+      })),
     };
 
     const manager = new OpenIdAuthManager(
@@ -1362,7 +1387,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     const response = await manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -1376,10 +1401,10 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: 'did:web:device.example',
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         body: {
-          sub: 'did:web:api.acme.org:employee:doctor1@acme.org:ISCO-08|2211',
-          scope: 'organization/Composition.rs?subject=did:web:api.acme.org:individual:123&section=LOINC|48765-2',
+          sub: `${EXAMPLE_API_ORGANIZATION_DID}:employee:doctor1@acme.org:ISCO-08|2211`,
+          scope: `organization/Composition.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}&section=LOINC|48765-2`,
           purpose: 'TREAT',
           vp_token: 'vp',
           acr_values: 'urn:antifraud:acr:openid4vp:employee',
@@ -1411,7 +1436,7 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -1446,7 +1471,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     await expect(manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -1460,10 +1485,10 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: 'did:web:device.example',
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         body: {
-          sub: 'did:web:api.acme.org:employee:doctor1@acme.org:ISCO-08|2211',
-          scope: 'organization/Composition.rs?subject=did:web:api.acme.org:individual:123&section=LOINC|48765-2',
+          sub: `${EXAMPLE_API_ORGANIZATION_DID}:employee:doctor1@acme.org:ISCO-08|2211`,
+          scope: `organization/Composition.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}&section=LOINC|48765-2`,
           purpose: 'TREAT',
           acr_values: 'urn:antifraud:acr:openid4vp:employee',
         },
@@ -1492,7 +1517,7 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -1523,12 +1548,12 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockClearingHouse: jest.Mocked<IClearingHouseService> = {
-      verifyVpToken: jest.fn().mockResolvedValue({
+      verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
         acr: 'urn:antifraud:acr:openid4vp:employee',
         amr: ['openid4vp', 'vc'],
-        vpHash: 'hash',
+        vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
         ledgerVerified: true,
-      }),
+      })),
     };
 
     const manager = new OpenIdAuthManager(
@@ -1539,7 +1564,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     await expect(manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -1553,10 +1578,10 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: 'did:web:device.example',
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         body: {
-          sub: 'did:web:api.acme.org:employee:doctor1@acme.org:ISCO-08|2211',
-          scope: 'organization/Composition.rs?subject=did:web:api.acme.org:individual:123&section=LOINC|48765-2',
+          sub: `${EXAMPLE_API_ORGANIZATION_DID}:employee:doctor1@acme.org:ISCO-08|2211`,
+          scope: `organization/Composition.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}&section=LOINC|48765-2`,
           purpose: 'TREAT',
           vp_token: 'vp',
           acr_values: 'urn:antifraud:acr:openid4vp:employee',
@@ -1586,7 +1611,7 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -1616,12 +1641,12 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockClearingHouse: jest.Mocked<IClearingHouseService> = {
-      verifyVpToken: jest.fn().mockResolvedValue({
+      verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
         acr: 'urn:antifraud:acr:openid4vp:employee',
         amr: ['openid4vp', 'vc'],
-        vpHash: 'hash',
+        vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
         ledgerVerified: true,
-      }),
+      })),
     };
 
     const manager = new OpenIdAuthManager(
@@ -1632,7 +1657,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     const response = await manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -1646,10 +1671,10 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: 'did:web:device.example',
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         body: {
-          sub: 'did:web:api.acme.org:family:guardian@example.org:v3-RoleCode|RESPRSN',
-          scope: 'organization/Composition.rs?subject=did:web:api.acme.org:individual:123&section=LOINC|48765-2',
+          sub: `${EXAMPLE_API_ORGANIZATION_DID}:family:guardian@example.org:v3-RoleCode|RESPRSN`,
+          scope: `organization/Composition.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}&section=LOINC|48765-2`,
           purpose: 'TREAT',
           vp_token: 'vp',
           acr_values: 'urn:antifraud:acr:openid4vp:employee',
@@ -1681,7 +1706,7 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -1712,12 +1737,12 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockClearingHouse: jest.Mocked<IClearingHouseService> = {
-      verifyVpToken: jest.fn().mockResolvedValue({
+      verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
         acr: 'urn:antifraud:acr:openid4vp:employee',
         amr: ['openid4vp', 'vc'],
-        vpHash: 'hash',
+        vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
         ledgerVerified: true,
-      }),
+      })),
     };
 
     const vpPayload = createVP({
@@ -1734,7 +1759,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     const response = await manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -1748,7 +1773,7 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: 'did:web:device.example',
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         body: {
           sub: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONSUMER_PROFESSIONAL_DID,
           scope: EXAMPLE_INTER_TENANT_DIGITAL_TWIN_SCOPE,
@@ -2035,12 +2060,12 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockClearingHouse: jest.Mocked<IClearingHouseService> = {
-      verifyVpToken: jest.fn().mockResolvedValue({
+      verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
         acr: 'urn:antifraud:acr:openid4vp:individual',
         amr: ['openid4vp', 'vc'],
-        vpHash: 'hash',
+        vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
         ledgerVerified: true,
-      }),
+      })),
     };
 
     const manager = new OpenIdAuthManager(
@@ -2051,7 +2076,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     const response = await manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -2142,7 +2167,7 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -2173,12 +2198,12 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockClearingHouse: jest.Mocked<IClearingHouseService> = {
-      verifyVpToken: jest.fn().mockResolvedValue({
+      verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
         acr: 'urn:antifraud:acr:openid4vp:employee',
         amr: ['openid4vp', 'vc'],
-        vpHash: 'hash',
+        vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
         ledgerVerified: true,
-      }),
+      })),
     };
 
     const manager = new OpenIdAuthManager(
@@ -2189,7 +2214,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     await expect(manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -2203,7 +2228,7 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: 'did:web:device.example',
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         body: {
           sub: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONSUMER_PROFESSIONAL_DID,
           scope: EXAMPLE_INTER_TENANT_DIGITAL_TWIN_SCOPE,
@@ -2223,10 +2248,13 @@ describe('OpenIdAuthManager', () => {
     // - client_assertion still authenticates the registered researcher client
     process.env.EXTERNAL_RESEARCH_TOKEN_TRUSTED_ISSUERS = 'https://pontus-x.example';
     const clientId = 'did:web:lab.example:employee:researcher1@lab.org:device:client-002';
-    const clientAssertion = await buildClientAssertionJwt({
+    const assertionFixture = await buildSmartClientFixture({
       clientId,
-      audience: 'did:web:api.acme.org',
+      audience: EXAMPLE_API_ORGANIZATION_DID,
     });
+
+    const clientAssertion = assertionFixture.jwt;
+    const registeredActorDid = EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONSUMER_PROFESSIONAL_DID;
 
     const mockKmsService: jest.Mocked<IKmsService> = {
       init: jest.fn(),
@@ -2242,13 +2270,13 @@ describe('OpenIdAuthManager', () => {
       createCompactJws: buildMockCompactJws(),
       encodeResponse: jest.fn(),
       protectConfidentialData: jest.fn(),
-      unprotectConfidentialData: jest.fn(),
+      unprotectConfidentialData: jest.fn().mockImplementation(async document => document.content),
       getHmacBase64Url: jest.fn(),
       protectAttributesNameAndValue: jest.fn(),
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -2270,7 +2298,15 @@ describe('OpenIdAuthManager', () => {
         },
       ] as any),
       put: jest.fn(),
-      get: jest.fn(),
+      get: jest.fn().mockImplementation(async (_vaultId, id, section) => (
+        id === clientId && String(section).includes('device-profiles')
+          ? { id: clientId, status: DeviceBindingStatuses.Active, content: {
+              clientId, status: DeviceBindingStatuses.Active, actorDid: registeredActorDid,
+              profileDid: registeredActorDid, authenticatedSubject: EXAMPLE_ACCOUNT_OWNER_ID,
+              jwks: { keys: [assertionFixture.publicJwk] },
+            } }
+          : undefined
+      )),
       getHistory: jest.fn(),
       query: jest.fn(),
       delete: jest.fn(),
@@ -2289,7 +2325,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     const response = await manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -2303,7 +2339,7 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: clientId,
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         meta: {
           bearer: {
             token: 'Bearer external',
@@ -2333,7 +2369,8 @@ describe('OpenIdAuthManager', () => {
     } as JobRequest);
 
     expect(response.body.access_token).toBeDefined();
-    expect(response.body.ledger_verified).toBe(true);
+    // Trusted OIDC and current local registration do not establish ledger evidence.
+    expect(response.body.ledger_verified).toBe(false);
     expect(mockClearingHouse.verifyVpToken).not.toHaveBeenCalled();
   });
 
@@ -2341,10 +2378,13 @@ describe('OpenIdAuthManager', () => {
     process.env.EXTERNAL_RESEARCH_TOKEN_TRUSTED_ISSUERS = 'https://pontus-x.example';
     const researchSubjectScope = `organization/ResearchSubject.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}`;
     const clientId = 'did:web:lab.example:employee:researcher1@lab.org:device:client-rs-001';
-    const clientAssertion = await buildClientAssertionJwt({
+    const assertionFixture = await buildSmartClientFixture({
       clientId,
-      audience: 'did:web:api.acme.org',
+      audience: EXAMPLE_API_ORGANIZATION_DID,
     });
+
+    const clientAssertion = assertionFixture.jwt;
+    const registeredActorDid = EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONSUMER_PROFESSIONAL_DID;
 
     const mockKmsService: jest.Mocked<IKmsService> = {
       init: jest.fn(),
@@ -2360,13 +2400,13 @@ describe('OpenIdAuthManager', () => {
       createCompactJws: buildMockCompactJws(),
       encodeResponse: jest.fn(),
       protectConfidentialData: jest.fn(),
-      unprotectConfidentialData: jest.fn(),
+      unprotectConfidentialData: jest.fn().mockImplementation(async document => document.content),
       getHmacBase64Url: jest.fn(),
       protectAttributesNameAndValue: jest.fn(),
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -2389,7 +2429,15 @@ describe('OpenIdAuthManager', () => {
         },
       ] as any),
       put: jest.fn(),
-      get: jest.fn(),
+      get: jest.fn().mockImplementation(async (_vaultId, id, section) => (
+        id === clientId && String(section).includes('device-profiles')
+          ? { id: clientId, status: DeviceBindingStatuses.Active, content: {
+              clientId, status: DeviceBindingStatuses.Active, actorDid: registeredActorDid,
+              profileDid: registeredActorDid, authenticatedSubject: EXAMPLE_ACCOUNT_OWNER_ID,
+              jwks: { keys: [assertionFixture.publicJwk] },
+            } }
+          : undefined
+      )),
       getHistory: jest.fn(),
       query: jest.fn(),
       delete: jest.fn(),
@@ -2408,7 +2456,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     const response = await manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -2422,7 +2470,7 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: clientId,
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         meta: {
           bearer: {
             token: 'Bearer external',
@@ -2452,17 +2500,21 @@ describe('OpenIdAuthManager', () => {
     } as JobRequest);
 
     expect(response.body.access_token).toBeDefined();
-    expect(response.body.ledger_verified).toBe(true);
+    // Trusted OIDC and current local registration do not establish ledger evidence.
+    expect(response.body.ledger_verified).toBe(false);
   });
 
   it('should accept one research employee when the permit is role-specific and matches the requester role', async () => {
     process.env.EXTERNAL_RESEARCH_TOKEN_TRUSTED_ISSUERS = 'https://pontus-x.example';
     const researchSubjectScope = `organization/ResearchSubject.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}`;
     const clientId = 'did:web:lab.example:employee:researcher1@lab.org:device:client-role-allow';
-    const clientAssertion = await buildClientAssertionJwt({
+    const assertionFixture = await buildSmartClientFixture({
       clientId,
-      audience: 'did:web:api.acme.org',
+      audience: EXAMPLE_API_ORGANIZATION_DID,
     });
+
+    const clientAssertion = assertionFixture.jwt;
+    const registeredActorDid = EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONSUMER_PROFESSIONAL_DID;
 
     const mockKmsService: jest.Mocked<IKmsService> = {
       init: jest.fn(),
@@ -2478,13 +2530,13 @@ describe('OpenIdAuthManager', () => {
       createCompactJws: buildMockCompactJws(),
       encodeResponse: jest.fn(),
       protectConfidentialData: jest.fn(),
-      unprotectConfidentialData: jest.fn(),
+      unprotectConfidentialData: jest.fn().mockImplementation(async document => document.content),
       getHmacBase64Url: jest.fn(),
       protectAttributesNameAndValue: jest.fn(),
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -2509,7 +2561,15 @@ describe('OpenIdAuthManager', () => {
         },
       ] as any),
       put: jest.fn(),
-      get: jest.fn(),
+      get: jest.fn().mockImplementation(async (_vaultId, id, section) => (
+        id === clientId && String(section).includes('device-profiles')
+          ? { id: clientId, status: DeviceBindingStatuses.Active, content: {
+              clientId, status: DeviceBindingStatuses.Active, actorDid: registeredActorDid,
+              profileDid: registeredActorDid, authenticatedSubject: EXAMPLE_ACCOUNT_OWNER_ID,
+              jwks: { keys: [assertionFixture.publicJwk] },
+            } }
+          : undefined
+      )),
       getHistory: jest.fn(),
       query: jest.fn(),
       delete: jest.fn(),
@@ -2528,7 +2588,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     const response = await manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -2542,7 +2602,7 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: clientId,
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         meta: {
           bearer: {
             token: 'Bearer external',
@@ -2578,10 +2638,13 @@ describe('OpenIdAuthManager', () => {
     process.env.EXTERNAL_RESEARCH_TOKEN_TRUSTED_ISSUERS = 'https://pontus-x.example';
     const researchSubjectScope = `organization/ResearchSubject.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}`;
     const clientId = 'did:web:lab.example:employee:researcher2@lab.org:device:client-role-deny';
-    const clientAssertion = await buildClientAssertionJwt({
+    const assertionFixture = await buildSmartClientFixture({
       clientId,
-      audience: 'did:web:api.acme.org',
+      audience: EXAMPLE_API_ORGANIZATION_DID,
     });
+
+    const clientAssertion = assertionFixture.jwt;
+    const registeredActorDid = `${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerOrganizationDid}:employee:researcher2@lab.org:ISCO-08|2166`;
 
     const mockKmsService: jest.Mocked<IKmsService> = {
       init: jest.fn(),
@@ -2597,13 +2660,13 @@ describe('OpenIdAuthManager', () => {
       createCompactJws: buildMockCompactJws(),
       encodeResponse: jest.fn(),
       protectConfidentialData: jest.fn(),
-      unprotectConfidentialData: jest.fn(),
+      unprotectConfidentialData: jest.fn().mockImplementation(async document => document.content),
       getHmacBase64Url: jest.fn(),
       protectAttributesNameAndValue: jest.fn(),
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -2628,7 +2691,15 @@ describe('OpenIdAuthManager', () => {
         },
       ] as any),
       put: jest.fn(),
-      get: jest.fn(),
+      get: jest.fn().mockImplementation(async (_vaultId, id, section) => (
+        id === clientId && String(section).includes('device-profiles')
+          ? { id: clientId, status: DeviceBindingStatuses.Active, content: {
+              clientId, status: DeviceBindingStatuses.Active, actorDid: registeredActorDid,
+              profileDid: registeredActorDid, authenticatedSubject: EXAMPLE_ACCOUNT_OWNER_ID,
+              jwks: { keys: [assertionFixture.publicJwk] },
+            } }
+          : undefined
+      )),
       getHistory: jest.fn(),
       query: jest.fn(),
       delete: jest.fn(),
@@ -2647,7 +2718,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     await expect(manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -2661,7 +2732,7 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: clientId,
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         meta: {
           bearer: {
             token: 'Bearer external',
@@ -2682,7 +2753,7 @@ describe('OpenIdAuthManager', () => {
           client_id: clientId,
           client_assertion: clientAssertion,
           client_assertion_type: 'client_assertion',
-          sub: 'did:web:api.lab.org:employee:researcher2@lab.org:ISCO-08|2166',
+          sub: `${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerOrganizationDid}:employee:researcher2@lab.org:ISCO-08|2166`,
           scope: researchSubjectScope,
           purpose: HealthcareConsentPurposes.Research,
           acr_values: 'urn:antifraud:acr:openid4vp:employee',
@@ -2695,10 +2766,13 @@ describe('OpenIdAuthManager', () => {
     process.env.EXTERNAL_RESEARCH_TOKEN_TRUSTED_ISSUERS = 'https://pontus-x.example';
     const researchSubjectScope = `organization/ResearchSubject.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}`;
     const clientId = 'did:web:lab.example:employee:researcher1@lab.org:device:client-email-allow';
-    const clientAssertion = await buildClientAssertionJwt({
+    const assertionFixture = await buildSmartClientFixture({
       clientId,
-      audience: 'did:web:api.acme.org',
+      audience: EXAMPLE_API_ORGANIZATION_DID,
     });
+
+    const clientAssertion = assertionFixture.jwt;
+    const registeredActorDid = `${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerOrganizationDid}:employee:researcher1@lab.org:ISCO-08|2166`;
 
     const mockKmsService: jest.Mocked<IKmsService> = {
       init: jest.fn(),
@@ -2714,13 +2788,13 @@ describe('OpenIdAuthManager', () => {
       createCompactJws: buildMockCompactJws(),
       encodeResponse: jest.fn(),
       protectConfidentialData: jest.fn(),
-      unprotectConfidentialData: jest.fn(),
+      unprotectConfidentialData: jest.fn().mockImplementation(async document => document.content),
       getHmacBase64Url: jest.fn(),
       protectAttributesNameAndValue: jest.fn(),
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -2745,7 +2819,15 @@ describe('OpenIdAuthManager', () => {
         },
       ] as any),
       put: jest.fn(),
-      get: jest.fn(),
+      get: jest.fn().mockImplementation(async (_vaultId, id, section) => (
+        id === clientId && String(section).includes('device-profiles')
+          ? { id: clientId, status: DeviceBindingStatuses.Active, content: {
+              clientId, status: DeviceBindingStatuses.Active, actorDid: registeredActorDid,
+              profileDid: registeredActorDid, authenticatedSubject: EXAMPLE_ACCOUNT_OWNER_ID,
+              jwks: { keys: [assertionFixture.publicJwk] },
+            } }
+          : undefined
+      )),
       getHistory: jest.fn(),
       query: jest.fn(),
       delete: jest.fn(),
@@ -2764,7 +2846,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     const response = await manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -2778,7 +2860,7 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: clientId,
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         meta: {
           bearer: {
             token: 'Bearer external',
@@ -2799,7 +2881,7 @@ describe('OpenIdAuthManager', () => {
           client_id: clientId,
           client_assertion: clientAssertion,
           client_assertion_type: 'client_assertion',
-          sub: 'did:web:api.lab.org:employee:researcher1@lab.org:ISCO-08|2166',
+          sub: `${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerOrganizationDid}:employee:researcher1@lab.org:ISCO-08|2166`,
           scope: researchSubjectScope,
           purpose: HealthcareConsentPurposes.Research,
           acr_values: 'urn:antifraud:acr:openid4vp:employee',
@@ -2814,10 +2896,13 @@ describe('OpenIdAuthManager', () => {
     process.env.EXTERNAL_RESEARCH_TOKEN_TRUSTED_ISSUERS = 'https://pontus-x.example';
     const researchSubjectScope = `organization/ResearchSubject.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}`;
     const clientId = 'did:web:lab.example:employee:researcher2@lab.org:device:client-email-deny';
-    const clientAssertion = await buildClientAssertionJwt({
+    const assertionFixture = await buildSmartClientFixture({
       clientId,
-      audience: 'did:web:api.acme.org',
+      audience: EXAMPLE_API_ORGANIZATION_DID,
     });
+
+    const clientAssertion = assertionFixture.jwt;
+    const registeredActorDid = `${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerOrganizationDid}:employee:researcher2@lab.org:ISCO-08|2166`;
 
     const mockKmsService: jest.Mocked<IKmsService> = {
       init: jest.fn(),
@@ -2833,13 +2918,13 @@ describe('OpenIdAuthManager', () => {
       createCompactJws: buildMockCompactJws(),
       encodeResponse: jest.fn(),
       protectConfidentialData: jest.fn(),
-      unprotectConfidentialData: jest.fn(),
+      unprotectConfidentialData: jest.fn().mockImplementation(async document => document.content),
       getHmacBase64Url: jest.fn(),
       protectAttributesNameAndValue: jest.fn(),
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -2864,7 +2949,15 @@ describe('OpenIdAuthManager', () => {
         },
       ] as any),
       put: jest.fn(),
-      get: jest.fn(),
+      get: jest.fn().mockImplementation(async (_vaultId, id, section) => (
+        id === clientId && String(section).includes('device-profiles')
+          ? { id: clientId, status: DeviceBindingStatuses.Active, content: {
+              clientId, status: DeviceBindingStatuses.Active, actorDid: registeredActorDid,
+              profileDid: registeredActorDid, authenticatedSubject: EXAMPLE_ACCOUNT_OWNER_ID,
+              jwks: { keys: [assertionFixture.publicJwk] },
+            } }
+          : undefined
+      )),
       getHistory: jest.fn(),
       query: jest.fn(),
       delete: jest.fn(),
@@ -2883,7 +2976,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     await expect(manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -2897,7 +2990,7 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: clientId,
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         meta: {
           bearer: {
             token: 'Bearer external',
@@ -2918,7 +3011,7 @@ describe('OpenIdAuthManager', () => {
           client_id: clientId,
           client_assertion: clientAssertion,
           client_assertion_type: 'client_assertion',
-          sub: 'did:web:api.lab.org:employee:researcher2@lab.org:ISCO-08|2166',
+          sub: `${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerOrganizationDid}:employee:researcher2@lab.org:ISCO-08|2166`,
           scope: researchSubjectScope,
           purpose: HealthcareConsentPurposes.Research,
           acr_values: 'urn:antifraud:acr:openid4vp:employee',
@@ -2931,11 +3024,14 @@ describe('OpenIdAuthManager', () => {
     // Professional SMART baseline:
     // - `client_assertion` proves possession of the device private key
     // - `vp_token` remains the authorization/holder-proof input for OIDC4VP
-    const clientId = 'did:web:api.acme.org:employee:doctor1@acme.org:device:client-001';
-    const clientAssertion = await buildClientAssertionJwt({
+    const clientId = `${EXAMPLE_API_ORGANIZATION_DID}:employee:doctor1@acme.org:device:client-001`;
+    const assertionFixture = await buildSmartClientFixture({
       clientId,
-      audience: 'did:web:api.acme.org',
+      audience: EXAMPLE_API_ORGANIZATION_DID,
     });
+
+    const clientAssertion = assertionFixture.jwt;
+    const registeredActorDid = `${EXAMPLE_API_ORGANIZATION_DID}:employee:doctor1@acme.org:ISCO-08|2211`;
 
     const mockKmsService: jest.Mocked<IKmsService> = {
       init: jest.fn(),
@@ -2951,13 +3047,13 @@ describe('OpenIdAuthManager', () => {
       createCompactJws: buildMockCompactJws(),
       encodeResponse: jest.fn(),
       protectConfidentialData: jest.fn(),
-      unprotectConfidentialData: jest.fn(),
+      unprotectConfidentialData: jest.fn().mockImplementation(async document => document.content),
       getHmacBase64Url: jest.fn(),
       protectAttributesNameAndValue: jest.fn(),
     };
 
     const mockTenantsCacheManager: jest.Mocked<TenantsCacheManager> = {
-      getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:api.acme.org' } as any),
+      getDidDocument: jest.fn().mockResolvedValue({ id: EXAMPLE_API_ORGANIZATION_DID } as any),
       tenantExists: jest.fn().mockResolvedValue(true),
     } as any;
 
@@ -2973,7 +3069,15 @@ describe('OpenIdAuthManager', () => {
       listContainersInSection: jest.fn(),
       getContainersInSection: jest.fn().mockResolvedValue([{ ...testConsentRulePermitOrgDid }] as any),
       put: jest.fn(),
-      get: jest.fn().mockResolvedValue(undefined),
+      get: jest.fn().mockImplementation(async (_vaultId, id, section) => (
+        id === clientId && String(section).includes('device-profiles')
+          ? { id: clientId, status: DeviceBindingStatuses.Active, content: {
+              clientId, status: DeviceBindingStatuses.Active, actorDid: registeredActorDid,
+              profileDid: registeredActorDid, authenticatedSubject: EXAMPLE_ACCOUNT_OWNER_ID,
+              jwks: { keys: [assertionFixture.publicJwk] },
+            } }
+          : undefined
+      )),
       getHistory: jest.fn(),
       query: jest.fn(),
       delete: jest.fn(),
@@ -2981,12 +3085,12 @@ describe('OpenIdAuthManager', () => {
     };
 
     const mockClearingHouse: jest.Mocked<IClearingHouseService> = {
-      verifyVpToken: jest.fn().mockResolvedValue({
+      verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
         acr: 'urn:antifraud:acr:openid4vp:employee',
         amr: ['openid4vp', 'vc'],
-        vpHash: 'hash',
+        vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
         ledgerVerified: true,
-      }),
+      })),
     };
 
     const manager = new OpenIdAuthManager(
@@ -2997,7 +3101,7 @@ describe('OpenIdAuthManager', () => {
     );
 
     const response = await manager.process({
-      tenantId: 'acme',
+      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
       jurisdiction: 'ES',
       sector: 'health-care',
       section: 'identity',
@@ -3011,13 +3115,13 @@ describe('OpenIdAuthManager', () => {
       content: {
         thid: 'thid',
         iss: clientId,
-        aud: 'did:web:api.acme.org',
+        aud: EXAMPLE_API_ORGANIZATION_DID,
         body: {
           client_id: clientId,
           client_assertion: clientAssertion,
           client_assertion_type: 'private_key_jwt',
-          sub: 'did:web:api.acme.org:employee:doctor1@acme.org:ISCO-08|2211',
-          scope: 'organization/Composition.rs?subject=did:web:api.acme.org:individual:123&section=*',
+          sub: `${EXAMPLE_API_ORGANIZATION_DID}:employee:doctor1@acme.org:ISCO-08|2211`,
+          scope: `organization/Composition.rs?subject=${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.subjectDid}&section=*`,
           purpose: 'TREAT',
           expires_in: 300,
           vp_token: 'vp',
@@ -3027,11 +3131,13 @@ describe('OpenIdAuthManager', () => {
     } as JobRequest);
 
     expect(response.body.access_token).toBeDefined();
-    expect(decodeJwt(String(response.body.access_token))).toMatchObject({
-      jti: 'thid',
+    const tokenClaims = decodeJwt(String(response.body.access_token));
+    expect(validateUuid(String(tokenClaims.jti))).toBe(true);
+    expect(tokenClaims).toMatchObject({
+      jti: expect.any(String),
       purpose: HealthcareConsentPurposes.Treatment,
       vp_token: 'vp',
-      vp_hash: 'hash',
+      vp_hash: createHash('sha256').update('vp').digest('hex'),
       consent_ids: [testConsentRulePermitOrgDid[ClaimConsent.identifier]],
       ledger_verified: true,
     });
@@ -3041,21 +3147,27 @@ describe('OpenIdAuthManager', () => {
   it('accepts no vp_token only when the actor DID issuer uses its exact DCR client assertion', async () => {
     const issuerDid = EXAMPLE_HOSTING_OPERATOR_DID;
     const subjectDid = EXAMPLE_SUBJECT_DID;
-    const actorDid = EXAMPLE_CONTROLLER_DID;
+    const actorDid = fixtureIndividualControllerDid(EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL);
     const clientId = EXAMPLE_DEVICE_CLIENT_ID;
-    const fixture = await buildClientAssertionFixture({ clientId, audience: issuerDid });
+    const fixture = await buildSmartClientFixture({ clientId, audience: issuerDid });
     const deviceProfile = {
       clientId, status: DeviceBindingStatuses.Active,
       actorDid, profileDid: actorDid, authorizedSubjectDid: subjectDid,
       authenticatedSubject: EXAMPLE_ACCOUNT_OWNER_ID,
+      authenticatedEmail: EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL,
       licenseId: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
       jwks: { keys: [fixture.publicJwk] },
     };
     const vault = {
-      get: jest.fn().mockResolvedValue({
-        id: clientId,
-        status: DeviceBindingStatuses.Active,
-        content: deviceProfile,
+      get: jest.fn(async (_vaultId: string,id: string,section: string) => {
+        if(id===clientId && section.includes('device-profiles'))return {id,status:DeviceBindingStatuses.Active,content:deviceProfile};
+        if(id===EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE && section.includes('device-licenses'))return {id,status:DeviceBindingStatuses.Active,content:{
+          id,status:DeviceBindingStatuses.Active,userClass:LICENSE_USER_CLASS_INDIVIDUAL,
+          exp:Math.floor(Date.now()/1000)+3600,subjectId:EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
+          authorizedSubjectDid:subjectDid,issuedToEmail:EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL,
+          issuedToRole:HealthcareActorRoles.Controller,deviceBindings:[{clientId,status:DeviceBindingStatuses.Active}],
+        }};
+        return undefined;
       }),
       getContainersInSection: jest.fn().mockResolvedValue([]),
     } as unknown as jest.Mocked<IVaultRepository>;
@@ -3069,6 +3181,7 @@ describe('OpenIdAuthManager', () => {
       {
         getDidDocument: jest.fn().mockResolvedValue({ id: issuerDid }),
         tenantExists: jest.fn().mockResolvedValue(true),
+        isTenantOperational: jest.fn().mockResolvedValue(true),
         getCollectionName: jest.fn().mockResolvedValue('tenant-collection'),
       } as unknown as jest.Mocked<TenantsCacheManager>,
       vault,
@@ -3104,14 +3217,15 @@ describe('OpenIdAuthManager', () => {
     const issuerDid = EXAMPLE_HOSTING_OPERATOR_DID;
     const privateSubjectDid = EXAMPLE_SUBJECT_DID;
     const publicCardDid = `${EXAMPLE_SUBJECT_DID}:public-card`;
-    const actorDid = EXAMPLE_CONTROLLER_DID;
+    const actorDid = fixtureIndividualControllerDid(EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL);
     const clientId = EXAMPLE_DEVICE_CLIENT_ID;
     const subjectId = 'animal-subject-1';
-    const fixture = await buildClientAssertionFixture({ clientId, audience: issuerDid });
+    const fixture = await buildSmartClientFixture({ clientId, audience: issuerDid });
     const deviceProfile = {
       clientId, status: DeviceBindingStatuses.Active,
       actorDid, profileDid: actorDid, authorizedSubjectDid: privateSubjectDid,
       authenticatedSubject: EXAMPLE_ACCOUNT_OWNER_ID,
+      authenticatedEmail: EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL,
       licenseId: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
       jwks: { keys: [fixture.publicJwk] },
     };
@@ -3128,6 +3242,11 @@ describe('OpenIdAuthManager', () => {
               id,
               status: DeviceBindingStatuses.Active,
               subjectId,
+              userClass: LICENSE_USER_CLASS_INDIVIDUAL,
+              exp: Math.floor(Date.now()/1000)+3600,
+              issuedToRole: HealthcareActorRoles.Controller,
+              issuedToEmail: EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL,
+              deviceBindings: [{clientId,status:DeviceBindingStatuses.Active}],
               authorizedSubjectDid: privateSubjectDid,
             },
           };
@@ -3155,6 +3274,7 @@ describe('OpenIdAuthManager', () => {
       {
         getDidDocument: jest.fn().mockResolvedValue({ id: issuerDid }),
         tenantExists: jest.fn().mockResolvedValue(true),
+        isTenantOperational: jest.fn().mockResolvedValue(true),
         getCollectionName: jest.fn().mockResolvedValue('tenant-collection'),
       } as unknown as jest.Mocked<TenantsCacheManager>,
       vault,
@@ -3189,7 +3309,7 @@ describe('OpenIdAuthManager', () => {
 
   it('accepts a second exact subject only when its active controller seat belongs to the same registered actor', async () => {
     const issuerDid = EXAMPLE_HOSTING_OPERATOR_DID;
-    const actorDid = EXAMPLE_CONTROLLER_DID;
+    const actorDid = fixtureIndividualControllerDid(SAME_TENANT_EMPLOYEE_EMAIL);
     const clientId = EXAMPLE_DEVICE_CLIENT_ID;
     const requestedSubjectDid = EXAMPLE_PORTAL_INDIVIDUAL_DID;
     const stableActorIdentifier = buildStableActorIdentifier({
@@ -3200,7 +3320,7 @@ describe('OpenIdAuthManager', () => {
       contactKind: 'phone',
       contact: EXAMPLE_KYC_CONTROLLER_TELEPHONE,
     });
-    const fixture = await buildClientAssertionFixture({ clientId, audience: issuerDid });
+    const fixture = await buildSmartClientFixture({ clientId, audience: issuerDid });
     const deviceProfile = {
       clientId,
       status: DeviceBindingStatuses.Active,
@@ -3217,8 +3337,12 @@ describe('OpenIdAuthManager', () => {
       id: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
       status: DeviceBindingStatuses.Active,
       userClass: LICENSE_USER_CLASS_INDIVIDUAL,
+      exp: Math.floor(Date.now()/1000)+3600,
+      deviceBindings: [{clientId,status:DeviceBindingStatuses.Active}],
       subjectId: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
       authorizedSubjectDid: EXAMPLE_SUBJECT_DID,
+      issuedToEmail: SAME_TENANT_EMPLOYEE_EMAIL,
+      issuedToPhone: EXAMPLE_KYC_CONTROLLER_TELEPHONE,
       activatedBy: linkedTelephoneActorIdentifier,
       issuedToRole: HealthcareActorRoles.Controller,
     };
@@ -3226,6 +3350,8 @@ describe('OpenIdAuthManager', () => {
       id: `${EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE}-related-subject`,
       status: DeviceBindingStatuses.Active,
       userClass: LICENSE_USER_CLASS_INDIVIDUAL,
+      exp: Math.floor(Date.now()/1000)+3600,
+      deviceBindings: [{clientId,status:DeviceBindingStatuses.Active}],
       subjectId: `${EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE}-related-subject`,
       authorizedSubjectDid: EXAMPLE_ALTERNATE_PORTAL_INDIVIDUAL_DID,
       authorizedSubjectAliases: [requestedSubjectDid],
@@ -3260,6 +3386,7 @@ describe('OpenIdAuthManager', () => {
       {
         getDidDocument: jest.fn().mockResolvedValue({ id: issuerDid }),
         tenantExists: jest.fn().mockResolvedValue(true),
+        isTenantOperational: jest.fn().mockResolvedValue(true),
         getCollectionName: jest.fn().mockResolvedValue('tenant-collection'),
       } as unknown as jest.Mocked<TenantsCacheManager>,
       vault,
@@ -3304,10 +3431,10 @@ describe('OpenIdAuthManager', () => {
 
   it('accepts legacy controller seats only when both match the DCR-verified contact', async () => {
     const issuerDid = EXAMPLE_HOSTING_OPERATOR_DID;
-    const actorDid = EXAMPLE_CONTROLLER_DID;
+    const actorDid = fixtureIndividualControllerDid(EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL);
     const clientId = EXAMPLE_DEVICE_CLIENT_ID;
     const requestedSubjectDid = EXAMPLE_PORTAL_INDIVIDUAL_DID;
-    const fixture = await buildClientAssertionFixture({ clientId, audience: issuerDid });
+    const fixture = await buildSmartClientFixture({ clientId, audience: issuerDid });
     const deviceProfile = {
       clientId, status: DeviceBindingStatuses.Active,
       actorDid, profileDid: actorDid, authorizedSubjectDid: EXAMPLE_SUBJECT_DID,
@@ -3320,6 +3447,8 @@ describe('OpenIdAuthManager', () => {
       id: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
       status: DeviceBindingStatuses.Active,
       userClass: LICENSE_USER_CLASS_INDIVIDUAL,
+      exp: Math.floor(Date.now()/1000)+3600,
+      deviceBindings: [{clientId,status:DeviceBindingStatuses.Active}],
       subjectId: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
       authorizedSubjectDid: EXAMPLE_SUBJECT_DID,
       issuedToEmail: String(EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL),
@@ -3329,6 +3458,8 @@ describe('OpenIdAuthManager', () => {
       id: `${EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE}-legacy-related-subject`,
       status: DeviceBindingStatuses.Active,
       userClass: LICENSE_USER_CLASS_INDIVIDUAL,
+      exp: Math.floor(Date.now()/1000)+3600,
+      deviceBindings: [{clientId,status:DeviceBindingStatuses.Active}],
       subjectId: `${EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE}-legacy-related-subject`,
       // The seat owns the private individual DID. Channels select the public
       // Card alias stored on that individual, so SMART must resolve both
@@ -3371,6 +3502,7 @@ describe('OpenIdAuthManager', () => {
       {
         getDidDocument: jest.fn().mockResolvedValue({ id: issuerDid }),
         tenantExists: jest.fn().mockResolvedValue(true),
+        isTenantOperational: jest.fn().mockResolvedValue(true),
         getCollectionName: jest.fn().mockResolvedValue('tenant-collection'),
       } as unknown as jest.Mocked<TenantsCacheManager>,
       vault,
@@ -3410,6 +3542,7 @@ describe('OpenIdAuthManager', () => {
     expect(response.body.access_token).toBeDefined();
 
     requestedLegacySeat.issuedToEmail = SAME_TENANT_EMPLOYEE_EMAIL;
+    request.content!.body.client_assertion = (await buildSmartClientFixture({clientId,audience:issuerDid})).jwt;
     await expect(manager.process(request)).rejects.toMatchObject({
       message: 'DCR-bound individual controller is not authorized for the requested subject.',
     });
@@ -3417,7 +3550,7 @@ describe('OpenIdAuthManager', () => {
 
   it('rejects a second subject controller seat bound to a different registered actor', async () => {
     const issuerDid = EXAMPLE_HOSTING_OPERATOR_DID;
-    const actorDid = EXAMPLE_CONTROLLER_DID;
+    const actorDid = fixtureIndividualControllerDid(SAME_TENANT_EMPLOYEE_EMAIL);
     const clientId = EXAMPLE_DEVICE_CLIENT_ID;
     const requestedSubjectDid = EXAMPLE_ALTERNATE_PORTAL_INDIVIDUAL_DID;
     const registeredActorIdentifier = buildStableActorIdentifier({
@@ -3428,7 +3561,7 @@ describe('OpenIdAuthManager', () => {
       contactKind: 'email',
       contact: SAFE.individualEmail,
     });
-    const fixture = await buildClientAssertionFixture({ clientId, audience: issuerDid });
+    const fixture = await buildSmartClientFixture({ clientId, audience: issuerDid });
     const deviceProfile = {
       clientId,
       status: DeviceBindingStatuses.Active,
@@ -3436,6 +3569,7 @@ describe('OpenIdAuthManager', () => {
       profileDid: actorDid,
       authorizedSubjectDid: EXAMPLE_SUBJECT_DID,
       authenticatedSubject: EXAMPLE_ACCOUNT_OWNER_ID,
+      authenticatedEmail: SAME_TENANT_EMPLOYEE_EMAIL,
       licenseId: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
       jwks: { keys: [fixture.publicJwk] },
     };
@@ -3443,8 +3577,11 @@ describe('OpenIdAuthManager', () => {
       id: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
       status: DeviceBindingStatuses.Active,
       userClass: LICENSE_USER_CLASS_INDIVIDUAL,
+      exp: Math.floor(Date.now()/1000)+3600,
+      deviceBindings: [{clientId,status:DeviceBindingStatuses.Active}],
       subjectId: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
       authorizedSubjectDid: EXAMPLE_SUBJECT_DID,
+      issuedToEmail: SAME_TENANT_EMPLOYEE_EMAIL,
       activatedBy: registeredActorIdentifier,
       issuedToRole: HealthcareActorRoles.Controller,
     };
@@ -3463,6 +3600,8 @@ describe('OpenIdAuthManager', () => {
         content: {
           status: DeviceBindingStatuses.Active,
           userClass: LICENSE_USER_CLASS_INDIVIDUAL,
+      exp: Math.floor(Date.now()/1000)+3600,
+      deviceBindings: [{clientId,status:DeviceBindingStatuses.Active}],
           authorizedSubjectDid: requestedSubjectDid,
           activatedBy: differentActorIdentifier,
           issuedToRole: HealthcareActorRoles.Controller,
@@ -3476,6 +3615,7 @@ describe('OpenIdAuthManager', () => {
       {
         getDidDocument: jest.fn().mockResolvedValue({ id: issuerDid }),
         tenantExists: jest.fn().mockResolvedValue(true),
+        isTenantOperational: jest.fn().mockResolvedValue(true),
         getCollectionName: jest.fn().mockResolvedValue('tenant-collection'),
       } as unknown as jest.Mocked<TenantsCacheManager>,
       vault,
@@ -3507,13 +3647,14 @@ describe('OpenIdAuthManager', () => {
 
   it('rejects an unowned public subject when the registered controller omits vp_token', async () => {
     const issuerDid = EXAMPLE_HOSTING_OPERATOR_DID;
-    const actorDid = EXAMPLE_CONTROLLER_DID;
+    const actorDid = fixtureIndividualControllerDid(EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL);
     const clientId = EXAMPLE_DEVICE_CLIENT_ID;
-    const fixture = await buildClientAssertionFixture({ clientId, audience: issuerDid });
+    const fixture = await buildSmartClientFixture({ clientId, audience: issuerDid });
     const deviceProfile = {
       clientId, status: DeviceBindingStatuses.Active,
       actorDid, profileDid: actorDid, authorizedSubjectDid: EXAMPLE_SUBJECT_DID,
       authenticatedSubject: EXAMPLE_ACCOUNT_OWNER_ID,
+      authenticatedEmail: EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL,
       licenseId: EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE,
       jwks: { keys: [fixture.publicJwk] },
     };
@@ -3554,6 +3695,7 @@ describe('OpenIdAuthManager', () => {
       {
         getDidDocument: jest.fn().mockResolvedValue({ id: issuerDid }),
         tenantExists: jest.fn().mockResolvedValue(true),
+        isTenantOperational: jest.fn().mockResolvedValue(true),
         getCollectionName: jest.fn().mockResolvedValue('tenant-collection'),
       } as unknown as jest.Mocked<TenantsCacheManager>,
       vault,

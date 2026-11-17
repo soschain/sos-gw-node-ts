@@ -18,8 +18,8 @@ import { canonicalize } from './json-canon';
 import {
   buildLegalSectorOrganizationAssetId,
   buildLegalSectorOrganizationUrn,
-} from 'gdc-common-utils-ts/utils/legal-sector-organization-urn';
-import { buildPublicAliasLedgerAssetId } from 'gdc-common-utils-ts/utils/same-as';
+} from 'sos-data-utils-ts/legal-sector-organization-urn';
+import { buildPublicAliasLedgerAssetId } from 'sos-data-utils-ts/public-alias-ledger';
 import {
   resolveLedgerOrganizationId,
   hashLedgerString,

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Identity } from '@hyperledger/fabric-gateway';
+import type { Identity } from '@hyperledger/fabric-gateway';
 import { common, ledger, msp, peer } from '@hyperledger/fabric-protos';
 import { assertDefined, cache } from './utils';
 

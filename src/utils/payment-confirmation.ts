@@ -6,7 +6,7 @@ import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import {
   PaymentProviderIds,
-} from 'vet-data-utils-ts/payment';
+} from 'sos-data-utils-ts/payment';
 
 export const PAYMENT_ORCHESTRATION_MODE_GW_CORE = 'gw-core';
 export const PAYMENT_ORCHESTRATION_MODE_PORTAL_BFF = 'portal-bff';

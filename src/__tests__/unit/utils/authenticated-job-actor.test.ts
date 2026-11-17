@@ -1,5 +1,5 @@
 // Flow contract: a registered DCR actor is bound either by an exact SMART subject DID or by the same verified OIDC contact hash embedded in its canonical professional DID; unverified contacts never authorize it.
-import { buildProfessionalDidWeb } from 'gdc-common-utils-ts/utils/did';
+import { buildProfessionalDidWeb } from 'sos-data-utils-ts/hosted-did';
 import {
   EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL,
   EXAMPLE_EMAIL_CONTROLLER_ORG,
@@ -7,7 +7,7 @@ import {
   EXAMPLE_HOSTED_PROVIDER_DID,
   EXAMPLE_KYC_CONTROLLER_TELEPHONE,
   EXAMPLE_ORGANIZATION_CONTROLLER_ROLE,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import {
   getAuthenticatedJobActorIdentifiers,

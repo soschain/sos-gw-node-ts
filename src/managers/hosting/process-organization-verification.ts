@@ -1,3 +1,4 @@
+import {isLocalDemoSecurityModeForConfiguration} from '../../security/runtime-security-policy';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { v4 as uuidv4 } from 'uuid';
@@ -25,7 +26,7 @@ import {
 } from './hosting-claim-contracts';
 import type { VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
 import type { TestNetworkAdmissionVerificationResult } from './organization-test-network-credential';
-import type { PostalActivationCodeBinding } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
+import type { PostalActivationCodeBinding } from 'sos-data-utils-ts/postal-activation-binding';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { resolveLedgerOrganizationId } from '../../utils/ledger-organization-registration-helpers';
 import {
@@ -81,7 +82,7 @@ export const ORGANIZATION_ISSUE_RESPONSE_TYPE = 'Organization-issue-response-v1.
 type VerificationDeps = Readonly<{
   job: JobRequest;
   issuerDid: string;
-  config: { sectorsAllowed: GatewaySector[]; namespace: string; securityMode?: string; networkMode?: string };
+  config: { sectorsAllowed: GatewaySector[]; namespace: string; securityMode?: string; networkMode?: string; nodeEnv?: string };
   normalizeClaims: (claims: ClaimsRecord) => ClaimsRecord;
   createPendingTenantRegistrationFromClaims: (input: {
     claims: ClaimsRecord;
@@ -159,7 +160,7 @@ export async function processOrganizationVerificationTransaction(
   const sharedTestNetworkRoute = hostNetwork === 'test-network' && runtimeNetwork === 'test-network';
   const inMemoryTestNetworkSimulation = hostNetwork === 'test'
     && runtimeNetwork === 'test'
-    && String(deps.config.securityMode || '').trim().toLowerCase() === 'demo';
+    && isLocalDemoSecurityModeForConfiguration(deps.config);
   if (testNetworkAdmissionCredential && !sharedTestNetworkRoute && !inMemoryTestNetworkSimulation) {
     throw new ManagerError(
       'Test Network admission VC is accepted only by Test Network or its explicit in-memory demo simulation.',
@@ -341,7 +342,7 @@ type IssueClaimsDeps = Readonly<{
   environment?: string;
   fallbackAlternateName?: string;
   bearerPayload?: Record<string, any>;
-  config: { namespace: string; sectorsAllowed: GatewaySector[]; securityMode?: string };
+  config: { namespace: string; sectorsAllowed: GatewaySector[]; securityMode?: string;networkMode?: string;nodeEnv?: string };
   vaultRepository: {
     vaultExists(id: string): Promise<boolean>;
     getContainersInSection(vaultId: string, sectionId: string): Promise<any[]>;
@@ -399,6 +400,8 @@ export async function createOrganizationIssueClaims(
     bearerPayload: deps.bearerPayload,
     tenantVaultId: vaultId,
     securityMode: deps.config.securityMode,
+    networkMode:deps.config.networkMode,
+    nodeEnv:deps.config.nodeEnv,
     findStoredControllerRoleByEmail: async (tenantVaultId, email) => findStoredControllerRoleByEmail({
       tenantVaultId,
       email,
@@ -444,6 +447,8 @@ export async function createOrganizationIssueClaims(
     bearerPayload: deps.bearerPayload,
     tenantVaultId: vaultId,
     securityMode: deps.config.securityMode,
+    networkMode:deps.config.networkMode,
+    nodeEnv:deps.config.nodeEnv,
     findStoredControllerRoleByEmail: async (tenantVaultId, email) => findStoredControllerRoleByEmail({
       tenantVaultId,
       email,
@@ -504,6 +509,8 @@ async function resolveOrganizationIssueControllerIdentity(input: {
   bearerPayload?: Record<string, any>;
   tenantVaultId: string;
   securityMode?: string;
+  networkMode?:string;
+  nodeEnv?:string;
   findStoredControllerRoleByEmail: (tenantVaultId: string, email: string | undefined) => Promise<string | undefined>;
 }): Promise<{ email?: string; role?: string }> {
   const emailFromPayload = normalizeIndexedEmail(input.claims[SchemaOrgPersonClaim.Email]) as string | undefined;
@@ -513,7 +520,7 @@ async function resolveOrganizationIssueControllerIdentity(input: {
     || (input.bearerPayload?.preferred_username as string | undefined),
   ) as string | undefined;
   const roleFromPayload = getPersonOccupationClaim(input.claims as Record<string, any> | undefined);
-  const isDemoMode = input.securityMode === 'demo';
+  const isDemoMode=isLocalDemoSecurityModeForConfiguration(input);
 
   const email = isDemoMode ? (emailFromPayload || emailFromBearer) : emailFromBearer;
   let role = roleFromPayload || await input.findStoredControllerRoleByEmail(input.tenantVaultId, email);

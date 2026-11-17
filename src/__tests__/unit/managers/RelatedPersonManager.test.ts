@@ -8,7 +8,7 @@ import { IVaultRepository } from '../../../database/repositories/vault/vault.rep
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
 import { EntityLifecycleStatus } from '../../../gdc-backend-utils-node/models/enums';
-import { InteroperableLifecycleStatuses } from 'gdc-common-utils-ts/utils/interoperable-resource-operation';
+import { GatewayResourceLifecycleStatuses as InteroperableLifecycleStatuses } from 'sos-data-utils-ts/gateway-response-contract';
 import {
   SearchResponseProfileEnvironment,
   SearchResponseProfiles,

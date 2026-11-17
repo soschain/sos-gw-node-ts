@@ -1,7 +1,8 @@
+// Flow contract: consume independent canonical clinical, identity and transport contracts while preserving the existing authorization and persistence assertions.
 // Copyright 2026 Connecting Solution & Applications Ltd under the Apache License, Version 2.0.
 // Flow contract: reuse governed research and organization fixtures; never duplicate authorization literals in suites.
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
-import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent, ConsentDecisions, ConsentStatuses } from "fhir-data-utils-ts/claims";
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 
 export const RESEARCH_STUDY_REVIEWER_EMAIL = 'reviewer@example.test';

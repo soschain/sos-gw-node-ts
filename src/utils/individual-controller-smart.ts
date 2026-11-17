@@ -1,5 +1,5 @@
-import { IndividualCredentialTypes } from 'gdc-common-utils-ts/constants/verifiable-credentials';
-import { getVpCredentials } from 'gdc-common-utils-ts/utils/vp-token';
+import { IndividualCredentialTypes } from 'sos-data-utils-ts/identity-credential-contracts';
+import { getVpCredentials } from 'sos-data-utils-ts/vp-token';
 
 export type IndividualControllerCredentialSummary = Readonly<{
   actorDid: string;

@@ -11,7 +11,7 @@ import { type ConsentRule, ClaimConsent, ConsentStatuses } from 'fhir-data-utils
 import { CONSENT_CREATION_MESSAGE } from '../data/example-payloads';
 import { buildConsentRuleStorageKey, expandConsentActorRoles, hashConsentRuleId } from '../../utils/consent';
 import { getClaimValue } from '../../utils/claims';
-import { knownDomainsReversed, knownDomainsReversedEnum } from 'gdc-common-utils-ts/models/urlPath';
+import { knownDomainsReversed, KnownClaimNamespaces } from 'sos-data-utils-ts/gateway-transport-values';
 import { getTenantVaultId } from '../../utils/tenant';
 import { getIndividualSectionId } from '../../utils/individual-sections';
 import type { IBlockchainAdapter } from '../../adapters/IBlockchainAdapter';
@@ -94,7 +94,7 @@ describe('ConsentManager', () => {
       jurisdiction: mockJurisdiction,
       sector: mockSector,
       section: 'individual',
-      format: knownDomainsReversedEnum['org.hl7.fhir.api'],
+      format: KnownClaimNamespaces['org.hl7.fhir.api'],
       resourceType: 'Consent',
       action: '_batch',
       id: randomUUID(),

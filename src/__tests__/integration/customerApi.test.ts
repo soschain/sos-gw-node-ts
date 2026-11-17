@@ -1,4 +1,6 @@
-// Flow contract: a decoded unsigned fixture crosses no cryptographic boundary and is queued for its validated customer route.
+// Flow contract: route admission uses explicit registered public wallet fixtures and real inner signatures; mocked JWE decoding/bearer validation do not constitute full cryptographic E2E. Existing route, role, payload and persistence assertions remain in force.
+import {getTenantVaultId} from '../../utils/tenant';
+import {registeredRouteFixture} from './helpers/registered-route-fixture';
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 /**
@@ -8,7 +10,7 @@
  * This test focuses ONLY on the API Controller layer (the router). Its sole responsibilities are:
  * 1.  Receive an encrypted request.
  * 2.  Call `kmsService.decodeRequest` to decrypt and decode the job.
- * 3.  Pass the decoded job to the `queueAdapter.addJob`.
+ * 3.  Verify the explicitly registered inner signature and pass the decoded job to the queue.
  * 4.  Return an HTTP 202 Accepted response with the correct Location header.
  *
  * This test MUST NOT test the manager's business logic.
@@ -49,7 +51,7 @@ const mockQueueAdapter: jest.Mocked<QueueAdapter> = {
   addJob: jest.fn(),
 };
 const mockAppAuthManager = {
-  verifyBearerToken: jest.fn(async () => ({ payload: { sub: 'person-api-test' } })),
+  verifyBearerToken: jest.fn(async () => ({ payload: { sub: ORGANIZATION_REGISTRATION_JOB.content!.iss } })),
 } as any;
 
 const setupApp = (
@@ -62,6 +64,7 @@ const setupApp = (
 
   const vaultRepository = new VaultMemRepository();
   const tenantsCacheManager = new TenantsCacheManager(vaultRepository, () => mockKmsService, 'test-host-collection');
+  jest.spyOn(tenantsCacheManager,'getCollectionName').mockImplementation(async (vaultId:string)=>vaultId);
   const cryptographyService = new CryptographyService(new AdapterCryptoSdkNode());
 
   const apiRouter = createApiRouter(
@@ -78,7 +81,7 @@ const setupApp = (
   );
   app.use('/', apiRouter);
 
-  return { app, tenantsCacheManager };
+  return { app, tenantsCacheManager, vaultRepository };
 };
 
 describe('Person Onboarding API', () => {
@@ -89,7 +92,7 @@ describe('Person Onboarding API', () => {
   it('should decode the request, queue a job, and return 202 Accepted', async () => {
     // --- Arrange ---
     const asyncResponseStore = new AsyncResponseStoreMem();
-    const { app, tenantsCacheManager } = setupApp(asyncResponseStore);
+    const { app, tenantsCacheManager, vaultRepository } = setupApp(asyncResponseStore);
 
     const tenantId = testTenant1AlternateName;
     const jurisdiction = testTenant1AddressCountry.toLowerCase();
@@ -121,7 +124,8 @@ describe('Person Onboarding API', () => {
       ...ORGANIZATION_REGISTRATION_JOB,
       content: withoutIncompleteJwsProof(ORGANIZATION_REGISTRATION_JOB.content as any),
     };
-    mockKmsService.decodeRequest.mockResolvedValue(mockJob);
+    const preparedJob=await registeredRouteFixture(mockJob,vaultRepository,getTenantVaultId('health-care',testTenant1AlternateName),mockKmsService);
+    mockKmsService.decodeRequest.mockResolvedValue(preparedJob);
 
     // --- Act ---
     const response = await invokeExpress(app, {
@@ -143,14 +147,14 @@ describe('Person Onboarding API', () => {
     expect(queuedJob.resourceType).toBe(resourceType);
     expect(queuedJob.action).toBe(action);
     // The API layer should preserve the decrypted payload content.
-    expect(queuedJob.content).toEqual(mockJob.content);
+    expect(queuedJob.content).toEqual(preparedJob.content);
     expect(response.status).toBe(202);
     expect(response.headers.location).toBe(expectedPollingUrl);
   });
 
   it('returns the protected Patient/$match result synchronously in strict form transport', async () => {
     const directJobProcessor = { process: jest.fn(async () => 'encoded.patient.match.response') };
-    const { app, tenantsCacheManager } = setupApp(new AsyncResponseStoreMem(), directJobProcessor);
+    const { app, tenantsCacheManager, vaultRepository } = setupApp(new AsyncResponseStoreMem(), directJobProcessor);
     const services: DidService[] = [{
       id: '#individual:org.hl7.fhir.api:Patient:$match',
       type: 'IndividualOnboardingService',
@@ -160,10 +164,10 @@ describe('Person Onboarding API', () => {
     }];
     jest.spyOn(tenantsCacheManager, 'getDidServiceConfig').mockResolvedValue(services);
     jest.spyOn(tenantsCacheManager, 'getTenant').mockResolvedValue({ didConfig: { service: services } } as any);
-    mockKmsService.decodeRequest.mockResolvedValue({
+    mockKmsService.decodeRequest.mockResolvedValue(await registeredRouteFixture({
       ...ORGANIZATION_REGISTRATION_JOB,
       content: withoutIncompleteJwsProof(ORGANIZATION_REGISTRATION_JOB.content as any),
-    });
+    },vaultRepository,getTenantVaultId('health-care',testTenant1AlternateName),mockKmsService));
 
     const response = await invokeExpress(app, {
       method: 'POST',

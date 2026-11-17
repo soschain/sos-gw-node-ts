@@ -1,28 +1,17 @@
 #!/usr/bin/env bash
-# Flow contract: the mandatory secure SDK E2E starts one isolated in-memory Connect ICA,
-# routes GW verification to it, and tears both processes down after the journey.
+# Flow contract: the SOS gateway delegates its real local UI/ICA boundary to
+# the explicitly selected Professional runner, which owns ephemeral processes,
+# state, leases and cleanup; this source check is not a browser or ICA proof.
 set -euo pipefail
-
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SCRIPT="${ROOT_DIR}/scripts/run-secure-e2e-google-user.sh"
-
 bash -n "$SCRIPT"
-grep -Fq 'CONNECT_ICA_ROOT=' "$SCRIPT"
-if grep -Fq 'DATASPACE_ICA_ROOT' "$SCRIPT"; then
-  echo 'ERROR: secure E2E must not launch the deprecated dataspace-ica runtime.' >&2
+grep -Fq 'PORTAL_PROJECT_ROOT' "$SCRIPT"
+grep -Fq 'VET_GW_PROJECT_ROOT="$GW_PROJECT_ROOT"' "$SCRIPT"
+grep -Fq 'v26.13.0' "$SCRIPT"
+grep -Fq 'exec npm run test:e2e:local -- --workers=1' "$SCRIPT"
+if grep -Eq 'GDC_SDK_NODE_ROOT|gdc-sdk-node-ts|local-close\.sh|pkill|start_local_ica|AUTH_BEARER=' "$SCRIPT"; then
+  echo 'ERROR: the launcher must not duplicate services, synthesize authority or clean unrelated processes.' >&2
   exit 1
 fi
-grep -Fq 'BASE_URL="${BASE_URL:-http://127.0.0.1:3000}"' "$SCRIPT"
-grep -Fq 'npm run api:local' "$SCRIPT"
-grep -Fq 'curl -fsS "${ICA_BASE_URL}/"' "$SCRIPT"
-grep -Fq 'ICA_URL_INTERNAL="$ICA_BASE_URL"' "$SCRIPT"
-grep -Fq 'ICA_URL_EXTERNAL="$ICA_BASE_URL"' "$SCRIPT"
-grep -Fq 'DID_WEB_DOMAIN="127.0.0.1:${ICA_PORT}"' "$SCRIPT"
-grep -Fq 'PROFESSIONAL_EMAIL="$pass_controller_email"' "$SCRIPT"
-grep -Fq 'INDIVIDUAL_CONTROLLER_EMAIL="$pass_controller_email"' "$SCRIPT"
-grep -Fq 'AUTH_BEARER="$pass_auth_bearer"' "$SCRIPT"
-grep -Fq 'email_verified: true' "$SCRIPT"
-grep -Fq 'cleanup-secure-e2e-bootstrap-individual.mjs' "$SCRIPT"
-grep -Fq 'start_local_ica' "$SCRIPT"
-
-echo 'OK: secure E2E owns its local Connect ICA boundary.'
+echo 'OK: the local Professional runner owns its UI and ICA boundary.'

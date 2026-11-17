@@ -5,15 +5,7 @@
  */
 
 import * as grpc from '@grpc/grpc-js';
-import {
-  connect,
-  ConnectOptions,
-  Gateway,
-  // GrpcClient,
-  Identity,
-  Signer,
-  signers,
-} from '@hyperledger/fabric-gateway';
+import type {ConnectOptions,Gateway,Identity,Signer} from '@hyperledger/fabric-gateway';
 import * as crypto from 'crypto';
 import {
   getPublicCertByMspId,
@@ -84,6 +76,7 @@ export async function newGatewayConnection(
   client: grpc.Client,
   mspId: string
 ): Promise<Gateway> {
+  const {connect}=await import('@hyperledger/fabric-gateway');
   return connect(await newConnectOptions(client, mspId));
 }
 
@@ -100,5 +93,6 @@ async function newSigner(mspId: string): Promise<Signer> {
   const privateKeyPem = getPrivatePemKeyByMspId(mspId);
   const privateCriptoKeyObject: crypto.KeyObject =
     crypto.createPrivateKey(privateKeyPem);
+  const {signers}=await import('@hyperledger/fabric-gateway');
   return signers.newPrivateKeySigner(privateCriptoKeyObject);
 }

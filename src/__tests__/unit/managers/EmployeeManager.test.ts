@@ -32,8 +32,8 @@ import { normalizeCodeSystemAndValue } from '../../../utils/normalize-codeAndSys
 import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { getEnvSectionId } from '../../../utils/section-env';
 import { EntityLifecycleStatus, EntityType } from '../../../gdc-backend-utils-node/models/enums';
-import { EXAMPLE_DEVICE_LICENSE_AVAILABLE } from 'gdc-common-utils-ts/examples/license';
-import { EXAMPLE_JURISDICTION, EXAMPLE_SECTOR, EXAMPLE_TENANT_IDENTIFIER } from 'gdc-common-utils-ts/examples/shared';
+import { EXAMPLE_DEVICE_LICENSE_AVAILABLE } from 'sos-data-utils-ts/gateway-resource-flow-examples';
+import { EXAMPLE_JURISDICTION, EXAMPLE_SECTOR, EXAMPLE_TENANT_IDENTIFIER } from 'sos-data-utils-ts/gateway-flow-examples';
 import {
   SearchResponseProfileEnvironment,
   SearchResponseProfiles,

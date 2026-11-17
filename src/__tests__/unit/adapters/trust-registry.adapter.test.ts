@@ -1,8 +1,13 @@
-import { describe, expect, it } from '@jest/globals';
+// Flow contract: explicit local Demo reports unperformed checks as false; strict network results are taken from verified current evidence, never inferred from deployment labels.
+import {afterEach,beforeEach,describe,expect,it} from '@jest/globals';
 import { DefaultTrustRegistryAdapter } from '../../../adapters/trust-registry.adapter';
 
+const original=process.env;
+beforeEach(()=>{process.env={...original,SECURITY_MODE:'strict',NETWORK_MODE:'test',NODE_ENV:'test'};});
+afterEach(()=>{process.env=original;});
 describe('DefaultTrustRegistryAdapter', () => {
   it('returns relaxed policy in test mode', async () => {
+    process.env.SECURITY_MODE='demo';
     const adapter = new DefaultTrustRegistryAdapter();
     const result = await adapter.verifyActivationTrust({
       networkMode: 'test',
@@ -19,6 +24,7 @@ describe('DefaultTrustRegistryAdapter', () => {
     const adapter = new DefaultTrustRegistryAdapter();
     const result = await adapter.verifyActivationTrust({
       networkMode: 'network',
+      verificationEvidence:{revocationChecked:true,issuerKeyStatusChecked:true,subjectKeyStatusChecked:true,onChainChecked:true},
       organizationDid: 'did:web:org.example',
       representativeDid: 'did:web:rep.example',
     });

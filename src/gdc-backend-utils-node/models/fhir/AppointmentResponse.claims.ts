@@ -1,1 +1,1 @@
-export * from 'gdc-common-utils-ts/models/interoperable-claims/index';
+export * from 'fhir-data-utils-ts';

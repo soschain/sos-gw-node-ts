@@ -1,4 +1,6 @@
 import { getFirestore } from 'firebase-admin/firestore';
+import { ReplayProtectionStoreFirestore } from '../adapters/replay-protection-store-firestore';
+import type { IReplayProtectionStore } from '../adapters/replay-protection-store';
 import type { IServerConfig } from '../config';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { FirestoreVaultRepository } from '../database/repositories/firestore/firestore.vault.repository';
@@ -35,8 +37,14 @@ export async function buildInfrastructure(options: {
   logger: ILogger;
   tenantManager: TenantsCacheManager;
   kmsService: IKmsService;
+  infrastructureReplayProtectionStore?: IReplayProtectionStore;
 }> {
   const { config, hostCollectionName } = options;
+  const useFirestoreReplay = String(process.env.REPLAY_PROTECTION_PROVIDER || '').trim().toLowerCase() === 'firestore';
+  if (useFirestoreReplay && config.dbProvider !== 'firestore') {
+    throw new Error('Firestore replay requires DB_PROVIDER=firestore and the existing vault database.');
+  }
+  let infrastructureReplayProtectionStore: IReplayProtectionStore | undefined;
 
   let storageAdapter: IStorageAdapter;
   if (config.storageProvider === 'gcs') {
@@ -85,6 +93,12 @@ export async function buildInfrastructure(options: {
   let vaultRepository: IVaultRepository;
   if (config.dbProvider === 'firestore') {
     const db = getFirestore();
+    if (useFirestoreReplay) {
+      const collectionName = process.env.REPLAY_FIRESTORE_COLLECTION === undefined
+        ? `${hostCollectionName}_replay` : process.env.REPLAY_FIRESTORE_COLLECTION.trim();
+      if (collectionName === hostCollectionName) throw new Error('Replay collection must be separate from the host vault collection.');
+      infrastructureReplayProtectionStore = new ReplayProtectionStoreFirestore(db, { collectionName });
+    }
     vaultRepository = new FirestoreVaultRepository(db, hostCollectionName, confidentialBlobStore);
     console.log('[GW-API] Using Firestore Vault Repository.');
   } else if (config.dbProvider === 'postgres') {
@@ -127,5 +141,5 @@ export async function buildInfrastructure(options: {
     await kmsService.init();
   }
 
-  return { vaultRepository, storageAdapter, cryptographyService, logger, tenantManager, kmsService };
+  return { vaultRepository, storageAdapter, cryptographyService, logger, tenantManager, kmsService, infrastructureReplayProtectionStore };
 }

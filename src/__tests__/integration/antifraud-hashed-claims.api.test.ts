@@ -2,10 +2,10 @@
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 // Flow contract: 1. provision a real in-memory veterinary tenant; 2. persist one encrypted Animal identity and its controller link; 3. submit authenticated Parameters whose UUID id equals the DIDComm thid; 4. poll the encrypted asynchronous response; 5. reconstruct the RFC 9901 disclosure locally from the signed seed, retained thid and original value. Authorization invariant: only the existing subject/controller boundary may request the pilot credential. Privacy invariant: attribute values and final salts never appear in the issued SD-JWT.
 import { randomUUID } from 'node:crypto';
-import { buildSubjectIdentityBundleEntry } from 'gdc-common-utils-ts/utils/subject-identity';
+import { buildSubjectIdentityBundleEntry } from 'sos-data-utils-ts/subject-identity';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
-import { EXAMPLE_EMAIL_CONTROLLER_ORG } from 'gdc-common-utils-ts/examples/shared';
+import { EXAMPLE_EMAIL_CONTROLLER_ORG } from 'sos-data-utils-ts/gateway-flow-examples';
 import { startServer, resetServerConfig } from '../../server';
 import { getTenantVaultId, generateTenantCollectionNameFromClaims } from '../../utils/tenant';
 import { initializeTenantServicesConfig } from '../../utils/services';

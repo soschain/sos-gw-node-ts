@@ -1,5 +1,6 @@
 // Flow contract: independent identity and commerce claim catalogs preserve exact stored keys and authorization boundaries.
-import { ClaimConsent, getClaimsInFirstDataEntry } from 'gdc-common-utils-ts';
+import { getClaimsInFirstDataEntry } from 'sos-sdk-core-ts/gateway-response-reader';
+import { ClaimConsent } from "fhir-data-utils-ts/claims";
 import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 
 import {
@@ -10,7 +11,7 @@ import {
   EXAMPLE_OPENID_SMART_TOKEN_INPUT,
   EXAMPLE_ORGANIZATION_EMPLOYEE_INPUT,
   EXAMPLE_SMART_PRESENTATION_SUBMISSION,
-} from 'gdc-common-utils-ts/examples/api-flow-examples';
+} from 'sos-data-utils-ts/gateway-resource-flow-examples';
 
 import {
   CONSENT_CREATION_MESSAGE,

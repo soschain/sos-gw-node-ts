@@ -1,16 +1,22 @@
-// src/managers/auth/SmartAuthorizationManager.ts
+import type { IAuthorizationManager } from './IAuthorizationManager';
+import type { ClientAccessTokenClaims } from 'antifraud-data-utils-ts/openid-contracts';
+import type { BundleEntry } from 'sos-data-utils-ts/bundle-contract';
 
-import { IAuthorizationManager } from './IAuthorizationManager';
-import { ClientAccessTokenClaims as IAccessTokenClaims } from 'antifraud-data-utils-ts/openid-contracts';
-
+/** Standalone native-FHIR requests require an explicit server-owned authorization policy. */
 export class SmartAuthorizationManager implements IAuthorizationManager {
+  constructor(private readonly options: Readonly<{ authorize?: IAuthorizationManager['canAccess'] }> = {}) {}
+
   public async canAccess(
-    claims: IAccessTokenClaims,
-    resource: any,
-    action: 'read' | 'write' | 'create' | 'delete',
+    claims: ClientAccessTokenClaims,
+    resource: BundleEntry,
+    action: string,
     consentId?: string,
   ): Promise<boolean> {
-    // For now, allow all access.
-    return true;
+    if (!claims?.iss || !claims.sub || !claims.client_id || !this.options.authorize) return false;
+    try {
+      return await this.options.authorize(claims, resource, action, consentId) === true;
+    } catch {
+      return false;
+    }
   }
 }

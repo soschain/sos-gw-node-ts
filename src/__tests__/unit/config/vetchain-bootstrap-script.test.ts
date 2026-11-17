@@ -100,15 +100,15 @@ describe('VetChain local tenant bootstrap', () => {
 });
 
 describe('VetChain immutable local image prerequisites', () => {
-  it('accepts Node 24 and 26 while retaining Node 24 container images', () => {
+  it('retains package compatibility while pinning both container stages to approved Node 26.13.0', () => {
     const dockerfile = readFileSync(resolve(process.cwd(), 'Dockerfile'), 'utf8');
     const manifest = JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf8')) as {
       engines?: { node?: string };
     };
     const baseImages = dockerfile.match(/^FROM .+$/gm) ?? [];
     expect(baseImages).toEqual([
-      'FROM node:24-alpine AS builder',
-      'FROM node:24-alpine',
+      'FROM node:26.13.0-alpine AS builder',
+      'FROM node:26.13.0-alpine',
     ]);
     expect(manifest.engines?.node).toBe('^24.0.0 || ^26.0.0');
   });

@@ -43,17 +43,17 @@ import {
   EXAMPLE_KYC_CONTROLLER_UUID,
   EXAMPLE_PRIVATE_INDIVIDUAL_UUID,
   EXAMPLE_REGISTERED_SUBJECT_ALTERNATE_NAME,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import { SearchResponseProfileEnvironment, SearchResponseProfiles } from '../../../utils/didcomm-response';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { Format } from 'sos-data-utils-ts/bff-wire-contract';
-import { RelatedPersonClaim } from 'gdc-common-utils-ts/models/interoperable-claims/related-person-claims';
+import { RelatedPersonClaim } from "fhir-data-utils-ts/claims";
 import { testExamplesDidWeb } from '../../data/identity.data';
-import { SecureIdTypesIndividual } from 'gdc-common-utils-ts/constants/identity-identifiers';
+import { SecureIdTypesIndividual } from 'sos-data-utils-ts/identity-identifiers';
 import {
   buildIndividualDidWeb,
   buildSecureIdValueIndividual,
-} from 'gdc-common-utils-ts/utils/did';
+} from 'sos-data-utils-ts/hosted-did';
 import { testFamilyRegisterExpanded } from '../../data/family.data';
 
 
@@ -102,8 +102,15 @@ describe('FamilyManager - Offer/Order Flow', () => {
   let hostCollectionName: string;
   let config: IServerConfig;
 
+  /** Unit boundary: the upstream account verifier has proved the proposed owner's email. */
+  function bindVerifiedOwner<T extends { iss?: unknown; meta?: object }>(content: T): T {
+    return Object.assign(content, { meta: { ...content.meta,
+      bearer: { jwt: { payload: { email: String(content.iss || ''), email_verified: true } } },
+    } });
+  }
+
   function buildFamilyRegistrationRequestWithoutPdfAttachment(addressCountry?: string, includeOwnerIdentifier = true) {
-    const payload = structuredClone(FAMILY_REGISTRATION_REQUEST) as any;
+    const payload = bindVerifiedOwner(structuredClone(FAMILY_REGISTRATION_REQUEST)) as any;
     delete payload.attachments;
     for (const entry of payload.body.data) {
       const claimBlocks = [entry.resource?.meta?.claims].filter(Boolean);
@@ -293,7 +300,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
     expect(firstEntry.response.status).toBe('201');
     const offerId = firstEntry.resource.meta.claims[SchemaOrgOfferClaim.Identifier] as string;
 
-    const orderContent = structuredClone(FAMILY_ORDER_REQUEST) as any;
+    const orderContent = bindVerifiedOwner(structuredClone(FAMILY_ORDER_REQUEST)) as any;
     orderContent.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] = offerId;
 
     const familyOrderJob: JobRequest = {
@@ -415,7 +422,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
     });
     const offerEntry = offerPayload.body.data[0];
     const offerId = offerEntry.resource.meta.claims[SchemaOrgOfferClaim.Identifier] as string;
-    const orderContent = structuredClone(FAMILY_ORDER_REQUEST) as any;
+    const orderContent = bindVerifiedOwner(structuredClone(FAMILY_ORDER_REQUEST)) as any;
     orderContent.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] = offerId;
     mockKmsService.protectAttributesNameAndValue.mockRejectedValueOnce(
       new Error('activation-code-index-unavailable'),
@@ -465,7 +472,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       content: registrationContent,
     });
     const offerId = offerPayload.body.data[0].resource.meta.claims[SchemaOrgOfferClaim.Identifier] as string;
-    const orderContent = structuredClone(FAMILY_ORDER_REQUEST) as any;
+    const orderContent = bindVerifiedOwner(structuredClone(FAMILY_ORDER_REQUEST)) as any;
     orderContent.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] = offerId;
     // `email_verified` is the standard OIDC proof exercised by this replay authorization test.
     orderContent.meta = {
@@ -601,7 +608,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
     });
     const individualId = String(offerPayload.body.data[0].resource.id);
     const offerId = offerPayload.body.data[0].resource.meta.claims[SchemaOrgOfferClaim.Identifier] as string;
-    const orderContent = structuredClone(FAMILY_ORDER_REQUEST) as any;
+    const orderContent = bindVerifiedOwner(structuredClone(FAMILY_ORDER_REQUEST)) as any;
     orderContent.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] = offerId;
     orderContent.meta = {
       ...orderContent.meta,
@@ -691,7 +698,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
     expect(firstEntry.response.status).toBe('201');
     const offerId = firstEntry.resource.meta.claims[SchemaOrgOfferClaim.Identifier] as string;
 
-    const orderContent = structuredClone(FAMILY_ORDER_REQUEST) as any;
+    const orderContent = bindVerifiedOwner(structuredClone(FAMILY_ORDER_REQUEST)) as any;
     orderContent.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] = offerId;
     await familyManager.process({
       id: 'job-family-search-order-1',
@@ -838,7 +845,7 @@ describe('FamilyManager - Offer/Order Flow', () => {
       getEnvSectionId('device-licenses'),
     );
 
-    const orderContent = structuredClone(FAMILY_ORDER_REQUEST) as any;
+    const orderContent = bindVerifiedOwner(structuredClone(FAMILY_ORDER_REQUEST)) as any;
     orderContent.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier] =
       String(extraOfferClaims[SchemaOrgOfferClaim.Identifier]);
     orderContent.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.PaymentMethod] = 'Stripe';

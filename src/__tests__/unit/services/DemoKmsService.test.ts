@@ -9,14 +9,17 @@ import { AdapterCryptoSdkNode } from '../../../gdc-backend-utils-node/adapters/n
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { Content } from "antifraud-data-utils-ts/cryptography";
 import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 
 describe('DemoKmsService', () => {
     let devKmsService: DemoKmsService;
     let realKmsService: KmsService;
+    const originalEnv = process.env;
+    afterEach(() => { process.env = originalEnv; });
 
     beforeEach(() => {
+        process.env = { ...originalEnv, NODE_ENV: 'test', DEPLOYMENT_ENV: 'local', SECURITY_MODE: 'demo', NETWORK_MODE: 'test' };
         // To test the DemoKmsService decorator, we need a real KmsService to wrap.
         const cryptoService = new CryptographyService(new AdapterCryptoSdkNode());
         const vaultRepository = new VaultMemRepository();

@@ -1,3 +1,4 @@
+// Flow contract: test execution retains real authentication; only explicit local Demo selects synthetic tokens.
 // src/__tests__/unit/auth/token-verifier-registry.test.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
@@ -25,7 +26,7 @@ describe('token-verifier-registry', () => {
   beforeEach(() => {
     jest.resetModules();
     clearTokenVerifierAdapters();
-    process.env = { ...originalEnv };
+    process.env = { ...originalEnv, NODE_ENV: 'test', DEPLOYMENT_ENV: 'local', SECURITY_MODE: 'strict', NETWORK_MODE: 'test' };
     delete process.env.AUTH_TOKEN_VERIFIER;
     delete process.env.OIDC_ISSUER;
     delete process.env.OIDC_AUDIENCE;
@@ -37,9 +38,14 @@ describe('token-verifier-registry', () => {
     process.env = originalEnv;
   });
 
-  it('defaults to DemoTokenVerifier in test env when AUTH_TOKEN_VERIFIER is not set', () => {
-    const verifier = resolveTokenVerifierFromEnv(true);
-    expect(verifier).toBeInstanceOf(DemoTokenVerifier);
+  it('defaults to real Firebase authentication even when the test flag is supplied', () => {
+    expect(resolveTokenVerifierFromEnv(true)).toBeInstanceOf(FirebaseTokenVerifier);
+  });
+
+  it('selects DemoTokenVerifier only for an explicit local Demo profile', () => {
+    process.env.SECURITY_MODE = 'demo';
+    process.env.AUTH_TOKEN_VERIFIER = 'demo';
+    expect(resolveTokenVerifierFromEnv(true)).toBeInstanceOf(DemoTokenVerifier);
   });
 
   it('defaults to FirebaseTokenVerifier when not test env and AUTH_TOKEN_VERIFIER is not set', () => {

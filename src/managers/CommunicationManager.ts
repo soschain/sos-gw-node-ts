@@ -22,10 +22,11 @@ import {
   matchesCommunicationParticipantSearch,
   paginateCommunicationParticipantMatches,
   parseCommunicationParticipantSearchCriteria,
-} from 'gdc-common-utils-ts/utils/communication-participant-search';
+} from 'fhir-data-utils-ts/communication-participant-search';
 import { GatewaySearchBundleTypes } from 'sos-data-utils-ts/gateway-response-contract';
-import { normalizeClaimsFromFhirResource } from 'gdc-common-utils-ts/utils/interoperable-resource-operation';
+import { normalizeClaimsFromFhirResource } from 'fhir-data-utils-ts/clinical-resource-adapters';
 import { compositionFhirR4ToFlat } from 'fhir-data-utils-ts';
+import { observationFhirR4ToFlatGraph } from 'fhir-data-utils-ts/converters';
 import { buildClinicalDocumentSearchAttributes } from '../utils/clinical-document-search-attributes';
 import { requireClaimsOnlyResourceShape } from '../utils/fhir-flat-claims';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
@@ -49,6 +50,9 @@ import { SUBJECT_SECTION_DIGITAL_TWIN, SUBJECT_SECTION_INDIVIDUAL } from '../con
 import { GatewayResponseEntryTypes } from '../shared/gateway-response-types';
 import {
   isFinalizedDigitalTwinResearchRecord,
+  buildDigitalTwinResearchRecordId,
+  isFinalizedDigitalTwinResearchGraphRecord,
+  rebindDigitalTwinObservationMembers,
   isDigitalTwinResearchResourceType,
   isProfessionallyAttestedResearchRecord,
   markDigitalTwinStudyTargetShared,
@@ -290,6 +294,8 @@ const COMMUNICATION_SECTION_PREFIX = getEnvSectionId(`${SUBJECT_SECTION_INDIVIDU
  *   but under another path".
  */
 export class CommunicationManager implements IJobProcessor {
+  private readonly observationComponentParents = new WeakMap<object, string>();
+  private readonly observationGraphParents = new WeakSet<object>();
   private readonly tenantsCacheManager: ITenantsManager;
   private readonly vaultRepository: IVaultRepository;
   private readonly kmsService: IKmsService;
@@ -1255,9 +1261,10 @@ export class CommunicationManager implements IJobProcessor {
         attachment,
         Boolean(explicitSection),
       );
-      for (const resource of resources) {
+      const deferredResearchProjections: Array<() => Promise<void>> = [];
+      const persistResource = async (resource: Record<string, any>, deferResearchProjection: boolean) => {
         const resourceType = this.getSupportedProjectedResourceType(resource?.resourceType);
-        if (!resource || !resourceType) continue;
+        if (!resource || !resourceType) return;
 
         await this.persistProjectedClinicalResource({
           job,
@@ -1273,8 +1280,13 @@ export class CommunicationManager implements IJobProcessor {
           documentClaims,
           documentStatusRequired: Boolean(compositionResource),
           isSubsettedDocumentIndex,
+          ...(deferResearchProjection ? { deferredResearchProjections } : {}),
         });
+      };
+      for (const resource of resources) {
+        await persistResource(resource, this.observationGraphParents.has(resource));
       }
+      for (const projectResearch of deferredResearchProjections) await projectResearch();
     }
     return batchResponses;
   }
@@ -1604,6 +1616,7 @@ export class CommunicationManager implements IJobProcessor {
     documentClaims?: Record<string, unknown>;
     documentStatusRequired?: boolean;
     isSubsettedDocumentIndex?: boolean;
+    deferredResearchProjections?: Array<() => Promise<void>>;
   }): Promise<{ recordId: string; versionId: string; created: boolean; terminologyWarning?: OperationOutcome }> {
     // A source-authored URN is import provenance, not the importing BFF's
     // identity. It may be persisted once; the existing-record authorization
@@ -1690,6 +1703,17 @@ export class CommunicationManager implements IJobProcessor {
       config.collectionId,
     );
     const recordId = String(input.resource?.id || versionId || fallbackId);
+    const componentParentRecordId = this.observationComponentParents.get(input.resource);
+    const sourceGraphRecords = input.resourceType === ResourceTypesFhirR4.Observation
+      ? await this.vaultRepository.listContainersInSection<{ id: string; [key: string]: unknown }>(
+          input.tenantVaultId, sectionId,
+        ) : [];
+    const graphFinalized = (recordClaims: Record<string, unknown>) =>
+      isFinalizedDigitalTwinResearchGraphRecord(input.resourceType, {
+        ...recordClaims, id: recordId,
+        ...(componentParentRecordId ? { audit: { componentParentRecordId } } : {}),
+      }, sourceGraphRecords);
+
     const parentDocumentStatus = this.getFirstClaimValue(input.documentClaims || {}, ['Composition.status']);
     const parentDocumentFinalized = (
       !(input.documentStatusRequired || parentDocumentStatus)
@@ -1700,7 +1724,7 @@ export class CommunicationManager implements IJobProcessor {
     );
     const incomingResearchFinalized = (
       parentDocumentFinalized
-      && isFinalizedDigitalTwinResearchRecord(input.resourceType, claims)
+      && graphFinalized(claims)
     );
     const existing = await this.vaultRepository.get<{ id: string } & Record<string, any>>(
       input.tenantVaultId,
@@ -1770,7 +1794,7 @@ export class CommunicationManager implements IJobProcessor {
       : claims;
     const isResearchFinalized = (
       parentDocumentFinalized
-      && isFinalizedDigitalTwinResearchRecord(input.resourceType, persistedClaims)
+      && graphFinalized(persistedClaims)
     );
 
     const consentStatus = this.getFirstClaimValue(persistedClaims, [ClaimConsent.status]);
@@ -1797,6 +1821,7 @@ export class CommunicationManager implements IJobProcessor {
     const signingKeyId = clinicalCreatorEvidence(input.job).keyId;
     const audit = input.creatorDid ? {
       creatorDid: authenticatedActorDid || input.creatorDid,
+      ...(componentParentRecordId ? { componentParentRecordId } : {}),
       ...(input.documentProvenance ? {
         authorOwnerIdentifier: input.documentProvenance.organizationReference,
         documentDate: input.documentProvenance.documentDate,
@@ -1832,103 +1857,114 @@ export class CommunicationManager implements IJobProcessor {
           claims: persistedClaims,
         })
       : undefined;
-    if (
-      !isMinimalIndexProjection
-      && isResearchFinalized
-      && isDigitalTwinResearchResourceType(input.resourceType)
-      && isProfessionallyAttestedResearchRecord(persistedClaims)
-    ) {
-      const studyTargets = await listEnabledDigitalTwinStudyTargets({
-        vaultRepository: this.vaultRepository,
-        tenantVaultId: input.tenantVaultId,
-        sourceSubject: subjectRef,
-      });
-      let terminologyWarning: OperationOutcome | undefined;
-      for (const target of studyTargets) {
-        const researchProjection = await resolveAndProjectClaimsForDigitalTwin({
-          claims: persistedClaims,
-          resourceType: input.resourceType,
-          twinSubjectId: target.twinSubjectId,
-          sector: String(input.job.sector || ''),
-          jurisdiction: String(input.job.jurisdiction || ''),
-        });
-        const researchClaims = researchProjection.claims;
-        if (target.researchUseReference) {
-          researchClaims['__digitalTwinStudy.reference'] = target.researchUseReference;
-        }
-        const researchVersionId = buildOperationalClaimsContentCid(this.clinicalContentVersionClaims(researchClaims));
-        researchClaims[`${input.resourceType}.meta.versionId`] = researchVersionId;
-        researchClaims[`org.hl7.fhir.r4.${input.resourceType}.meta.versionId`] = researchVersionId;
-        const digitalTwinSectionId = getSubjectScopedSectionId(
-          target.twinSubjectId,
-          SUBJECT_SECTION_DIGITAL_TWIN,
-          config.collectionId,
-        );
-        const researchRecordId = createHash('sha256')
-          .update(`${input.resourceType}|${recordId}`, 'utf8')
-          .digest('hex');
-        const priorResearchRecords = await this.vaultRepository.listContainersInSection<any>(
-          input.tenantVaultId,
-          digitalTwinSectionId,
-        );
-        const legacyResearchRecordIds = priorResearchRecords
-          .filter((priorResearchRecord) =>
-            this.normalizeOptionalString(priorResearchRecord?.audit?.sourceRecordId) === recordId
-            && this.normalizeOptionalString(priorResearchRecord?.id) !== researchRecordId)
-          .map((priorResearchRecord) => String(priorResearchRecord.id));
-        const researchAudit = input.creatorDid ? {
-          creatorDid: authenticatedActorDid || input.creatorDid,
-          sourceRecordId: recordId,
-          ...(audit?.submitterDid ? { submitterDid: audit.submitterDid } : {}),
-          ...(audit?.signingKeyId ? { signingKeyId: audit.signingKeyId } : {}),
-        } : undefined;
-        await this.vaultRepository.put(input.tenantVaultId, [{
-          id: researchRecordId,
-          ...researchClaims,
-          ...(researchAudit ? { audit: researchAudit } : {}),
-          indexed: {
-            attributes: buildClinicalDocumentSearchAttributes({
-              claims: researchClaims,
-              sector: String(input.job.sector || ''),
-              audit: researchAudit,
-            }),
-          },
-        } as any], digitalTwinSectionId);
-        await markDigitalTwinStudyTargetShared({
+    const projectResearch = async () => {
+      if (
+        !isMinimalIndexProjection
+        && isResearchFinalized
+        && isDigitalTwinResearchResourceType(input.resourceType)
+        && isProfessionallyAttestedResearchRecord(persistedClaims)
+      ) {
+        const projectionSourceRecords = input.resourceType === ResourceTypesFhirR4.Observation
+          ? await this.vaultRepository.listContainersInSection<{ id: string; [key: string]: unknown }>(
+              input.tenantVaultId, sectionId,
+            ) : [];
+        const studyTargets = await listEnabledDigitalTwinStudyTargets({
           vaultRepository: this.vaultRepository,
           tenantVaultId: input.tenantVaultId,
           sourceSubject: subjectRef,
-          researchUseReference: target.researchUseReference,
         });
-        for (const legacyResearchRecordId of legacyResearchRecordIds) {
-          await this.vaultRepository.delete(input.tenantVaultId, legacyResearchRecordId, digitalTwinSectionId);
-        }
-        terminologyWarning = terminologyWarning || researchProjection.warning;
-        if (researchProjection.researchReady) {
-          terminologyWarning = await this.registerResearchMapping(input.job, buildResearchAssetVersionMapping({
+        let terminologyWarning: OperationOutcome | undefined;
+        for (const target of studyTargets) {
+          const researchProjection = await resolveAndProjectClaimsForDigitalTwin({
+            claims: input.resourceType === ResourceTypesFhirR4.Observation
+              ? rebindDigitalTwinObservationMembers(persistedClaims, projectionSourceRecords) : persistedClaims,
             resourceType: input.resourceType,
-            sourceResourceId: recordId,
-            sourceVersionId: versionId,
             twinSubjectId: target.twinSubjectId,
-            claims: researchClaims,
-          })) || terminologyWarning;
+            sector: String(input.job.sector || ''),
+            jurisdiction: String(input.job.jurisdiction || ''),
+          });
+          const researchClaims = researchProjection.claims;
+          if (target.researchUseReference) {
+            researchClaims['__digitalTwinStudy.reference'] = target.researchUseReference;
+          }
+          const researchVersionId = buildOperationalClaimsContentCid(this.clinicalContentVersionClaims(researchClaims));
+          researchClaims[`${input.resourceType}.meta.versionId`] = researchVersionId;
+          researchClaims[`org.hl7.fhir.r4.${input.resourceType}.meta.versionId`] = researchVersionId;
+          const digitalTwinSectionId = getSubjectScopedSectionId(
+            target.twinSubjectId,
+            SUBJECT_SECTION_DIGITAL_TWIN,
+            config.collectionId,
+          );
+          const researchRecordId = buildDigitalTwinResearchRecordId(input.resourceType, recordId);
+          const priorResearchRecords = await this.vaultRepository.listContainersInSection<any>(
+            input.tenantVaultId,
+            digitalTwinSectionId,
+          );
+          const legacyResearchRecordIds = priorResearchRecords
+            .filter((priorResearchRecord) =>
+              this.normalizeOptionalString(priorResearchRecord?.audit?.sourceRecordId) === recordId
+              && this.normalizeOptionalString(priorResearchRecord?.id) !== researchRecordId)
+            .map((priorResearchRecord) => String(priorResearchRecord.id));
+          const researchAudit = input.creatorDid ? {
+            creatorDid: authenticatedActorDid || input.creatorDid,
+            sourceRecordId: recordId,
+            ...(audit?.submitterDid ? { submitterDid: audit.submitterDid } : {}),
+            ...(audit?.signingKeyId ? { signingKeyId: audit.signingKeyId } : {}),
+          } : undefined;
+          await this.vaultRepository.put(input.tenantVaultId, [{
+            id: researchRecordId,
+            ...researchClaims,
+            ...(researchAudit ? { audit: researchAudit } : {}),
+            indexed: {
+              attributes: buildClinicalDocumentSearchAttributes({
+                claims: researchClaims,
+                sector: String(input.job.sector || ''),
+                audit: researchAudit,
+              }),
+            },
+          } as any], digitalTwinSectionId);
+          await markDigitalTwinStudyTargetShared({
+            vaultRepository: this.vaultRepository,
+            tenantVaultId: input.tenantVaultId,
+            sourceSubject: subjectRef,
+            researchUseReference: target.researchUseReference,
+          });
+          for (const legacyResearchRecordId of legacyResearchRecordIds) {
+            await this.vaultRepository.delete(input.tenantVaultId, legacyResearchRecordId, digitalTwinSectionId);
+          }
+          terminologyWarning = terminologyWarning || researchProjection.warning;
+          if (researchProjection.researchReady) {
+            terminologyWarning = await this.registerResearchMapping(input.job, buildResearchAssetVersionMapping({
+              resourceType: input.resourceType,
+              sourceResourceId: recordId,
+              sourceVersionId: versionId,
+              twinSubjectId: target.twinSubjectId,
+              claims: researchClaims,
+            })) || terminologyWarning;
+          }
         }
+        if (studyTargets.length > 0) return {
+          recordId,
+          versionId,
+          created: !alreadyIndexed,
+          ...((publicStatisticsWarning || terminologyWarning)
+            ? { terminologyWarning: publicStatisticsWarning || terminologyWarning }
+            : {}),
+        };
       }
-      if (studyTargets.length > 0) return {
+      return {
         recordId,
         versionId,
         created: !alreadyIndexed,
-        ...((publicStatisticsWarning || terminologyWarning)
-          ? { terminologyWarning: publicStatisticsWarning || terminologyWarning }
-          : {}),
+        ...(publicStatisticsWarning ? { terminologyWarning: publicStatisticsWarning } : {}),
       };
-    }
-    return {
-      recordId,
-      versionId,
-      created: !alreadyIndexed,
-      ...(publicStatisticsWarning ? { terminologyWarning: publicStatisticsWarning } : {}),
     };
+    if (input.deferredResearchProjections) {
+      input.deferredResearchProjections.push(async () => { await projectResearch(); });
+      return { recordId, versionId, created: !alreadyIndexed,
+        ...(publicStatisticsWarning ? { terminologyWarning: publicStatisticsWarning } : {}) };
+    }
+    return projectResearch();
   }
 
   /**
@@ -2579,6 +2615,7 @@ export class CommunicationManager implements IJobProcessor {
     }
     if (authorDid) baseClaims[CompositionClaim.Author] = authorDid;
     for (const claimName of [
+      CompositionClaim.Status,
       CompositionClaim.Identifier,
       CompositionClaim.Author,
       CompositionClaim.Attester,
@@ -3413,9 +3450,41 @@ export class CommunicationManager implements IJobProcessor {
     const documentBundle = this.asDocumentBundle(parsed);
     if (documentBundle) {
       this.inferDocumentResourceSectionClaims(documentBundle);
-      return documentBundle.entry
+      const resources = documentBundle.entry
         .map((bundleEntry: any) => bundleEntry?.resource as Record<string, any> | undefined)
         .filter((resource: Record<string, any> | undefined): resource is Record<string, any> => Boolean(resource?.resourceType));
+      return resources.flatMap((resource: Record<string, any>) => {
+        if (resource.resourceType !== ResourceTypesFhirR4.Observation
+          || !Array.isArray(resource.component) || resource.component.length === 0) return [resource];
+        const parentEntryId = this.normalizeOptionalString(resource.id)
+          || buildOperationalClaimsContentCid(normalizeClaimsFromFhirResource({
+            ...resource, resourceType: ResourceTypesFhirR4.Observation, component: undefined,
+          }));
+        const graph = observationFhirR4ToFlatGraph({
+          ...resource, resourceType: ResourceTypesFhirR4.Observation,
+        }, { parentEntryId });
+        const inheritedClaims = Object.fromEntries(Object.entries(resource.meta?.claims || {})
+          .filter(([claim]) => claim.startsWith('Composition.')));
+        const projections = graph.map((graphEntry, index) => ({
+          ...(index === 0 ? { ...resource, component: undefined } : {
+            resourceType: ResourceTypesFhirR4.Observation,
+            ...(resource.language ? { language: resource.language } : {}),
+          }),
+          id: graphEntry.entryId,
+          meta: {
+            ...(index === 0 ? resource.meta : {}),
+            claims: {
+              ...(index === 0 ? resource.meta?.claims : inheritedClaims),
+              ...graphEntry.claims,
+            },
+          },
+        }));
+        this.observationGraphParents.add(projections[0]);
+        for (const child of projections.slice(1)) {
+          this.observationComponentParents.set(child, parentEntryId);
+        }
+        return projections;
+      });
     }
 
     const bundleType = String((parsed as any).type || '').toLowerCase();

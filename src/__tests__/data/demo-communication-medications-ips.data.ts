@@ -1,6 +1,6 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
-import { CompositionAttesterModes } from 'gdc-common-utils-ts';
-import { EXAMPLE_KYC_CONTROLLER_UUID } from 'gdc-common-utils-ts/examples/shared';
+import { CompositionAttesterModes } from "fhir-data-utils-ts/claims";
+import { EXAMPLE_KYC_CONTROLLER_UUID } from 'sos-data-utils-ts/gateway-flow-examples';
 
 export const demoCommunicationMedicationIpsDefaults = {
   subjectId: 'did:web:api.acme.org:individual:subject-001',

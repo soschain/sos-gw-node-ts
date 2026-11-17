@@ -8,7 +8,7 @@ import {
   EXAMPLE_EMPLOYEE_DEVICE_INSTANCE_ID_PRIMARY,
   EXAMPLE_SECTOR,
   EXAMPLE_TENANT_IDENTIFIER,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import { IdentityTokenManager } from '../../../managers/IdentityTokenManager';
 
 /**

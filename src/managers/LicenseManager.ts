@@ -54,7 +54,7 @@ import type { ITenantsManager } from './ITenantsManager';
 import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { normalizePublicAliasList } from 'antifraud-data-utils-ts/public-aliases';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
-import type { OrganizationRoleLicenseSectorPolicy } from 'gdc-common-utils-ts/models/organization-role-license';
+import type { OrganizationRoleLicenseSectorPolicy } from 'sos-data-utils-ts/organization-role-license';
 import {
   buildIssuedRoleLicenseLedgerIdentity,
   ensureIssuedRoleLicenseOnLedger,

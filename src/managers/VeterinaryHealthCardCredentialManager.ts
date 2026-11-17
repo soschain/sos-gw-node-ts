@@ -1,12 +1,11 @@
+import {encodePostQuantumDetachedProofUri,encodePostQuantumDetachedProofQr} from 'antifraud-data-utils-ts/cryptography';
+import {encodeSoschainSmartHealthCardQr} from 'sos-data-utils-ts/clinical-document-shc';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import {
   decodeSmartHealthCardPayloadBytes,
-  encodePostQuantumCompanionProofUri,
-  encodePostQuantumCompanionProofQr,
-  encodeSmartHealthCardQr,
   prepareSmartHealthCard,
-} from 'vet-data-utils-ts/shc';
+} from 'sos-data-utils-ts/smart-health-card';
 
 type VeterinaryCredentialKms = Pick<IKmsService,
   'getPublicJwks' | 'createCompactJwsFromEncodedPayload' | 'createDetachedJwsForBytes'>;
@@ -81,9 +80,9 @@ export class VeterinaryHealthCardCredentialManager {
     }));
     return {
       compactJws,
-      shcQr: encodeSmartHealthCardQr(compactJws),
-      pqcCompanionProofs: detached.map(encodePostQuantumCompanionProofUri),
-      pqcQr: detached.map(proof => encodePostQuantumCompanionProofQr(proof)),
+      shcQr: encodeSoschainSmartHealthCardQr(compactJws),
+      pqcCompanionProofs: detached.map(encodePostQuantumDetachedProofUri),
+      pqcQr: detached.map(proof => encodePostQuantumDetachedProofQr(proof)),
     };
   }
 }

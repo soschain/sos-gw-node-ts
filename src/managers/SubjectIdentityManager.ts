@@ -6,7 +6,7 @@ import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-stor
 import {
   buildSubjectIdentifierAssetId,
   readSubjectIdentityBundleEntry,
-} from 'gdc-common-utils-ts/utils/subject-identity';
+} from 'sos-data-utils-ts/subject-identity';
 import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';

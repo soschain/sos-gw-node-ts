@@ -108,5 +108,8 @@ export interface ITenantsManager {
    * Convenience boolean derived from authorization lifecycle state.
    */
   isTenantOperational(vaultId: string): Promise<boolean>;
+
+  /** Resolves an exact protected tenant DID or approved alias; never a prefix match. */
+  findTenantVaultIdByDid?(did: string): Promise<string | undefined>;
   
 }

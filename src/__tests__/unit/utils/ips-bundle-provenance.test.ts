@@ -6,7 +6,9 @@
  * Authorization invariant: author remains the individual and attester remains the registered member.
  * Persistence invariant: summary export does not replace either reference with transport actorDid.
  */
-import { CompositionAttesterModes, CompositionClaim, HL7_RELATED_PERSON_FUNCTIONAL_ROLES, ResourceTypesFhirR4 } from 'gdc-common-utils-ts';
+import { HL7_RELATED_PERSON_FUNCTIONAL_ROLES } from "fhir-data-utils-ts";
+import { CompositionAttesterModes, CompositionClaim } from "fhir-data-utils-ts/claims";
+import { ResourceTypesFhirR4 } from "fhir-data-utils-ts/constants";
 import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
@@ -26,7 +28,7 @@ import {
   EXAMPLE_RELATED_PERSON_MEMBER_DID,
   EXAMPLE_RELATED_PERSON_ROLE,
   EXAMPLE_SUBJECT_DID,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import { buildConsolidatedIpsBundleDocument, getClinicalCreatorBindingsSectionId } from '../../../utils/ips-bundle';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
 

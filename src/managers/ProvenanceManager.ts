@@ -8,7 +8,7 @@ import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import {
   normalizeProvenanceR5FlatClaimsResource,
   type ProvenanceR5FlatClaimsResource,
-} from 'vet-data-utils-ts/provenance';
+} from 'sos-data-utils-ts/provenance';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { EntityLifecycleStatus } from '../gdc-backend-utils-node/models/enums';

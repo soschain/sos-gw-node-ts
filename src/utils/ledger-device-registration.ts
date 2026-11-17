@@ -1,3 +1,4 @@
+import {buildProfessionalAssignmentLedgerPayload} from './professional-assignment-ledger';
 import { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
 import type { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { VerificationMethod } from '../gdc-backend-utils-node/models/did';
@@ -33,6 +34,11 @@ function resolveLedgerKeyId(method: Pick<VerificationMethod, 'id' | 'publicKeyJw
     || `key_${hashLedgerString(JSON.stringify(method.publicKeyJwk || {})).slice(0, 32)}`;
 }
 
+function resolveDeviceKeyRelationship(subjectType:'employee'|'person',use:string,prefix?:'employee-device'|'legal-organization-controller'):string{
+  const relationshipPrefix=prefix||(subjectType==='person'?'person-device':'employee-device');
+  return `${relationshipPrefix}-${use==='enc'?'encryption':'signing'}`;
+}
+
 export async function registerSubjectKeysOnLedger(params: {
   jurisdiction?: string;
   organizationId: string;
@@ -47,6 +53,7 @@ export async function registerSubjectKeysOnLedger(params: {
   relationshipPrefix?: 'employee-device' | 'legal-organization-controller';
   keyOrigin?: string;
   auditAttributes?: Record<string, unknown>;
+  professionalAssignment?:Readonly<{assignmentIdentifier:string;employeeIdentifier:string;organizationIdentifier:string}>;
 }): Promise<void> {
   if (!shouldSyncIdentityLedger()) return;
 
@@ -70,6 +77,8 @@ export async function registerSubjectKeysOnLedger(params: {
     channelName,
   });
 
+  const professionalLinks=params.professionalAssignment?buildProfessionalAssignmentLedgerPayload({...params.professionalAssignment,role:params.licensedRole||''}):undefined;
+
   for (const method of params.verificationMethods) {
     const publicKeyJwk = method.publicKeyJwk as PublicJwk | undefined;
     if (!publicKeyJwk) continue;
@@ -77,8 +86,9 @@ export async function registerSubjectKeysOnLedger(params: {
     const thumbprint = tryGetJwkThumbprint(publicKeyJwk);
     const keyId = resolveLedgerKeyId(method);
     const use = String((publicKeyJwk as any)?.use || '').trim() || inferLedgerJwkUse(publicKeyJwk);
-    const relationshipPrefix = params.relationshipPrefix || 'employee-device';
-    const relationship = use === 'enc' ? `${relationshipPrefix}-encryption` : `${relationshipPrefix}-signing`;
+    // Existing employee wire values remain unchanged. Natural-person DCR
+    // introduces the governed person-device relationship on the global plane.
+    const relationship=resolveDeviceKeyRelationship(params.subjectType,use,params.relationshipPrefix);
 
     const keyPayload: CryptographicKeyLedgerPayload = {
       keyId,
@@ -112,6 +122,7 @@ export async function registerSubjectKeysOnLedger(params: {
       keyId,
       relationship,
       status: 'active',
+      ...(professionalLinks?{professionalAssignmentLink:professionalLinks.assignmentLink,employeeLink:professionalLinks.employeeLink,organizationLink:professionalLinks.organizationLink}:{}),
       meta: {
         attributes: {
           did: params.subjectDid || params.subjectId,
@@ -197,7 +208,7 @@ export async function revokeSubjectKeysOnLedger(params: {
     const publicKeyJwk = method.publicKeyJwk as PublicJwk | undefined;
     const keyId = resolveLedgerKeyId(method);
     const use = publicKeyJwk ? inferLedgerJwkUse(publicKeyJwk) : 'sig';
-    const relationship = use === 'enc' ? 'employee-device-encryption' : 'employee-device-signing';
+    const relationship=resolveDeviceKeyRelationship(params.subjectType,use);
     const bindingId = `${params.subjectType}_${params.subjectId}__${keyId}`;
 
     await keyManager.submit(mspId, 'UpdateKeyStatus', keyId, 'revoked', revokedAt);

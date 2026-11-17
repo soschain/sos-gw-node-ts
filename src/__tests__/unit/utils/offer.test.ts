@@ -3,7 +3,7 @@
 
 import { VETCHAIN_PRODUCT_BOUNDARY } from '../../../config/vetchain-product-boundary';
 import { generateLicenseOffer } from '../../../utils/offer';
-import { VET_PAYMENT_TEST_DATA } from 'vet-data-utils-ts/payment';
+import { PAYMENT_TEST_EXAMPLES } from 'sos-data-utils-ts/payment';
 import { SchemaOrgOfferClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 
 describe('generateLicenseOffer', () => {
@@ -23,16 +23,16 @@ describe('generateLicenseOffer', () => {
   it('uses the reusable paid USDC fixture only in the exact local test stage', () => {
     process.env.DEPLOYMENT_ENV = 'dev';
     process.env.NETWORK_MODE = 'test';
-    process.env.VETCHAIN_LOCAL_TEST_LICENSE_UNIT_PRICE = VET_PAYMENT_TEST_DATA.priceText;
+    process.env.VETCHAIN_LOCAL_TEST_LICENSE_UNIT_PRICE = PAYMENT_TEST_EXAMPLES.priceText;
     const claims = generateLicenseOffer(
-      VET_PAYMENT_TEST_DATA.quantity,
+      PAYMENT_TEST_EXAMPLES.quantity,
       hostDid,
       jurisdiction,
       VETCHAIN_PRODUCT_BOUNDARY.professionalSector,
       allowedPaymentMethods,
     );
-    expect(claims[SchemaOrgOfferClaim.Price]).toBe(VET_PAYMENT_TEST_DATA.priceText);
-    expect(claims[SchemaOrgOfferClaim.PriceCurrency]).toBe(VET_PAYMENT_TEST_DATA.currency);
+    expect(claims[SchemaOrgOfferClaim.Price]).toBe(PAYMENT_TEST_EXAMPLES.priceText);
+    expect(claims[SchemaOrgOfferClaim.PriceCurrency]).toBe(PAYMENT_TEST_EXAMPLES.currency);
   });
   const hostDid = 'did:web:host.example.com';
   const jurisdiction = 'es';

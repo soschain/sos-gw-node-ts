@@ -1,4 +1,4 @@
-import { buildExampleConfidentialStorageDoc } from 'gdc-common-utils-ts';
+import { buildExampleConfidentialStorageDoc } from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import { CONFIDENTIAL_JWE_BLOB_CONTENT_TYPE } from 'sos-data-utils-ts/confidential-storage';
 import { jest } from '@jest/globals';
 import type { IConfidentialBlobStore } from '../../../database/storage/IConfidentialBlobStore';

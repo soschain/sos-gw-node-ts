@@ -1,7 +1,7 @@
-// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+// Flow contract: local BYOK onboarding uses real KEM/AES and ML-DSA messages with the explicitly selected local Demo account verifier; all Offer, Order, token and DCR persistence assertions remain required.
 // src/__tests__/integration/end-to-end-flow.test.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
-import { GatewayRequestEntryTypes } from 'gdc-common-utils-ts/constants/gateway-response';
+import { GatewayRequestEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
@@ -12,6 +12,9 @@ process.env.DB_PROVIDER = 'mem';
 process.env.STORAGE_PROVIDER = 'mem';
 process.env.QUEUE_PROVIDER = 'mem';
 process.env.SECURITY_MODE = 'demo';
+process.env.NETWORK_MODE='test';
+process.env.DEPLOYMENT_ENV='local';
+process.env.AUTH_TOKEN_VERIFIER='demo';
 process.env.ALLOWED_SECTORS = 'health-care,test';
 process.env.HOST_EXTERNAL_DOMAIN = 'provider.com';
 
@@ -28,12 +31,12 @@ import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { startServer } from '../../server';
 import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { Content } from "antifraud-data-utils-ts/cryptography";
 import { QueueAdapterMem } from '../../adapters/queue-mem';
 import { testPayloadCreateTenant1, testTenant1Data } from '../data/end-to-end.data';
 import { testTenant1AlternateName, testTenant1VaultId } from '../data/organization.data';
 import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { createHash } from 'crypto';
+import { createHash,randomUUID } from 'crypto';
 import { invokeExpress } from './helpers/invokeExpress';
 import { getEnvSectionId } from '../../utils/section-env';
 
@@ -125,7 +128,7 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
     // is not yet registered in the system. To establish trust, the client MUST
     // embed their public keys (JWKs) directly into the JWS and JWE protected headers.
     // The server will then associate these keys with the new admin employee being created.
-    const orgCreationPayload = { ...testPayloadCreateTenant1 };
+    const orgCreationPayload={...structuredClone(testPayloadCreateTenant1),jti:randomUUID()};
     const thid = orgCreationPayload.thid;
 
     const jwsProtectedHeader = {
@@ -387,6 +390,7 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
     const exchangeThid = `${testPayloadCreateTenant1.thid}-token-exchange`;
     const exchangePayload = {
       thid: exchangeThid,
+      jti: exchangeThid+'-message',
       iss: testPayloadCreateTenant1.iss,
       aud: await tenantManager.getTenantDid(testTenant1VaultId),
       type: 'application/json',
@@ -414,6 +418,7 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
     const dcrThid = `${testPayloadCreateTenant1.thid}-device-dcr`;
     const dcrPayload = {
       thid: dcrThid,
+      jti: randomUUID(),
       iss: testPayloadCreateTenant1.iss,
       aud: await tenantManager.getTenantDid(testTenant1VaultId),
       type: 'application/json',

@@ -1,6 +1,8 @@
 // Flow contract: preserve SOSChain break-glass OpenID authorization and make the test green only with the complete real behavior.
+import { createHash } from 'node:crypto';
+import type { ClearingHouseVerificationRequest } from '../../../services/ClearingHouseService';
 import { OpenIdAuthManager } from '../../../managers/OpenIdAuthManager';
-import { buildUnsignedProfessionalIdentityVpJwt } from 'gdc-common-utils-ts/utils/professional-smart';
+import { buildUnsignedProfessionalIdentityVpJwt } from 'sos-data-utils-ts/professional-smart';
 import { mockKmsService as sharedKmsServiceMock } from '../../mocks/kms.mock';
 
 describe('SOSChain break-glass SMART integration', () => {
@@ -24,7 +26,7 @@ describe('SOSChain break-glass SMART integration', () => {
         } as any,
         { tenantExists: jest.fn().mockResolvedValue(true), getDidDocument: jest.fn().mockResolvedValue({ id: 'did:web:soschain-gw.unid.online' }) } as any,
         { getContainersInSection: jest.fn().mockResolvedValue([]) } as any,
-        { verifyVpToken: jest.fn().mockResolvedValue({ acr: 'urn:antifraud:acr:openid4vp:employee', amr: ['openid4vp', 'vc'], vpHash: 'hash', ledgerVerified: true }) } as any,
+        { verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({ acr: 'urn:antifraud:acr:openid4vp:employee', amr: ['openid4vp', 'vc'], vpHash: createHash('sha256').update(request.vpToken).digest('hex'), ledgerVerified: true })) } as any,
         { authorize },
       );
 

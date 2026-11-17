@@ -1,6 +1,7 @@
+// Flow contract: preserve the existing authorization, request and persistence expectations while using independent neutral helper contracts.
 import { jest } from '@jest/globals';
 import { sha3_384 } from '@noble/hashes/sha3.js';
-import { encodeMultibase58btc } from 'gdc-common-utils-ts/utils/multibase58';
+import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
 import { SupabaseStorageAdapter } from '../../../../database/storage/supabase.storage.adapter';
 
 describe('SupabaseStorageAdapter', () => {
@@ -34,7 +35,7 @@ describe('SupabaseStorageAdapter', () => {
     const multihashBytes = new Uint8Array(prefix.length + digest.length);
     multihashBytes.set(prefix);
     multihashBytes.set(digest, prefix.length);
-    const expectedHash = encodeMultibase58btc(multihashBytes);
+    const expectedHash = encodeBase58btc(multihashBytes);
 
     expect(result.encodedMultiHash).toBe(expectedHash);
     expect(result.publicUrl).toBe(`${baseUrl}/storage/v1/object/public/${bucketName}/${expectedHash}`);

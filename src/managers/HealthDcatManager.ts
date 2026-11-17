@@ -13,7 +13,7 @@ import {
   ClaimsHealthDcatDataService,
   normalizeHealthDcatResource,
   type HealthDcatResource,
-} from 'vet-data-utils-ts/health-dcat';
+} from 'sos-data-utils-ts/health-dcat';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { EntityLifecycleStatus } from '../gdc-backend-utils-node/models/enums';

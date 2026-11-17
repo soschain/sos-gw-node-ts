@@ -13,16 +13,12 @@ import path from 'path';
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { BundleJsonApi, BundleEntry } from 'sos-data-utils-ts/bundle-contract';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import {
-  buildExampleFamilyRegistrationClaims,
-  buildExampleFamilyRegistrationContent,
-  EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE,
-  mergeIndividualOrganizationClaims,
-} from 'gdc-common-utils-ts';
+import { mergeIndividualOrganizationClaims } from 'sos-data-utils-ts/individual-onboarding';
+import { buildExampleFamilyRegistrationClaims, buildExampleFamilyRegistrationContent, EXAMPLE_FAMILY_REGISTRATION_OWNER_TELEPHONE } from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import { PDFDocument } from 'pdf-lib';
-import { DocumentReferenceClaim } from 'gdc-common-utils-ts/models/interoperable-claims/document-reference-claims';
+import { DocumentReferenceClaim } from "fhir-data-utils-ts/claims";
 import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent } from "fhir-data-utils-ts/claims";
 import {
   EXAMPLE_CONTROLLER_IDENTIFIER_TYPE,
   EXAMPLE_DOCUMENT_REFERENCE_CONTENT_TYPE_PDF,
@@ -51,7 +47,7 @@ import {
   EXAMPLE_REGISTERED_SUBJECT_BIRTH_YEAR,
   EXAMPLE_SELF_REGISTERED_INDIVIDUAL_EMAIL_NORMALIZED,
   EXAMPLE_SUBJECT_DID,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import { getSubjectScopedSectionId } from '../../utils/individual-sections';
 import { getEnvSectionId } from '../../utils/section-env';
 import { IVaultRepository } from '../../database/repositories/vault/vault.repository';

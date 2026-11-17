@@ -12,14 +12,14 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 import { afterEach, expect, it } from '@jest/globals';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
-import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
-import { knownDomainsReversedEnum } from 'gdc-common-utils-ts/models/urlPath';
+import { ClaimConsent } from "fhir-data-utils-ts/claims";
+import { KnownClaimNamespaces } from 'sos-data-utils-ts/gateway-transport-values';
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import {
   ANIMAL_INSURANCE_CONSENT_TEST_DATA,
   ANIMAL_INSURANCE_CONSENT_TEST_INPUT,
   buildAnimalInsuranceEligibilityConsent,
-} from 'vet-data-utils-ts/insurance-consent';
+} from 'sos-data-utils-ts/animal-insurance-consent';
 import { resetServerConfig, startServer } from '../../server';
 import { getEnvSectionId } from '../../utils/section-env';
 import { getIndividualSectionId } from '../../utils/individual-sections';
@@ -77,7 +77,7 @@ it('fails closed through the HTTP queue when an insurance Consent claim diverges
     await tenantManager.getTenant(tenantVaultId);
 
     const consent = buildAnimalInsuranceEligibilityConsent(ANIMAL_INSURANCE_CONSENT_TEST_INPUT);
-    const format = knownDomainsReversedEnum['org.hl7.fhir.r4'];
+    const format = KnownClaimNamespaces['org.hl7.fhir.r4'];
     await submitConsentRuleAndPoll({
       app,
       tenantId,

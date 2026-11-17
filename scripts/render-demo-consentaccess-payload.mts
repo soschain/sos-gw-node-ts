@@ -1,16 +1,16 @@
 import {
   EXAMPLE_CONSENT_ACCESS_RULES,
-} from 'gdc-common-utils-ts/examples/consent-access';
+} from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import {
   EXAMPLE_CONSENT_ATTACHMENT_CONTENT_TYPE,
   EXAMPLE_CONSENT_ATTACHMENT_DATA_BASE64,
   EXAMPLE_SUBJECT_DID,
-} from 'gdc-common-utils-ts/examples/shared';
-import { ClaimConsent, type ConsentRule } from 'gdc-common-utils-ts/models/consent-rule';
+} from 'sos-data-utils-ts/gateway-flow-examples';
+import { ClaimConsent, type ConsentRule } from "fhir-data-utils-ts/claims";
 import { buildConsentRulePrimaryDocument } from '../src/utils/consent-access-blockchain.ts';
 import { getClaimValue, normalizeContextualizedClaims } from '../src/utils/claims.ts';
 import { expandConsentActorRoles } from '../src/utils/consent.ts';
-import type { BundleEntry } from 'gdc-common-utils-ts/models/bundle';
+import type { BundleEntry } from "sos-data-utils-ts/bundle-contract";
 
 type RenderMode =
   | 'CONSENT_BATCH_REQUEST'

@@ -1,5 +1,16 @@
 ## Unreleased
 
+- Preserve component Observation graphs through clinical import and research
+  projection, including correlated references and consent-driven rebuilds.
+  Component records retain their own clinical state without manufacturing one.
+
+- Match person-specific consent rules to the exact authorized actor while
+  retaining explicit organization-wide grants and current device checks.
+
+- Verify all approved ICA status sources for shared issuers; any revocation or unavailable source denies activation, and unknown records cannot override revocation.
+
+- Require an explicit server-owned authorization decision for the standalone native-FHIR router; missing identity, missing policy and policy errors deny access.
+
 - Persist a bound pending state while reconciling the configured host DID.
   Restart retries publish the exact stored self-credentials before clearing
   that state; inconsistent targets fail closed. Keys, claims and tenants stay

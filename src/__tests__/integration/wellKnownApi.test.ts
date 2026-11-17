@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto';
 import { createDiscoveryRouter } from '../../routes/discovery';
 import { DiscoveryService } from '../../services/DiscoveryService';
 import type { TenantsCacheManager } from '../../managers/TenantsCacheManager';
-import { testTenant1AlternateName, testTenant1DidWebHosted, testTenant1IdentifierUrn, testTenant1VaultId } from '../data/organization.data';
+import { testHostDomain, testTenant1AlternateName, testTenant1DidWebHosted, testTenant1IdentifierUrn, testTenant1VaultId } from '../data/organization.data';
 import { DidDocument } from '../../gdc-backend-utils-node/models/did';
 import { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
@@ -18,7 +18,7 @@ import { ILogger } from '../../loggers/ILogger';
 import type { IVaultRepository } from '../../database/repositories/vault/vault.repository';
 import { invokeExpress } from './helpers/invokeExpress';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { HostNetworkTypes } from 'gdc-common-utils-ts/constants/network';
+import { HostNetworkTypes } from 'sos-data-utils-ts/gateway-profile-values';
 import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { serializeServiceCapabilityTokens } from 'sos-data-utils-ts/service-capabilities';
@@ -33,7 +33,7 @@ import {
   EXAMPLE_SECONDARY_PROVIDER_LEGAL_NAME,
   EXAMPLE_SECONDARY_TENANT_SERVICE_DID,
   EXAMPLE_SIGNED_TERMS_PDF_URL,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import { buildGatewayDataspaceCatalogArtifactPath, buildGatewayDataspaceVersionPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import { NativeFhirFormats } from '../../constants/fhir-discovery';
 import { SUBJECT_SECTION_DIGITAL_TWIN } from '../../constants/domain';
@@ -50,7 +50,7 @@ const mockTenantsCacheManager = {
   getEmployeeDidDocument: jest.fn(),
   getTenant: jest.fn(),
   isTenantOperational: jest.fn(async () => true),
-  getTenantDomainUrl: jest.fn(async () => 'https://host.example.com'),
+  getTenantDomainUrl: jest.fn(async () => `https://${testHostDomain}`),
   getTenantOperationalUrl: jest.fn(),
   getTenantJurisdiction: jest.fn(async () => 'CA-BC'),
   getTenantSector: jest.fn(async () => 'health-care'),
@@ -814,8 +814,9 @@ describe('DSP Discovery API', () => {
         { '@id': `http://${EXAMPLE_HOST_PUBLIC_HOSTNAME}/${testTenant1AlternateName}/cds-es/v1/${DataspaceSectors.HealthResearch}/.well-known/service-offering-personal-backup.json` },
       ]),
     );
+    // The published access URL follows the registered publisher, independently of the request Host header.
     expect(parsed['dcat:dataset'][0]['dcat:distribution'][0]['dcat:accessURL']).toBe(
-      `https://${EXAMPLE_HOST_PUBLIC_HOSTNAME}/.well-known/did.json`,
+      `https://${testHostDomain}/.well-known/did.json`,
     );
     expect(parsed['dcat:dataset']).toHaveLength(1);
     expect(mockTenantsCacheManager.listAutodiscoverableTenants).toHaveBeenCalledTimes(1);

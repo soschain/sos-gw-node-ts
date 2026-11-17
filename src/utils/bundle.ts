@@ -5,7 +5,7 @@ import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
 import { BundleJsonApi, ErrorEntry } from 'sos-data-utils-ts/bundle-contract';
 import { IssueLevel, IssueType } from 'fhir-data-utils-ts/operation-outcome';
-import { safelyJoinUrl } from 'gdc-common-utils-ts/utils/url';
+import { safelyJoinUrl } from 'sos-data-utils-ts/gateway-transport-values';
 
 export const BundleType = {
   BatchResponse: 'batch-response',

@@ -5,6 +5,7 @@ import { IVaultRepository } from '../database/repositories/vault/vault.repositor
 import { ITokenVerifier, VerificationResult } from '../auth/ITokenVerifier';
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { ICryptography } from 'antifraud-data-utils-ts/cryptography';
+import { verifyPinnedJwt } from 'antifraud-data-utils-ts/clearing-house';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
@@ -614,16 +615,24 @@ export class AppAuthorizationManager {
       throw new ManagerError('Controller proof bearer kid does not match the projected verification JWK.', IssueType.Security);
     }
 
-    if ((alg === 'ES256K' || alg === 'ES384') && verificationJwk) {
-      try {
+    if (!verificationJwk) {
+      throw new ManagerError('Controller proof bearer requires one public verification JWK.', IssueType.Security);
+    }
+    try {
+      if (alg === 'ES256K') {
+        // Keep the existing secp256k1 profile; the shared verifier does not
+        // advertise this algorithm. JOSE still verifies the actual signature.
         const keyLike = await importJWK(verificationJwk, alg);
         await compactVerify(compact, keyLike);
-      } catch (error: any) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new ManagerError(`Invalid controller proof bearer signature: ${message}`, IssueType.Security);
+      } else {
+        await verifyPinnedJwt(compact, { keys: [verificationJwk] }, String(payload.iss || '').trim(), now, {
+          cryptography: this.cryptographyService,
+          requireJwtTimes: false,
+        });
       }
-    } else if (alg === 'ES256K' || alg === 'ES384') {
-      throw new ManagerError('Controller proof bearer requires one public JWK in its header or decoded request meta for ES256K/ES384 verification.', IssueType.Security);
+    } catch (error: any) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new ManagerError(`Invalid controller proof bearer signature: ${message}`, IssueType.Security);
     }
 
     return { valid: true, payload };

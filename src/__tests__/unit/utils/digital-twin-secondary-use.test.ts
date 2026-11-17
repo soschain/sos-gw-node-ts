@@ -1,5 +1,8 @@
 // Flow contract: secondary-use consent rebuilds only finalized, professionally attested clinical records and never promotes personal records into the research repository.
-import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
+import { ObservationClaim } from 'fhir-data-utils-ts/observation-claims';
+import { VitalSignsCodes } from 'fhir-data-utils-ts/vital-sign-observations';
+import { EXAMPLE_OBSERVATION_IDENTIFIER, EXAMPLE_SUBJECT_DID } from 'sos-data-utils-ts/gateway-flow-examples';
+import { ClaimConsent, CompositionClaim } from "fhir-data-utils-ts/claims";
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
@@ -208,6 +211,66 @@ describe('digital twin secondary-use lifecycle', () => {
     const medications = await vaultRepository.listContainersInSection<any>(tenantVaultId, twinMedicationSection);
     expect(medications).toHaveLength(1);
     expect(medications[0]['MedicationStatement.subject']).toBe(twinSubjectId);
+  });
+
+  it('rebuilds a finalized panel graph without promoting unrelated or explicitly draft children', async () => {
+    const vaultRepository = new VaultMemRepository();
+    const observationSection = getSubjectScopedSectionId(sourceSubject, 'individual', 'observations');
+    const parentId = EXAMPLE_OBSERVATION_IDENTIFIER;
+    const childId = `${parentId}-component-1`;
+    const unrelatedId = `${parentId}-component-2`;
+    const foreignId = `${parentId}-component-3`;
+    const draftId = `${parentId}-component-4`;
+    const draftDocumentParentId = `${parentId}-draft-document`;
+    await vaultRepository.put(tenantVaultId, [{
+      id: parentId,
+      [ObservationClaim.Identifier]: parentId,
+      [ObservationClaim.Subject]: sourceSubject,
+      [ObservationClaim.Code]: VitalSignsCodes.BloodPressure.claim,
+      [ObservationClaim.Status]: 'final',
+      [ObservationClaim.HasMember]: [childId, foreignId, draftId].map(id => `Observation/${id}`).join(','),
+      ...professionalProvenance,
+    }, {
+      id: draftDocumentParentId,
+      [ObservationClaim.Identifier]: draftDocumentParentId,
+      [ObservationClaim.Subject]: sourceSubject,
+      [ObservationClaim.Code]: VitalSignsCodes.BloodPressure.claim,
+      [ObservationClaim.Status]: 'final',
+      [CompositionClaim.Status]: 'preliminary',
+      ...professionalProvenance,
+    }, ...[childId, unrelatedId, foreignId, draftId].map(id => ({
+      id,
+      [ObservationClaim.Identifier]: id,
+      [ObservationClaim.Subject]: id === foreignId ? EXAMPLE_SUBJECT_DID : sourceSubject,
+      [ObservationClaim.Code]: VitalSignsCodes.SystolicBloodPressure.claim,
+      ...(id === draftId ? { [ObservationClaim.Status]: 'preliminary' } : {}),
+      audit: { componentParentRecordId: parentId },
+      ...professionalProvenance,
+    }))], observationSection);
+    await applyDigitalTwinSecondaryUseDecision({
+      vaultRepository, tenantVaultId,
+      claims: { ...baseClaims, [ClaimConsent.decision]: 'permit' },
+    });
+    const [target] = await listEnabledDigitalTwinStudyTargets({ vaultRepository, tenantVaultId, sourceSubject });
+    const twinSection = getSubjectScopedSectionId(target.twinSubjectId, 'digitaltwin', 'observations');
+    const graph = await vaultRepository.listContainersInSection<Record<string, unknown> & { id: string }>(tenantVaultId, twinSection);
+    expect(graph).toHaveLength(2);
+    const parent = graph.find(record => record[ObservationClaim.Code] === VitalSignsCodes.BloodPressure.claim);
+    const child = graph.find(record => record[ObservationClaim.Code] === VitalSignsCodes.SystolicBloodPressure.claim);
+    expect(parent).toBeDefined();
+    expect(child).toBeDefined();
+    expect(child?.[ObservationClaim.Status]).toBeUndefined();
+    expect(parent?.[ObservationClaim.HasMember]).toBe(`Observation/${child?.id}`);
+    expect(await vaultRepository.get(tenantVaultId, String(child?.id), twinSection)).toEqual(child);
+    await applyDigitalTwinSecondaryUseDecision({
+      vaultRepository, tenantVaultId,
+      claims: { ...baseClaims, [ClaimConsent.decision]: 'deny' },
+    });
+    await applyDigitalTwinSecondaryUseDecision({
+      vaultRepository, tenantVaultId,
+      claims: { ...baseClaims, [ClaimConsent.decision]: 'permit' },
+    });
+    expect(await vaultRepository.listContainersInSection(tenantVaultId, twinSection)).toEqual(graph);
   });
 
   it('rebuilds only finalized Observations and Compositions', async () => {

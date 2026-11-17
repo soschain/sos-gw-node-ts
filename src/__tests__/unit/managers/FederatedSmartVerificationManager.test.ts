@@ -2,12 +2,12 @@
 
 import { createHash } from 'node:crypto';
 import { decodeJwt, decodeProtectedHeader } from 'jose';
-import { buildClientAssertionFixture } from 'gdc-common-utils-ts/utils/client-assertion';
-import { EXAMPLE_DEVICE_CLIENT_ID, EXAMPLE_SUBJECT_DID } from 'gdc-common-utils-ts/examples/shared';
-import { buildScopeSmartCompositionAccess } from 'gdc-common-utils-ts/utils/smart-scope';
+import { buildClientAssertionFixture } from 'antifraud-sdk-node-ts/examples/client-assertion';
+import { EXAMPLE_DEVICE_CLIENT_ID, EXAMPLE_SUBJECT_DID } from 'sos-data-utils-ts/gateway-flow-examples';
+import { buildScopeSmartCompositionAccess } from 'sos-data-utils-ts/consent-smart-scopes';
 import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
-import { SmartIntrospectionExtensionFields } from 'gdc-common-utils-ts/utils/smart-authorization-profile';
+import { SmartIntrospectionExtensionFields } from 'sos-data-utils-ts/smart-authorization-profile';
 import { buildDeterministicSignedJwt } from '../../utils/deterministic-jwt-fixtures';
 import { FederatedSmartVerificationManager } from '../../../managers/FederatedSmartVerificationManager';
 import type { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';

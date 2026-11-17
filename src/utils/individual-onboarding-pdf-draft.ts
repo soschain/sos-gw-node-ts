@@ -2,14 +2,14 @@ import { createHash, randomUUID } from 'crypto';
 import { Buffer } from 'buffer';
 import {
   buildIndividualOnboardingPdfDocumentReferenceEntry,
-} from 'gdc-common-utils-ts/utils/individual-onboarding-document-reference';
-import { mergeIndividualOrganizationClaims } from 'gdc-common-utils-ts/utils/individual-organization-claims';
+} from 'sos-data-utils-ts/individual-onboarding';
+import { mergeIndividualOrganizationClaims } from 'sos-data-utils-ts/individual-onboarding';
 import {
   IndividualIndexServiceFormFields,
   IndividualOnboardingDraftInput,
   IndividualOnboardingPdfDocumentReferenceEntry,
   IndividualOnboardingPdfTemplateInput,
-} from 'gdc-common-utils-ts/models/individual-onboarding';
+} from 'sos-data-utils-ts/individual-onboarding';
 import { PDFCheckBox, PDFDropdown, PDFOptionList, PDFRadioGroup, PDFTextField, PDFDocument } from 'pdf-lib';
 
 const templateCache = new Map<string, Uint8Array>();

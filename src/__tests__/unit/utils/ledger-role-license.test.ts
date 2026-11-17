@@ -3,7 +3,7 @@
 import {
   EXAMPLE_ORGANIZATION_ROLE_LICENSE,
   EXAMPLE_ORGANIZATION_ROLE_LICENSE_IDENTITY,
-} from 'gdc-common-utils-ts/examples/organization-role-license';
+} from 'sos-data-utils-ts/organization-role-license-examples';
 import {
   buildIssuedRoleLicenseLedgerIdentity,
   buildIssuedRoleLicenseLedgerIdentityFromSeat,

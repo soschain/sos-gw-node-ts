@@ -16,11 +16,11 @@
 import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 
-import { HealthcareConsentActions } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareConsentActions } from 'sos-data-utils-ts/gateway-profile-values';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
-import { knownDomainsReversedEnum } from 'gdc-common-utils-ts/models/urlPath';
+import { KnownClaimNamespaces } from 'sos-data-utils-ts/gateway-transport-values';
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
-import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent, ConsentDecisions, ConsentStatuses } from "fhir-data-utils-ts/claims";
 import {
   EXAMPLE_CONSENT_DATE,
   EXAMPLE_EMAIL_PROFESSIONAL,
@@ -29,7 +29,7 @@ import {
   EXAMPLE_PROVIDER_ORGANIZATION_DID,
   EXAMPLE_SECONDARY_EU_COUNTRY,
   EXAMPLE_SUBJECT_DID,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 
 const ODRL_MEDIA_TYPE = 'application/odrl+json';
 const FHIR_JSON_MEDIA_TYPE = 'application/fhir+json';
@@ -77,8 +77,8 @@ describeIfConfigured('ConsentAccess smoke against deployed UNID test-network hos
     const pollMs = Number(process.env.TEST_NETWORK_POLL_MS || '1500');
     const subjectDid = process.env.TEST_NETWORK_SUBJECT_DID || EXAMPLE_SUBJECT_DID;
 
-    const communicationFormat = knownDomainsReversedEnum['org.hl7.fhir.r4'];
-    const consentClaimsContext = knownDomainsReversedEnum['org.hl7.fhir.api'];
+    const communicationFormat = KnownClaimNamespaces['org.hl7.fhir.r4'];
+    const consentClaimsContext = KnownClaimNamespaces['org.hl7.fhir.api'];
     const consentBundleSummaryNote =
       'Bundle of Consents containing: 0 personal consents, 1 professional consent, 1 organizational consent, 1 jurisdictional consent.';
 

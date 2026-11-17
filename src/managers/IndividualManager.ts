@@ -1,6 +1,6 @@
 // src/managers/IndividualManager.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
-import { SchemaOrgTypes } from 'gdc-common-utils-ts/constants/schemaorg';
+import { GatewayResourceTypes } from 'sos-data-utils-ts/gateway-profile-values';
 import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
 import { v4 as uuidv4} from 'uuid';
@@ -229,7 +229,7 @@ export class IndividualManager {
     person.meta.claims[SchemaOrgPersonClaim.Identifier] = publicUuidUrn;
 
     return {
-      type: SchemaOrgTypes.Customer,
+      type: GatewayResourceTypes.Customer,
       resource: {
         ...person,
         resourceType: ResourceTypesFhirR4.Person,

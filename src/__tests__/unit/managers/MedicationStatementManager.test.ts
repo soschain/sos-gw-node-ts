@@ -13,11 +13,12 @@ import {
   listEnabledDigitalTwinStudyTargets,
 } from '../../../utils/digital-twin-secondary-use';
 import { buildDemoResearchPermitByRoleConsent } from '../../data/demo-smart-access-local-network.data';
-import { CompositionClaim, ConfidentialDocumentIndex } from 'gdc-common-utils-ts';
+import { ConfidentialDocumentIndex } from 'sos-data-utils-ts/confidential-storage';
+import { CompositionClaim } from "fhir-data-utils-ts/claims";
 import {
   EXAMPLE_PROVIDER_ORGANIZATION_DID,
   EXAMPLE_SUBJECT_DID,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import type { IBlockchainAdapter } from '../../../adapters/IBlockchainAdapter';
 
 describe('MedicationStatementManager', () => {

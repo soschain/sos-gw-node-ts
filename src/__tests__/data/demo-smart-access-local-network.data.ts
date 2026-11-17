@@ -1,7 +1,7 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import { createRequire } from 'node:module';
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
 import { readFileSync } from 'node:fs';
-import path from 'node:path';
 
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
@@ -16,25 +16,18 @@ import {
   EXAMPLE_HEALTHCARE_ACTOR_ROLE_PHYSICIAN,
   EXAMPLE_RESEARCH_CONTROLLER_DID,
   EXAMPLE_TENANT_IDENTIFIER,
-} from 'gdc-common-utils-ts/examples/shared';
-import { EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_PURPOSE } from 'gdc-common-utils-ts/examples/inter-tenant-access-contract';
+} from 'sos-data-utils-ts/gateway-flow-examples';
+import { EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_PURPOSE } from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses, type ConsentRule } from 'fhir-data-utils-ts';
-import { ClaimInterTenantAccessContract } from 'gdc-common-utils-ts/models/inter-tenant-access-contract';
-import { MedicationStatementClaim } from 'gdc-common-utils-ts/models/interoperable-claims';
-import {
-  buildClientAssertionJwt,
-  buildInterTenantAccessContractCredential,
-  buildUnsignedProfessionalIdentityVpJwt,
-  createVP,
-  addVC,
-} from 'gdc-common-utils-ts';
+import { ClaimInterTenantAccessContract } from 'sos-data-utils-ts/inter-tenant-access-contract';
+import { MedicationStatementClaim } from "fhir-data-utils-ts/claims";
+import {buildClientAssertionJwt} from 'antifraud-sdk-node-ts/examples/client-assertion';
+import {buildInterTenantAccessContractCredential} from 'sos-data-utils-ts/inter-tenant-access-contract';
+import {buildUnsignedProfessionalIdentityVpJwt} from 'sos-data-utils-ts/professional-smart';
+import {createVP,addVC} from 'sos-data-utils-ts/vp-token';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
-import { buildExampleCommunicationIngestionPayload } from 'gdc-common-utils-ts/examples/shared';
-import {
-  BundleDocumentRequestMessageTypes,
-  buildCommunicationRequestOperationWithAttachedParametersClaims,
-} from 'gdc-common-utils-ts/utils/communication-bundle-document-request';
-import { transformCommunicationClaimsToResourceFhirR4 } from 'gdc-common-utils-ts/utils/communication-fhir-r4';
+import { buildExampleCommunicationIngestionPayload } from 'sos-data-utils-ts/gateway-flow-examples';
+import {buildIndividualSummaryRequestCommunication} from 'sos-sdk-core-ts/individual-summary-request';
 import { demoCommunicationMedicationIpsDefaults } from './demo-communication-medications-ips.data';
 
 /**
@@ -184,13 +177,7 @@ export async function buildDemoIndividualSmartTokenRequest(input: Readonly<{
 export function buildDemoIndividualAllSectionsIngestionRequest(input: Readonly<{
   subjectDid: string;
 }>): Record<string, unknown> {
-  const fixturePath = path.join(
-    process.cwd(),
-    'node_modules',
-    'gdc-common-utils-ts',
-    'fixtures',
-    'fhir-ips-bundle-all-sections.json',
-  );
+  const fixturePath = createRequire(import.meta.url).resolve('fhir-data-utils-ts/fixtures/fhir-ips-bundle-all-sections.json');
   const bundle = JSON.parse(readFileSync(fixturePath, 'utf8'));
   const subjectDid = String(input.subjectDid || '').trim();
   for (const entry of Array.isArray(bundle?.entry) ? bundle.entry : []) {
@@ -254,24 +241,11 @@ export function buildDemoIndividualScopedSummaryRequest(input: Readonly<{
   tenantId: string;
   subjectDid: string;
 }>): Record<string, unknown> {
-  const claims = buildCommunicationRequestOperationWithAttachedParametersClaims({
+  return buildIndividualSummaryRequestCommunication({
     subjectId: String(input.subjectDid || '').trim(),
     requesterId: buildIndividualProfessionalDid(input.tenantId),
     thid: DEMO_SMART_ACCESS_LOCAL_IDS.individualScopedSummaryThreadId,
   });
-  const resource = transformCommunicationClaimsToResourceFhirR4([claims], {
-    mode: 'strict',
-    defaultStatus: 'completed',
-  }).resources[0];
-  return {
-    thid: DEMO_SMART_ACCESS_LOCAL_IDS.individualScopedSummaryThreadId,
-    body: {
-      data: [{
-        type: BundleDocumentRequestMessageTypes.CommunicationRequestSearchWithReferenceUrl,
-        resource,
-      }],
-    },
-  };
 }
 
 /**

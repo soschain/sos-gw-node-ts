@@ -5,7 +5,7 @@ import { DiscoveryService } from '../../../services/DiscoveryService';
 import { NativeFhirFormats } from '../../../constants/fhir-discovery';
 import { SUBJECT_SECTION_DIGITAL_TWIN, SUBJECT_SECTION_INDIVIDUAL } from '../../../constants/domain';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
-import { Format } from 'gdc-common-utils-ts/models/urlPath';
+import { Format } from 'sos-data-utils-ts/bff-wire-contract';
 
 describe('DiscoveryService', () => {
   it('should publish public issuer urls and operational token endpoints independently', async () => {
@@ -67,7 +67,7 @@ describe('DiscoveryService', () => {
     const service = new DiscoveryService({} as any);
     await expect(service.getCapabilityStatement('animal-care_acme', {
       section: SUBJECT_SECTION_INDIVIDUAL,
-      format: Format.FhirApi,
+      format: Format.FHIR_API,
     })).resolves.toBeUndefined();
   });
 });

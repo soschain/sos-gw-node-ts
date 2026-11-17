@@ -21,7 +21,7 @@ import type { ActivationParticipantMaterialLike } from './controller-entity-conf
 import {
   extractServiceControllerOccupationCodes,
   extractServiceControllerRoleCodes,
-} from 'gdc-common-utils-ts/utils/activation-policy';
+} from 'sos-data-utils-ts/activation-policy';
 
 type PersistExistingTenantControllerBindingDeps = Readonly<{
   claims: ClaimsRecord;

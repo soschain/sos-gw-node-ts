@@ -1,4 +1,5 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import { createRequire } from 'node:module';
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 // Ingest clinical sections, read the current summary, delete one
 // exact authored resource through a batch, then prove operational and permitted
@@ -10,7 +11,6 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 import { invokeExpress } from './helpers/invokeExpress';
 import { createHash } from 'crypto';
 import { readFileSync } from 'fs';
-import path from 'path';
 import { getTenantVaultId, generateTenantCollectionNameFromClaims } from '../../utils/tenant';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { testPayloadCreateTenant1 } from '../data/end-to-end.data';
@@ -19,16 +19,16 @@ import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { startServer, resetServerConfig } from '../../server';
 import { getEnvSectionId } from '../../utils/section-env';
 import { getSubjectScopedSectionId } from '../../utils/individual-sections';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts/constants/index';
+import { ResourceTypesFhirR4 } from "fhir-data-utils-ts/constants";
 import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
-import { CompositionAttesterModes } from 'gdc-common-utils-ts';
+import { CompositionAttesterModes } from "fhir-data-utils-ts/claims";
 import { testTenant1TenantId } from '../data/organization.data';
 import {
   getDigitalTwinSubjectAliasSectionId,
   getOrCreateDigitalTwinSubjectId,
 } from '../../utils/digital-twin-research-projection';
-import { buildOrganizationDidWeb, buildProfessionalDidWeb } from 'gdc-common-utils-ts/utils/did';
+import { buildOrganizationDidWeb, buildProfessionalDidWeb } from 'sos-data-utils-ts/hosted-did';
 import {
   EXAMPLE_HOST_PUBLIC_HOSTNAME,
   EXAMPLE_ROUTE_VERSION,
@@ -38,15 +38,15 @@ import {
   EXAMPLE_KYC_CONTROLLER_UUID,
   EXAMPLE_SUBJECT_DID,
   EXAMPLE_TENANT_SERVICE_DID,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
 import { getClinicalCreatorBindingsSectionId } from '../../utils/ips-bundle';
-import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
-import { ExampleEmployeeEmails, ExampleEmployeeRoles } from 'gdc-common-utils-ts/examples/employee';
-import { ClaimConsent, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
-import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-claims/communication-claims';
+import { extractBundleSearchResources } from "sos-sdk-core-ts/gateway-response-reader";
+import { ExampleEmployeeEmails, ExampleEmployeeRoles } from 'sos-data-utils-ts/gateway-resource-flow-examples';
+import { ClaimConsent, ConsentStatuses } from "fhir-data-utils-ts/claims";
+import { CommunicationClaim } from "fhir-data-utils-ts/claims";
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
-import { EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_PROVIDER_ORGANIZATION_URN } from 'gdc-common-utils-ts/examples/inter-tenant-access-contract';
+import { EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_PROVIDER_ORGANIZATION_URN } from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import {
   DEMO_SMART_ACCESS_LOCAL_IDS,
   buildDemoResearchPermitByRoleConsent,
@@ -66,7 +66,7 @@ describe('Composition Bundle _search API (integration)', () => {
     // Official HL7 IPS fixture used to feed individual, mirror into digitaltwin,
     // and verify section-first `Composition/_search` behavior end to end:
     // https://build.fhir.org/ig/HL7/fhir-ips/en/Bundle-bundle-ips-all-sections.json.html
-    const fixturePath = path.join(process.cwd(), 'node_modules', 'gdc-common-utils-ts', 'fixtures', 'fhir-ips-bundle-all-sections.json');
+    const fixturePath = createRequire(import.meta.url).resolve('fhir-data-utils-ts/fixtures/fhir-ips-bundle-all-sections.json');
     const bundle = JSON.parse(readFileSync(fixturePath, 'utf8'));
     for (const entry of Array.isArray(bundle?.entry) ? bundle.entry : []) {
       const resource = entry?.resource;
@@ -1062,7 +1062,8 @@ describe('Composition Bundle _search API (integration)', () => {
         '30954-2': Array(6).fill('Observation'),
         '47519-4': ['Procedure'],
         '46264-8': ['DeviceUseStatement'],
-        '8716-3': Array(3).fill('Observation'),
+        // The three native observations include one panel with two reduced component records.
+        '8716-3': Array(5).fill('Observation'),
         '29762-2': Array(2).fill('Observation'),
         '104605-1': ['Flag'],
         '81338-6': ['Consent', 'DocumentReference'],
@@ -1093,6 +1094,42 @@ describe('Composition Bundle _search API (integration)', () => {
           .filter(Boolean)
           .sort();
         expect(types).toEqual([...(expectedSectionTypes[code] || [])].sort());
+      }
+
+      type GraphObservation = {
+        id: string; resourceType: string;
+        code?: { coding?: Array<{ system?: string; code?: string }> };
+        component?: Array<{ code: { coding: Array<{ system: string; code: string }> };
+          valueQuantity: { value: number; system: string; code: string } }>;
+        hasMember?: Array<{ reference: string }>;
+        valueQuantity?: { value?: number; system?: string; code?: string };
+      };
+      const sourcePanels = (ipsBundle.entry as Array<{ resource: GraphObservation }>)
+        .map(entry => entry.resource)
+        .filter(resource => resource.resourceType === ResourceTypesFhirR4.Observation && resource.component?.length);
+      expect(sourcePanels).toHaveLength(1);
+      const summaryEntries = completeSummary.entry as Array<{ fullUrl?: string; resource: GraphObservation }>;
+      const resourceByReference = new Map<string, GraphObservation>();
+      for (const { fullUrl, resource } of summaryEntries) {
+        for (const reference of [fullUrl, resource.id, `${resource.resourceType}/${resource.id}`]) {
+          if (reference) resourceByReference.set(reference, resource);
+        }
+      }
+      for (const sourcePanel of sourcePanels) {
+        const parent = resourceByReference.get(`${ResourceTypesFhirR4.Observation}/${sourcePanel.id}`);
+        expect(parent?.hasMember).toHaveLength(sourcePanel.component!.length);
+        const children = parent!.hasMember!.map(member => resourceByReference.get(member.reference));
+        for (const component of sourcePanel.component!) {
+          const coding = component.code.coding[0];
+          const child = children.find(resource => resource?.code?.coding?.some(candidate =>
+            candidate.system === coding.system && candidate.code === coding.code));
+          expect(child?.resourceType).toBe(ResourceTypesFhirR4.Observation);
+          expect(child?.valueQuantity).toMatchObject({
+            value: component.valueQuantity.value,
+            system: component.valueQuantity.system,
+            code: component.valueQuantity.code,
+          });
+        }
       }
 
       const scopedSectionCodes = [

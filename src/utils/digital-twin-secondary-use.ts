@@ -10,6 +10,9 @@ import { SUBJECT_SECTION_DIGITAL_TWIN, SUBJECT_SECTION_INDIVIDUAL } from '../con
 import { getClaimValue } from './claims';
 import {
   buildDigitalTwinSubjectAliasId,
+  buildDigitalTwinResearchRecordId,
+  isFinalizedDigitalTwinResearchGraphRecord,
+  rebindDigitalTwinObservationMembers,
   getOrCreateDigitalTwinSubjectId,
   isFinalizedDigitalTwinResearchRecord,
   isDigitalTwinResearchResourceType,
@@ -72,6 +75,7 @@ function cleanStoredClaims(record: Record<string, any>): Record<string, any> {
   const claims = { ...record };
   delete claims.id;
   delete claims.indexed;
+  delete claims.audit;
   delete claims.meta;
   delete claims.tag;
   return claims;
@@ -83,7 +87,8 @@ function projectedRecordId(resourceType: string, claims: Record<string, any>, so
     || getClaimValue(claims, `${resourceType}.identifier.value`)
     || '',
   ).trim();
-  const seed = String(sourceRecordId || '').trim() || identifier || JSON.stringify(claims, Object.keys(claims).sort());
+  if (sourceRecordId) return buildDigitalTwinResearchRecordId(resourceType, sourceRecordId);
+  const seed = identifier || JSON.stringify(claims, Object.keys(claims).sort());
   return createHash('sha256').update(`${resourceType}|${seed}`, 'utf8').digest('hex');
 }
 
@@ -128,13 +133,14 @@ async function rebuildProjection(
   for (const [resourceType, collectionId] of resourceCollections) {
     if (!isDigitalTwinResearchResourceType(resourceType)) continue;
     const sourceSectionId = getSubjectScopedSectionId(sourceSubject, SUBJECT_SECTION_INDIVIDUAL, collectionId);
-    const sourceRecords = await vaultRepository.listContainersInSection<RecordBase>(tenantVaultId, sourceSectionId);
+    const sourceRecords = await vaultRepository.listContainersInSection<RecordBase & Record<string, unknown>>(tenantVaultId, sourceSectionId);
     for (const sourceRecord of sourceRecords) {
       const sourceClaims = cleanStoredClaims(sourceRecord as Record<string, any>);
-      if (!isFinalizedDigitalTwinResearchRecord(resourceType, sourceClaims)) continue;
+      if (!isFinalizedDigitalTwinResearchGraphRecord(resourceType, sourceRecord, sourceRecords)) continue;
       if (!isProfessionallyAttestedResearchRecord(sourceClaims)) continue;
       const projection = await resolveAndProjectClaimsForDigitalTwin({
-        claims: sourceClaims,
+        claims: resourceType === ResourceTypesFhirR4.Observation
+          ? rebindDigitalTwinObservationMembers(sourceClaims, sourceRecords) : sourceClaims,
         resourceType,
         twinSubjectId,
         sector,

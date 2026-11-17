@@ -50,6 +50,16 @@ import { GroupManager } from '../managers/GroupManager';
 import { ConsentManager } from '../managers/ConsentManager';
 import { DiscoveryService } from '../services/DiscoveryService';
 import { ClearingHouseService } from '../services/ClearingHouseService';
+import { buildLocalClearingHouseVerifier } from './build-clearing-house-verifier';
+import { buildActivationClearingHouse } from './build-activation-clearing-house';
+import { resolveProfessionalHomeVault } from './resolve-professional-home-vault';
+import { IcaCredentialStatusClient } from '../services/IcaCredentialStatusClient';
+import { getTenantVaultIdFromIss } from '../utils/tenant';
+import { randomUUID } from 'node:crypto';
+import { isLocalDemoSecurityMode } from '../security/runtime-security-policy';
+import { ReplayProtectionStoreFirestore } from '../adapters/replay-protection-store-firestore';
+import { ReplayProtectionStoreMem, ReplayProtectionStoreNoop, ReplayProtectionStoreRedis, type IReplayProtectionStore } from '../adapters/replay-protection-store';
+
 import type { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { buildUnidManagers } from '../extensions/unid/build-unid-managers';
 import { composeHostDidWebId } from '../utils/did-backend';
@@ -63,6 +73,36 @@ import { buildBreakGlassAuthorizer } from '../security/break-glass';
 import { createNotificationManagerFromEnv } from '../services/notifications/factory';
 
 const isTestEnv = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined;
+/** Compose one process replay port; enrolled cloud networks require explicit durable custody. */
+function composeReplayProtectionStore(network: IServerConfig['networkMode'], provided?: IReplayProtectionStore): IReplayProtectionStore {
+  const durableNetwork = network === 'test-network' || network === 'network';
+  const provider = String(process.env.REPLAY_PROTECTION_PROVIDER || (durableNetwork ? '' : 'mem')).trim().toLowerCase();
+  const redisUrl = String(process.env.REDIS_URL || '').trim();
+  if (durableNetwork && !['redis', 'firestore'].includes(provider)) {
+    throw new Error('Network replay protection requires an explicit durable redis or firestore provider.');
+  }
+  if (provider === 'firestore') {
+    if (!(provided instanceof ReplayProtectionStoreFirestore)) {
+      throw new Error('Firestore replay requires the infrastructure-owned durable Firestore adapter.');
+    }
+    return provided;
+  }
+  if (provider === 'redis') {
+    if (!redisUrl) throw new Error('Redis replay protection requires an explicit REDIS_URL.');
+    const url = new URL(redisUrl);
+    if (!['redis:', 'rediss:'].includes(url.protocol)) throw new Error('Replay Redis URL must use redis or rediss.');
+    if (provided && durableNetwork && !(provided instanceof ReplayProtectionStoreRedis)) throw new Error('Network replay protection requires the configured durable Redis adapter.');
+    return provided || new ReplayProtectionStoreRedis({ redisUrl, keyPrefix: process.env.REPLAY_REDIS_KEY_PREFIX || 'replay:jti' });
+  }
+  if (provider === 'none') {
+    if (!isLocalDemoSecurityMode()) throw new Error('Disabled replay protection requires explicit local demo.');
+    return provided || new ReplayProtectionStoreNoop();
+  }
+  if (provider !== 'mem') throw new Error('Unknown replay protection provider.');
+  if (provided instanceof ReplayProtectionStoreNoop && !isLocalDemoSecurityMode()) throw new Error('Disabled replay protection requires explicit local demo.');
+  return provided || new ReplayProtectionStoreMem();
+}
+
 
 /**
  * Aggregate capability contract required by the runtime manager wiring.
@@ -99,6 +139,7 @@ export function buildManagers(options: {
   storageAdapter: IStorageAdapter;
   logger: ILogger;
   cryptographyService: CryptographyService;
+  replayProtectionStore?: IReplayProtectionStore;
 }) {
   const { config, vaultRepository, kmsService, tenantManager, storageAdapter, logger, cryptographyService } = options;
   const hostRuntime = {
@@ -106,7 +147,68 @@ export function buildManagers(options: {
     hostDid: composeHostDidWebId(config.apiBaseUrl, config.hostExternalDomain),
   };
 
-  const clearingHouseService = new ClearingHouseService();
+  const credentialLedgerMem = new CredentialLedgerAdapterMem();
+  const credentialLedgerFabric = new CredentialLedgerAdapterFabric();
+  const ledgerProviderMap = parseLedgerProviderMap(process.env.LEDGER_PROVIDER_MAP);
+  const ledgerDefaultProvider = process.env.LEDGER_PROVIDER_DEFAULT || 'mem';
+  const ledgerProviders: Record<string, ICredentialLedgerAdapter> = {
+    mem: credentialLedgerMem,
+    fabric: credentialLedgerFabric,
+    multi: new CredentialLedgerAdapterMulti([credentialLedgerMem, credentialLedgerFabric]),
+  };
+  const credentialLedgerAdapter = new CredentialLedgerResolver({
+    defaultProvider: ledgerDefaultProvider,
+    providerMap: ledgerProviderMap,
+    providers: ledgerProviders,
+  });
+
+  const verifierProvider = credentialLedgerAdapter.resolveProviderName(config.networkMode);
+  const verifierUsesFabric = config.networkMode !== 'test' && ['fabric', 'multi'].includes(verifierProvider);
+  const replayProtectionStore = composeReplayProtectionStore(config.networkMode, options.replayProtectionStore);
+  const localClearingHouseVerifier = buildLocalClearingHouseVerifier({
+    network: config.networkMode, ledgerKind: verifierUsesFabric ? 'fabric' : 'memory',
+    tenants: tenantManager, ledger: verifierUsesFabric ? credentialLedgerFabric : credentialLedgerMem,
+    vaultRepository, kmsService, cryptography: cryptographyService,
+    authorize: (request, identity) => openIdAuthManager.verifyCurrentConsentContext(request, identity),
+  });
+  const clearingHouseService = new ClearingHouseService({
+    cryptography: cryptographyService, localVerifier: localClearingHouseVerifier,
+    signClientAssertion: async ({ tenantDid, tenantVaultId, audience, requestHash }) => {
+      const vaultId = tenantVaultId || (tenantDid === hostRuntime.hostDid ? 'host'
+        : await tenantManager.findTenantVaultIdByDid?.(tenantDid) || getTenantVaultIdFromIss(tenantDid));
+      if ((await tenantManager.getDidDocument(vaultId))?.id !== tenantDid || !await tenantManager.isTenantOperational(vaultId)) {
+        throw new Error('Verifier requester does not match an active registered tenant.');
+      }
+      const key = await kmsService.getPublicVerificationKey(vaultId, undefined, 'comm_sig');
+      if (!key?.kid) throw new Error('Verifier client signing key is unavailable.');
+      const now = Math.floor(Date.now() / 1000);
+      return kmsService.createCompactJws({ iss: tenantDid, sub: tenantDid, aud: audience, iat: now, exp: now + 60,
+        jti: randomUUID(), request_hash: requestHash }, key.kid, vaultId, 'comm_sig', { typ: 'JWT' });
+    },
+  });
+  const activationIssuerTrust = (issuer: string) => {
+    const entries = JSON.parse(process.env.CREDENTIAL_TRUSTED_ISSUERS_JSON || '{}');
+    const entry = Object.prototype.hasOwnProperty.call(entries, issuer) ? entries[issuer] : undefined;
+    if (entry?.status !== 'active' || !Array.isArray(entry.jwks?.keys) || !entry.jwks.keys.length
+      || !(typeof entry.statusEndpointTemplate === 'string' && entry.statusEndpointTemplate.trim()
+        || Array.isArray(entry.statusEndpointTemplates) && entry.statusEndpointTemplates.length > 0
+          && entry.statusEndpointTemplates.length <= 16 && entry.statusEndpointTemplates.every((value: unknown) => typeof value === 'string' && value.trim()))
+      || typeof entry.statusRequestType !== 'string' || !entry.statusRequestType.trim()) {
+      throw new Error('Active ICA issuer keys, status endpoint and status request protocol must be configured.');
+    }
+    return entry;
+  };
+  const icaStatusClient = new IcaCredentialStatusClient({
+    resolveEndpoint: issuer => { const trust = activationIssuerTrust(issuer); return trust.statusEndpointTemplates ?? trust.statusEndpointTemplate; },
+    resolveRequestType: issuer => activationIssuerTrust(issuer).statusRequestType,
+  });
+  const activationClearingHouseService = buildActivationClearingHouse({
+    hostDid: hostRuntime.hostDid, cryptography: cryptographyService,
+    allowLegacyRepresentativeBootstrap: process.env.HOST_LEGACY_REPRESENTATIVE_CONTROLLER === 'true',
+    resolveIssuer: async issuer => activationIssuerTrust(issuer),
+    checkCredentialStatus: credential => icaStatusClient.check(credential),
+  });
+
   const hostingManager = new HostingManager(
     vaultRepository,
     kmsService,
@@ -115,7 +217,7 @@ export function buildManagers(options: {
     logger,
     config,
     hostRuntime,
-    clearingHouseService,
+    activationClearingHouseService,
     undefined,
     cryptographyService,
   );
@@ -133,20 +235,7 @@ export function buildManagers(options: {
   const blockchainAdapter: IBlockchainAdapter = blockchainAdapterFabric
     ? new BlockchainAdapterMulti({ discoveryAdapter: blockchainAdapterMem, writeAdapter: blockchainAdapterFabric })
     : blockchainAdapterMem;
-  const credentialLedgerMem = new CredentialLedgerAdapterMem();
-  const credentialLedgerFabric = new CredentialLedgerAdapterFabric();
-  const ledgerProviderMap = parseLedgerProviderMap(process.env.LEDGER_PROVIDER_MAP);
-  const ledgerDefaultProvider = process.env.LEDGER_PROVIDER_DEFAULT || 'mem';
-  const ledgerProviders: Record<string, ICredentialLedgerAdapter> = {
-    mem: credentialLedgerMem,
-    fabric: credentialLedgerFabric,
-    multi: new CredentialLedgerAdapterMulti([credentialLedgerMem, credentialLedgerFabric]),
-  };
-  const credentialLedgerAdapter: ICredentialLedgerAdapter = new CredentialLedgerResolver({
-    defaultProvider: ledgerDefaultProvider,
-    providerMap: ledgerProviderMap,
-    providers: ledgerProviders,
-  });
+
 
   const individualManager = new IndividualManager(
     vaultRepository,
@@ -207,6 +296,8 @@ export function buildManagers(options: {
     vaultRepository,
     clearingHouseService,
     buildBreakGlassAuthorizer(blockchainAdapter, vaultRepository),
+    { cryptography: cryptographyService, replayProtectionStore, apiBaseUrl: config.apiBaseUrl,
+      resolveClientRegistrationVault: (actorDid, requestedVaultId) => resolveProfessionalHomeVault(tenantManager, actorDid, requestedVaultId) },
   );
   const medicationStatementManager = new MedicationStatementManager(vaultRepository, tenantManager, blockchainAdapter);
   const appointmentManager = new SchedulingManager({ resourceType: 'Appointment', repository: vaultRepository, kms: kmsService, tenantManager });
@@ -296,5 +387,8 @@ export function buildManagers(options: {
     taskManager,
     discoveryService,
     clearingHouseService,
+    localClearingHouseVerifier,
+    activationClearingHouseService,
+    replayProtectionStore,
   };
 }

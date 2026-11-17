@@ -1,7 +1,7 @@
 import { createPrivateKey, createSign } from 'node:crypto'
-import { buildAuthorityDidWeb } from 'gdc-common-utils-ts/utils/authority-resolution'
-import { deriveDeterministicEcJwkPair } from 'gdc-common-utils-ts/utils/deterministic-jwk'
-import { buildOrganizationDidWeb } from 'gdc-common-utils-ts/utils/did'
+import { buildAuthorityDidWeb } from "antifraud-data-utils-ts/organization-identity";
+import { deriveDeterministicEcJwkPair } from 'antifraud-sdk-node-ts/examples/deterministic-signing-key'
+import { buildOrganizationDidWeb } from 'sos-data-utils-ts/hosted-did'
 
 let serializedInput = ''
 for await (const chunk of process.stdin) serializedInput += chunk

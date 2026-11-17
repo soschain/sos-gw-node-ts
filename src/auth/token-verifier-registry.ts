@@ -1,3 +1,4 @@
+import { isLocalDemoSecurityMode } from '../security/runtime-security-policy';
 // src/auth/token-verifier-registry.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
@@ -67,17 +68,16 @@ export function clearTokenVerifierAdapters(): void {
 
 export function resolveTokenVerifierFromEnv(isTestEnv: boolean): ITokenVerifier {
   const configured = String(process.env.AUTH_TOKEN_VERIFIER || '').trim().toLowerCase();
-  if (isTestEnv && !configured) {
-    return new DemoTokenVerifier();
-  }
-
   const key = configured || 'firebase';
   const adapter = adapterRegistry.get(key);
   if (adapter) {
     return adapter();
   }
 
-  if (key === 'demo') return new DemoTokenVerifier();
+  if (key === 'demo') {
+    if (!isLocalDemoSecurityMode()) throw new Error('Demo authentication is disabled outside explicit local demo.');
+    return new DemoTokenVerifier();
+  }
   if (key === 'firebase') return new FirebaseTokenVerifier();
   if (key === 'google') return new GoogleTokenVerifier(requireEnv('GOOGLE_CLIENT_ID'));
   if (key === 'apple') return new AppleTokenVerifier();

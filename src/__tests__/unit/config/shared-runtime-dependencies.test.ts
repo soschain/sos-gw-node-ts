@@ -9,17 +9,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 describe('shared runtime dependency contract', () => {
-  it('retains the reviewed shared dependency pins while replacement releases are pending', () => {
-    const packageJson = JSON.parse(
-      fs.readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8'),
-    ) as { dependencies?: Record<string, string>; devDependencies?: Record<string, string> };
-
-    expect(packageJson.dependencies?.['gdc-common-utils-ts']).toBe('2.9.30');
-    expect(packageJson.dependencies?.['antifraud-data-utils-ts']).toBe('0.2.0');
-    expect(packageJson.dependencies?.['fhir-data-utils-ts']).toBe('0.6.24');
-    expect(packageJson.dependencies?.['sos-data-utils-ts']).toBe('0.6.28');
-    expect(packageJson.dependencies?.['sos-sdk-core-ts']).toBe('0.5.5');
-    expect(packageJson.dependencies?.['vet-data-utils-ts']).toBe('0.8.7');
-    expect(packageJson.devDependencies?.['vet-sdk-core-ts']).toBe('0.7.1');
+  it('requires exact independent registry pins for the shared runtime and test clients', () => {
+    const packageJson = JSON.parse(fs.readFileSync(path.resolve(process.cwd(), 'package.json'), 'utf8')) as {
+      dependencies?: Record<string, string>; devDependencies?: Record<string, string>;
+    };
+    for (const name of ['antifraud-data-utils-ts', 'fhir-data-utils-ts', 'sos-data-utils-ts', 'sos-sdk-core-ts']) {
+      expect(packageJson.dependencies?.[name]).toMatch(/^\d+\.\d+\.\d+$/);
+    }
+    for (const name of ['antifraud-sdk-node-ts', 'sos-sdk-node-ts']) {
+      expect(packageJson.devDependencies?.[name]).toMatch(/^\d+\.\d+\.\d+$/);
+    }
+    for (const section of [packageJson.dependencies, packageJson.devDependencies]) {
+      expect(Object.keys(section || {}).some(name => name.startsWith('gdc-'))).toBe(false);
+      for (const name of ['vet-data-utils-ts', 'vet-sdk-core-ts', 'uhc-sdk-core-ts']) expect(section?.[name]).toBeUndefined();
+    }
   });
 });

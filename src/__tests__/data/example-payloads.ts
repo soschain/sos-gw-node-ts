@@ -7,17 +7,19 @@ import { testClaimsOfferEntityExpanded, testClaimsOfferFamilyExpanded } from './
 import { testClaimsRegisterTenantExpanded } from './organization.data';
 import { testFamilyRegisterExpanded } from './family.data';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
-import { HealthcareConsentActions } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareConsentActions } from 'sos-data-utils-ts/gateway-profile-values';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   EXAMPLE_EMPLOYEE_DOCTOR_ACTIVE,
+  EXAMPLE_GW_ORGANIZATION_ACTIVATE_PAYLOAD,
+  EXAMPLE_ORGANIZATION_EMPLOYEE_INPUT,
   buildExampleEmployeeClaims,
-} from 'gdc-common-utils-ts/examples/employee';
+} from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import {
   EXAMPLE_RELATED_PERSON_DISABLE_BUNDLE_PAYLOAD,
   EXAMPLE_RELATED_PERSON_PURGE_BUNDLE_PAYLOAD,
-} from 'gdc-common-utils-ts/examples/related-person';
+} from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import {
   EXAMPLE_INDIVIDUAL_ORGANIZATION_DISABLE_PAYLOAD,
   EXAMPLE_INDIVIDUAL_ORGANIZATION_PURGE_PAYLOAD,
@@ -27,22 +29,14 @@ import {
   EXAMPLE_TENANT_ENABLE_MESSAGE,
   EXAMPLE_TENANT_ENABLE_REQUEST_TYPE,
   EXAMPLE_TENANT_PURGE_REQUEST_TYPE,
-} from 'gdc-common-utils-ts/examples/lifecycle';
-import {
-  EmployeeBatchEntryTypes,
-  EmployeeBundleMethods,
-  EmployeeResourceTypes,
-} from 'gdc-common-utils-ts/utils/employee';
+} from 'sos-data-utils-ts/gateway-resource-flow-examples';
+import { EmployeeBatchEntryTypes, EmployeeBundleMethods, EmployeeResourceTypes } from 'sos-data-utils-ts/employee-batch-contract';
 import { Format } from 'sos-data-utils-ts/bff-wire-contract';
 import { DeviceAppTypes, DeviceUserClasses } from 'sos-data-utils-ts/device-license-contract';
-import { buildLicensePurchaseEntry } from 'gdc-common-utils-ts/utils/license';
-import {
-  EXAMPLE_API_ORGANIZATION_DID,
-  EXAMPLE_LICENSE_PURCHASE_INPUT,
-  EXAMPLE_SERVICE_PUBLIC_DID,
-  EXAMPLE_THREAD_IDENTIFIER_LICENSE_SEARCH,
-  LicenseListSearchEditor,
-} from 'gdc-common-utils-ts';
+import { buildLicensePurchaseEntry } from 'sos-data-utils-ts/license-commercial-contract';
+import { EXAMPLE_LICENSE_PURCHASE_INPUT, EXAMPLE_SERVICE_PUBLIC_DID, EXAMPLE_THREAD_IDENTIFIER_LICENSE_SEARCH } from 'sos-data-utils-ts/gateway-resource-flow-examples';
+import { EXAMPLE_API_ORGANIZATION_DID } from 'sos-data-utils-ts/gateway-flow-examples';
+import { LicenseListSearchEditor } from 'sos-sdk-core-ts/license-list-search';
 
 
 /**
@@ -429,32 +423,7 @@ export const ORGANIZATION_ACTIVATION_REQUEST = {
   "type": "application/api+json",
   "body": {
     "vp_token": "<ica-proof-token>",
-    "controller": {
-      "did": "did:web:people.acme.org:controllers:primary",
-      "sameAs": "urn:multibase:zControllerHash",
-      "publicKeyJwk": {
-        "kid": "controller-es384-001",
-        "kty": "EC",
-        "crv": "P-384",
-        "x": "<x>",
-        "y": "<y>",
-        "alg": "ES384",
-        "use": "sig"
-      },
-      "jwks": {
-        "keys": [
-          {
-            "kid": "controller-didcomm-enc-001",
-            "kty": "EC",
-            "crv": "P-384",
-            "x": "<enc-x>",
-            "y": "<enc-y>",
-            "use": "enc",
-            "purposes": ["didcomm-enc"]
-          }
-        ]
-      }
-    },
+    "controller": structuredClone(EXAMPLE_GW_ORGANIZATION_ACTIVATE_PAYLOAD.controller),
     "organizationCredential": "<deprecated-legacy-compat>",
     "representativeCredential": "<deprecated-legacy-compat>",
     "data": [{
@@ -878,11 +847,7 @@ export const EMPLOYEE_REGISTRATION_REQUEST = {
       "resource": {
         "resourceType": "Employee",
         "meta": {
-          "claims": {
-            "org.schema.Person.identifier": "urn:uuid:11b2c3d4-e5f6-7890-1234-567890abcdef",
-            "org.schema.Person.hasOccupation.identifier.value": "ISCO-08|4226",
-            "org.schema.Person.email": "receptionist1@acme.org"
-          }
+          "claims": structuredClone(EXAMPLE_ORGANIZATION_EMPLOYEE_INPUT.employeeClaims)
         }
       }
     }]

@@ -13,8 +13,8 @@ import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { DidService } from '../../../gdc-backend-utils-node/models/did';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { buildOrganizationDidWeb } from 'gdc-common-utils-ts/utils/did';
-import { EXAMPLE_HOST_PUBLIC_DID } from 'gdc-common-utils-ts/examples/shared';
+import { buildOrganizationDidWeb } from 'sos-data-utils-ts/hosted-did';
+import { EXAMPLE_HOST_PUBLIC_DID } from 'sos-data-utils-ts/gateway-flow-examples';
 import { testConfigDataHost, testConfigTenant1 } from '../../data/organization.data';
 import { testClaimsHostInitialization, testClaimsTenant1Registration } from '../../data/end-to-end.data';
 import { EntityLifecycleStatus, EntityType } from '../../../gdc-backend-utils-node/models/enums';
@@ -82,6 +82,20 @@ describe('TenantsCacheManager', () => {
     } as any;
 
     tenantsCacheManager = new TenantsCacheManager(mockVaultRepository, () => mockKmsService, hostCollectionName);
+  });
+
+  describe('exact tenant DID ownership', () => {
+    it('resolves only an exact current tenant registration', async () => {
+      mockVaultRepository.getContainersInSection.mockResolvedValue([{ id: acmeVaultId, content: acmeConfig }] as any);
+      mockKmsService.unprotectConfidentialData.mockImplementation(async (record: any) => record.content);
+      await expect((tenantsCacheManager as any).findTenantVaultIdByDid(healthTenantDid)).resolves.toBe(acmeVaultId);
+      await expect((tenantsCacheManager as any).findTenantVaultIdByDid(`${healthTenantDid}:employee:unknown`)).resolves.toBeUndefined();
+    });
+    it('rejects ambiguous ownership across registered tenants', async () => {
+      mockVaultRepository.getContainersInSection.mockResolvedValue([{ id: acmeVaultId, content: acmeConfig }, { id: `${acmeVaultId}-other`, content: acmeConfig }] as any);
+      mockKmsService.unprotectConfidentialData.mockImplementation(async (record: any) => record.content);
+      await expect((tenantsCacheManager as any).findTenantVaultIdByDid(healthTenantDid)).rejects.toThrow(/ambiguous/i);
+    });
   });
 
   describe('hosted tenant DID lookup', () => {

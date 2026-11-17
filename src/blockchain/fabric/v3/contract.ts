@@ -1,4 +1,4 @@
-import { Contract, Network } from '@hyperledger/fabric-gateway';
+import type { Contract, Network } from '@hyperledger/fabric-gateway';
 import { getNetworkByMspId } from './network';
 
 const contractNameSuffix = '-sc'; // i.e. 'employee-sc'

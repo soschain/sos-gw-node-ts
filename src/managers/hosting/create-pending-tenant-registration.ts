@@ -14,7 +14,7 @@ import { getEnvSectionId } from '../../utils/section-env';
 import { getTenantVaultId, isValidTenantAlternateName, resolveOrganizationRouteJurisdiction } from '../../utils/tenant';
 import { createOrganizationUrn } from '../../utils/urn';
 import type { PublicJwk } from 'antifraud-data-utils-ts/cryptography';
-import type { PostalActivationCodeBinding } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
+import type { PostalActivationCodeBinding } from 'sos-data-utils-ts/postal-activation-binding';
 import { isDeepStrictEqual } from 'node:util';
 import {
   HOST_TRANSACTION_REQUIRED_INPUT_CLAIMS,

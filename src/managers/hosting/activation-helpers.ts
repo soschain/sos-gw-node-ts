@@ -8,7 +8,7 @@ import {
   ORGANIZATION_ACTIVATION_VC_TYPES,
   REPRESENTATIVE_ACTIVATION_VC_TYPES,
   SERVICE_CONTROLLER_ACTIVATION_VC_TYPES,
-} from 'gdc-common-utils-ts/constants/verifiable-credentials';
+} from 'sos-data-utils-ts/identity-credential-contracts';
 
 export type ActivationParticipantMaterial = {
   did?: string;

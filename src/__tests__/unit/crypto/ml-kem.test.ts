@@ -1,10 +1,11 @@
+// Flow contract: real ML-KEM key agreement preserves exact shared secrets and rejects a foreign secret key.
 
-import * as mlKem from '@noble/post-quantum/ml-kem';
+import * as mlKem from '@noble/post-quantum/ml-kem.js';
 import { testMockRandom64Bytes } from '../../data/crypto.data';
 
 // Tell Jest to bypass the global mock in jest.config.ts for this test file.
 // We want to test the REAL library primitives here.
-jest.unmock('@noble/post-quantum/ml-kem');
+jest.unmock('@noble/post-quantum/ml-kem.js');
 
 describe('ML-KEM (Kyber-768) Primitives', () => {
   it('should correctly encapsulate and decapsulate a shared secret', async () => {

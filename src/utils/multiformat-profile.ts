@@ -2,16 +2,7 @@ import { sha3_256, sha3_384 } from '@noble/hashes/sha3.js';
 import { utf8ToBytes } from '@noble/hashes/utils.js';
 import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
 
-/**
- * Local copy of the multiformat profile used by GW CORE at runtime.
- *
- * Why it exists here as well:
- * - `gwtemplate-node-ts` currently depends on a published `gdc-common-utils-ts`
- *   package version
- * - the local workspace changes are not yet available through that package
- * - keeping the same names and contract here avoids changing business logic
- *   again when the shared package is republished
- */
+/** Gateway multihash profiles preserve the existing algorithm and wire bytes. */
 
 export type MultihashProfile = Readonly<{
   algorithm: 'sha3-256' | 'sha3-384';

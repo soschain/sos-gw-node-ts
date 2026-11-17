@@ -1,3 +1,6 @@
+import {isLocalDemoSecurityMode} from '../security/runtime-security-policy';
+import type { GaiaXComplianceManager } from '../managers/GaiaXComplianceManager';
+import type { TenantPresentationVerificationManager } from '../managers/TenantPresentationVerificationManager';
 // src/routes/api.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 import { GatewayInternalResourceTypes } from 'sos-data-utils-ts/gateway-response-contract';
@@ -25,7 +28,7 @@ import { composeHostDidWebId } from '../utils/did-backend';
 import { buildGaiaXLegalParticipantOptionsFromClaims, createGaiaXLegalParticipantCredential } from '../utils/credential-generators';
 import { AppAuthorizationManager } from '../managers/AppAuthorizationManager';
 import { getEnvSectionId } from '../utils/section-env';
-import { IReplayProtectionStore, ReplayProtectionStoreNoop } from '../adapters/replay-protection-store';
+import { IReplayProtectionStore, createLocalRouteReplayProtectionStore } from '../adapters/replay-protection-store';
 import { sendDidcommEarlyError } from '../utils/didcomm-error-response';
 import { ACTION_DISABLE, ACTION_ENABLE, ACTION_PURGE, ACTION_STATUS } from '../constants/domain';
 import { getTenantAuthorizationStatus as readTenantAuthorizationStatusFromConfig } from '../utils/tenant-lifecycle';
@@ -45,7 +48,8 @@ import {
   REGISTERED_PROFILE_ACCOUNT_DIRECTORY_META,
   requiresVerifiedBearerActorBindingForSecureRoute,
 } from '../utils/secure-route-bearer-binding';
-import { decodeJwt } from 'jose';
+import { decodeJwt, flattenedVerify, importJWK, type JWK as JoseJwk } from 'jose';
+import {verifyPinnedDetachedJws} from 'antifraud-data-utils-ts/clearing-house';
 import { randomUUID } from 'node:crypto';
 import { enqueueAsyncJob } from '../services/async-job-submission';
 import type { FederatedSmartVerificationManager } from '../managers/FederatedSmartVerificationManager';
@@ -208,12 +212,24 @@ async function verifyDecodedDidcommSignature(
   delete signedPayload.meta;
   const protectedHeader = Content.objectToRawBase64UrlSafe(jws.protected);
   const detachedJws = `${protectedHeader}..${jws.signature}`;
-  const isValid = await cryptographyService.verifyDetachedJws(
-    Content.objectToBytes(signedPayload),
-    detachedJws,
-    signingKey,
-  );
-  if (!isValid) throw new Error('Invalid signature.');
+  const algorithm=String(jws.protected.alg||'');
+  if(!['ES384','ES256K','ML-DSA-44','ML-DSA-65','ML-DSA-87'].includes(algorithm)){
+    throw new Error('Unsupported operational signature algorithm.');
+  }
+  const payloadBytes=Content.objectToBytes(signedPayload);
+  if(algorithm==='ES256K'){
+    // Existing secp256k1 controller keys retain their pinned JOSE verifier.
+    const key=signingKey as JoseJwk;
+    if(key.kty!=='EC'||key.crv!=='secp256k1'||(key.alg&&key.alg!==algorithm)
+      ||(key.use&&key.use!=='sig')||(key.key_ops&&!key.key_ops.includes('verify'))
+      ||['d','k','priv','dBytes','p','q','dp','dq','qi','oth'].some(member=>Object.prototype.hasOwnProperty.call(key,member))
+      ||(jws.protected.kid!==undefined&&(typeof jws.protected.kid!=='string'||!jws.protected.kid.trim()||(key.kid!==undefined&&jws.protected.kid!==key.kid)))){
+      throw new Error('Operational signature requires the registered public signing key.');
+    }
+    await flattenedVerify({protected:protectedHeader,payload:jws.protected.b64===false?payloadBytes:Content.bytesToRawBase64UrlSafe(payloadBytes),signature:jws.signature},await importJWK(key,algorithm),{algorithms:[algorithm]});
+    return;
+  }
+  await verifyPinnedDetachedJws(payloadBytes,detachedJws,signingKey,cryptographyService);
 }
 
 /**
@@ -615,10 +631,12 @@ export function createApiRouter(
   cryptographyService: ICryptography,
   apiBaseUrl: string,
   appAuthManager?: AppAuthorizationManager,
-  replayProtectionStore: IReplayProtectionStore = new ReplayProtectionStoreNoop(),
+  replayProtectionStore: IReplayProtectionStore = createLocalRouteReplayProtectionStore(),
   directJobProcessor?: Readonly<{ process(jobName: string, job: JobRequest): Promise<string> }>,
   federatedSmartVerificationManager?: FederatedSmartVerificationManager,
   demoWorkspaceEnabled = false,
+  gaiaXComplianceManager?: GaiaXComplianceManager,
+  tenantPresentationVerificationManager?: TenantPresentationVerificationManager,
 ): express.Router {
   const router = express.Router();
   const demoDirectory = new DemoWorkspaceCardDirectory(vaultRepository);
@@ -764,6 +782,60 @@ export function createApiRouter(
     }
     return 900;
   };
+
+  /**
+   * @openapi
+   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/gaia-x/standard-compliance:
+   *   post:
+   *     summary: Submit a tenant-signed VP to the tenant-configured GXDCH and verify the original signed result
+   *     description: Gateway extension using registered private_key_jwt client authentication. The upstream request uses application/vp+jwt; its result uses application/vc+jwt. The request never selects the GXDCH endpoint, issuer, keys or rules version.
+   *     responses:
+   *       '201': { description: Verified original GXDCH VC-JWT }
+   *       '400': { description: Invalid presentation or compliance result }
+   *       '415': { description: Unsupported request media type }
+   *       '503': { description: Tenant GXDCH integration is not configured }
+   */
+  router.post('/:tenantId/cds-:jurisdiction/v1/:sector/identity/gaia-x/standard-compliance', async (req, res) => {
+    if (!gaiaXComplianceManager) return res.status(503).json({ error: 'temporarily_unavailable' });
+    if (normalizeContentType(req.headers['content-type']) !== 'application/x-www-form-urlencoded') return res.status(415).json({ error: 'invalid_request' });
+    try {
+      const result = await gaiaXComplianceManager.verify({ tenantId: String(req.params.tenantId), jurisdiction: String(req.params.jurisdiction), sector: String(req.params.sector),
+        vpToken: String(req.body?.vp_token || ''), clientAssertion: String(req.body?.client_assertion || ''), clientAssertionType: String(req.body?.client_assertion_type || ''),
+        requestUrl: new URL(req.originalUrl, apiBaseUrl).href });
+      return res.status(201).type('application/vc+jwt').send(result.credentialJwt);
+    } catch {
+      return res.status(400).json({ error: 'invalid_request', error_description: 'GXDCH presentation or signed compliance evidence was rejected.' });
+    }
+  });
+
+  /**
+   * @openapi
+   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/presentation/_verify:
+   *   post:
+   *     tags: [2.2 SMART Token]
+   *     summary: Verify a presentation for an explicitly trusted tenant backend
+   *     description: Gateway extension. Requires a short-lived backend JWT with exact audience, replay protection and a canonical SHA-256 request hash. Returns a signed current-state result. Requesters and keys are selected by server configuration.
+   *     responses:
+   *       '200': { description: Tenant-signed verification JWT }
+   *       '401': { description: Missing backend assertion }
+   *       '403': { description: Untrusted request or invalid current evidence }
+   *       '415': { description: Expected application/json }
+   *       '503': { description: Verifier unavailable }
+   */
+  router.post('/:tenantId/cds-:jurisdiction/v1/:sector/identity/openid/presentation/_verify', async (req, res) => {
+    if (!tenantPresentationVerificationManager) return res.status(503).json({ error: 'temporarily_unavailable' });
+    if (normalizeContentType(req.headers['content-type']) !== 'application/json') return res.status(415).json({ error: 'invalid_request' });
+    const authorization = String(req.headers.authorization || '');
+    if (!/^Bearer \S+$/i.test(authorization)) return res.status(401).json({ error: 'invalid_client' });
+    try {
+      const compact = await tenantPresentationVerificationManager.verify({ tenantId: String(req.params.tenantId), sector: String(req.params.sector),
+        requestUrl: new URL(req.originalUrl, apiBaseUrl).href, assertion: authorization.slice(7), body: req.body });
+      res.set('Cache-Control', 'no-store');
+      return res.status(200).type('application/jwt').send(compact);
+    } catch {
+      return res.status(403).json({ error: 'access_denied' });
+    }
+  });
 
   const cdsRoutePrefix = '/:tenantId/cds-:jurisdiction/v1/:sector/:section/:format/:resourceType';
 
@@ -2506,7 +2578,7 @@ export function createApiRouter(
    *       activation entries or PATCH revocations containing only
    *       `resourceType`, `id` and `meta.claims`. A revocation PATCH carries
    *       only `Consent.status=inactive`; the stored claims remain canonical.
-   *       Claims may be scalar strings emitted by `vet-sdk-core-ts` or string
+   *       Claims may be scalar strings emitted by a compatible SDK or string
    *       arrays; the GW canonicalizes both to arrays. The current tenant DID
    *       controller must make an explicit
    *       `active`/`permit` decision after the referenced PractitionerRole has
@@ -3640,7 +3712,7 @@ export function createApiRouter(
   *       - direct and transitive DocumentReferences remain in their authorized section
   *
   *       See also:
-  *       - `gdc-common-utils-ts/docs/101-COMMUNICATION_LAYERING.md`
+  *       - `docs/API_INTEGRATORS_GUIDE.md`
   *       - `gdc-sdk-core-ts/docs/101-IPS_COMMUNICATION_OUTBOX.md`
   *     parameters:
   *       - $ref: '#/components/parameters/AppId'
@@ -4787,6 +4859,9 @@ export function createApiRouter(
         // The KMS decrypts the JWE using the HOST's key and returns the inner JWS, but does not verify it.
         const decodedJob = await kmsService.decodeRequest(req.body.request);
         const decodedJws = decodedJob.content?.meta?.jws;
+        if (!isLocalDemoSecurityMode() && (!decodedJws?.protected || !decodedJws.signature)) {
+          throw new Error('Encrypted operational request requires a signed inner JWS.');
+        }
         const embeddedSigningKey = decodedJws?.protected?.jwk as PublicJwk | undefined;
         const isLegacyHostOrganizationBootstrap = tenantId === 'host'
           && section === 'registry'
@@ -5270,11 +5345,14 @@ export function createApiRouter(
       );
     }
 
-    // --- 4. Replay Protection (best-effort) ---
-    // We only enforce when both `iss` and `jti` are present. This preserves compatibility
-    // with older/plaintext payloads that may omit `jti` in development flows.
+    // Secure operational envelopes require their signed issuer and message
+    // identifier. Plain bearer/bootstrap requests and polling retain their
+    // own transport contracts; only explicit local Demo may omit this nonce.
     const iss = String(jobRequest.content?.iss || '').trim();
     const jti = String(jobRequest.content?.jti || '').trim();
+    if (parsedContentType === 'secure-form' && !isLocalDemoSecurityMode() && (!iss || !jti)) {
+      return sendDidcommEarlyError(req,res,400,IssueType.Required,'Signed operational request requires iss and jti for replay protection.');
+    }
     if (iss && jti) {
       const replayKey = `${vaultId}:${iss}:${jti}`;
       const reserved = await replayProtectionStore.reserveIfNotExists(

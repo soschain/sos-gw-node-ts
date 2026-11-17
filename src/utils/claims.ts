@@ -2,7 +2,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { v4 as uuidv4, validate as uuidValidate} from 'uuid';
-import { knownDomainsReversed } from "gdc-common-utils-ts/models/urlPath";
+import { knownDomainsReversed } from "sos-data-utils-ts/gateway-transport-values";
 import { findCanonicalClaimCase } from '../gdc-backend-utils-node/models/schema-definitions';
 
 /**

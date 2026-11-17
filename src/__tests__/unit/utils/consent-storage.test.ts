@@ -1,5 +1,5 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
-import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent } from "fhir-data-utils-ts/claims";
 import { getHealthcareRoleByClaim, HealthcareActorRoles, ISCO08_CODING_SYSTEM } from 'sos-data-utils-ts/healthcare-roles';
 import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import {
@@ -7,7 +7,7 @@ import {
   ANIMAL_INSURANCE_CONSENT_TEST_INPUT,
   AnimalInsuranceConsentErrors,
   buildAnimalInsuranceEligibilityConsent,
-} from 'vet-data-utils-ts/insurance-consent';
+} from 'sos-data-utils-ts/animal-insurance-consent';
 import { persistConsentRuleAndAttachment } from '../../../utils/consent-storage';
 import { getIndividualSectionId, getSubjectScopedSectionId } from '../../../utils/individual-sections';
 

@@ -11,7 +11,7 @@ import { LicenseManager } from '../../managers/LicenseManager';
 import { DeviceLicense, DeviceRestrictions } from 'sos-data-utils-ts/device-license-contract';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { getEnvSectionId } from '../../utils/section-env';
-import { EXAMPLE_SECTOR } from 'gdc-common-utils-ts/examples/shared';
+import { EXAMPLE_SECTOR } from 'sos-data-utils-ts/gateway-flow-examples';
 
 // --- Mocks ---
 

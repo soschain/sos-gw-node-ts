@@ -3,11 +3,11 @@ import {
   SmartPostDcrActions,
 } from 'sos-data-utils-ts/identity-auth-wire-contract';
 import { GatewayRouteFormats, GatewayRouteSections } from 'sos-data-utils-ts/gateway-response-contract';
-import { SecureIdTypesIndividual } from 'gdc-common-utils-ts/constants/identity-identifiers';
+import { SecureIdTypesIndividual } from 'sos-data-utils-ts/identity-identifiers';
 import {
   buildSecureIdValueMember,
   parseIndividualMemberDidWeb,
-} from 'gdc-common-utils-ts/utils/did';
+} from 'sos-data-utils-ts/hosted-did';
 import { normalizeIndexedEmail, normalizeIndexedPhone } from './indexed-contact';
 
 type SecureRouteIdentity = Readonly<{

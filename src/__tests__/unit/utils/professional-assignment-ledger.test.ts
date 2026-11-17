@@ -3,12 +3,12 @@
 import { describe, expect, it } from '@jest/globals';
 import { buildOrganizationAuthorizationUrnCds } from 'sos-data-utils-ts/organization-authorization-urn';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
-import { CompositionClaim } from 'gdc-common-utils-ts/models/interoperable-claims/composition-claims';
+import { CompositionClaim } from "fhir-data-utils-ts/claims";
 import {
   EXAMPLE_JURISDICTION,
   EXAMPLE_KYC_CONTROLLER_UUID,
   EXAMPLE_KYC_CONTROLLER_USER_UUID,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import { buildClinicalLedgerReferenceId, buildFhirLedgerProvenance } from '../../../utils/fhir-versioning';
 import { buildProfessionalAssignmentLedgerPayload } from '../../../utils/professional-assignment-ledger';
 import { ManageAssetProfessionalAssignment } from '../../../blockchain/fabric/v3/manageAssetProfessionalAssignment';

@@ -22,7 +22,7 @@ import { testConsentRulePermitOrgDid } from '../src/__tests__/data/consent-rules
 import { getTenantVaultId } from '../src/utils/tenant';
 import { getIndividualSectionId } from '../src/utils/individual-sections';
 import { getEnvSectionId } from '../src/utils/section-env';
-import { ClaimsOfferSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
+import { SchemaOrgOfferClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { resolveHostRegistrySector } from '../src/utils/services';
 
 type StepResult = {
@@ -81,7 +81,7 @@ function extractOfferId(bundleBody: any): string | undefined {
   for (const e of entries) {
     const claims = e?.meta?.claims;
     if (!claims || typeof claims !== 'object') continue;
-    const direct = claims[ClaimsOfferSchemaorg.identifier];
+    const direct = claims[SchemaOrgOfferClaim.Identifier];
     if (typeof direct === 'string' && direct) return direct;
     for (const [k, v] of Object.entries(claims)) {
       if (typeof v === 'string' && k.endsWith('Offer.identifier')) return v;

@@ -3,7 +3,7 @@ import { describe, expect, it, jest } from '@jest/globals';
 import {
   buildSubjectIdentityBundleEntry,
   readSubjectIdentityBundleEntry,
-} from 'gdc-common-utils-ts/utils/subject-identity';
+} from 'sos-data-utils-ts/subject-identity';
 import { registerSubjectIdentityBundleOnLedger } from '../../../utils/ledger-subject-identifier-registration';
 
 /**

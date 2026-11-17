@@ -1,9 +1,9 @@
 // Flow contract: reuse canonical fixtures, persist claims-first Group data and return the actual provider/caller/thread binding with versioned acknowledgements; membership alone confers no clinical authority.
 import { describe, expect, it, jest } from '@jest/globals';
 import {
-  buildVeterinaryResearchStudyGroupCreateEntry,
-  buildVeterinaryResearchStudyReviewTeamGroupSearch,
-} from 'vet-sdk-core-ts/research-study';
+  buildResearchStudyGroupCreateEntry,
+  buildResearchStudyReviewTeamGroupSearch,
+} from 'sos-sdk-core-ts/research-study';
 import { projectGroupPractitionerRoleMemberFlatClaimResources, projectGroupR5FlatClaimsResource } from 'fhir-data-utils-ts';
 import {
   GroupManager,
@@ -49,7 +49,7 @@ const animalCampaignMemberResource = {
 describe('GroupManager FHIR R5 claims-first professional and subject-group workflow contract', () => {
   it('persists the SDK-derived ResearchStudy association as canonical Group.identifier claims', async () => {
     const studyId = '8b168f80-98d4-4d85-b441-3f11cac124f7';
-    const entry = buildVeterinaryResearchStudyGroupCreateEntry({
+    const entry = buildResearchStudyGroupCreateEntry({
       researchStudyId: studyId,
       group: { ...researchGroupFixture, member: [] },
     });
@@ -65,7 +65,7 @@ describe('GroupManager FHIR R5 claims-first professional and subject-group workf
 
     expect((created.body as any).data[0].response.status).toBe('201');
     expect(harness.recordsIn('research-groups')[0].content.claims['Group.identifier'])
-      .toEqual([buildVeterinaryResearchStudyReviewTeamGroupSearch(studyId).identifier]);
+      .toEqual([buildResearchStudyReviewTeamGroupSearch(studyId).identifier]);
   });
 
   it('persists only base flat claims and HMAC-indexes attributes before encryption', async () => {

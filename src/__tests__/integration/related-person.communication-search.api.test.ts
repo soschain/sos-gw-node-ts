@@ -11,7 +11,7 @@ import { initializeTenantServicesConfig } from '../../utils/services';
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { getEnvSectionId } from '../../utils/section-env';
 import { configureAuthenticatedTestActor } from './helpers/authenticated-test-actor';
-import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
+import { extractBundleSearchResources } from "sos-sdk-core-ts/gateway-response-reader";
 
 /**
  * Related-entity API flow:

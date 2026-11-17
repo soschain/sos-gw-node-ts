@@ -1,4 +1,5 @@
-// Flow contract: route-only network enrollment fixtures never pretend to contain an unverifiable nested signature.
+// Flow contract: route admission uses explicit registered public wallet fixtures and real inner signatures; mocked JWE decoding/bearer validation do not constitute full cryptographic E2E. Existing route, role, payload and persistence assertions remain in force.
+import {registeredRouteFixture} from './helpers/registered-route-fixture';
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import express from 'express';
@@ -35,6 +36,7 @@ const setupApp = (asyncResponseStore: IAsyncResponseStore) => {
   const vaultRepository = new VaultMemRepository();
   const cryptographyService = new CryptographyService(new AdapterCryptoSdkNode());
   const tenantsCacheManager = new TenantsCacheManager(vaultRepository, () => mockKmsService, 'test-host-collection');
+  jest.spyOn(tenantsCacheManager,'getCollectionName').mockImplementation(async (vaultId:string)=>vaultId);
   
   jest.spyOn(tenantsCacheManager, 'getDidServiceConfig');
   jest.spyOn(tenantsCacheManager, 'getDidDocument');
@@ -64,7 +66,7 @@ describe('Network Enrollment API', () => {
     it('should authorize the controller, queue a job, and return 202 Accepted', async () => {
       // --- Arrange ---
       const asyncResponseStore = new AsyncResponseStoreMem();
-      const { app, tenantsCacheManager } = setupApp(asyncResponseStore);
+      const { app, tenantsCacheManager, vaultRepository } = setupApp(asyncResponseStore);
 
       const tenantId = testTenant1AlternateName;
       const jurisdiction = testTenant1AddressCountry;
@@ -114,7 +116,8 @@ describe('Network Enrollment API', () => {
           },
         },
       };
-      mockKmsService.decodeRequest.mockResolvedValue(mockJobRequest);
+      mockAppAuthManager.verifyBearerToken.mockResolvedValue({payload:{sub:(mockJobRequest).content!.iss}});
+      mockKmsService.decodeRequest.mockResolvedValue(await registeredRouteFixture(mockJobRequest,vaultRepository,getTenantVaultId(sector,tenantId),mockKmsService));
       
       (tenantsCacheManager.getDidDocument as jest.Mock).mockResolvedValue(testTenantC_DidDocument);
 
@@ -155,7 +158,7 @@ describe('Network Enrollment API', () => {
     it('should return 401 Unauthorized if the KMS throws a signature verification error', async () => {
       // --- Arrange ---
       const asyncResponseStore = new AsyncResponseStoreMem();
-      const { app, tenantsCacheManager } = setupApp(asyncResponseStore);
+      const { app, tenantsCacheManager, vaultRepository } = setupApp(asyncResponseStore);
 
       const tenantId = testTenant1AlternateName;
       const jurisdiction = testTenant1AddressCountry;
@@ -210,7 +213,7 @@ describe('Network Enrollment API', () => {
     it('should return 202 Accepted for a validly signed request, even if the employee lacks specific permissions (authz is handled by worker)', async () => {
       // --- Arrange ---
       const asyncResponseStore = new AsyncResponseStoreMem();
-      const { app, tenantsCacheManager } = setupApp(asyncResponseStore);
+      const { app, tenantsCacheManager, vaultRepository } = setupApp(asyncResponseStore);
 
       const tenantId = testTenant1AlternateName; // 'acme'
       const jurisdiction = testTenant1AddressCountry;
@@ -267,7 +270,8 @@ describe('Network Enrollment API', () => {
         },
       };
       // The KMS successfully verifies the signature (authentication is a success).
-      mockKmsService.decodeRequest.mockResolvedValue(mockJobRequestFromEmployee);
+      mockAppAuthManager.verifyBearerToken.mockResolvedValue({payload:{sub:(mockJobRequestFromEmployee).content!.iss}});
+      mockKmsService.decodeRequest.mockResolvedValue(await registeredRouteFixture(mockJobRequestFromEmployee,vaultRepository,getTenantVaultId(sector,tenantId),mockKmsService));
       
       // The DID Document for the tenant does NOT contain the analyst's key in its assertionMethod.
       // The API controller IGNORES this; it's the worker's responsibility to check it.

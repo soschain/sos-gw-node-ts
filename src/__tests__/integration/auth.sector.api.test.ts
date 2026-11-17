@@ -6,7 +6,7 @@ import {
   EXAMPLE_EMPLOYEE_ACTIVATION_CODE,
   EXAMPLE_SECTOR,
   EXAMPLE_TENANT_IDENTIFIER,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import { createAuthRouter } from '../../routes/auth';
 import { invokeExpress } from './helpers/invokeExpress';
 

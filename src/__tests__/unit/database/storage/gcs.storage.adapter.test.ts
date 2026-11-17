@@ -5,7 +5,7 @@
 import { jest } from '@jest/globals';
 import type { Storage } from '@google-cloud/storage';
 import { sha3_384 } from '@noble/hashes/sha3.js';
-import { encodeMultibase58btc } from 'gdc-common-utils-ts/utils/multibase58';
+import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
 import { GcsStorageAdapter } from '../../../../database/storage/gcs.storage.adapter';
 
 describe('GcsStorageAdapter', () => {
@@ -66,7 +66,7 @@ describe('GcsStorageAdapter', () => {
     const multihashBytes = new Uint8Array(prefix.length + digest.length);
     multihashBytes.set(prefix);
     multihashBytes.set(digest, prefix.length);
-    const expectedHash = encodeMultibase58btc(multihashBytes);
+    const expectedHash = encodeBase58btc(multihashBytes);
 
     // 2. Verify the adapter returned the correct hash
     expect(result.encodedMultiHash).toBe(expectedHash);

@@ -15,8 +15,8 @@ import {
 import { buildConsentRulePrimaryDocument } from '../src/utils/consent-access-blockchain.ts';
 import { getClaimValue, normalizeContextualizedClaims } from '../src/utils/claims.ts';
 import { expandConsentActorRoles } from '../src/utils/consent.ts';
-import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
-import type { BundleEntry } from 'gdc-common-utils-ts/models/bundle';
+import { ClaimConsent } from "fhir-data-utils-ts/claims";
+import type { BundleEntry } from "sos-data-utils-ts/bundle-contract";
 import { ensureDigitalTwinSecondaryUseConsentIdentifier } from '../src/utils/consent-storage.ts';
 import { getTenantVaultId } from '../src/utils/tenant.ts';
 

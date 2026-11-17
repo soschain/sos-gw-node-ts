@@ -4,14 +4,7 @@ import type { TaskRecord, TaskService } from 'tasks-core-node-ts';
 import type { IPhoneAdapter } from '../adapters/phone/IPhoneAdapter.js';
 import { UhcTaskOrchestrator } from './UhcTaskOrchestrator.js';
 import { getVoiceBundle, getVoiceReminderCountIntro } from '../locales/voice/index.js';
-import {
-  UhcReminderActions,
-  UhcReminderActorKinds,
-  UhcReminderChannels,
-  UhcReminderEntityKinds,
-  decodeUhcReminderPermissionBundle,
-  evaluateUhcReminderRuntimeAccess,
-} from 'uhc-sdk-core-ts';
+import { evaluateReminderTaskVoiceAccess } from './ReminderTaskAuthorization.js';
 
 function toDate(value: string | undefined): Date | undefined {
   if (!value) return undefined;
@@ -195,6 +188,7 @@ export class UhcReminderDaemon {
     const subjectTasks = await this.options.taskService.listTasks({ subjectId: rootTask.subjectId });
     const roots = subjectTasks
       .filter((task) => this.taskOrchestrator.isRootTask(task))
+      .filter((task) => evaluateReminderTaskVoiceAccess(task).allowed)
       .filter((task) => task.status !== 'completed' && task.status !== 'cancelled' && task.status !== 'acknowledged');
     if (roots.length <= 1) return [rootTask.id];
 
@@ -268,7 +262,8 @@ export class UhcReminderDaemon {
     try {
       const now = new Date();
       const scheduledTasks = await this.options.taskService.listTasks({ status: 'scheduled' });
-      const rootTasks = scheduledTasks.filter((task) => this.taskOrchestrator.isRootTask(task));
+      const rootTasks = scheduledTasks.filter((task) => this.taskOrchestrator.isRootTask(task))
+        .filter((task) => evaluateReminderTaskVoiceAccess(task).allowed);
       // TODO(reminders-capacity): enforce host-global and per-tenant concurrent call limits here
       // before launching new provider calls. Current behavior is functional-first (no explicit limiter).
       for (const rootTask of rootTasks) {
@@ -279,16 +274,8 @@ export class UhcReminderDaemon {
         const selection = await this.taskOrchestrator.selectNextCallTask(rootTask);
         if (!('callTask' in selection)) continue;
         const task = selection.callTask;
-        const permissionBundle = decodeUhcReminderPermissionBundle(task.metadata || {});
-        const permissionEvaluation = evaluateUhcReminderRuntimeAccess({
-          permissionBundle,
-          actorKind: UhcReminderActorKinds.Assistant,
-          actorId: 'voice-assistant',
-          action: UhcReminderActions.Execute,
-          entity: UhcReminderEntityKinds.DispatchWindow,
-          channel: UhcReminderChannels.Phone,
-        });
-        if (!permissionEvaluation.allowed) {
+        const permissionEvaluation = evaluateReminderTaskVoiceAccess(task);
+        if (task.subjectId !== rootTask.subjectId || !permissionEvaluation.allowed) {
           console.warn(
             `[UHC Reminder Daemon] task '${task.id}' denied for voice assistant `
             + `(reason=${permissionEvaluation.reason}).`,
@@ -318,7 +305,8 @@ export class UhcReminderDaemon {
           const scheduledAtLabel = toSpokenTimeLabel(eventAt, locale) || '';
           const voiceBundle = getVoiceBundle(locale);
           const groupedRootIds = await this.collectGroupedRootIds(selection.rootTask);
-          const introReminderCount = Math.max(selection.pendingReminderCount, groupedRootIds.length || 0);
+          const authorizedPendingCount = selection.pendingChildTasks?.filter((entry) => evaluateReminderTaskVoiceAccess(entry).allowed).length || 1;
+          const introReminderCount = Math.max(authorizedPendingCount, groupedRootIds.length || 0);
           const introText = buildCallIntroduction(locale, subjectAlias, introReminderCount);
           const promptText = `${introText} ${stripLeadingGreetingFromPrompt(
             locale,
