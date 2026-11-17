@@ -1,18 +1,17 @@
-// Flow contract: existing IPS operational consumers use the exact published SOS Core/PermissionSummary profiles, preserving every descriptor and non-enumerable compatibility key while keeping native URI summary tokens separate and granting no access.
+// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+// Every actual IPS operational import uses the owned Core/PermissionSummary profiles, preserving descriptors and native URI summary distinctions without granting access.
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {readFileSync} from 'node:fs';
+import {readFileSync,readdirSync} from 'node:fs';
 import ts from 'typescript';
 import * as owned from 'sos-data-utils-ts/healthcare-sections';
 import * as publicApi from 'sos-data-utils-ts';
 const fixture=JSON.parse(readFileSync('src/__tests__/data/healthcare-operational-wire.json','utf8'));
 const pairs={HealthcareBasicSections:'HealthcareCoreSections',HealthcareSummarySections:'HealthcarePermissionSummarySections'};
-const paths=[
- 'src/api-examples/communication.examples.ts','src/managers/CommunicationManager.ts',
- 'src/managers/CompositionManager.ts','src/managers/TwinCompositionManager.ts',
- 'src/shared/healthcare-constants.ts','src/utils/ips-bundle.ts',
-];
+const paths=readdirSync('src',{recursive:true}).map(path=>'src/'+path.replaceAll('\\','/'))
+ .filter(path=>path.endsWith('.ts')&&!path.includes('/__tests__/')&&!/\.(test|spec)\.ts$/u.test(path));
 test('operational section consumers import exact canonical owners without re-exporting a legacy alias',()=>{
+ const consumers=[];
  for(const path of paths){
   const source=ts.createSourceFile(path,readFileSync(path,'utf8'),ts.ScriptTarget.Latest,true);let found=0;
   for(const statement of source.statements){
@@ -26,8 +25,9 @@ test('operational section consumers import exact canonical owners without re-exp
     assert.equal(name,canonical,path);assert.equal(item.name.text,canonical,path);
    }
   }
-  assert.ok(found>0,path);
+  if(found)consumers.push(path);
  }
+ assert.deepEqual(consumers.sort(),['src/api-examples/communication.examples.ts','src/managers/CommunicationManager.ts','src/managers/CompositionManager.ts','src/managers/TwinCompositionManager.ts','src/utils/ips-bundle.ts'].sort());
 });
 test('all original Core and permission-summary descriptors and enumerability remain exactly equal',()=>{
  assert.equal(fixture.profiles.length,2);

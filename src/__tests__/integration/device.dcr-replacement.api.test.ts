@@ -256,10 +256,11 @@ describe('Device DCR multi-device route story', () => {
               alg: deviceJwkMldsa.alg,
               kid: deviceJwkMldsa.kid,
               jwk: deviceJwkMldsa,
+              skid: routeResponseEncryptionKey.kid,
             },
             signature: Buffer.from(DEVICE_REGISTRATION_REQUEST.jti).toString('base64url'),
           },
-          jwe: { header: { jwk: deviceJwkMlkem } },
+          jwe: { header: { skid: routeResponseEncryptionKey.kid, jwk: routeResponseEncryptionKey } },
         },
       },
     } as any);
@@ -568,7 +569,7 @@ describe('Device DCR multi-device route story', () => {
     // This manager journey injects the signature verifier; the decoder still
     // supplies the complete signed-envelope profile and the actual wallet key.
     Object.assign(dcrRequest.body,{jwks:{keys:structuredClone(DCR_REPLAY_PUBLIC_KEYS)}});
-    Object.assign(dcrRequest,{meta:{jws:{protected:{alg:deviceJwkMldsa.alg,kid:deviceJwkMldsa.kid,jwk:deviceJwkMldsa},signature:Buffer.from(dcrRequest.jti).toString('base64url')},jwe:{header:{skid:routeResponseEncryptionKey.kid,jwk:routeResponseEncryptionKey}}}});
+    Object.assign(dcrRequest,{meta:{jws:{protected:{alg:deviceJwkMldsa.alg,kid:deviceJwkMldsa.kid,jwk:deviceJwkMldsa,skid:routeResponseEncryptionKey.kid},signature:Buffer.from(dcrRequest.jti).toString('base64url')},jwe:{header:{skid:routeResponseEncryptionKey.kid,jwk:routeResponseEncryptionKey}}}});
     jest.spyOn(kmsService, 'decodeRequest').mockResolvedValue({ content: dcrRequest } as any);
 
     const submit = await invokeExpress(app, {
@@ -657,7 +658,7 @@ describe('Device DCR multi-device route story', () => {
     // This manager journey injects the signature verifier; the decoder still
     // supplies the complete signed-envelope profile and the actual wallet key.
     Object.assign(dcrRequest.body,{jwks:{keys:structuredClone(DCR_REPLAY_PUBLIC_KEYS)}});
-    Object.assign(dcrRequest,{meta:{jws:{protected:{alg:deviceJwkMldsa.alg,kid:deviceJwkMldsa.kid,jwk:deviceJwkMldsa},signature:Buffer.from(dcrRequest.jti).toString('base64url')},jwe:{header:{skid:routeResponseEncryptionKey.kid,jwk:routeResponseEncryptionKey}}}});
+    Object.assign(dcrRequest,{meta:{jws:{protected:{alg:deviceJwkMldsa.alg,kid:deviceJwkMldsa.kid,jwk:deviceJwkMldsa,skid:routeResponseEncryptionKey.kid},signature:Buffer.from(dcrRequest.jti).toString('base64url')},jwe:{header:{skid:routeResponseEncryptionKey.kid,jwk:routeResponseEncryptionKey}}}});
     jest.spyOn(kmsService, 'decodeRequest').mockResolvedValue({ content: dcrRequest } as any);
 
     const submit = await invokeExpress(app, {

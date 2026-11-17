@@ -24,7 +24,12 @@ import {
   parseCommunicationParticipantSearchCriteria,
 } from 'fhir-data-utils-ts/communication-participant-search';
 import { GatewaySearchBundleTypes } from 'sos-data-utils-ts/gateway-response-contract';
-import { normalizeClaimsFromFhirResource } from 'fhir-data-utils-ts/clinical-resource-adapters';
+import {
+  projectGatewayClinicalNativeClaims,
+  resolveGatewayClinicalIndexIdentity,
+  projectGatewayClinicalIndexClaims,
+  type GatewayClinicalIndexIdentity,
+} from '../utils/gateway-clinical-profile';
 import { compositionFhirR4ToFlat } from 'fhir-data-utils-ts';
 import { observationFhirR4ToFlatGraph } from 'fhir-data-utils-ts/converters';
 import { buildClinicalDocumentSearchAttributes } from '../utils/clinical-document-search-attributes';
@@ -1175,6 +1180,43 @@ export class CommunicationManager implements IJobProcessor {
     return Array.isArray(matches) && matches.length > 0;
   }
 
+  /** Existing index representations must agree before a system-qualified identifier can use its raw business key. */
+  private async requireUnambiguousClinicalIdentifierIndex(
+    tenantVaultId: string,
+    sectionId: string,
+    claims: Readonly<Record<string, unknown>>,
+    identifierNames: readonly string[],
+    identity: GatewayClinicalIndexIdentity,
+  ): Promise<void> {
+    const token = identity.aliases.find(value => value !== identity.indexValue);
+    if (!token || !identity.indexValue) return;
+    const names = [...new Set(identifierNames.flatMap(name => [
+      name,
+      ...Object.keys(claims).filter(key => key.endsWith(`.${name}`)),
+    ]))];
+    const recordIdsFor = async (value: string): Promise<Set<string>> => {
+      const ids = new Set<string>();
+      for (const name of names) {
+        const matches = await this.vaultRepository.query(
+          tenantVaultId, { sectionId, where: [{ name, value }] }, { hydrate: false },
+        );
+        for (const record of matches) if (typeof record.id === 'string' && record.id) ids.add(record.id);
+      }
+      return ids;
+    };
+    const [tokenIds, rawIds] = await Promise.all([
+      recordIdsFor(token), recordIdsFor(identity.indexValue),
+    ]);
+    if (tokenIds.size > 0 && (
+      tokenIds.size !== rawIds.size || [...tokenIds].some(id => !rawIds.has(id))
+    )) {
+      throw new ManagerError(
+        'Clinical identifier index is ambiguous; an explicit migration is required.',
+        IssueType.Conflict,
+      );
+    }
+  }
+
   private async persistProjectedResourcesFromCommunication(
     job: JobRequest,
     entry: any,
@@ -1686,7 +1728,9 @@ export class CommunicationManager implements IJobProcessor {
       throw new Error('Clinical resource subject must equal Communication.subject.');
     }
 
-    const identifier = this.getFirstClaimValue(claims, config.identifierClaimKeys) || `urn:uuid:${uuidv4()}`;
+    const clinicalIdentifier = this.getFirstClaimValue(claims, config.identifierClaimKeys);
+    const indexIdentity = resolveGatewayClinicalIndexIdentity(input.resource, clinicalIdentifier);
+    const identifier = indexIdentity.indexValue || `urn:uuid:${uuidv4()}`;
     const fallbackId = determineResourceId(identifier, process.env.NODE_ENV);
     const versionId = buildOperationalClaimsContentCid(this.clinicalContentVersionClaims(claims));
     applyFhirCidVersioningToEntry({
@@ -1730,6 +1774,9 @@ export class CommunicationManager implements IJobProcessor {
       input.tenantVaultId,
       recordId,
       sectionId,
+    );
+    await this.requireUnambiguousClinicalIdentifierIndex(
+      input.tenantVaultId, sectionId, claims, config.identifierClaimKeys, indexIdentity,
     );
     const alreadyIndexed = await this.hasSectionRecordWithClaims(input.tenantVaultId, sectionId, [
       { name: `${input.resourceType}.meta.versionId`, value: versionId },
@@ -1837,7 +1884,7 @@ export class CommunicationManager implements IJobProcessor {
       ...(audit ? { audit } : {}),
       indexed: {
         attributes: buildClinicalDocumentSearchAttributes({
-          claims: persistedClaims,
+          claims: projectGatewayClinicalIndexClaims(persistedClaims, config.identifierClaimKeys, indexIdentity.indexValue),
           sector: String(input.job.sector || ''),
           audit,
         }),
@@ -1917,7 +1964,11 @@ export class CommunicationManager implements IJobProcessor {
             ...(researchAudit ? { audit: researchAudit } : {}),
             indexed: {
               attributes: buildClinicalDocumentSearchAttributes({
-                claims: researchClaims,
+                claims: projectGatewayClinicalIndexClaims(
+                  researchClaims,
+                  config.identifierClaimKeys,
+                  resolveGatewayClinicalIndexIdentity(input.resource, this.getFirstClaimValue(researchClaims, config.identifierClaimKeys)).indexValue,
+                ),
                 sector: String(input.job.sector || ''),
                 audit: researchAudit,
               }),
@@ -2524,9 +2575,10 @@ export class CommunicationManager implements IJobProcessor {
       const resource = entry?.resource;
       if (resource?.resourceType !== ResourceTypesFhirR4.Consent) return false;
       const claims = normalizeContextualizedClaims(
-        normalizeClaimsFromFhirResource(resource as any, {
-          identifierClaimKey: ClaimConsent.identifier,
-        }) as Record<string, any>,
+        {
+          ...projectGatewayClinicalNativeClaims(resource),
+          ...(resource?.meta?.claims || {}),
+        },
       );
       return getClaimValue<string>(claims, ClaimConsent.status) === ConsentStatuses.Draft;
     });
@@ -2572,6 +2624,9 @@ export class CommunicationManager implements IJobProcessor {
     authorDid?: string,
     documentClaims?: Record<string, unknown>,
   ): Record<string, any> {
+    if (resource.resourceType !== resourceType) {
+      throw new ManagerError('Clinical projection resource type does not match its admitted profile.', IssueType.Invalid);
+    }
     const rawEmbeddedClaims = resource?.meta?.claims && typeof resource.meta.claims === 'object'
       ? resource.meta.claims as Record<string, any>
       : {};
@@ -2580,11 +2635,12 @@ export class CommunicationManager implements IJobProcessor {
       : {};
     const nativeResource = {
       ...resource,
+      resourceType,
       ...(resource?.meta ? { meta: { ...resource.meta, claims: undefined } } : {}),
     };
-    const nativeClaims = normalizeClaimsFromFhirResource(nativeResource as any, {
-        identifierClaimKey: `${resourceType}.identifier`,
-      }) as Record<string, any>;
+    const nativeClaims = projectGatewayClinicalNativeClaims(
+      nativeResource, PROJECTED_RESOURCE_CONFIG[resourceType].identifierClaimKeys[0],
+    );
     const definedNativeClaims = Object.fromEntries(Object.entries(nativeClaims)
       .filter(([, value]) => value !== undefined && value !== null && String(value).trim() !== ''));
     const indexTagClaims = this.extractMinimalDocumentIndexTagClaims(resourceType, resource);
@@ -3457,7 +3513,7 @@ export class CommunicationManager implements IJobProcessor {
         if (resource.resourceType !== ResourceTypesFhirR4.Observation
           || !Array.isArray(resource.component) || resource.component.length === 0) return [resource];
         const parentEntryId = this.normalizeOptionalString(resource.id)
-          || buildOperationalClaimsContentCid(normalizeClaimsFromFhirResource({
+          || buildOperationalClaimsContentCid(projectGatewayClinicalNativeClaims({
             ...resource, resourceType: ResourceTypesFhirR4.Observation, component: undefined,
           }));
         const graph = observationFhirR4ToFlatGraph({

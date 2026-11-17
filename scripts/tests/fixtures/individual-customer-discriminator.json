@@ -1,0 +1,9 @@
+{
+  "source": {
+    "repository": "https://github.com/Global-DataCare/gdc-common-utils-ts",
+    "readOnly": true,
+    "moduleSha256": "5ee55d6d90ad476709c675db0b899998e826949f32ef73300d12748881fa1aa8",
+    "scope": "Actual predecessor Customer discriminator consumed at IndividualManager creation response; this capture alone is not manager, authorization or persistence proof."
+  },
+  "individualCustomer": "Customer"
+}

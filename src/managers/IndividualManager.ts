@@ -1,6 +1,6 @@
 // src/managers/IndividualManager.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
-import { GatewayResourceTypes } from 'sos-data-utils-ts/gateway-profile-values';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 
 import { v4 as uuidv4} from 'uuid';
@@ -52,7 +52,6 @@ import type { IHostRuntime } from './IHostRuntime';
 import { ClaimConsent } from 'fhir-data-utils-ts';
 import { getClaimValue } from '../utils/claims';
 import { buildSearchResponseEntries } from '../utils/didcomm-response';
-import { GatewayResponseEntryTypes } from '../shared/gateway-response-types';
 import { canonicalizeBundleEntryMetadata } from '../utils/canonical-entry-metadata';
 
 
@@ -229,7 +228,7 @@ export class IndividualManager {
     person.meta.claims[SchemaOrgPersonClaim.Identifier] = publicUuidUrn;
 
     return {
-      type: GatewayResourceTypes.Customer,
+      type: GatewayResponseEntryTypes.IndividualCustomer,
       resource: {
         ...person,
         resourceType: ResourceTypesFhirR4.Person,

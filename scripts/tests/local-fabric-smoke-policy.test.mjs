@@ -49,3 +49,20 @@ test('an absent prepared peer fails before any reset or automatic bootstrap', ()
     assert.match(result.stderr,/prepared.*peer|peer.*prepared/i);
   } finally {rmSync(dir,{recursive:true,force:true});}
 });
+
+test('an explicit prepared peer selects only that owned container, preserving the historical default', () => {
+  const dir=mkdtempSync(resolve(tmpdir(),'sos-fabric-peer-selection-'));
+  try {
+    const npmLog=resolve(dir,'npm-invoked');
+    for(const [name,body] of [['docker','#!/bin/sh\nif [ "$1" = ps ]; then printf "%s\\n" "$SYNTHETIC_RUNNING_PEER"; fi\n'],['npm',`#!/bin/sh\nprintf '%s\\n' "$*" > '${npmLog}'\nexit 99\n`]]){
+      writeFileSync(resolve(dir,name),body);chmodSync(resolve(dir,name),0o700);
+    }
+    for(const [selected,running,expected] of [['synthetic-owned-peer','synthetic-owned-peer',99],['synthetic-owned-peer','gdc-peer0-host1',2],['','gdc-peer0-host1',99]]){
+      rmSync(npmLog,{force:true});
+      const result=spawnSync('bash',[resolve(root,'scripts/smoke-docker-local-network.sh')],{encoding:'utf8',env:{...process.env,PATH:`${dir}:${process.env.PATH}`,IMAGE_NAME:'synthetic-selected-image',STRICT_FABRIC_DRIVER_MODULE:'synthetic-driver',STRICT_FABRIC_DRIVER_CONFIG:'synthetic-config',LOCAL_REDIS_IMAGE:'synthetic-replay-image',LOCAL_FABRIC_EVIDENCE_DIR:dir,FABRIC_PEER_CONTAINER:selected,SYNTHETIC_RUNNING_PEER:running}});
+      assert.equal(result.status,expected,result.stderr);
+      if(expected===99)assert.equal(readFileSync(npmLog,'utf8').trim(),'run prepare:local-fabric-env');
+      else assert.equal(existsSync(npmLog),false,'an unrelated historical peer must not satisfy the selected peer');
+    }
+  } finally {rmSync(dir,{recursive:true,force:true});}
+});

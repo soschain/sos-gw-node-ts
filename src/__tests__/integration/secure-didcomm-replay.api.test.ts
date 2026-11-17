@@ -2,7 +2,7 @@
 import {afterEach,beforeEach,describe,expect,it,jest} from '@jest/globals';
 import express from 'express';
 import {importJWK,jwtVerify} from 'jose';
-import {CryptographyService} from 'antifraud-data-utils-ts/cryptography';
+import {CryptographyService,Content,type MlkemPrivateJwk} from 'antifraud-data-utils-ts/cryptography';
 import {REPOSITORY_SAFE_EXAMPLES as e} from 'sos-data-utils-ts/repository-privacy';
 import {DataspaceSectors} from 'sos-data-utils-ts/dataspace-sectors';
 import {AdapterCryptoSdkNode} from '../../gdc-backend-utils-node/adapters/node/crypto';
@@ -19,7 +19,7 @@ import {invokeExpress} from './helpers/invokeExpress';
 const original=process.env;
 const vaultId=getTenantVaultId(DataspaceSectors.HealthCare,e.tenantId);
 const route=`/${e.tenantId}/cds-es/v1/health-care/digitaltwin/org.hl7.fhir.api/Composition/_search`;
-let kms:KmsService,vault:VaultMemRepository,crypto:CryptographyService,app:express.Express,bearer:string,queue:any,store:AsyncResponseStoreMem,signature:any,signingKey:any;
+let kms:KmsService,vault:VaultMemRepository,crypto:CryptographyService,app:express.Express,bearer:string,queue:any,store:AsyncResponseStoreMem,signature:any,signingKey:any,senderEncryptionKey:MlkemPrivateJwk;
 const wallet=deriveDeterministicEcJwkPair({seed:e.resourceUuid,purpose:e.tenantId});
 const legacyWallet=deriveDeterministicEcJwkPair({seed:e.resourceUuid,purpose:e.tenantId,alg:'ES256K'});
 const clientId=e.demoOrganizationUuids.healthCare;
@@ -28,7 +28,8 @@ beforeEach(async()=>{
  crypto=new CryptographyService(new AdapterCryptoSdkNode());vault=new VaultMemRepository();let current:KmsService;
  const tenantCache=new TenantsCacheManager(vault,()=>current,e.tenantId);current=new KmsService(crypto,tenantCache);kms=current;await kms.init();await kms.provisionKeys(vaultId);
  const encryptionKey=await kms.getPublicEncryptionKey(vaultId);expect(encryptionKey).toBeDefined();signingKey=await kms.getPublicVerificationKey(vaultId,'ML-DSA-44','comm_sig');expect(signingKey).toBeDefined();
- const profile={id:clientId,status:'active',sequence:0,content:{clientId,actorDid:e.didWeb,jwks:{keys:[signingKey,wallet.publicJwk,legacyWallet.publicJwk,encryptionKey]}}};
+ const senderKem=await crypto.generateKeyPairMlKem();senderEncryptionKey={...senderKem.publicJWKey,dBytes:senderKem.secretKeyBytes};
+ const profile={id:clientId,status:'active',sequence:0,content:{clientId,actorDid:e.didWeb,jwks:{keys:[signingKey,wallet.publicJwk,legacyWallet.publicJwk,senderKem.publicJWKey]}}};
  await vault.put(vaultId,[await kms.protectConfidentialData(profile as any,vaultId)],getEnvSectionId('device-profiles'));
  const services=[{id:'#digitaltwin:org.hl7.fhir.api',type:'ApiService',serviceEndpoint:'Composition',actions:['_search'],selector:{sector:'health-care',section:'digitaltwin',format:'org.hl7.fhir.api'}}];
  const tenants={tenantExists:async()=>true,getCollectionName:async()=>vaultId,getDidServiceConfig:async()=>services,getTenant:async()=>({status:'active',authorizationStatus:'active',didConfig:{service:services}})};
@@ -42,12 +43,13 @@ afterEach(()=>{kms?.destroy();vault?.clear();process.env=original;jest.restoreAl
 async function envelope(jti?:string,tamper=false,algorithm:'ML-DSA-44'|'ES384'|'ES256K'='ML-DSA-44'){
  const payload={iss:e.didWeb,aud:e.httpsBaseUrl,thid:e.resourceUuid,...(jti!==undefined?{jti}:{}),client_id:clientId,type:'application/didcomm-plain+json',body:{data:[]}};
  const signed=algorithm==='ML-DSA-44'?await kms.createCompactJws(payload,signingKey.kid,vaultId,'comm_sig'):(await buildDeterministicSignedJwt({seed:e.resourceUuid,purpose:e.tenantId,payload,alg:algorithm})).compactToken;const parts=signed.split('.');
- const content={...payload,...(tamper?{aud:e.tenantId}:{}),meta:{jws:{protected:JSON.parse(Buffer.from(parts[0],'base64url').toString('utf8')),signature:parts[2]}}};
- return kms.encodeResponse(content,[await kms.getPublicEncryptionKey(vaultId) as any],vaultId);
+ const compact=tamper?[parts[0],Content.objectToRawBase64UrlSafe({...payload,aud:e.tenantId}),parts[2]].join('.'):signed;
+ return crypto.encryptJweToCompact(compact,{cty:'JWS',skid:senderEncryptionKey.kid,jwk:senderEncryptionKeyPublic()},senderEncryptionKey,await kms.getPublicEncryptionKey(vaultId) as any);
 }
+function senderEncryptionKeyPublic(){const {dBytes:_private,...publicKey}=senderEncryptionKey;return publicKey;}
 async function unsignedEnvelope(){
  const payload={iss:e.didWeb,aud:e.httpsBaseUrl,jti:e.resourceUuid,thid:e.resourceUuid,client_id:clientId,type:'application/didcomm-plain+json',body:{data:[]}};
- return kms.encodeResponse(payload,[await kms.getPublicEncryptionKey(vaultId) as any],vaultId);
+ return crypto.encryptJweToCompact(payload,{skid:senderEncryptionKey.kid,jwk:senderEncryptionKeyPublic()},senderEncryptionKey,await kms.getPublicEncryptionKey(vaultId) as any);
 }
 async function submit(request:string){return invokeExpress(app,{method:'POST',url:route,headers:{'content-type':'application/x-www-form-urlencoded',authorization:`Bearer ${bearer}`},body:{request}});}
 describe('signed operational nonce admission',()=>{

@@ -62,6 +62,18 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
   let controllerActivationCode: string;
   let vaultRepository: IVaultRepository;
 
+  async function decryptProviderResponse(packed:string,providerVaultId:string):Promise<IDecodedDidcommPayload>{
+    const {decryptedBytes,protectedHeader}=await cryptoService.decryptJwe(packed,externalEncrypter);
+    expect(protectedHeader).toMatchObject({cty:'JWS'});
+    const compact=Content.bytesToStringUTF8(decryptedBytes);
+    const pinned=await kmsService.getPublicVerificationKey(providerVaultId,undefined,'comm_sig');
+    if(!pinned)throw new Error('Trusted provider communication signing key unavailable');
+    const header=Content.base64UrlSafeToJSON(compact.split('.')[0]!);
+    expect(header).toMatchObject({kid:pinned.kid,alg:'alg' in pinned?pinned.alg:undefined});
+    expect(await cryptoService.verifyJws(compact,pinned)).toBe(true);
+    return Content.base64UrlSafeToJSON(compact.split('.')[1]!) as IDecodedDidcommPayload;
+  }
+
 
   beforeAll(async () => {
     // Start the server, which will use the mocked config and generate deterministic keys
@@ -134,6 +146,7 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
     const jwsProtectedHeader = {
       alg: externalSigner.alg,
       kid: externalSigner.kid,
+      skid: externalEncrypter.kid,
       jwk: { // Public part of the signer key
         alg: externalSigner.alg,
         kid: externalSigner.kid,
@@ -213,8 +226,7 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
       ? pollResponse.text.slice('response='.length)
       : pollResponse.text;
     
-    const { decryptedBytes } = await cryptoService.decryptJwe(encryptedFinalResponse, externalEncrypter);
-    const finalResponse = JSON.parse(Content.bytesToStringUTF8(decryptedBytes)) as IDecodedDidcommPayload;
+    const finalResponse = await decryptProviderResponse(encryptedFinalResponse,'host');
 
     // 5. ASSERT (Phase 3): Verify the content of the final, decrypted Offer
     expect(finalResponse.thid).toBe(thid);
@@ -249,6 +261,7 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
     const orderJwsProtectedHeader = {
       alg: externalSigner.alg,
       kid: externalSigner.kid,
+      skid: externalEncrypter.kid,
       jwk: {
         alg: externalSigner.alg,
         kid: externalSigner.kid,
@@ -312,8 +325,7 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
     const encryptedOrderFinalResponse = orderPollResponse!.text.startsWith('response=')
       ? orderPollResponse!.text.slice('response='.length)
       : orderPollResponse!.text;
-    const { decryptedBytes: orderDecryptedBytes } = await cryptoService.decryptJwe(encryptedOrderFinalResponse, externalEncrypter);
-    const orderFinalResponse = JSON.parse(Content.bytesToStringUTF8(orderDecryptedBytes)) as IDecodedDidcommPayload;
+    const orderFinalResponse = await decryptProviderResponse(encryptedOrderFinalResponse,'host');
     expect(orderFinalResponse.thid).toBe(orderThid);
     expect(orderFinalResponse.body?.data?.[0]).toMatchObject({ response: { status: String(HttpStatusCodes.Created) } });
     controllerActivationCode = String(orderFinalResponse.body.data[0]?.resource?.meta?.claims?.[
@@ -335,6 +347,7 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
       const jwsHeader = {
         alg: externalSigner.alg,
         kid: externalSigner.kid,
+        skid: externalEncrypter.kid,
         jwk: {
           alg: externalSigner.alg,
           kid: externalSigner.kid,
@@ -378,8 +391,7 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
       const compactResponse = response!.text.startsWith('response=')
         ? response!.text.slice('response='.length)
         : response!.text;
-      const { decryptedBytes } = await cryptoService.decryptJwe(compactResponse, externalEncrypter);
-      return JSON.parse(Content.bytesToStringUTF8(decryptedBytes)) as IDecodedDidcommPayload;
+      return decryptProviderResponse(compactResponse,testTenant1VaultId);
     };
 
     const accountToken = `eyJhbGciOiJub25lIn0.${Buffer.from(JSON.stringify({

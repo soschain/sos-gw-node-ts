@@ -1,4 +1,5 @@
-// Flow contract: subject search returns consent resources through either rollout envelope without changing authorization or persistence.
+// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+// Individual creation retains its exact owned application response discriminator; subject search preserves rollout envelopes, authorization and persistence.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/__tests__/unit/managers/IndividualManager.test.ts
 
@@ -11,6 +12,7 @@ import { SchemaOrgOfferClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 
 import { CredentialManager } from '../../../managers/CredentialManager';
 import { EntityConfig } from '../../../gdc-backend-utils-node/models/entity';
@@ -117,6 +119,7 @@ describe('IndividualManager', () => {
         throw new Error('Expected a BundleEntry, got an ErrorEntry.');
       }
       expect(responseEntry.response.status).toBe('201');
+      expect(responseEntry.type).toBe(GatewayResponseEntryTypes.IndividualCustomer);
       expect(responseEntry.resource?.id).toBe(testCustomer1Uuid);
 
       // 3. Verify aggregated claims in the response

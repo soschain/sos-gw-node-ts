@@ -2,6 +2,11 @@
 
 ## 2.1.0 (2026-11-17)
 
+- Sign encrypted responses with the provider communication key and bind the
+  pre-registration reply key to the authenticated request signature.
+- Require explicitly prepared local Fabric infrastructure for image verification;
+  the smoke runner never resets a shared development ledger.
+
 - Keep published JavaScript dependencies under native Node module resolution
   while transpiling local TypeScript, preserving PKI key and signature behavior.
 
@@ -15,6 +20,22 @@
 - Verify all approved ICA status sources for shared issuers; any revocation or unavailable source denies activation, and unknown records cannot override revocation.
 
 - Require an explicit server-owned authorization decision for the standalone native-FHIR router; missing identity, missing policy and policy errors deny access.
+
+- Use the owned SOS IndividualCustomer response discriminator for Individual
+  creation, retaining the exact Customer wire tag and Person resource. Remove
+  an unreferenced internal healthcare re-export module; governance checks now
+  examine actual emergency-purpose and operational-section imports directly.
+  This functional source is integrated on main. Public dependency pins and the
+  remaining GDC migration are required before service promotion.
+
+- Move indexed clinical native conversion to explicit owned FHIR profiles:
+  fourteen semantic and five separately selected structural input families,
+  with thirteen R4-shaped compatibility output families. Preserve GW metadata
+  precedence, creator/subject guards and existing output overlays. Keep clinical
+  identifier systems separate from established business index keys, and reject
+  ambiguous raw/token index records before clinical writes. This is a local
+  candidate integration pending the cumulative public FHIR release and pin;
+  it does not close the remaining project GDC boundary or add native R5 output.
 
 - Inject the existing process-owned Antifraud crypto port into discovery ping.
   Preserve its fixed unsigned UTF-8 JSON/base64url form response and ordinary

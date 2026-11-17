@@ -11,6 +11,7 @@ Run the selected linux/amd64 image with native verification and an owned local
 TLS ICA/OIDC fixture plus Redis. Required explicit inputs: IMAGE_NAME,
 STRICT_FABRIC_DRIVER_MODULE, STRICT_FABRIC_DRIVER_CONFIG, LOCAL_REDIS_IMAGE,
 LOCAL_FABRIC_EVIDENCE_DIR. The external SDK driver is a test consumer only.
+FABRIC_PEER_CONTAINER selects the explicitly prepared peer (default gdc-peer0-host1).
 ConsentAccess, SMART IPS allow/deny and role licence are mandatory. Research
 is an explicitly selected additional journey, never an implied success.
 HELP
@@ -26,7 +27,8 @@ export DOCKER_NETWORK="${DOCKER_NETWORK:-gdc-fabric-v3-devnet}"
 export ENV_FILE="${ENV_FILE:-${ROOT_DIR}/.env.local-fabric}"
 for executable in docker node npm openssl; do command -v "$executable" >/dev/null || { echo "Missing $executable" >&2; exit 2; }; done
 docker image inspect "$IMAGE_NAME" >/dev/null
-if ! docker ps --format '{{.Names}}' | grep -qx 'gdc-peer0-host1'; then
+FABRIC_PEER_CONTAINER="${FABRIC_PEER_CONTAINER:-gdc-peer0-host1}"
+if ! docker ps --format '{{.Names}}' | grep -Fxq -- "$FABRIC_PEER_CONTAINER"; then
   echo 'The explicitly prepared local Fabric peer is absent. Prepare an isolated owned stack separately (npm run local:fabric:stack); this image gate never bootstraps or resets Fabric.' >&2
   exit 2
 fi

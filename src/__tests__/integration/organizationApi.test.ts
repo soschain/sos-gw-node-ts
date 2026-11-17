@@ -43,6 +43,8 @@ import { createHash } from 'crypto';
 import { Content } from "antifraud-data-utils-ts/cryptography";
 import { SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { JWK } from 'antifraud-data-utils-ts/cryptography';
+import {DCR_REPLAY_PUBLIC_KEYS} from '../data/dcr-replay-public-keys';
+const fixtureReplyKey=DCR_REPLAY_PUBLIC_KEYS.find(key=>key.kty==='OKP')!;
 import { toJwkThumbprintSha256Urn } from "antifraud-data-utils-ts/jwk-thumbprints";
 import { HostingManager } from '../../managers/HostingManager';
 import type { IHostRuntime } from '../../managers/IHostRuntime';
@@ -53,8 +55,11 @@ import { AppAuthorizationManager } from '../../managers/AppAuthorizationManager'
 import { testAnimalResearchRegistrationClaims } from '../data/organization-registration-replay.data';
 
 // The injected crypto collaborator models proof verification in this route/manager suite.
-function withCompleteFixtureJwsProof<T extends {jti:string;meta:{jws:Record<string,unknown>}}>(payload:T):T{
- const result=completeLegacyProof(payload);result.jti=uuidv4();result.meta.jws.signature=Content.objectToRawBase64UrlSafe({jti:result.jti});return result;
+function withCompleteFixtureJwsProof<T extends {jti:string;meta:{jws:Record<string,unknown>;jwe?:{header?:Record<string,unknown>}}}>(payload:T):T{
+ const result=completeLegacyProof(payload);result.jti=uuidv4();
+ result.meta.jws.protected={...(result.meta.jws.protected as Record<string,unknown>),skid:fixtureReplyKey.kid};
+ result.meta.jwe={header:{...result.meta.jwe?.header,skid:fixtureReplyKey.kid,jwk:fixtureReplyKey}};
+ result.meta.jws.signature=Content.objectToRawBase64UrlSafe({jti:result.jti});return result;
 }
 
 type InMemoryResponse = {
@@ -854,7 +859,7 @@ describe('Organization Registration API', () => {
         },
       );
       registrationJob.content!.meta = {
-        jws: { protected: { kid: signerJwk.kid, alg: signerJwk.alg, jwk: signerJwk }, signature: 'registration-signature' },
+        jws: { protected: { kid: signerJwk.kid, alg: signerJwk.alg, jwk: signerJwk, skid: encrypterJwk.kid }, signature: 'registration-signature' },
         jwe: { header: { skid: encrypterJwk.kid, jwk: encrypterJwk } },
       } as any;
       const offerResponse = await hostingManager.process(registrationJob);
