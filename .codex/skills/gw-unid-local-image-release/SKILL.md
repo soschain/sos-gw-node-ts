@@ -67,6 +67,15 @@ Stop before publication or deployment unless all applicable gates pass:
 - `DOCKER_PLATFORM=linux/amd64`.
 - `docker_build_local.sh` uses the repository itself as Docker context.
 - `npm run docker:smoke:local-network` validates the selected local image.
+  Supply `IMAGE_NAME`, `STRICT_FABRIC_DRIVER_MODULE`,
+  `STRICT_FABRIC_DRIVER_CONFIG`, `LOCAL_REDIS_IMAGE`, and a private
+  `LOCAL_FABRIC_EVIDENCE_DIR`. The SDK driver is an explicitly reviewed external
+  interoperability test consumer, not an application dependency. It must finish
+  real ConsentAccess and role-licence readbacks plus SMART IPS allowed/denied
+  requests. The harness uses a synthetic asymmetric local ICA/OIDC fixture,
+  pinned public keys and a real local replay service; it never starts a retired
+  ICA or substitutes a Demo verifier. Research is an additional scoped journey,
+  not implied by these three required stages. Missing receipts fail closed.
 - Organization activation tests prove that eight public/hosted DID methods
   backed by four JWKs issue four unique `EnsureKey` calls, and that only the
   stable `ORGANIZATION_CONFLICT` / `CRYPTOGRAPHIC_KEY_CONFLICT` detail tokens
@@ -74,8 +83,10 @@ Stop before publication or deployment unless all applicable gates pass:
 - The `rolelicense-sc` compatibility copy is byte-identical to the canonical
   `fabric-multicloud` source, is deployed on the regional organization
   identity channel (`identity-eu` for UNID), and its tests prove deterministic
-  role identity, exact-over-catch-all sector policy, per-sector DCR limits,
-  replacement and revocation. Never deploy it on `identity-global`.
+  role identity, sector-policy updates and revocation/history. Device capacity
+  and replacement are enforced by the gateway DCR managers, not by a
+  `RegisterDevice` transaction on this contract. Never deploy it on
+  `identity-global`.
 - Professional Test Network seats prove Offer -> Order -> invoice/payment
   verification -> materialization -> role-licence registration. A direct
   professional `License/_add` is a release blocker in every environment.

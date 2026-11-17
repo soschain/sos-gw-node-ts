@@ -232,3 +232,27 @@ on the global identity channel, using the currently licensed member's stable
 actor identifier. Account identity, actor identity and the authorized human or
 animal subject remain distinct. Verification reads that current registration
 and rejects an inactive licence, revoked key binding or unauthorized subject.
+
+
+## Local image and Fabric proof
+
+The local image gate runs one inspected `linux/amd64` image ID against the
+prepared local Fabric network. Its reviewed external SDK driver performs the
+actual signed HTTP operations; that test consumer is separate from runtime
+package ownership. Configure its explicit module and private fixture JSON with
+`STRICT_FABRIC_DRIVER_MODULE` and `STRICT_FABRIC_DRIVER_CONFIG`.
+
+The harness owns a temporary asymmetric ICA/OIDC fixture and TLS certificate,
+public issuer pins, a local Redis replay instance and the selected image
+container. Credentials use the canonical organization/representative/controller
+builder and bind the real test wallet key. The fixture has no connection to a
+production ICA or credential store. Unknown or revoked fixture credentials
+cannot become active. Only labelled resources created by that run are cleaned.
+
+A successful gate includes real ConsentAccess and role-licence ledger readback,
+SMART IPS access allowed by the current policy, and denial after revocation.
+Missing stage results or readback remain failures. Source-level orchestration
+and fixture tests alone do not prove an image or blockchain execution. Research
+has a separate, explicitly selected journey. Private receipts identify the
+image ID, channels and actual results; fixture keys and runtime environment
+files are removed after the owned run.
