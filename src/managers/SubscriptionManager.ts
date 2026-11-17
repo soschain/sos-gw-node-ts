@@ -11,6 +11,7 @@ import {
   buildSubscriptionNotificationR5,
   matchesSubscriptionEventR5,
 } from 'fhir-data-utils-ts/subscription-r5';
+import type { SubscriptionEventTopicR5 } from 'fhir-data-utils-ts/subscription-r5';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { SUBJECT_SECTION_INDIVIDUAL } from '../constants/domain';
@@ -21,6 +22,25 @@ import type { ITenantsManager } from './ITenantsManager';
 import type { ISubscriptionProcessor } from './registry';
 
 type FetchLike = (input: string | URL, init?: RequestInit) => Promise<Pick<Response, 'ok' | 'status'>>;
+type TopicFilter = NonNullable<SubscriptionEventTopicR5['canFilterBy']>[number];
+type StoredTopic = Omit<SubscriptionEventTopicR5, 'canFilterBy'> & {
+  canFilterBy?: readonly (TopicFilter & { resourceType?: string })[];
+};
+
+/** Project the historical persisted topic spelling at this versioned R5 boundary only. */
+function notificationTopic(topic: StoredTopic): SubscriptionEventTopicR5 | undefined {
+  if (topic.canFilterBy === undefined) return topic;
+  if (!Array.isArray(topic.canFilterBy)) return undefined;
+  const filters: TopicFilter[] = [];
+  for (const filter of topic.canFilterBy) {
+    if (!filter || typeof filter !== 'object') return undefined;
+    const { resourceType, ...canonical } = filter;
+    if (resourceType !== undefined && (typeof resourceType !== 'string'
+      || (canonical.resource !== undefined && canonical.resource !== resourceType))) return undefined;
+    filters.push({ ...canonical, ...(resourceType === undefined ? {} : { resource: resourceType }) });
+  }
+  return { ...topic, canFilterBy: filters };
+}
 
 export interface SubscriptionManagerDeps {
   vaultRepository: IVaultRepository;
@@ -124,21 +144,21 @@ export class SubscriptionManager implements ISubscriptionProcessor {
         if (subscription?.status !== 'active') continue;
         const topic = topics.find((candidate) => candidate.resource?.url === subscription.topic)?.resource;
         if (!topic) continue;
-        let matchingTopic: any;
-        try { matchingTopic = this.projectTopicFilterResources(topic); }
+        let matchingTopic: SubscriptionEventTopicR5 | undefined;
+        try { matchingTopic = notificationTopic(this.projectTopicFilterResources(topic)); }
         catch {
           console.warn('[SubscriptionManager] Unsupported topic filters; delivery denied.');
           continue;
         }
-        if (!matchesSubscriptionEventR5(subscription, matchingTopic, resource)) continue;
+        if (!matchingTopic || !matchesSubscriptionEventR5(subscription, matchingTopic, resource)) continue;
         const eventNumber = Number(stored.eventCount || 0) + 1;
+        const notification = this.buildNotification(subscription, topic, resource, eventNumber);
         stored.eventCount = eventNumber;
         await this.store(vaultId, SUBSCRIPTIONS_SECTION, subscription.id, 'active', stored);
-        const notification = this.buildNotification(subscription, topic, resource, eventNumber);
         const outboxId = randomUUID();
         const outbox = {
           id: outboxId, subscriptionId: subscription.id, endpoint: subscription.endpoint,
-          parameters: subscription.parameter || [], notification, status: 'pending', attempts: 0,
+          parameters: subscription.parameter || [], notification, serializedNotification: JSON.stringify(notification), status: 'pending', attempts: 0,
           createdAt: new Date().toISOString(), nextAttemptAt: Date.now(),
         };
         await this.store(vaultId, OUTBOX_SECTION, outboxId, 'pending', outbox);
@@ -250,8 +270,6 @@ export class SubscriptionManager implements ISubscriptionProcessor {
   }
 
   private buildNotification(subscription: any, topic: any, resource: any, eventNumber: number): any {
-    const fullResource = subscription.content === 'full-resource';
-    const focusFullUrl = `urn:uuid:${randomUUID()}`;
     return buildSubscriptionNotificationR5({
       subscriptionReference: `Subscription/${subscription.id}`,
       topic: topic.url,
@@ -259,8 +277,11 @@ export class SubscriptionManager implements ISubscriptionProcessor {
       eventsSinceSubscriptionStart: eventNumber,
       timestamp: new Date().toISOString(),
       statusFullUrl: `urn:uuid:${randomUUID()}`,
-      focusReference: fullResource ? focusFullUrl : `${resource.resourceType}/${resource.id}`,
-      ...(fullResource ? { focusFullUrl, focusResource: resource } : {}),
+      focusReference: `${resource.resourceType}/${resource.id}`,
+      ...(subscription.content === 'full-resource' ? {
+        focusResource: resource,
+        focusFullUrl: `urn:uuid:${randomUUID()}`,
+      } : {}),
     });
   }
 
@@ -273,15 +294,15 @@ export class SubscriptionManager implements ISubscriptionProcessor {
     } }] };
   }
 
-  private async post(endpoint: string, parameters: any[], body: any): Promise<Pick<Response, 'ok' | 'status'>> {
+  private async post(endpoint: string, parameters: any[], body: any, serializedBody?: string): Promise<Pick<Response, 'ok' | 'status'>> {
     const headers: Record<string, string> = { 'content-type': 'application/fhir+json' };
     for (const parameter of parameters) headers[String(parameter.name).toLowerCase()] = String(parameter.value);
-    return this.fetchFn(endpoint, { method: HttpRequestMethods.Post, headers, body: JSON.stringify(body), signal: AbortSignal.timeout(5000) });
+    return this.fetchFn(endpoint, { method: HttpRequestMethods.Post, headers, body: serializedBody ?? JSON.stringify(body), signal: AbortSignal.timeout(5000) });
   }
 
   private async deliver(vaultId: string, outbox: any): Promise<void> {
     try {
-      const response = await this.post(outbox.endpoint, outbox.parameters, outbox.notification);
+      const response = await this.post(outbox.endpoint, outbox.parameters, outbox.notification, outbox.serializedNotification);
       outbox.attempts += 1;
       outbox.status = response.ok ? 'delivered' : outbox.attempts >= 5 ? 'failed' : 'retryable';
       outbox.lastStatus = response.status;

@@ -11,6 +11,32 @@
 
 - Require an explicit server-owned authorization decision for the standalone native-FHIR router; missing identity, missing policy and policy errors deny access.
 
+- Inject the existing process-owned Antifraud crypto port into discovery ping.
+  Preserve its fixed unsigned UTF-8 JSON/base64url form response and ordinary
+  JSON output. Correct the negotiated FHIR batch response to contain the actual
+  OperationOutcome, response status and FHIR media type. Describe the compact
+  response as unsigned rather than claiming JARM authenticity. The remaining
+  Gateway independence is completed by the native-contract changes below.
+
+- Type discovery's protected CommunicationRequest and DocumentReference
+  section reads with the existing SOS Data record contract. Preserve emitted
+  route bytes and every storage, publication and authority check.
+
+- Use public FHIR 0.7.1 R5 subscription event selection and notification
+  construction. Project historical topic filter `resourceType` spelling at
+  this boundary, deny unsupported modifiers, and persist caller-owned UUID
+  entry identities, timestamp and serialized notification bytes with the
+  encrypted outbox. Retries retain those exact bytes after restart. This
+  corrects the previous invalid notification fullUrls; it does not claim
+  byte parity with that invalid wire profile.
+
+- Resolve FHIR code-system identifiers and appointment fixtures from the
+  canonical FHIR package, and search-response HTTP status values from SOS Data.
+  Preserve successful response strings and remove unused legacy clinical
+  catalog forwarders. Pin public SOS Data 0.8.2 and Antifraud Data 0.3.3 so
+  existing response envelopes and neutral credential canonicalizer types
+  resolve after a clean install.
+
 - Persist a bound pending state while reconciling the configured host DID.
   Restart retries publish the exact stored self-credentials before clearing
   that state; inconsistent targets fail closed. Keys, claims and tenants stay

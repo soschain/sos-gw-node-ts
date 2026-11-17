@@ -33,6 +33,8 @@ import { buildGaiaXServiceOfferingCredentialDraft } from 'antifraud-data-utils-t
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { ILogger } from '../loggers/ILogger';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import type { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { TenantStatusService } from '../services/TenantStatusService';
 import { CommunicationRequestClaim, DocumentReferenceClaim } from 'fhir-data-utils-ts/claims';
 import { PublicAlertOperationalClaim } from 'sos-data-utils-ts/public-notifications';
@@ -62,6 +64,7 @@ function canonicalizeHostedTenantRouteId(tenantId: string): string {
  * @param discoveryService The service to generate discovery documents.
  * @param kmsService The service to retrieve cryptographic keys.
  * @param logger The logging service.
+ * @param cryptography The existing process-owned cryptography resource for ping serialization.
  * @returns An Express router.
  */
 export function createDiscoveryRouter(
@@ -70,6 +73,7 @@ export function createDiscoveryRouter(
   kmsService: IKmsService,
   logger: ILogger,
   vaultRepository: IVaultRepository,
+  cryptography: Pick<ICryptography, 'jwsToCompact'>,
 ): express.Router {
   const router = express.Router();
   const tenantStatusService = new TenantStatusService(tenantsCacheManager, vaultRepository, kmsService);
@@ -870,7 +874,7 @@ export function createDiscoveryRouter(
   router.get(
     [`${hostPingPrefix}/ping`, `${hostScopedWellKnownPrefix}/ping`, `${tenantWellKnownPrefix}/ping`],
     resolveTenant,
-    pingHandler(),
+    pingHandler(cryptography),
   );
 
   router.get(
@@ -1380,8 +1384,8 @@ export function createDiscoveryRouter(
       const collectionName = String(tenant?.collectionName || await tenantsCacheManager.getCollectionName(vaultId) || '');
       if (!collectionName) continue;
       const tenantJurisdiction = String(await tenantsCacheManager.getTenantJurisdiction(vaultId) || '').toUpperCase();
-      const records = await vaultRepository.listContainersInSection<import('sos-data-utils-ts/confidential-storage').ConfidentialStorageDoc>(collectionName, 'care-communication-requests');
-      const documentRecords = await vaultRepository.listContainersInSection<import('sos-data-utils-ts/confidential-storage').ConfidentialStorageDoc>(collectionName, 'organization-document-references');
+      const records = await vaultRepository.listContainersInSection<ConfidentialStorageDoc>(collectionName, 'care-communication-requests');
+      const documentRecords = await vaultRepository.listContainersInSection<ConfidentialStorageDoc>(collectionName, 'organization-document-references');
       const documents = new Map<string, FlatClaims>();
       for (const record of documentRecords) {
         try {

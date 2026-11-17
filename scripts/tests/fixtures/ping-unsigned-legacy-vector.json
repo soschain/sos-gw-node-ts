@@ -1,0 +1,40 @@
+{
+  "profile": "Fixed alg:none object payload, no zip, empty signature; no authenticity assertion",
+  "source": {
+    "package": "gdc-common-utils-ts",
+    "version": "2.9.30",
+    "moduleSha256": "ffd7babbdbe6a6285c6f4a50921294cc06ab77d75dbbfed086fb18131ac3f134",
+    "readOnly": true
+  },
+  "header": {
+    "alg": "none"
+  },
+  "payload": {
+    "jti": "00000000-0000-4000-8000-000000000001",
+    "type": "ping-response",
+    "thid": "ping-static",
+    "iss": "did:web:example.invalid%3A8443",
+    "aud": "anonymous",
+    "exp": 1893492300,
+    "body": {
+      "type": "batch-response",
+      "meta": {
+        "timestamp": "2030-01-01T10:00:00.000Z",
+        "tenantId": "example-tenant-café-水"
+      },
+      "data": [
+        {
+          "resourceType": "OperationOutcome",
+          "issue": [
+            {
+              "severity": "information",
+              "code": "throttled",
+              "diagnostics": "Ping successful"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "compact": "eyJhbGciOiJub25lIn0.eyJqdGkiOiIwMDAwMDAwMC0wMDAwLTQwMDAtODAwMC0wMDAwMDAwMDAwMDEiLCJ0eXBlIjoicGluZy1yZXNwb25zZSIsInRoaWQiOiJwaW5nLXN0YXRpYyIsImlzcyI6ImRpZDp3ZWI6ZXhhbXBsZS5pbnZhbGlkJTNBODQ0MyIsImF1ZCI6ImFub255bW91cyIsImV4cCI6MTg5MzQ5MjMwMCwiYm9keSI6eyJ0eXBlIjoiYmF0Y2gtcmVzcG9uc2UiLCJtZXRhIjp7InRpbWVzdGFtcCI6IjIwMzAtMDEtMDFUMTA6MDA6MDAuMDAwWiIsInRlbmFudElkIjoiZXhhbXBsZS10ZW5hbnQtY2Fmw6kt5rC0In0sImRhdGEiOlt7InJlc291cmNlVHlwZSI6Ik9wZXJhdGlvbk91dGNvbWUiLCJpc3N1ZSI6W3sic2V2ZXJpdHkiOiJpbmZvcm1hdGlvbiIsImNvZGUiOiJ0aHJvdHRsZWQiLCJkaWFnbm9zdGljcyI6IlBpbmcgc3VjY2Vzc2Z1bCJ9XX1dfX0."
+}

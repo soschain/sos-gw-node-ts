@@ -3,7 +3,7 @@
 // Description: Contains test data fixtures related to FHIR Appointments and Communications.
 import { FhirDataTypes } from 'fhir-data-utils-ts';
 
-import { AppointmentClaimsFhirApi, AppointmentStatus } from '../../gdc-backend-utils-node/models/fhir/Appointment.claims';
+import { AppointmentClaimsFhirApi, AppointmentStatus } from 'fhir-data-utils-ts';
 import { testExamplesDidWeb } from './identity.data';
 import { testTenant1DidWebExternal } from './organization.data';
 

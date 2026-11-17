@@ -1,5 +1,44 @@
 # GDC Core to SOSChain GW synchronization
 
+## Public ping compact response and FHIR export
+
+Bootstrap passes its existing process-owned Antifraud `jwsToCompact` capability
+through discovery routing to ping. A static governed vector records the
+read-only published predecessor's UTF-8 JSON/base64url bytes for ping's fixed
+`alg: none`, uncompressed object payload and empty signature. The terminal dot
+and existing JSON/form response fields remain unchanged. This profile carries
+no signature or authenticity proof; it is not a general JWT or compressed
+payload migration.
+
+The FHIR branch now exports an owned typed Bundle with an OperationOutcome
+resource and a response status per entry, using the FHIR JSON media type.
+Previously, raw outcomes were passed to a helper expecting entry wrappers,
+which produced empty entries. The correction is isolated to ping's native
+export; storage profiles and manager behavior are unchanged. No dependency or
+version update is required, and the full project GDC boundary remains blocked.
+
+## Discovery protected-record types
+
+The two protected section reads in discovery use
+`sos-data-utils-ts/confidential-storage`. This removes only erased record-type
+imports; the compiled route and its tenant, KMS and publication checks remain
+byte-identical. No dependency version changes are required.
+
+## Versioned R5 subscription owner
+
+SubscriptionManager consumes the public FHIR 0.7.1 subscription matcher and
+notification builder. Its explicit adapter maps historical topic
+`canFilterBy.resourceType` to R5 `resource`, rejecting conflicting spellings.
+The manager retains its tenant, endpoint, exact-subject and handshake guards.
+Unsupported filter modifiers do not match.
+
+Event notifications now carry valid caller-owned UUID fullUrls and a timestamp.
+Their serialized body is persisted in the existing encrypted outbox so storage
+key order and process restart cannot change retry bytes. Older outbox records
+without that body retain their previous serialization fallback. Registration
+handshakes remain a separate existing profile. The remaining project-wide GDC
+boundary is still blocked.
+
 ## Host DID reconciliation recovery
 
 The existing host reconciler uses the same physical registry and KMS custody.

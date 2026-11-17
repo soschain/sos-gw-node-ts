@@ -6,6 +6,8 @@
 import { jest } from '@jest/globals';
 import express from 'express';
 import { createHash } from 'node:crypto';
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
+import { AdapterCryptoSdkNode } from '../../gdc-backend-utils-node/adapters/node/crypto';
 import { createDiscoveryRouter } from '../../routes/discovery';
 import { DiscoveryService } from '../../services/DiscoveryService';
 import type { TenantsCacheManager } from '../../managers/TenantsCacheManager';
@@ -101,6 +103,7 @@ const discoveryRouter = createDiscoveryRouter(
   mockKmsService,
   mockLogger,
   mockVaultRepository,
+  new CryptographyService(new AdapterCryptoSdkNode()),
 );
 app.use('/', discoveryRouter);
 
