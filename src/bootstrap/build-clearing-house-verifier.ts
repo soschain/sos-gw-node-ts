@@ -142,15 +142,16 @@ export function buildLocalClearingHouseVerifier(options: {
       if (options.ledgerKind === 'fabric') {
         const mspId = String(process.env.LEDGER_MSP_ID || process.env.LEDGER_FABRIC_MSP_ID || '').trim();
         const keyId = tryGetJwkThumbprint(key as any);
-        if (!mspId || !keyId || !identity.employeeUrn || !identity.stableActorIdentifier) throw new Error('Professional Fabric identity binding is incomplete.');
-        const channelName = resolveOrganizationIdentityChannel(process.env.HOST_JURISDICTION);
+        const expectedLicence = identity.roleLicenseIdentity;
+        if (!mspId || !keyId || !identity.employeeUrn || !identity.stableActorIdentifier || !expectedLicence) throw new Error('Professional Fabric identity binding is incomplete.');
+        const channelName = resolveOrganizationIdentityChannel(expectedLicence.jurisdiction);
         const binding = await new ManageAssetSubjectKeyBinding({ chaincodeName: SubjectKeyBindingIdentityChaincode, channelName })
           .read(mspId, `employee_${identity.employeeUrn}__${keyId}`) as Record<string, any>;
-        if (binding?.status !== 'active' || binding.keyId !== keyId || binding.subjectId !== identity.employeeUrn
-          || normalizeCodeSystemAndValue(binding.licensedRole) !== normalizeCodeSystemAndValue(identity.role)
-          || !binding.roleLicenseId || !binding.professionalAssignmentLink) throw new Error('Professional key binding is not currently active on Fabric.');
-        const licence = await new ManageAsset('roleLicense', { chaincodeName: 'rolelicense-sc', channelName }).read(mspId, binding.roleLicenseId) as Record<string, any>;
-        if (licence?.status !== 'active' || licence.stableContactIdentifier !== identity.stableActorIdentifier
+        if (binding?.status !== 'active' || binding.subjectType !== 'employee' || binding.keyId !== keyId || binding.subjectId !== identity.employeeUrn
+          || !binding.professionalAssignmentLink || !binding.employeeLink || !binding.organizationLink) throw new Error('Professional key binding is not currently active on Fabric.');
+        const licence = await new ManageAsset('roleLicense', { chaincodeName: 'rolelicense-sc', channelName }).read(mspId, expectedLicence.id) as Record<string, any>;
+        if (licence?.status !== 'active' || licence.id !== expectedLicence.id || licence.organizationOfficialId !== expectedLicence.organizationOfficialId
+          || licence.jurisdiction !== expectedLicence.jurisdiction || licence.stableContactIdentifier !== identity.stableActorIdentifier
           || normalizeCodeSystemAndValue(licence.licensedRole) !== normalizeCodeSystemAndValue(identity.role)) throw new Error('Professional role licence is not currently active on Fabric.');
         const assignment = await new ManageAssetProfessionalAssignment({ channelName }).read(mspId, binding.professionalAssignmentLink) as Record<string, any>;
         if (assignment?.status !== 'active' || assignment.assignmentLink !== binding.professionalAssignmentLink

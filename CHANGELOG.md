@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Resolve professional role and licence authority through the protected current
+  licence and authoritative ledger assets, using the canonical key-binding schema.
+
 - Bind Communication write and search response audiences to the requesting actor,
   preserving the provider issuer and request thread for registered SDK verification.
 
