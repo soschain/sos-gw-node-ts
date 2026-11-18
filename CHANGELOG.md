@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Bind Communication write and search response audiences to the requesting actor,
+  preserving the provider issuer and request thread for registered SDK verification.
+
 - Pin the published independent Antifraud, FHIR and SOS runtime libraries and
   native SDK to their verified registry releases for the cumulative gateway
   image. Preserve existing host identity, custody and deployment profiles.
