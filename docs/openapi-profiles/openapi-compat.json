@@ -4,7 +4,7 @@
     "title": "Gateway API - COMPAT",
     "version": "1.0.3",
     "description": "Compatibility profile including legacy and alias routes on top of the core flow.",
-    "x-profile-generated-at": "2026-11-17T07:16:27.896Z",
+    "x-profile-generated-at": "2026-11-18T02:00:03.071Z",
     "x-profile-name": "compat"
   },
   "servers": [],
@@ -5094,7 +5094,7 @@
           "3.1 Employee Role"
         ],
         "summary": "Create a new Professional (Employee)",
-        "description": "Submits an asynchronous job to create or enable again a professional (employee) within an existing tenant.\nThe `tenantId` in the path specifies the organization under which the employee is being created.\nPrerequisite: controller device/client must already be active (`Token/_exchange` + `Device/_dcr`).\nCreating an employee profile does not automatically activate employee devices.\nAdditional employees require `License/_issue`. A second device for the\nsame employee reuses that seat and activation code, sending a distinct\n`client_instance_id` through `_exchange` and `_dcr` (default allowance: 2).\n\nV1 lifecycle semantics:\n- business identity is the combination `email + role`\n- if the same `email + role` already exists and is active, the gateway returns the existing employee instead of creating a duplicate\n- if the same `email + role` exists and is inactive, the gateway enables that employee record again\n- employee suspension does not implicitly release the reserved license seat\n- a bounded Bundle may carry multiple entries, but every entry must\n  identify one concrete `resource.id`; wildcard ids are rejected\n- `entry.request.method = DELETE` is the current GW v1 soft-disable\n  compatibility profile, not native FHIR delete semantics\n",
+        "description": "Submits an asynchronous job to create or enable again a professional (employee) within an existing tenant.\nThe `tenantId` in the path specifies the organization under which the employee is being created.\nPrerequisite: controller device/client must already be active (`Token/_exchange` + `Device/_dcr`).\nCreating an employee profile does not automatically activate employee devices.\nAdditional employees require `License/_issue`. A second device for the\nsame employee reuses that seat and activation code, sending a distinct\n`client_instance_id` through `_exchange` and `_dcr` (default allowance: 5).\nAn explicit allowance stored on the licence takes precedence.\n\nV1 lifecycle semantics:\n- business identity is the combination `email + role`\n- if the same `email + role` already exists and is active, the gateway returns the existing employee instead of creating a duplicate\n- if the same `email + role` exists and is inactive, the gateway enables that employee record again\n- employee suspension does not implicitly release the reserved license seat\n- a bounded Bundle may carry multiple entries, but every entry must\n  identify one concrete `resource.id`; wildcard ids are rejected\n- `entry.request.method = DELETE` is the current GW v1 soft-disable\n  compatibility profile, not native FHIR delete semantics\n",
         "parameters": [
           {
             "$ref": "#/components/parameters/AppId"

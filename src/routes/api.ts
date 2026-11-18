@@ -1737,7 +1737,8 @@ export function createApiRouter(
    *       Creating an employee profile does not automatically activate employee devices.
    *       Additional employees require `License/_issue`. A second device for the
    *       same employee reuses that seat and activation code, sending a distinct
-   *       `client_instance_id` through `_exchange` and `_dcr` (default allowance: 2).
+   *       `client_instance_id` through `_exchange` and `_dcr` (default allowance: 5).
+   *       An explicit allowance stored on the licence takes precedence.
    *       
    *       V1 lifecycle semantics:
    *       - business identity is the combination `email + role`

@@ -1,5 +1,14 @@
 ## Unreleased
 
+- Reuse the original active licence credential and device bindings when an
+  authorized actor enrolls another installation. Reconcile a missing legacy
+  controller subject only from its current protected tenant designation and
+  exact licensed contact. Preserve separate controller and occupational roles,
+  current DCR actor/profile checks and the ledger issuance callback; use the
+  same five-device default for licence receipts and registration capacity.
+  Device revocation selects the licensed role while retaining other role aliases
+  and independently active device keys.
+
 ## 2.1.0 (2026-11-17)
 
 - Sign encrypted responses with the provider communication key and bind the

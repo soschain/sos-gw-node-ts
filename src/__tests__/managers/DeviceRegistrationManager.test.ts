@@ -1,4 +1,4 @@
-// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+// Flow contract: DCR binds current licensed employee identity or verified individual-controller authority; distinct installations preserve prior keys, and explicit replacement/revocation changes only the selected device. Fixtures use shared identities and the real vault and explicit KMS port.
 import { DCR_REPLAY_PUBLIC_KEYS } from '../data/dcr-replay-public-keys';
 // Contract: DCR binds one verified activation seat, authenticated account,
 // controller role DID, authorized subject and registered device JWKS.
@@ -14,12 +14,13 @@ import {jest as esmJest} from '@jest/globals';
 import { DCR_REGISTRATION_JOB } from '../data/example-jobs';
 import { VaultMemRepository } from '../../database/repositories/vault/vault.mem.repository';
 import { mockKmsService } from '../mocks/kms.mock';
-import { getTenantVaultId } from '../../utils/tenant';
+import {getTenantVaultId,generateTenantCollectionNameFromClaims} from '../../utils/tenant';
 import { getEnvSectionId } from '../../utils/section-env';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { EntityLifecycleStatus, EntityType } from '../../gdc-backend-utils-node/models/enums';
 import type { EntityConfig } from '../../gdc-backend-utils-node/models/entity';
+import {SchemaOrgOrganizationClaim,SchemaOrgServiceClaim} from 'antifraud-data-utils-ts/schema-org-claims';
 import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 
 
@@ -29,9 +30,11 @@ import { IdentityAuthActions, IdentityAuthRequestFields, IdentityDcrMetadataFiel
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { HttpStatusCodes } from 'sos-data-utils-ts/bff-wire-contract';
 import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
-import { createEmployeeUrn, createOrganizationUrn } from '../../utils/urn';
+import { createEmployeeUrn, createOrganizationUrn,parseTenantUrn } from '../../utils/urn';
 import { URN_NAMESPACE, URN_NETWORK, URN_VERSION } from '../data/urn.data';
 import {
+  EXAMPLE_PROFESSIONAL_DID,
+  EXAMPLE_TENANT_ROUTE_CONTEXT,
   EXAMPLE_EMPLOYEE_DEVICE_CLIENT_ID_PRIMARY,
   EXAMPLE_EMPLOYEE_DEVICE_INSTANCE_ID_TERTIARY,
   EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL,
@@ -112,10 +115,33 @@ describe('DeviceRegistrationManager', () => {
     expect(manager).toBeDefined();
   });
 
+  async function seedLicensedEmployee(job:any,license:any,actorDid=EXAMPLE_PROFESSIONAL_DID,role:string=HealthcareActorRoles.GeneralistMedicalPractitioner){
+    jest.mocked(mockKmsService.protectAttributesNameAndValue).mockImplementation(async(attributes:any[])=>attributes.map(attribute=>({name:`protected:${attribute.name}`,value:`protected:${attribute.value}`,unique:attribute.unique})));
+    const realm=parseTenantUrn(TEST_ORGANIZATION_URN)!;
+    const claims={
+      [SchemaOrgOrganizationClaim.AddressCountry]:String(job.jurisdiction).split('-')[0],
+      ...(String(job.jurisdiction).includes('-')?{[SchemaOrgOrganizationClaim.AddressRegion]:job.jurisdiction}:{}),
+      [SchemaOrgOrganizationClaim.IdentifierType]:realm.idType,
+      [SchemaOrgOrganizationClaim.IdentifierValue]:EXAMPLE_LEGAL_ORGANIZATION_TAX_ID,
+      [SchemaOrgServiceClaim.Category]:job.sector,
+    };
+    const collection=generateTenantCollectionNameFromClaims(claims),vaultId=getTenantVaultId(job.sector,job.tenantId);
+    const employeeUrn=createEmployeeUrn({namespace:URN_NAMESPACE,network:URN_NETWORK,version:URN_VERSION,jurisdiction:job.jurisdiction,sector:job.sector,idType:realm.idType,idValue:EXAMPLE_LEGAL_ORGANIZATION_TAX_ID,email:EXAMPLE_EMAIL_PROFESSIONAL,role});
+    Object.assign(license,{subjectId:EXAMPLE_KYC_CONTROLLER_USER_UUID,issuedToEmail:EXAMPLE_EMAIL_PROFESSIONAL,issuedToRole:role,ownerOrganizationId:EXAMPLE_LEGAL_ORGANIZATION_TAX_ID,activatedBy:buildStableActorIdentifier({contactKind:'email',contact:EXAMPLE_EMAIL_PROFESSIONAL})});
+    Object.assign(job.content.body,{[IdentityDcrMetadataFields.ActorDid]:actorDid,[IdentityDcrMetadataFields.ProfileDid]:actorDid});
+    const employee:EntityConfig={id:EXAMPLE_KYC_CONTROLLER_USER_UUID,type:EntityType.Person,status:EntityLifecycleStatus.Active,
+      claims:{[SchemaOrgPersonClaim.Email]:EXAMPLE_EMAIL_PROFESSIONAL,[SchemaOrgPersonClaim.HasOccupation]:role},
+      didDocument:{'@context':'https://www.w3.org/ns/did/v1',id:actorDid,alsoKnownAs:[employeeUrn],verificationMethod:[],service:[]},didConfig:{service:[]},meta:{lastUpdated:new Date().toISOString()}};
+    await vaultRepository.put(collection,[await mockKmsService.protectConfidentialData({id:employee.id,status:employee.status,sequence:0,content:employee} as ConfidentialStorageDoc,vaultId)],getEnvSectionId('employees'));
+    manager=new DeviceRegistrationManager(TEST_API_BASE_URL,vaultRepository,mockKmsService,{getCollectionName:async()=>collection,getOrganizationIdentifierUrn:async()=>EXAMPLE_LEGAL_ORGANIZATION_TAX_ID});
+    return license;
+  }
+
   describe('process', () => {
     it('should process a valid web DCR job and return a success response with a client_id', async () => {
       // Arrange
       const job = cloneDeep(DCR_REGISTRATION_JOB);
+      Object.assign(job,EXAMPLE_TENANT_ROUTE_CONTEXT);
       (job.content?.body as any).application_type = 'web';
       (job.content?.body as any).software_id = 'online.example.professional';
       (job.content?.body as any).software_version = '2.4.0';
@@ -134,6 +160,7 @@ describe('DeviceRegistrationManager', () => {
         reactivationEnabled: false,
         exp: Math.floor(Date.now() / 1000) + 3600,
       };
+      await seedLicensedEmployee(job,license);
       const licenseDoc: ConfidentialStorageDoc = {
         id: license.id,
         status: license.status,
@@ -148,6 +175,7 @@ describe('DeviceRegistrationManager', () => {
       // Assert
       const responseBody = result.body as BundleJsonApi;
       const responseEntry = responseBody.data[0] as BundleEntryResponse;
+      expect((responseEntry as any).response?.outcome?.issue||[]).toEqual([]);
       expect(responseEntry.response.status).toEqual('201');
       
       const resource = responseEntry.resource as any;
@@ -184,15 +212,18 @@ describe('DeviceRegistrationManager', () => {
 
     it('uses the verified initial-access-token activation binding when the server-side professional flow omits the code from the DCR body', async () => {
       const job = cloneDeep(DCR_REGISTRATION_JOB);
+      Object.assign(job,EXAMPLE_TENANT_ROUTE_CONTEXT);
       const activationCode = String((job.content?.body as any).code);
       delete (job.content?.body as any).code;
       job.content!.meta = {
         bearer: { jwt: { payload: { sub: 'verified-professional', act_code: activationCode, scope: 'dcr:register' } } },
       } as any;
       const vaultId = getTenantVaultId(job.sector as any, job.tenantId as string);
+      const employeeLicenseBinding=await seedLicensedEmployee(job,{});
       await vaultRepository.put(vaultId, [{
         id: 'portable-professional-license', status: 'active', sequence: 1,
         content: {
+          ...employeeLicenseBinding,
           id: 'portable-professional-license', tenantId: job.tenantId, orderId: 'portable-professional-order',
           activationCode, userClass: 'employee', type: 'web', status: 'active',
           plan: 'default', renewalCycle: '12m', reactivationEnabled: false,
@@ -202,6 +233,7 @@ describe('DeviceRegistrationManager', () => {
 
       const result = await manager.process(job);
 
+      expect((result.body as any).data[0].response?.outcome?.issue||[]).toEqual([]);
       expect(((result.body as BundleJsonApi).data[0] as BundleEntryResponse).response.status).toBe('201');
     });
 
@@ -294,6 +326,7 @@ describe('DeviceRegistrationManager', () => {
 
     it('links DCR client and key aliases only to an existing stable clinical creator assignment', async () => {
       const job = cloneDeep(DCR_REGISTRATION_JOB);
+      Object.assign(job,EXAMPLE_TENANT_ROUTE_CONTEXT);
       const body = job.content?.body as any;
       const activationCode = String(body?.code);
       const vaultId = getTenantVaultId(job.sector as any, job.tenantId as string);
@@ -319,11 +352,13 @@ describe('DeviceRegistrationManager', () => {
           role: 'org.ilo.isco|2250',
         },
       });
+      const employeeLicenseBinding=await seedLicensedEmployee(job,{},actorDid,binding.role);
       await vaultRepository.put(vaultId, [{
         id: 'license-clinical-creator',
         status: 'issued',
         sequence: 0,
         content: {
+          ...employeeLicenseBinding,
           id: 'license-clinical-creator',
           tenantId: job.tenantId,
           orderId: 'order-clinical-creator',
@@ -346,6 +381,7 @@ describe('DeviceRegistrationManager', () => {
       const result = await manager.process(job);
 
       const entry = (result.body as BundleJsonApi).data[0] as BundleEntryResponse;
+      expect((entry as any).response?.outcome?.issue||[]).toEqual([]);
       expect(entry.response.status).toBe(String(HttpStatusCodes.Created));
       const clientId = String((entry.resource as any).client_id);
       const stored = await vaultRepository.get<any>(

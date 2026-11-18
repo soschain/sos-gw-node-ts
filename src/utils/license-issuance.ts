@@ -17,8 +17,13 @@ import {
   LICENSE_USER_CLASS_EMPLOYEE,
   LICENSE_USER_CLASS_INDIVIDUAL,
 } from '../constants/domain';
-import { normalizeIndexedEmail } from './indexed-contact';
+import { normalizeIndexedEmail,normalizeIndexedPhone } from './indexed-contact';
 import { normalizeCodeSystemAndValue } from './normalize-codeAndSystem';
+import {resolveLegacyControllerLicenseSubject} from './legacy-controller-license-binding';
+import {openDeviceLicenseDocument,prepareDeviceLicenseDocumentForWrite} from './device-license-storage';
+import {ManagerError} from 'sos-sdk-core-ts/manager-error';
+import {IssueType} from 'fhir-data-utils-ts/operation-outcome';
+import {isStableActorIdentifier} from 'antifraud-data-utils-ts/organization-identity';
 
 export type IssueActivationCodeParams = {
   vaultRepository: IVaultRepository;
@@ -317,9 +322,13 @@ export async function issueActivationCodeFromPool(params: IssueActivationCodePar
     subjectDid,
   } = params;
 
-  const all = await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(tenantVaultId, getEnvSectionId('device-licenses'));
+  const documents=await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(tenantVaultId,getEnvSectionId('device-licenses'));
+  const all=await Promise.all(documents.map(async document=>{
+    const opened=await openDeviceLicenseDocument(document,tenantVaultId,kmsService);
+    return {...document,content:structuredClone(opened.license)} as ConfidentialStorageDoc;
+  }));
   const normalizedEmail = normalizeIndexedEmail(email || '');
-  const normalizedPhone = String(phone || '').replace(/[\s()-]/g, '');
+  const normalizedPhone=normalizeIndexedPhone(phone||'');
   const normalizedRole = normalizeCodeSystemAndValue(role);
   const now = Math.floor(Date.now() / 1000);
 
@@ -334,7 +343,7 @@ export async function issueActivationCodeFromPool(params: IssueActivationCodePar
       return false;
     }
     const issuedEmail = normalizeIndexedEmail(String(license.issuedToEmail || ''));
-    const issuedPhone = String(license.issuedToPhone || '').replace(/[\s()-]/g, '');
+    const issuedPhone=normalizeIndexedPhone(license.issuedToPhone||'');
     const issuedRole = normalizeCodeSystemAndValue(String(license.issuedToRole || ''));
     const sameRecipient = normalizedEmail
       ? issuedEmail === normalizedEmail
@@ -356,6 +365,28 @@ export async function issueActivationCodeFromPool(params: IssueActivationCodePar
       if (leftReusableScore !== rightReusableScore) return rightReusableScore - leftReusableScore;
       return Number(right.sequence || 0) - Number(left.sequence || 0);
     })[0];
+
+  const existingLicense=existingMatch?.content as DeviceLicense & Record<string,any> | undefined;
+  if(existingMatch&&existingLicense){
+    if(![LICENSE_STATUS_ACTIVE,LICENSE_STATUS_ISSUED].includes(existingLicense.status as typeof LICENSE_STATUS_ACTIVE|typeof LICENSE_STATUS_ISSUED))throw new ManagerError('An inactive licence requires its explicit lifecycle action.',IssueType.Forbidden);
+    if(subjectId&&existingLicense.subjectId&&subjectId!==existingLicense.subjectId)throw new ManagerError('Existing licence belongs to a different employee.',IssueType.Conflict);
+    if(params.stableActorIdentifier&&isStableActorIdentifier(existingLicense.activatedBy)&&existingLicense.activatedBy!==params.stableActorIdentifier)throw new ManagerError('Existing licence belongs to a different actor.',IssueType.Forbidden);
+    const activationCode=String(existingLicense.activationCode||'').trim();
+    if(activationCode){
+      const before=JSON.stringify(existingLicense);
+      if(userClass===LICENSE_USER_CLASS_EMPLOYEE&&subjectId&&!existingLicense.subjectId){
+        const resolved=await resolveLegacyControllerLicenseSubject({tenantVaultId,license:existingLicense,vaultRepository,kmsService});
+        if(resolved!==subjectId)throw new ManagerError('Requested employee does not match the current controller.',IssueType.Forbidden);
+        existingLicense.subjectId=resolved;
+      }
+      await params.beforePersist?.(existingLicense);
+      if(before!==JSON.stringify(existingLicense)){
+        const updated=await prepareDeviceLicenseDocumentForWrite({document:{...existingMatch,sequence:(existingMatch.sequence||0)+1},license:existingLicense,vaultId:tenantVaultId,kmsService});
+        await vaultRepository.put(tenantVaultId,[updated],getEnvSectionId('device-licenses'));
+      }
+      return {activationCode,licenseId:existingMatch.id,maxDevices:resolveIssuedSeatDeviceAllowance(existingLicense.maxDevices)};
+    }
+  }
 
   const availableSameType = all.find((doc) => {
     const license = doc?.content as any;
@@ -444,7 +475,8 @@ export async function issueActivationCodeFromPool(params: IssueActivationCodePar
 
   await params.beforePersist?.(license);
 
-  await vaultRepository.put(tenantVaultId, [match], getEnvSectionId('device-licenses'));
+  const updated=await prepareDeviceLicenseDocumentForWrite({document:match,license,vaultId:tenantVaultId,kmsService});
+  await vaultRepository.put(tenantVaultId,[updated],getEnvSectionId('device-licenses'));
 
   const maxDevices = resolveIssuedSeatDeviceAllowance(license.maxDevices);
   return { activationCode, licenseId: match.id, maxDevices };

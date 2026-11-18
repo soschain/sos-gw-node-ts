@@ -1,4 +1,4 @@
-// Flow contract: local BYOK onboarding uses real KEM/AES and ML-DSA messages with the explicitly selected local Demo account verifier; all Offer, Order, token and DCR persistence assertions remain required.
+// Flow contract: local BYOK onboarding uses real KEM/AES and ML-DSA messages with the explicitly selected local Demo account verifier; DCR binds the controller DID published by the activated tenant, and all Offer, Order, token and identity/key persistence assertions remain required.
 // src/__tests__/integration/end-to-end-flow.test.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 import { GatewayRequestEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
@@ -427,6 +427,12 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
     const initialAccessToken = String((exchangeFinal.body as any)?.initial_access_token || '');
     expect(initialAccessToken.split('.')).toHaveLength(3);
 
+    const tenantDidDocument=await tenantManager.getDidDocument(testTenant1VaultId);
+    const controllers=Array.isArray(tenantDidDocument?.controller)?tenantDidDocument.controller:tenantDidDocument?.controller?[tenantDidDocument.controller]:[];
+    expect(controllers).toHaveLength(1);
+    const controllerDid=String(controllers[0]);
+    expect(controllerDid).toMatch(/^did:web:/);
+
     const dcrThid = `${testPayloadCreateTenant1.thid}-device-dcr`;
     const dcrPayload = {
       thid: dcrThid,
@@ -437,6 +443,8 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
       body: {
         application_type: 'web',
         client_name: 'BYOK controller browser',
+        actor_did:controllerDid,
+        profile_did:controllerDid,
         code: controllerActivationCode,
         redirect_uris: ['https://controller.example/callback'],
         token_endpoint_auth_method: 'private_key_jwt',
@@ -497,6 +505,8 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
       testTenant1VaultId,
     );
     expect(openedProfile.clientId).toBe(clientId);
+    expect(openedProfile.subjectId).toBe(controllerDid);
+    expect(openedProfile.stableActorIdentifier).toMatch(/^urn:multibase:z/);
     expect(openedProfile.jwks.keys.map((key: { kid?: string }) => key.kid)).toEqual(
       expect.arrayContaining([externalSigner.kid, externalEncrypter.kid]),
     );
@@ -517,6 +527,7 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
     expect(activatedLicense).toBeDefined();
     expect(activatedLicense!).toMatchObject({
       status: 'active',
+      subjectId:controllerDid,
       deviceId: clientId,
     });
     expect(activatedLicense!.deviceBindings).toEqual(expect.arrayContaining([
@@ -526,5 +537,13 @@ describe('End-to-End API Flow (BYOK Onboarding)', () => {
         status: 'active',
       }),
     ]));
+    const employeeCollection=await tenantManager.getCollectionName(testTenant1VaultId);
+    expect(employeeCollection).toBeTruthy();
+    const employeeDocument=await vaultRepository.get<ConfidentialStorageDoc>(employeeCollection!,controllerDid,getEnvSectionId('employees'));
+    expect(employeeDocument).toBeDefined();
+    const employee=await kmsService.unprotectConfidentialData<any>(employeeDocument!,testTenant1VaultId);
+    expect(employee.didDocument.id).toBe(controllerDid);
+    expect(employee.didDocument.verificationMethod.map((method:any)=>method.publicKeyJwk?.kid)).toEqual(expect.arrayContaining([externalSigner.kid,externalEncrypter.kid]));
+
   });
 });

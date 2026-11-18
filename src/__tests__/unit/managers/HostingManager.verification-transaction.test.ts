@@ -921,6 +921,7 @@ describe('HostingManager legal organization verification transaction', () => {
       mockHostRuntime,
     );
 
+    const before=structuredClone(assignedControllerLicenseDoc);
     const response = await manager.process(buildIssueJob(), 'test', false);
     const claims = (response.body.data[0]?.resource as any)?.meta?.claims || {};
 
@@ -928,19 +929,9 @@ describe('HostingManager legal organization verification transaction', () => {
     expect(fetchCalls[0]?.url).toBe(
       `${EXAMPLE_ICA_BASE_URL}/ica/cds-ES/v1/${EXAMPLE_SECTOR}/terms/pdf/${EXAMPLE_VERIFY_RESOURCE_TYPE}/_verify`,
     );
-    expect(claims['org.schema.IndividualProduct.serialNumber']).toEqual(expect.any(String));
-    expect(mockVaultRepository.put).toHaveBeenCalledWith(
-      `${EXAMPLE_SECTOR}_${EXAMPLE_TENANT_ALTERNATE_NAME}`,
-      [expect.objectContaining({
-        id: 'license-seat-reuse-001',
-        content: expect.objectContaining({
-          status: 'issued',
-          issuedToEmail: 'controller@example.org',
-          issuedToRole: 'RESPRSN',
-        }),
-      })],
-      getEnvSectionId('device-licenses'),
-    );
+    expect(claims['org.schema.IndividualProduct.serialNumber']).toBe(before.content.activationCode);
+    expect(assignedControllerLicenseDoc).toEqual(before);
+    expect(mockVaultRepository.put).not.toHaveBeenCalled();
   });
 
   it('returns the canonical Offer identifier only for first-time legal _transaction onboarding', async () => {
