@@ -1,5 +1,19 @@
 ## Unreleased
 
+## 2.1.1 - 2026-11-18
+
+- Publish the configured canonical gateway origin while retaining explicitly
+  approved historical transport origins for existing device-registration receipts
+  and exact SMART and backend-verification audiences.
+- Project gateway-owned operational endpoints to the canonical origin without
+  rewriting existing tenant identifiers, issuer URLs, credentials or key material;
+  preserve regional route jurisdictions, external provider domains and current
+  authorization checks.
+- Document the optional historical-origin configuration and forward it through
+  the deployment template with HTTPS requirements for deployed workloads.
+
+## 2.1.0 - 2026-11-18
+
 - Preserve typed policy-denial status and tenant signing authority in asynchronous
   error responses, retaining request correlation and generic unexpected failures.
 

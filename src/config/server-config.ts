@@ -1,5 +1,6 @@
 import { IServerConfig } from '../config';
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
+import { getPublicApiBaseUrls } from '../utils/host-public-origin';
 
 let configInstance: IServerConfig;
 const DEFAULT_MAX_HEADER_SIZE_BYTES = 128 * 1024;
@@ -239,6 +240,12 @@ export function getConfig(): IServerConfig {
       .filter(Boolean);
 
     const nodeEnv = process.env.NODE_ENV || 'development';
+    const hostLegacyPublicUrls = [...getPublicApiBaseUrls(apiBaseUrl,
+      (process.env.HOST_LEGACY_PUBLIC_URLS || '').split(',').map(value => value.trim()).filter(Boolean))].slice(1);
+    if ([nodeEnv, process.env.DEPLOYMENT_ENV].some(value => value === 'staging' || value === 'production')
+      && hostLegacyPublicUrls.some(value => new URL(value).protocol !== 'https:')) {
+      throw new Error('Legacy public origins require HTTPS in deployed environments.');
+    }
     const securityMode = parseSecurityMode(process.env.SECURITY_MODE);
     const networkMode = parseNetworkMode(process.env.NETWORK_MODE, nodeEnv);
     const fhirLegacy = parseBooleanEnv(process.env.FHIR_LEGACY, false);
@@ -311,6 +318,7 @@ export function getConfig(): IServerConfig {
       apiHostname,
       hostExternalDomain: process.env.HOST_EXTERNAL_DOMAIN || new URL(apiBaseUrl).host,
       apiBaseUrl,
+      hostLegacyPublicUrls,
       namespace: process.env.URN_NAMESPACE || 'gdc',
       sectorsAllowed: resolveAllowedSectorsFromEnv(process.env),
       allowedPaymentMethods: (process.env.ALLOWED_PAYMENT_METHODS || 'Stripe').split(','),

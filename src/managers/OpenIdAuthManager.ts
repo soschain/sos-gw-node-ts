@@ -1,3 +1,4 @@
+import { getPublicApiBaseUrls } from '../utils/host-public-origin';
 import { createHash, randomUUID } from 'node:crypto';
 import type { VerifiedPresentationIdentity } from '../services/LedgerPresentationVerifier';
 import { loadRegisteredIndividualMemberAuthority } from '../services/registered-individual-member-authority';
@@ -114,7 +115,7 @@ export class OpenIdAuthManager implements IJobProcessor {
     private readonly vaultRepository: IVaultRepository,
     private readonly clearingHouseService: IClearingHouseService,
     private readonly breakGlassAuthorizer?: BreakGlassAuthorizer,
-    private readonly securityOptions: { cryptography?: ICryptography; replayProtectionStore?: IReplayProtectionStore; apiBaseUrl?: string; resolveClientRegistrationVault?: (actorDid: string, requestedVaultId: string) => Promise<string> } = {},
+    private readonly securityOptions: { cryptography?: ICryptography; replayProtectionStore?: IReplayProtectionStore; apiBaseUrl?: string; legacyPublicUrls?: readonly string[]; resolveClientRegistrationVault?: (actorDid: string, requestedVaultId: string) => Promise<string> } = {},
   ) { this.assertionReplay = securityOptions.replayProtectionStore || new ReplayProtectionStoreMem(); }
 
   public async process(job: JobRequest): Promise<IDecodedDidcommPayload> {
@@ -1011,7 +1012,12 @@ export class OpenIdAuthManager implements IJobProcessor {
         break;
       } catch { /* Only the currently registered keys can authenticate this client. */ }
     }
-    if (!payload || payload.sub !== clientId || (payload.aud !== params.issuerDid && (!params.requestUrl || payload.aud !== params.requestUrl))
+    const expectedRequestUrl = params.requestUrl ? new URL(params.requestUrl) : undefined;
+    const permittedRequestUrls = expectedRequestUrl
+      ? getPublicApiBaseUrls(expectedRequestUrl.origin, this.securityOptions.legacyPublicUrls).map(baseUrl =>
+        new URL(expectedRequestUrl.pathname + expectedRequestUrl.search, baseUrl).href)
+      : [];
+    if (!payload || payload.sub !== clientId || (payload.aud !== params.issuerDid && !permittedRequestUrls.includes(payload.aud))
       || payload.exp <= payload.iat || payload.exp - payload.iat > 300) throw new ManagerError('SMART client assertion signature, validity or target is invalid.', IssueType.Security);
     if (!await this.assertionReplay.reserveIfNotExists(`${registrationVaultId}:smart-client:${clientId}:${payload.jti}`, payload.exp - now)) throw new ManagerError('SMART client assertion replay detected.', IssueType.Conflict);
     return { ...profile, registeredAtVaultId: registrationVaultId };

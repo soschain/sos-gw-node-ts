@@ -42,7 +42,7 @@ import { populateDidDocumentServices } from '../../../utils/did-document';
 
 import { ILogger } from '../../../loggers/ILogger';
 import { testTenant1LegalName } from '../../data/organization.data';
-import { composeHostDidWebId } from '../../../utils/did-backend';
+import { composeHostDidWebId, createHostedDidWeb } from '../../../utils/did-backend';
 
 const uuidMock = {
   v4: jest.fn(),
@@ -400,6 +400,31 @@ describe('HostingManager', () => {
     const put = jest.spyOn(vaultRepository, 'put');
     await expect(hostingManager.reconcilePersistedHostRuntimeConfig()).rejects.toThrow(/reconciliation.*inconsistent/i);
     expect(put).not.toHaveBeenCalled();
+  });
+
+  it('[1.2c TENANT] preserves regional jurisdiction when reprojecting a hosted service catalog', async () => {
+    const tenantId = SAFE.tenantId, sector = GatewaySector.HEALTH_CARE;
+    const vaultId = tenantUtils.getTenantVaultId(sector, tenantId);
+    const collection = await mockTenantsCacheManager.getCollectionName('host') as string;
+    const did = createHostedDidWeb(composeHostDidWebId(SAFE.httpsBaseUrl),tenantId,{jurisdiction:'CA-BC',version:'v1',sector});
+    const claims: ClaimsRecord = {
+      [SchemaOrgOrganizationClaim.AlternateName]:tenantId,
+      [SchemaOrgOrganizationClaim.AddressCountry]:'CA',
+      [SchemaOrgOrganizationClaim.AddressRegion]:'CA-BC',
+      [SchemaOrgOrganizationClaim.IdentifierType]:'UUID',
+      [SchemaOrgOrganizationClaim.IdentifierValue]:SAFE.resourceUuid,
+      [SchemaOrgServiceClaim.Category]:sector,
+    };
+    const tenant = {status:'active',claims,didConfig:{service:[]},didDocument:{'@context':'https://www.w3.org/ns/did/v1',id:did,service:[]}};
+    await vaultRepository.put(collection,[await mockKmsService.protectConfidentialData({id:vaultId,status:'active',sequence:0,content:tenant},'host')],getEnvSectionId('tenants'));
+    expect(await hostingManager.reconcileTenantServiceCatalog()).toBe(1);
+    const stored = await vaultRepository.get<ConfidentialStorageDoc>(collection,vaultId,getEnvSectionId('tenants'));
+    const refreshed = await mockKmsService.unprotectConfidentialData<OrganizationConfig>(stored!,'host');
+    expect(refreshed.didDocument?.id).toBe(did);
+    expect(refreshed.claims).toEqual(claims);
+    const expected = populateDidDocumentServices(did,mockConfig.apiBaseUrl,initializeTenantServicesConfig(sector,[]),true,{alternateName:tenantId,jurisdiction:'CA-BC',version:'v1',sector},mockConfig.apiBaseUrl);
+    expect(refreshed.didDocument?.service).toEqual(expected);
+    expect(JSON.stringify(refreshed.didDocument?.service)).not.toContain('/cds-CA/');
   });
 
   it('[1.2a TENANT] migrates stale canonical twin routes without requiring split-runtime configuration', async () => {

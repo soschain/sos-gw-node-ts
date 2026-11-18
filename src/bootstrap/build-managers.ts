@@ -279,6 +279,7 @@ export function buildManagers(options: {
     vaultRepository,
     kmsService,
     tenantManager,
+    config.hostLegacyPublicUrls,
   );
   const licenseManager = new LicenseManager(vaultRepository, kmsService, tenantManager);
   const tokenVerifier = resolveTokenVerifierFromEnv(isTestEnv);
@@ -296,7 +297,7 @@ export function buildManagers(options: {
     vaultRepository,
     clearingHouseService,
     buildBreakGlassAuthorizer(blockchainAdapter, vaultRepository),
-    { cryptography: cryptographyService, replayProtectionStore, apiBaseUrl: config.apiBaseUrl,
+    { cryptography: cryptographyService, replayProtectionStore, apiBaseUrl: config.apiBaseUrl, legacyPublicUrls: config.hostLegacyPublicUrls,
       resolveClientRegistrationVault: (actorDid, requestedVaultId) => resolveProfessionalHomeVault(tenantManager, actorDid, requestedVaultId) },
   );
   const medicationStatementManager = new MedicationStatementManager(vaultRepository, tenantManager, blockchainAdapter);

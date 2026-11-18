@@ -1,3 +1,5 @@
+import { getPublicApiBaseUrls, rewriteHostedPublicUrl } from '../utils/host-public-origin';
+import { getDidWebDocumentUrl } from '../utils/physical-identity-did';
 // src/managers/TenantsCacheManager.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
@@ -162,6 +164,7 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
     vaultRepository: IVaultRepository, 
     kmsServiceResolver: () => IKmsService,
     hostCollectionName: string,
+    private readonly publicOriginProjection?: Readonly<{apiBaseUrl:string;legacyPublicUrls?:readonly string[]}>,
   ) {
     this.vaultRepository = vaultRepository;
     this.kmsServiceResolver = kmsServiceResolver;
@@ -526,7 +529,18 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
 
   public async getDidDocument(vaultId: string): Promise<DidDocument | undefined> {
     const tenantConfig = await this._ensureTenantIsInCache(vaultId);
-    return tenantConfig?.didDocument;
+    if (!tenantConfig?.didDocument) return undefined;
+    const projection = this.publicOriginProjection;
+    if (!projection?.legacyPublicUrls?.length) return tenantConfig.didDocument;
+    const document = structuredClone(tenantConfig.didDocument);
+    if (projection && Array.isArray(document.service)) {
+      document.service = document.service.map(service => ({...service,
+        serviceEndpoint: typeof service.serviceEndpoint === 'string'
+          ? rewriteHostedPublicUrl(service.serviceEndpoint, projection.apiBaseUrl, projection.legacyPublicUrls)
+          : service.serviceEndpoint,
+      }));
+    }
+    return document;
   }
 
   public async getDidServiceConfig(vaultId: string): Promise<DidService[] | undefined> {
@@ -610,6 +624,18 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
     if (externalUrl) {
       return externalUrl.startsWith('http') ? externalUrl : `https://${externalUrl}`;
     }
+    const projection = this.publicOriginProjection;
+    const tenantDid = tenantConfig.didDocument?.id;
+    if (projection?.legacyPublicUrls?.length && typeof tenantDid === 'string' && tenantDid.startsWith('did:web:')) {
+      let identityHost: string | undefined;
+      try { identityHost = new URL(getDidWebDocumentUrl(tenantDid)).host; }
+      catch { /* Preserve the established hosted fallback for a non-resolvable identifier. */ }
+      if (identityHost) {
+        const historicalOrigin = getPublicApiBaseUrls(projection.apiBaseUrl, projection.legacyPublicUrls)
+          .slice(1).find(origin => new URL(origin).host === identityHost);
+        if (historicalOrigin) return await this.constructHostedUrl(tenantConfig, historicalOrigin);
+      }
+    }
     return await this.constructHostedUrl(tenantConfig);
   }
 
@@ -631,7 +657,10 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
 
     const operationalUrl = tenantConfig.operationalUrl;
     if (typeof operationalUrl === 'string' && operationalUrl.trim()) {
-      return operationalUrl.startsWith('http') ? operationalUrl : `https://${operationalUrl}`;
+      const normalizedUrl = operationalUrl.startsWith('http') ? operationalUrl : `https://${operationalUrl}`;
+      return this.publicOriginProjection
+        ? rewriteHostedPublicUrl(normalizedUrl, this.publicOriginProjection.apiBaseUrl, this.publicOriginProjection.legacyPublicUrls)
+        : normalizedUrl;
     }
 
     return await this.constructHostedUrl(tenantConfig);
@@ -641,7 +670,7 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
    * Constructs the full hosted URL for a tenant based on its configuration.
    * @param config The full tenant configuration object from the cache.
    */
-  private async constructHostedUrl(config: TenantRuntimeView): Promise<string | undefined> {
+  private async constructHostedUrl(config: TenantRuntimeView, hostOriginOverride?: string): Promise<string | undefined> {
     const hostDidDoc = await this.getDidDocument('host');
     if (!hostDidDoc) {
       console.error('[TenantsCacheManager] Cannot construct hosted URL: Host DID document not found in cache.');
@@ -649,7 +678,7 @@ export class TenantsCacheManager implements ITenantsManager, IPrivilegedTenantRe
     }
 
     const baseUrl = getBaseUrlFromDidWeb(hostDidDoc.id);
-    const hostPublicBaseUrl = getDidDocumentServiceEndpointBaseUrl(hostDidDoc, '#did-document') || baseUrl;
+    const hostPublicBaseUrl = hostOriginOverride || getDidDocumentServiceEndpointBaseUrl(hostDidDoc, '#did-document') || baseUrl;
 
     const alternateName = config.alternateName;
     const parsedUrn = config.tenantIdentifierUrn ? parseTenantUrn(config.tenantIdentifierUrn) : null;

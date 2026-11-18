@@ -11,6 +11,10 @@ export GDC_RESOURCE_NAME=replace-with-gateway-resource-name
 export GDC_SECRET_NAME=replace-with-kubernetes-secret-name
 export GDC_IMAGE=replace-with-region-docker.pkg.dev/replace-with-gcp-project-id/replace-with-repository/sos-gw-node-ts
 export GDC_PUBLIC_URL=https://replace-with-staging-gateway-host
+export HOST_PUBLIC_URL=https://replace-with-staging-gateway-host
+export HOST_EXTERNAL_DOMAIN=replace-with-staging-gateway-host
+# Optional comma-separated previous HTTPS origins; transport continuity only.
+export HOST_LEGACY_PUBLIC_URLS=
 export GDC_STATIC_IP_NAME=replace-with-static-ip-resource-name
 export GDC_GSA_EMAIL=replace-with-service-account@replace-with-gcp-project-id.iam.gserviceaccount.com
 export GDC_SERVICE_TYPE=ClusterIP
