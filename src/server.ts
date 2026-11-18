@@ -473,6 +473,7 @@ async function startServer(options?: StartServerOptions) {
     config.networkMode !== 'network',
     gaiaXComplianceManager,
     tenantPresentationVerificationManager,
+    config.hostLegacyPublicUrls,
   );
   const networkRouter = createNetworkRouter(queueAdapter, kmsService);
   const fhirRouter = createFhirRouter(queueAdapter, authManager);

@@ -3144,12 +3144,18 @@ describe('OpenIdAuthManager', () => {
     expect(mockClearingHouse.verifyVpToken).toHaveBeenCalled();
   });
 
-  it('accepts no vp_token only when the actor DID issuer uses its exact DCR client assertion', async () => {
+  it.each(['tenant-did', 'canonical-endpoint', 'approved-legacy-endpoint'])('accepts the exact registered controller assertion targeting %s without changing its identity', async (target) => {
+    const canonicalBaseUrl = SAFE.httpsBaseUrl;
+    const legacyUrl = new URL(canonicalBaseUrl); legacyUrl.port = '8443';
+    const legacyPublicUrls = [legacyUrl.origin];
+    const tokenPath = `/${EXAMPLE_TENANT_ROUTE_CONTEXT.tenantId}/cds-${EXAMPLE_TENANT_ROUTE_CONTEXT.jurisdiction}/v1/${EXAMPLE_TENANT_ROUTE_CONTEXT.sector}/identity/openid/smart/token`;
+    const securityOptions = {apiBaseUrl:canonicalBaseUrl,legacyPublicUrls};
     const issuerDid = EXAMPLE_HOSTING_OPERATOR_DID;
     const subjectDid = EXAMPLE_SUBJECT_DID;
     const actorDid = fixtureIndividualControllerDid(EXAMPLE_EMAIL_CONTROLLER_INDIVIDUAL);
     const clientId = EXAMPLE_DEVICE_CLIENT_ID;
-    const fixture = await buildSmartClientFixture({ clientId, audience: issuerDid });
+    const audience = target === 'tenant-did' ? issuerDid : new URL(tokenPath, target === 'canonical-endpoint' ? canonicalBaseUrl : legacyUrl.origin).href;
+    const fixture = await buildSmartClientFixture({ clientId, audience });
     const deviceProfile = {
       clientId, status: DeviceBindingStatuses.Active,
       actorDid, profileDid: actorDid, authorizedSubjectDid: subjectDid,
@@ -3186,9 +3192,10 @@ describe('OpenIdAuthManager', () => {
       } as unknown as jest.Mocked<TenantsCacheManager>,
       vault,
       { verifyVpToken: jest.fn() } as unknown as jest.Mocked<IClearingHouseService>,
+      undefined, securityOptions,
     );
 
-    const response = await manager.process({
+    const request = {
       ...EXAMPLE_TENANT_ROUTE_CONTEXT,
       section: GatewayRouteSections.Identity,
       format: GatewayRouteFormats.OpenId,
@@ -3208,9 +3215,14 @@ describe('OpenIdAuthManager', () => {
         acr_values: 'urn:antifraud:acr:openid4vp:individual',
         },
       },
-    } as JobRequest);
-
+    } as JobRequest;
+    const response = await manager.process(request);
     expect(response.body.access_token).toBeDefined();
+    const unapproved = new URL(legacyUrl); unapproved.port = '9443';
+    for (const invalidAudience of [unapproved.origin + tokenPath, legacyUrl.origin + tokenPath + '/other']) {
+      request.content!.body.client_assertion = (await buildSmartClientFixture({clientId,audience:invalidAudience})).jwt;
+      await expect(manager.process(request)).rejects.toThrow('SMART client assertion signature, validity or target is invalid.');
+    }
   });
 
   it('accepts the public card alias only when the registered controller license owns that individual', async () => {

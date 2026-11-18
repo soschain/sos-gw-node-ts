@@ -74,3 +74,14 @@ test('enrolled network without existing Firestore requires explicit durable repl
   assert.notEqual(result.status, 0);
   assert.equal(calls, '');
 });
+
+// The legacy-origin list is optional transport configuration, never caller authority.
+test('optional legacy public origins render unchanged with an empty compatibility default', () => {
+  for (const origins of ['', 'https://previous.example.invalid,https://earlier.example.invalid:8443']) {
+    const { result, map } = runDeployment({ HOST_LEGACY_PUBLIC_URLS: origins });
+    assert.equal(result.status, 0, result.stderr);
+    const scalar = map.split('\n').find(line => line.startsWith('  HOST_LEGACY_PUBLIC_URLS: '))?.slice('  HOST_LEGACY_PUBLIC_URLS: '.length);
+    assert.ok(scalar, 'the optional runtime field must be forwarded by the generic renderer');
+    assert.equal(JSON.parse(scalar), origins);
+  }
+});

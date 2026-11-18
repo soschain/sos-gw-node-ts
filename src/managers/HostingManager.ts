@@ -33,7 +33,7 @@ import { populateDidDocumentServices } from '../utils/did-document';
 import { createOperationOutcome } from '../utils/outcome';
 import { determineResourceId } from '../utils/resource';
 import { initializeHostServicesConfig, initializeTenantServicesConfig } from '../utils/services';
-import { generateTenantCollectionNameFromClaims, getTenantVaultId, isValidTenantAlternateName } from '../utils/tenant';
+import { generateTenantCollectionNameFromClaims, getTenantVaultId, isValidTenantAlternateName, resolveOrganizationRouteJurisdiction } from '../utils/tenant';
 import { AllowedIndexableClaims } from '../gdc-backend-utils-node/models/indexing';
 import { createEmployeeUrn, createOrganizationUrn, parseTenantUrn } from '../utils/urn';
 import { ILogger } from '../loggers/ILogger';
@@ -1328,7 +1328,7 @@ export class HostingManager {
       if (!claims || !tenantId || !tenant.didDocument?.id) continue;
 
       const sector = String(claims[SchemaOrgServiceClaim.Category] || '').trim() as GatewaySector;
-      const jurisdiction = String(claims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim();
+      const jurisdiction = resolveOrganizationRouteJurisdiction(claims);
       if (!sector || !jurisdiction) continue;
       const publicTenantUrl = this.normalizeTenantPublicUrl(
         claims[SchemaOrgOrganizationClaim.Url] as string | undefined,

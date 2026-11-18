@@ -22,6 +22,8 @@ export interface IServerConfig {
   apiHostname: string;
   hostExternalDomain: string;
   apiBaseUrl: string;
+  /** Explicit historical gateway transport origins; existing tenant identities remain unchanged. */
+  hostLegacyPublicUrls?: string[];
   namespace: string;
   ica?: {
     mode?: 'internal' | 'external';

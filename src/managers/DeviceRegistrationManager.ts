@@ -1,3 +1,4 @@
+import { getPublicApiBaseUrls } from '../utils/host-public-origin';
 import {SchemaOrgPersonClaim} from 'antifraud-data-utils-ts/schema-org-claims';
 import {HealthcareActorRoles} from 'sos-data-utils-ts/healthcare-roles';
 import {resolveLegacyControllerLicenseBinding,type LegacyControllerLicenseBinding} from '../utils/legacy-controller-license-binding';
@@ -65,6 +66,7 @@ import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization
  */
 export class DeviceRegistrationManager implements IJobProcessor {
   private readonly apiBaseUrl: string;
+  private readonly publicApiBaseUrls: readonly string[];
   private readonly vaultRepository: IVaultRepository;
   private readonly kmsService?: IKmsService;
   private readonly tenantsManager?: Partial<Pick<ITenantsManager, 'getCollectionName' | 'getOrganizationIdentifierUrn'>>;
@@ -75,8 +77,10 @@ export class DeviceRegistrationManager implements IJobProcessor {
     vaultRepository: IVaultRepository,
     kmsService?: IKmsService,
     tenantsManager?: Partial<Pick<ITenantsManager, 'getCollectionName' | 'getOrganizationIdentifierUrn'>>,
+    legacyPublicUrls: readonly string[] = [],
   ) {
     this.apiBaseUrl = apiBaseUrl;
+    this.publicApiBaseUrls = getPublicApiBaseUrls(apiBaseUrl, legacyPublicUrls);
     this.vaultRepository = vaultRepository;
     this.kmsService = kmsService;
     this.tenantsManager = tenantsManager;
@@ -423,7 +427,7 @@ export class DeviceRegistrationManager implements IJobProcessor {
     if (profile.registrationReplay.requestDigest !== dcrRequestDigest(params.request)
       || profile.clientId !== document.id || profile.clientId !== matches[0].clientId
       || !Number.isInteger(profile.clientIdIssuedAt) || profile.clientIdIssuedAt <= 0
-      || profile.registrationClientUri !== `${this.apiBaseUrl}/clients/${profile.clientId}`) {
+      || !this.publicApiBaseUrls.some(baseUrl => profile.registrationClientUri === `${baseUrl}/clients/${profile.clientId}`)) {
       throw new ManagerError('DCR replay conflicts with its registered request or receipt.', IssueType.Conflict);
     }
     return profile;
@@ -851,10 +855,10 @@ export class DeviceRegistrationManager implements IJobProcessor {
       ...(employeeContent.didDocument.alsoKnownAs || []),
     ].map((value) => String(value || '').trim()).filter(Boolean));
     const roleBearingEmployee = /:employee:(z[1-9A-HJ-NP-Za-km-z]+):role:[^:|]+[|:]([0-9]+)(?::instance:.*)?$/i.exec(employeeUrn);
-    const routedEmployee = new RegExp(
-      `^${composeHostDidWebId(this.apiBaseUrl).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}:([^:]+):cds-([^:]+):(v[1-9][0-9]*):([^:]+):employee:(z[1-9A-HJ-NP-Za-km-z]+):ISCO-08\\|([0-9]+)$`,
+    const routedEmployee = this.publicApiBaseUrls.map(baseUrl => new RegExp(
+      `^${composeHostDidWebId(baseUrl).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}:([^:]+):cds-([^:]+):(v[1-9][0-9]*):([^:]+):employee:(z[1-9A-HJ-NP-Za-km-z]+):ISCO-08\\|([0-9]+)$`,
       'i',
-    ).exec(requestedActorDid);
+    ).exec(requestedActorDid)).find(Boolean);
     const actorMatchesRoutedEmployee = Boolean(
       routedEmployee
       && roleBearingEmployee

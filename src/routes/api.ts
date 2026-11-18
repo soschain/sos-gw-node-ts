@@ -1,3 +1,4 @@
+import { resolveRequestApiBaseUrl } from '../utils/host-public-origin';
 import {assertBootstrapReplyKeyBinding} from '../auth/bootstrap-reply-key';
 import {isLocalDemoSecurityMode} from '../security/runtime-security-policy';
 import type { GaiaXComplianceManager } from '../managers/GaiaXComplianceManager';
@@ -638,6 +639,7 @@ export function createApiRouter(
   demoWorkspaceEnabled = false,
   gaiaXComplianceManager?: GaiaXComplianceManager,
   tenantPresentationVerificationManager?: TenantPresentationVerificationManager,
+  legacyPublicUrls: readonly string[] = [],
 ): express.Router {
   const router = express.Router();
   const demoDirectory = new DemoWorkspaceCardDirectory(vaultRepository);
@@ -802,7 +804,7 @@ export function createApiRouter(
     try {
       const result = await gaiaXComplianceManager.verify({ tenantId: String(req.params.tenantId), jurisdiction: String(req.params.jurisdiction), sector: String(req.params.sector),
         vpToken: String(req.body?.vp_token || ''), clientAssertion: String(req.body?.client_assertion || ''), clientAssertionType: String(req.body?.client_assertion_type || ''),
-        requestUrl: new URL(req.originalUrl, apiBaseUrl).href });
+        requestUrl: new URL(req.originalUrl, resolveRequestApiBaseUrl(req.headers.host, apiBaseUrl, legacyPublicUrls)).href });
       return res.status(201).type('application/vc+jwt').send(result.credentialJwt);
     } catch {
       return res.status(400).json({ error: 'invalid_request', error_description: 'GXDCH presentation or signed compliance evidence was rejected.' });
@@ -830,7 +832,7 @@ export function createApiRouter(
     if (!/^Bearer \S+$/i.test(authorization)) return res.status(401).json({ error: 'invalid_client' });
     try {
       const compact = await tenantPresentationVerificationManager.verify({ tenantId: String(req.params.tenantId), sector: String(req.params.sector),
-        requestUrl: new URL(req.originalUrl, apiBaseUrl).href, assertion: authorization.slice(7), body: req.body });
+        requestUrl: new URL(req.originalUrl, resolveRequestApiBaseUrl(req.headers.host, apiBaseUrl, legacyPublicUrls)).href, assertion: authorization.slice(7), body: req.body });
       res.set('Cache-Control', 'no-store');
       return res.status(200).type('application/jwt').send(compact);
     } catch {

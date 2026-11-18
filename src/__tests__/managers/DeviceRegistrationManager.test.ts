@@ -1,4 +1,5 @@
 // Flow contract: DCR binds current licensed employee identity or verified individual-controller authority; distinct installations preserve prior keys, and explicit replacement/revocation changes only the selected device. Fixtures use shared identities and the real vault and explicit KMS port.
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { DCR_REPLAY_PUBLIC_KEYS } from '../data/dcr-replay-public-keys';
 // Contract: DCR binds one verified activation seat, authenticated account,
 // controller role DID, authorized subject and registered device JWKS.
@@ -322,6 +323,22 @@ describe('DeviceRegistrationManager', () => {
         },
         clientId: 'new-browser-installation',
       })).resolves.toEqual(expect.objectContaining({ subjectId: employeeId }));
+      const migratedManager = new DeviceRegistrationManager(SAFE.httpsBaseUrl, vaultRepository, undefined, {
+        getCollectionName: async () => employeeCollectionName,
+        getOrganizationIdentifierUrn: async () => TEST_ORGANIZATION_URN,
+      }, [TEST_API_BASE_URL]);
+      const contextInput = {job,vaultId,registrationRequest,license:{subjectId:employeeId,
+        activatedBy:normalizeSameAsHash(EXAMPLE_EMAIL_PROFESSIONAL),issuedToRole:HealthcareActorRoles.Veterinarian,
+        ownerOrganizationId:EXAMPLE_LEGAL_ORGANIZATION_TAX_ID},clientId:'new-browser-installation'};
+      await expect((migratedManager as any).prepareEmployeeDeviceIdentityContext(contextInput))
+        .resolves.toEqual(expect.objectContaining({subjectId:employeeId}));
+      for (const actor of [routedProfessionalDid.replace(':cds-CA-BC:', ':cds-CA-ON:'),
+        routedProfessionalDid.replace('localhost%3A3001', 'example.invalid%3A9443')]) {
+        await expect((migratedManager as any).prepareEmployeeDeviceIdentityContext({...contextInput,
+          registrationRequest:{...registrationRequest,[IdentityDcrMetadataFields.ActorDid]:actor,[IdentityDcrMetadataFields.ProfileDid]:actor}}))
+          .rejects.toThrow('Professional DCR actor and profile DID must match the licensed employee identity.');
+      }
+
     });
 
     it('links DCR client and key aliases only to an existing stable clinical creator assignment', async () => {
@@ -613,6 +630,24 @@ describe('DeviceRegistrationManager', () => {
       expect(await vaultRepository.getContainersInSection<ConfidentialStorageDoc>(vaultId, getEnvSectionId('device-profiles'))).toEqual(deviceRowsBefore);
       expect(await vaultRepository.get<ConfidentialStorageDoc>(vaultId, clientId, getEnvSectionId('device-profiles'))).toEqual(stored);
       expect(await vaultRepository.get<ConfidentialStorageDoc>(vaultId, 'animal-controller-license', getEnvSectionId('device-licenses'))).toEqual(repairedLicenseDocument);
+
+      // A configured public-origin move preserves the exact registered receipt,
+      // account binding and existing keys instead of replacing the installation.
+      const canonicalBaseUrl = SAFE.httpsBaseUrl;
+      const migratedManager: InstanceType<typeof DeviceRegistrationManager> = Reflect.construct(
+        DeviceRegistrationManager,
+        [canonicalBaseUrl, vaultRepository, mockKmsService, undefined, [TEST_API_BASE_URL]],
+      );
+      const migratedReplay = await migratedManager.process(cloneDeep(replayJob));
+      expect((migratedReplay.body as BundleJsonApi).data[0]).toEqual(replayEntry);
+      expect(await vaultRepository.get<ConfidentialStorageDoc>(vaultId, clientId, getEnvSectionId('device-profiles'))).toEqual(stored);
+      const unconfiguredManager = new DeviceRegistrationManager(canonicalBaseUrl, vaultRepository, mockKmsService);
+      const unconfiguredReplay = await unconfiguredManager.process(cloneDeep(replayJob));
+      expect(((unconfiguredReplay.body as BundleJsonApi).data[0] as BundleEntryResponse).response.status).toBe('409');
+      const foreignMigratedActor = cloneDeep(replayJob);
+      (foreignMigratedActor.content!.body as any).actor_did += ':other';
+      const mismatchedActor = await migratedManager.process(foreignMigratedActor);
+      expect(((mismatchedActor.body as BundleJsonApi).data[0] as BundleEntryResponse).response.status).toBe('403');
 
       // Recovery is bound to current verified account and the complete request,
       // not merely a known installation locator or matching key identifiers.

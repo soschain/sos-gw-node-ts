@@ -43,6 +43,7 @@ optional_env_defaults=(
   "GDC_WORKLOAD_IDENTITY_ENABLED=false"
   "HOST_EXTERNAL_DOMAIN="
   "HOST_PUBLIC_URL=${GDC_PUBLIC_URL}"
+  "HOST_LEGACY_PUBLIC_URLS="
   "NODE_ENV=demo"
   "DEPLOYMENT_ENV=staging"
   "SECURITY_MODE=compat"
@@ -170,6 +171,7 @@ render_template() {
     -e "s|__GDC_PUBLIC_URL__|${GDC_PUBLIC_URL}|g" \
     -e "s|__HOST_PUBLIC_URL__|${HOST_PUBLIC_URL}|g" \
     -e "s|__HOST_EXTERNAL_DOMAIN__|${HOST_EXTERNAL_DOMAIN}|g" \
+    -e "s|__HOST_LEGACY_PUBLIC_URLS__|${HOST_LEGACY_PUBLIC_URLS}|g" \
     -e "s|__GDC_STATIC_IP_NAME__|${GDC_STATIC_IP_NAME}|g" \
     -e "s|__GDC_SERVICE_TYPE__|${GDC_SERVICE_TYPE}|g" \
     -e "s|__GDC_HOST__|${GDC_HOST}|g" \

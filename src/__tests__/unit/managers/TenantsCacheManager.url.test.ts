@@ -1,15 +1,19 @@
 // Flow contract: tenant endpoint URLs derive from the configured route while tenant key material stays with the configured KMS.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
+import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
 import { KmsService } from '../../../services/KmsService';
 import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { AdapterCryptoSdkNode } from '../../../gdc-backend-utils-node/adapters/node/crypto';
-import { testConfigTenant1, testTenant1IdentifierUrn, testHostDidWeb } from '../../data/organization.data';
+import { testConfigTenant1, testTenant1IdentifierUrn, testHostDidWeb, testConfigDataHost } from '../../data/organization.data';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { EntityConfig } from '../../../gdc-backend-utils-node/models/entity';
 import { getEnvSectionId } from '../../../utils/section-env';
+import { composeHostDidWebId, createHostedDidWeb, populateDidDocumentFromJwks } from '../../../utils/did-backend';
+import { createOrganizationUrn } from '../../../utils/urn';
+import { DCR_REPLAY_PUBLIC_KEYS } from '../../data/dcr-replay-public-keys';
 
 describe('TenantsCacheManager - tenant urls', () => {
   let tenantsCacheManager: TenantsCacheManager;
@@ -135,4 +139,65 @@ describe('TenantsCacheManager - tenant urls', () => {
     const expectedUrl = `https://${hostDomain}/${tenantPath}/cds-${urnParts[3].toLowerCase()}/${urnParts[4]}/${urnParts[5]}`;
     expect(url).toBe(expectedUrl);
   });
+});
+
+// Flow contract: moving an approved hosted transport never changes the protected
+// tenant identity, credential issuer, keys, unrelated domains or stored records.
+describe('TenantsCacheManager approved hosted transport projection', () => {
+  it.each(['approved', 'approved-without-domain', 'approved-without-domain-http', 'external', 'lookalike'])('projects only an exact approved %s origin without writes', async kind => {
+    const canonical = SAFE.httpsBaseUrl;
+    const legacy = new URL(canonical); legacy.port = '8443';
+    if (kind.endsWith('-http')) { legacy.protocol='http:'; legacy.hostname='localhost'; }
+    const external = new URL(canonical); external.port = '9443';
+    const lookalike = new URL(legacy); lookalike.hostname += '.invalid';
+    const selected = kind.startsWith('approved') ? legacy.origin : kind === 'external' ? external.origin : lookalike.origin;
+    const record = structuredClone(testConfigTenant1);
+    const alternateName = String(record.claims[SchemaOrgOrganizationClaim.AlternateName]);
+    const sector='health-care',jurisdiction='CA-BC';
+    const transport = `${selected}/${alternateName}/cds-${jurisdiction}/v1/${sector}`;
+    const expected = kind.startsWith('approved') ? transport.replace(legacy.origin, canonical) : transport;
+    record.claims = {...record.claims,[SchemaOrgOrganizationClaim.AddressCountry]:'CA',[SchemaOrgOrganizationClaim.AddressRegion]:jurisdiction,[SchemaOrgServiceClaim.Category]:sector,[SchemaOrgOrganizationClaim.Url]:transport,[SchemaOrgServiceClaim.Url]:transport};
+    record.claims[SchemaOrgOrganizationClaim.IdentifierReference]=createOrganizationUrn({namespace:'cds',network:'test-network',jurisdiction,sector,idType:String(record.claims[SchemaOrgOrganizationClaim.IdentifierType]),idValue:String(record.claims[SchemaOrgOrganizationClaim.IdentifierValue])});
+    if (kind.startsWith('approved-without-domain')) delete record.claims[SchemaOrgOrganizationClaim.Url];
+    const identity = createHostedDidWeb(composeHostDidWebId(selected),alternateName,{jurisdiction,version:'v1',sector});
+    record.didDocument = populateDidDocumentFromJwks({'@context':'https://www.w3.org/ns/did/v1',id:identity}, {keys:[...structuredClone(DCR_REPLAY_PUBLIC_KEYS)]});
+    record.didDocument.service = [{id:`${identity}#did-document`,type:'LinkedDomains',serviceEndpoint:`${transport}/.well-known/did.json`}];
+    const original = structuredClone(record);
+    const vault = new VaultMemRepository();
+    await vault.put('transport-host', [{id:'health-care_legacy',status:'active',content:record}] as any, getEnvSectionId('tenants'));
+    const host=structuredClone(testConfigDataHost),hostDid=composeHostDidWebId(selected);
+    host.didDocument={'@context':'https://www.w3.org/ns/did/v1',id:hostDid,service:[{id:hostDid+'#did-document',type:'LinkedDomains',serviceEndpoint:selected+'/.well-known/did.json'}]};
+    await vault.put('transport-host',[{id:'host',status:'active',content:host}] as any,getEnvSectionId('tenants'));
+    const writes = jest.spyOn(vault, 'put');
+    const kms = {unprotectConfidentialData: jest.fn(async (doc: any) => structuredClone(doc.content))} as unknown as KmsService;
+    const previous = new TenantsCacheManager(vault,()=>kms,'transport-host');
+    const previousIssuer = await previous.getTenantDomainUrl('health-care_legacy');
+    if(kind.startsWith('approved-without-domain'))expect(previousIssuer).toBe(`${selected}/${alternateName}/cds-ca-bc/v1/${sector}`);
+    const manager: TenantsCacheManager = Reflect.construct(TenantsCacheManager, [vault, () => kms, 'transport-host', {apiBaseUrl:canonical,legacyPublicUrls:[legacy.origin]}]);
+    expect(await manager.getTenantDomainUrl('health-care_legacy')).toBe(previousIssuer);
+    expect(await manager.getTenantOperationalUrl('health-care_legacy')).toBe(expected);
+    const projected = await manager.getDidDocument('health-care_legacy');
+    expect(projected).toEqual({...original.didDocument,service:[{...original.didDocument!.service![0],serviceEndpoint:`${expected}/.well-known/did.json`}]});
+    expect(projected?.id).toBe(original.didDocument!.id);
+    projected!.service![0].serviceEndpoint = canonical + '/modified-by-caller';
+    expect((await manager.getDidDocument('health-care_legacy'))?.service?.[0].serviceEndpoint).toBe(`${expected}/.well-known/did.json`);
+    expect((await vault.get<any>('transport-host','health-care_legacy',getEnvSectionId('tenants')))?.content).toEqual(original);
+    expect(writes).not.toHaveBeenCalled();
+  });
+  it('propagates a host read failure without retrying under a different issuer origin', async () => {
+    const canonical=SAFE.httpsBaseUrl,legacy=new URL(canonical);legacy.port='8443';
+    const record=structuredClone(testConfigTenant1);
+    record.claims={...record.claims,[SchemaOrgServiceClaim.Category]:'health-care'};
+    delete record.claims[SchemaOrgOrganizationClaim.Url];
+    record.didDocument={'@context':'https://www.w3.org/ns/did/v1',id:createHostedDidWeb(composeHostDidWebId(legacy.origin),String(record.claims[SchemaOrgOrganizationClaim.AlternateName]),{jurisdiction:'CA',version:'v1',sector:'health-care'})};
+    const host=structuredClone(testConfigDataHost);host.didDocument={'@context':'https://www.w3.org/ns/did/v1',id:composeHostDidWebId(canonical)};
+    const vault=new VaultMemRepository();await vault.put('transport-host',[{id:'health-care_legacy',status:'active',content:record},{id:'host',status:'active',content:host}] as any,getEnvSectionId('tenants'));
+    const kms={unprotectConfidentialData:async(doc:any)=>structuredClone(doc.content)} as unknown as KmsService;
+    const manager=new TenantsCacheManager(vault,()=>kms,'transport-host',{apiBaseUrl:canonical,legacyPublicUrls:[legacy.origin]});
+    expect(await manager.getDidDocument('health-care_legacy')).toBeDefined();
+    const read=jest.spyOn(vault,'get').mockRejectedValueOnce(new Error('Host storage unavailable'));
+    await expect(manager.getTenantDomainUrl('health-care_legacy')).rejects.toThrow('Host storage unavailable');
+    expect(read).toHaveBeenCalledTimes(1);
+  });
+
 });

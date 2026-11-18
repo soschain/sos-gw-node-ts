@@ -41,6 +41,36 @@ They do not belong in this public repository.
 Follow [SECURITY.md](../SECURITY.md) to report vulnerabilities. Do not open a
 public issue containing a credential, exploit payload or tenant information.
 
+## Canonical public origin and historical URLs
+
+Set `HOST_PUBLIC_URL` to the canonical public origin and
+`HOST_EXTERNAL_DOMAIN` to that origin's host. The host DID and advertised
+operational endpoints use this canonical origin. Keep the host jurisdiction
+and coverage unchanged when changing its public hostname.
+
+`HOST_LEGACY_PUBLIC_URLS` optionally lists previous public origins, separated
+by commas. It defaults to an empty list. Supply complete HTTPS origins, for
+example `https://previous.example.invalid,https://earlier.example.invalid:8443`.
+Resource paths, query strings, fragments, user information and wildcards are
+rejected. Configuration normalizes and deduplicates origins and excludes the
+canonical origin from the legacy list. HTTP is restricted to explicitly
+permitted local tests; staging and production require HTTPS.
+
+The list supplies explicit transport compatibility. It does not trust a caller,
+grant a role, authenticate a device or change consent. Existing tenant DIDs,
+issued-credential issuers and registered device identities retain their values;
+public endpoint projection must not rewrite those identities. Request headers
+cannot add legacy origins. Select the corresponding server-owned provider
+route and retain its pinned keys and exact authorization context.
+
+A public hostname change is separate from key custody and data ownership.
+Preserve the host storage scope, physical host collection, database project,
+bucket, KMS root and wrapped key, tenant records and Fabric identities. Services
+sharing an ingress address can still have separate backends and data stores.
+Check their actual routes rather than treating a previous hostname as a DNS
+alias of the new service. Use a guarded image/configuration delta after local
+compatibility and exact-image gates; do not repeat host onboarding.
+
 ## ICA issuer trust and credential status
 
 `CREDENTIAL_TRUSTED_ISSUERS_JSON` is trusted server configuration indexed by the

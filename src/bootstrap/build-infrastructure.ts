@@ -116,7 +116,7 @@ export async function buildInfrastructure(options: {
   const logger: ILogger = new ConsoleLogger();
 
   let kmsService: IKmsService;
-  const tenantManager = new TenantsCacheManager(vaultRepository, () => kmsService, hostCollectionName);
+  const tenantManager = new TenantsCacheManager(vaultRepository, () => kmsService, hostCollectionName, {apiBaseUrl:config.apiBaseUrl,legacyPublicUrls:config.hostLegacyPublicUrls});
   const wrappedKeyRepository = new VaultWrappedKeyRepository(vaultRepository, hostCollectionName);
   const { adapter: envelopeAdapter, provider: envelopeProvider } = await createEnvelopeAdapter(config);
   if (envelopeProvider === 'memory') {
