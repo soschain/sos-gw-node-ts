@@ -7,14 +7,7 @@ import { getVoiceBundle, getVoiceReminderCountIntro, getVoiceSystemText, resolve
 import type { VoiceTaskType, VoiceTimingState } from '../locales/voice/types.js';
 import { UhcTaskOrchestrator } from '../services/UhcTaskOrchestrator.js';
 import type { NotificationManager } from '../services/notifications/NotificationManager.js';
-import {
-  UhcReminderActions,
-  UhcReminderActorKinds,
-  UhcReminderChannels,
-  UhcReminderEntityKinds,
-  decodeUhcReminderPermissionBundle,
-  evaluateUhcReminderRuntimeAccess,
-} from 'uhc-sdk-core-ts/reminder-permissions';
+import { evaluateReminderTaskVoiceAccess } from '../services/ReminderTaskAuthorization.js';
 
 type ReminderLogEvent = {
   at: string;
@@ -30,7 +23,6 @@ type ReminderLogEvent = {
 };
 
 const reminderLogs: ReminderLogEvent[] = [];
-const FORWARDED_HEADER_SEPARATOR = ',';
 
 function pushLog(event: ReminderLogEvent): void {
   reminderLogs.push(event);
@@ -48,20 +40,8 @@ function xmlEscape(value: string): string {
     .replace(/'/g, '&apos;');
 }
 
-function getRequestBaseUrl(req: express.Request, fallback: string): string {
-  const forwardedProto = req.headers['x-forwarded-proto'];
-  const forwardedHost = req.headers['x-forwarded-host'];
-  const forwardedProtocol = (Array.isArray(forwardedProto) ? forwardedProto[0] : forwardedProto)
-    ?.split(FORWARDED_HEADER_SEPARATOR)[0]
-    ?.trim();
-  const socketEncrypted = (req.socket as { encrypted?: boolean } | undefined)?.encrypted;
-  const protocol = forwardedProtocol || (socketEncrypted ? 'https' : 'http');
-  const host = (Array.isArray(forwardedHost) ? forwardedHost[0] : forwardedHost) || req.get('host');
-  return host ? `${protocol}://${host}` : fallback;
-}
-
 function buildMountedUrl(req: express.Request, fallbackBaseUrl: string, relativePath: string): string {
-  const base = getRequestBaseUrl(req, fallbackBaseUrl).replace(/\/$/, '');
+  const base = fallbackBaseUrl.replace(/\/$/, '');
   const mountPath = String(req.baseUrl || '').replace(/\/$/, '');
   const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
   return `${base}${mountPath}${path}`;
@@ -380,7 +360,7 @@ async function closeParentIfAllChildrenResolved(
   if (unresolved.length > 0) return;
 
   const parentTask = await taskService.getTask(parentId);
-  if (!parentTask || isResolvedStatus(parentTask.status)) return;
+  if (!parentTask || parentTask.subjectId !== subjectId || !evaluateReminderTaskVoiceAccess(parentTask).allowed || isResolvedStatus(parentTask.status)) return;
   await taskService.closeTask({
     taskId: parentId,
     status: 'completed',
@@ -403,6 +383,7 @@ async function collectGroupedRootIds(
   const subjectTasks = await taskService.listTasks({ subjectId: rootTask.subjectId });
   const roots = subjectTasks
     .filter((task) => taskOrchestrator.isRootTask(task))
+    .filter((task) => evaluateReminderTaskVoiceAccess(task).allowed)
     .filter((task) => !isResolvedStatus(task.status));
   if (roots.length <= 1) return [rootTask.id];
 
@@ -498,6 +479,26 @@ export interface UhcTaskReminderRouterOptions {
 
 export function createUhcTaskReminderRouter(options: UhcTaskReminderRouterOptions): express.Router {
   const router = express.Router();
+  // Verify against the configured public origin before reading any task or processing a provider callback.
+  router.use('/voice', express.urlencoded({ extended: false }), async (req, res, next) => {
+    try {
+      const signature = req.get('X-Twilio-Signature');
+      const callbackUrl = `${options.apiBaseUrl.replace(/\/$/, '')}${req.originalUrl}`;
+      const params = req.body && typeof req.body === 'object' ? req.body : {};
+      if (!signature || !Object.values(params).every(value => typeof value === 'string')
+        || !options.phoneAdapter.validateWebhookSignature(callbackUrl, params, signature)) {
+        return res.status(403).json({ error: 'invalid_provider_signature' });
+      }
+      const taskId = typeof req.query.taskId === 'string' ? req.query.taskId.trim() : '';
+      const task = taskId ? await options.taskService.getTask(taskId) : undefined;
+      if (!task || !evaluateReminderTaskVoiceAccess(task).allowed) {
+        return res.status(403).json({ error: 'permission_denied' });
+      }
+      return next();
+    } catch {
+      return res.status(403).json({ error: 'permission_denied' });
+    }
+  });
   const logToConsole = options.consoleLogsEnabled === true;
   const taskOrchestrator = options.taskOrchestrator || new UhcTaskOrchestrator({ taskService: options.taskService });
 
@@ -529,7 +530,7 @@ export function createUhcTaskReminderRouter(options: UhcTaskReminderRouterOption
           return leftAt.localeCompare(rightAt);
         });
       const unresolved = siblings.filter((candidate) => !isResolvedStatus(candidate.status));
-      const unresolvedReadyNow = unresolved.filter((candidate) => isReadyForCurrentCall(candidate.scheduledFor, Date.now()));
+      const unresolvedReadyNow = unresolved.filter((candidate) => evaluateReminderTaskVoiceAccess(candidate).allowed && isReadyForCurrentCall(candidate.scheduledFor, Date.now()));
       if (unresolvedReadyNow.length === 0) {
         allResolved = unresolved.length === 0;
         if (unresolved.length === 0) {
@@ -606,7 +607,7 @@ export function createUhcTaskReminderRouter(options: UhcTaskReminderRouterOption
         for (let i = currentGroupIndex + 1; i < groupedRootIds.length; i += 1) {
           const candidateRootId = groupedRootIds[i];
           const candidateRoot = await options.taskService.getTask(candidateRootId);
-          if (!candidateRoot || isResolvedStatus(candidateRoot.status)) continue;
+          if (!candidateRoot || candidateRoot.subjectId !== currentTask.subjectId || !evaluateReminderTaskVoiceAccess(candidateRoot).allowed || isResolvedStatus(candidateRoot.status)) continue;
           const selection = await taskOrchestrator.selectNextCallTask(candidateRoot);
           if (!('callTask' in selection) && selection.reason !== 'not-due') continue;
 
@@ -615,6 +616,7 @@ export function createUhcTaskReminderRouter(options: UhcTaskReminderRouterOption
           const nextCallTask = ('callTask' in selection)
             ? selection.callTask
             : candidateRoot;
+          if (nextCallTask.subjectId !== currentTask.subjectId || !evaluateReminderTaskVoiceAccess(nextCallTask).allowed) continue;
           const nextScheduledFor = new Date().toISOString();
           await options.taskService.scheduleTask({ taskId: nextCallTask.id, scheduledFor: nextScheduledFor });
           const refreshedNext = await options.taskService.getTask(nextCallTask.id) || nextCallTask;
@@ -1020,6 +1022,10 @@ export function createUhcTaskReminderRouter(options: UhcTaskReminderRouterOption
         return res.status(404).json({ error: 'not_found', message: `Task '${taskId}' was not found.` });
       }
 
+      if (!evaluateReminderTaskVoiceAccess(rootTask).allowed) {
+        return res.status(403).json({ error: 'permission_denied' });
+      }
+
       const selection = await taskOrchestrator.selectNextCallTask(rootTask);
       if (!('callTask' in selection)) {
         if (selection.reason === 'resolved') {
@@ -1031,16 +1037,8 @@ export function createUhcTaskReminderRouter(options: UhcTaskReminderRouterOption
         return res.status(409).json({ error: 'not_due', message: `Task '${taskId}' is not due for call yet.` });
       }
       const task = selection.callTask;
-      const permissionBundle = decodeUhcReminderPermissionBundle(task.metadata || {});
-      const permissionEvaluation = evaluateUhcReminderRuntimeAccess({
-        permissionBundle,
-        actorKind: UhcReminderActorKinds.Assistant,
-        actorId: 'voice-assistant',
-        action: UhcReminderActions.Execute,
-        entity: UhcReminderEntityKinds.DispatchWindow,
-        channel: UhcReminderChannels.Phone,
-      });
-      if (!permissionEvaluation.allowed) {
+      const permissionEvaluation = evaluateReminderTaskVoiceAccess(task);
+      if (task.subjectId !== rootTask.subjectId || !permissionEvaluation.allowed) {
         return res.status(403).json({
           error: 'permission_denied',
           message: `Voice assistant cannot execute reminder dispatch (${permissionEvaluation.reason}).`,
@@ -1486,7 +1484,7 @@ export function createUhcTaskReminderRouter(options: UhcTaskReminderRouterOption
         // When processing DTMF in the same call, only proceed to next sibling if it's ready-now.
         // Tasks with future scheduledFor (from previous DTMF reschedules) should NOT redirect in the same call.
         // Note: current task (taskId) is explicitly excluded from siblings pool above, so we only get the next ones.
-        const unresolvedReadyNow = unresolved.filter((candidate) => isReadyForCurrentCall(candidate.scheduledFor, Date.now()));
+        const unresolvedReadyNow = unresolved.filter((candidate) => evaluateReminderTaskVoiceAccess(candidate).allowed && isReadyForCurrentCall(candidate.scheduledFor, Date.now()));
         const currentResolved = nextStatus === 'completed' || nextStatus === 'cancelled' || nextStatus === 'acknowledged';
         if (unresolvedReadyNow.length === 0) {
           allResolved = currentResolved && unresolved.length === 0;
@@ -1577,7 +1575,7 @@ export function createUhcTaskReminderRouter(options: UhcTaskReminderRouterOption
           for (let i = currentGroupIndex + 1; i < groupedRootIds.length; i += 1) {
             const candidateRootId = groupedRootIds[i];
             const candidateRoot = await options.taskService.getTask(candidateRootId);
-            if (!candidateRoot || isResolvedStatus(candidateRoot.status)) continue;
+            if (!candidateRoot || candidateRoot.subjectId !== currentTask.subjectId || !evaluateReminderTaskVoiceAccess(candidateRoot).allowed || isResolvedStatus(candidateRoot.status)) continue;
             const selection = await taskOrchestrator.selectNextCallTask(candidateRoot);
             if (!('callTask' in selection) && selection.reason !== 'not-due') continue;
 
@@ -1586,6 +1584,7 @@ export function createUhcTaskReminderRouter(options: UhcTaskReminderRouterOption
             const nextCallTask = ('callTask' in selection)
               ? selection.callTask
               : candidateRoot;
+            if (nextCallTask.subjectId !== currentTask.subjectId || !evaluateReminderTaskVoiceAccess(nextCallTask).allowed) continue;
             const nextScheduledFor = new Date().toISOString();
             await options.taskService.scheduleTask({ taskId: nextCallTask.id, scheduledFor: nextScheduledFor });
             const refreshedNext = await options.taskService.getTask(nextCallTask.id) || nextCallTask;

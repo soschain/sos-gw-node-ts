@@ -3,7 +3,7 @@
 import { startServer, resetServerConfig } from '../../../server';
 import {
   EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT,
-} from 'gdc-common-utils-ts/examples/inter-tenant-access-contract';
+} from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import {
   RESEARCH_ACCESS_REQUESTER_MATRIX,
   RESEARCH_ACCESS_DEMO_MEDICATION_CASES,
@@ -12,7 +12,7 @@ import {
   TestResearchOrgControllerSdk,
 } from '../helpers/research-access-sdk';
 import { configureAuthenticatedTestActor } from '../helpers/authenticated-test-actor';
-import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
+import { extractBundleSearchResources } from 'sos-sdk-core-ts/gateway-response-reader';
 
 /**
  * Didactic end-to-end research access conversation.

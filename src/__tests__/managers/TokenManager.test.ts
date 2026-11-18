@@ -1,3 +1,4 @@
+// Flow contract: initial-access JWT composition preserves host issuer, DCR audience, scope and expiry through the shared encoding contract.
 // src/__tests__/managers/TokenManager.test.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
@@ -5,7 +6,7 @@ import { TokenManager } from '../../managers/TokenManager';
 import { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import { TenantsCacheManager } from '../../managers/TenantsCacheManager';
 import { DidDocument } from '../../gdc-backend-utils-node/models/did';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { encodeHeader, encodePayload, encodeSignature, decodePayload } from 'sos-data-utils-ts/jwt';
 
 // --- Mocks ---
 
@@ -46,9 +47,9 @@ describe('TokenManager', () => {
       mockTenantsCacheManager.getDidDocument.mockResolvedValue(mockHostDidDoc);
       mockKmsService.getPublicVerificationKey.mockResolvedValue({ kid: 'host-key-1' } as any);
       mockKmsService.createCompactJws.mockImplementation(async (payload: any) => {
-        const headerB64 = Content.stringToBase64Url(JSON.stringify({ alg: 'ML-DSA-44', kid: 'host-key-1' }));
-        const payloadB64 = Content.stringToBase64Url(JSON.stringify(payload));
-        const sigB64 = Content.stringToBase64Url('sig');
+        const headerB64 = encodeHeader({ alg: 'ML-DSA-44', kid: 'host-key-1' });
+        const payloadB64 = await encodePayload(payload);
+        const sigB64 = encodeSignature(new TextEncoder().encode('sig'));
         return `${headerB64}.${payloadB64}.${sigB64}`;
       });
 
@@ -69,7 +70,7 @@ describe('TokenManager', () => {
 
       // Decode the payload to verify its contents
       const payloadB64 = token.split('.')[1];
-      const decodedPayload = JSON.parse(Content.bytesToStringUTF8(Content.base64ToBytes(payloadB64)));
+      const decodedPayload = await decodePayload(payloadB64) as Record<string, unknown>;
       
       expect(decodedPayload.iss).toBe(mockHostDid);
       expect(decodedPayload.sub).toBe('user-123');

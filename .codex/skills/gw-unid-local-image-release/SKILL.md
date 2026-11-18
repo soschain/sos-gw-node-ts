@@ -61,12 +61,21 @@ Stop before publication or deployment unless all applicable gates pass:
 - Local branch is synchronized with the intended remote branch.
 - The source checkout is the shared SOS gateway
   (`package.json#name=sos-gw-node-ts`), the release commit exists in this
-  repository and the selected deployment profile is UNID. Never tag a GW CORE
+  repository and the selected deployment profile is the approved SOS profile. Never tag a GW CORE
   or veterinary-profile image into the GW UNID Artifact Registry path.
 - Image tag is `<package-version>-<short-commit-sha>`.
 - `DOCKER_PLATFORM=linux/amd64`.
 - `docker_build_local.sh` uses the repository itself as Docker context.
 - `npm run docker:smoke:local-network` validates the selected local image.
+  Supply `IMAGE_NAME`, `STRICT_FABRIC_DRIVER_MODULE`,
+  `STRICT_FABRIC_DRIVER_CONFIG`, `LOCAL_REDIS_IMAGE`, and a private
+  `LOCAL_FABRIC_EVIDENCE_DIR`. The SDK driver is an explicitly reviewed external
+  interoperability test consumer, not an application dependency. It must finish
+  real ConsentAccess and role-licence readbacks plus SMART IPS allowed/denied
+  requests. The harness uses a synthetic asymmetric local ICA/OIDC fixture,
+  pinned public keys and a real local replay service; it never starts a retired
+  ICA or substitutes a Demo verifier. Research is an additional scoped journey,
+  not implied by these three required stages. Missing receipts fail closed.
 - Organization activation tests prove that eight public/hosted DID methods
   backed by four JWKs issue four unique `EnsureKey` calls, and that only the
   stable `ORGANIZATION_CONFLICT` / `CRYPTOGRAPHIC_KEY_CONFLICT` detail tokens
@@ -74,8 +83,10 @@ Stop before publication or deployment unless all applicable gates pass:
 - The `rolelicense-sc` compatibility copy is byte-identical to the canonical
   `fabric-multicloud` source, is deployed on the regional organization
   identity channel (`identity-eu` for UNID), and its tests prove deterministic
-  role identity, exact-over-catch-all sector policy, per-sector DCR limits,
-  replacement and revocation. Never deploy it on `identity-global`.
+  role identity, sector-policy updates and revocation/history. Device capacity
+  and replacement are enforced by the gateway DCR managers, not by a
+  `RegisterDevice` transaction on this contract. Never deploy it on
+  `identity-global`.
 - Professional Test Network seats prove Offer -> Order -> invoice/payment
   verification -> materialization -> role-licence registration. A direct
   professional `License/_add` is a release blocker in every environment.
@@ -100,9 +111,9 @@ deny-by-default policy and does not block the current non-cross-portal MVP.
 The image is environment-neutral. Keep the modes and profiles separate:
 
 - image smoke: `NETWORK_MODE=local-network` from `.env.local-fabric`
-- UNID staging: `NETWORK_MODE=test-network` from `.env.gke.unid` and the
-  Kubernetes `ConfigMap`/`Secret`
-- UNID production: `NETWORK_MODE=network` from a separately reviewed
+- SOS staging: `NETWORK_MODE=test-network` from the selected private SOS profile
+  and its Kubernetes `ConfigMap`/`Secret`
+- SOS production: `NETWORK_MODE=network` from a separately reviewed
   production profile
 
 Never copy `.env*` into the image. Before and after rollout, inspect the
@@ -110,10 +121,12 @@ effective Deployment `env`/`envFrom` configuration and confirm the expected
 mode, Firebase project and persistent providers. A successful local-network
 smoke proves the image; it does not change or prove the staging runtime mode.
 
-For an emergency image-only correction, update only the `uhc-unid-gw`
-container image by digest so existing ConfigMap, Secret, additional Firebase
-audiences and ledger channel overrides remain intact. Record the previous
-digest before mutation and verify the replacement digest after rollout.
+For an emergency image-only correction, select the Deployment and container
+from the approved private inventory and update only its image digest. Preserve
+ConfigMaps, Secrets, Firebase audiences and ledger bindings. A change requiring
+new verifier configuration needs a separately reviewed configuration delta; it
+is not an image-only correction. Record the original digest and verify the
+replacement after rollout.
 
 ## DIDComm signature and DCR authorization
 
@@ -157,7 +170,7 @@ Run from `sos-gw-node-ts`:
 
 ```bash
 release_tag="$(node -p "require('./package.json').version")-$(git rev-parse --short HEAD)"
-local_image="gw-unid:${release_tag}"
+local_image="sos-gw:${release_tag}"
 
 DOCKER_PLATFORM=linux/amd64 \
 LOCAL_IMAGE_NAME="${local_image}" \
@@ -167,9 +180,9 @@ IMAGE_NAME="${local_image}" \
   npm run docker:smoke:local-network
 ```
 
-The smoke prepares Fabric without starting the host TypeScript process, runs
-the image on `gdc-fabric-v3-devnet`, uses `peer0-org1:7051`, verifies the
-canonical local-network ping and runs:
+The smoke prepares Fabric without starting the host TypeScript process, uses
+its selected local-network bridge and peer, verifies the canonical local-network
+ping and runs:
 
 - atomic ConsentAccess writes, reads and duplicate no-op verification
 - same-portal individual SMART token issuance
@@ -226,26 +239,31 @@ remove a path that was not created and checked by this run.
 
 ## Dry-run, publish and deploy
 
-Use the checked-in, product-owned UNID runtime and GKE profiles. Run this from
-the UHC GW repository; `fabric-multicloud` must never deploy a GW workload:
+Run from the shared SOS gateway checkout. Read the structural
+`deploy/profiles/soschain/staging/` examples, then select the approved private
+runtime environment and GKE configuration. Infrastructure repositories do not
+select or deploy this application profile:
 
 ```bash
-config="deploy/uhc-staging/gke.config"
+: "${SOS_GKE_CONFIG_FILE:?Select the reviewed private SOS GKE config}"
+: "${SOS_RUNTIME_ENV_FILE:?Select the reviewed private SOS runtime environment}"
+config="${SOS_GKE_CONFIG_FILE}"
 
 GDC_IMAGE_TAG="${release_tag}" \
-GKE_ENV_FILE=.env.staging \
+GKE_ENV_FILE="${SOS_RUNTIME_ENV_FILE}" \
 DEPLOY_DRY_RUN=true \
-  ./cloud_deploy.sh gke unid "${config}"
+  ./cloud_deploy.sh gke soschain "${config}"
 ```
 
 After explicit deployment authorization:
 
 ```bash
 GDC_IMAGE_TAG="${release_tag}" \
+GKE_ENV_FILE="${SOS_RUNTIME_ENV_FILE}" \
 SKIP_BUILD=true \
 LOCAL_IMAGE_NAME="${local_image}" \
 DEPLOY_CONFIRM=true \
-  ./cloud_deploy.sh gke unid "${config}"
+  ./cloud_deploy.sh gke soschain "${config}"
 ```
 
 This path tags and pushes the tested local image, resolves its registry digest,
@@ -262,73 +280,39 @@ public endpoints.
   cannot be preserved by the repository commit.
 - Never claim deployment from a successful build alone.
 
-## Mandatory release authorization continuity
+## Mandatory local-first release order
 
-Run unit and integration tests with `networkKind=test`, then the real local UI
--> BFF -> SDK -> GW/DataConv Playwright journey without blockchain. An `npm pack`
-tarball is a temporary `--no-save` input only; restore the dependency and
-lockfile. Publish only after the full affected local matrix is green, install
-the exact registry version, run its minimal artifact smoke, then run
-`local-network` and staging. Resume at the smallest failed gate; rerun predecessor gates only
-for required state, an earlier-boundary change, or untrustworthy state.
+Follow the repository `AGENTS.md` and the canonical workspace runtime contract.
+The order is local packages, the complete affected local test matrix without
+skips, merge every validated branch to `main`, publish changed shared packages
+bottom-up, install exact registry versions and commit lockfiles on `main`, then
+stage the validated immutable service image. Do not publish before the local
+matrix and integrated `main`. A staging failure starts a new local patch cycle.
 
-For any release chain that requires npm authorization, make at most three
-attempts and keep each command session and browser window alive for up to five
-minutes. Never end the turn or imply continued work while a window is pending.
-After all three attempts fail, keep the release unpublished and continue the
-local `test` stage with an immutable `npm pack` tarball. Never commit a
-`file:`, Git, workspace or vendored tarball dependency.
+Use immutable `npm pack` artifacts with `--no-save` for local proof. Never commit
+file, Git, workspace or vendored dependencies. The gateway is a private service:
+shared-package publication and container-image publication are distinct steps.
 
-Follow the canonical contract in
-[`docs/LOCAL_FIRST_RELEASE_CONTRACT.md`](../../../docs/LOCAL_FIRST_RELEASE_CONTRACT.md):
-
-- Do not attempt `npm publish` until every affected local `test` gate is
-  green, including unit, integration, local services, real UI and Playwright.
-- An npm publish or authorization failure must never stop the `test` stage.
-- Continue unit, integration, local service, UI and Playwright gates with the
-  immutable tarball installed `--no-save` on pushed but unmerged branches.
-- The `npm pack` tarball is temporary: install it `--no-save`, then restore
-  the registry dependency and lockfile before committing dependency state.
-- After a failure, resume only the smallest failed gate; do not repeat a green
-  gate unless the fix changed its boundary, it creates required state, or the
-  environment is no longer trustworthy.
-- Resume the failed gate; rerun a predecessor only for required state, a
-  changed earlier boundary or an untrustworthy environment.
-- After publication, install the exact registry version and run only the minimal
-  install/export smoke; do not repeat the green local matrix unless the
-  published artifact differs from the tested tarball or invalidates that
-  evidence.
-- Missing exact registry publication blocks only consumer merge, image build,
-  `local-network`, `test-network`/staging and `network` promotion.
-- A gateway consumer installs the exact registry version before its merge,
-  image build and `local-network`. A portal consumer may retain the immutable
-  tarball on its pushed, unmerged branch throughout `local-network`; after
-  `local-network` is green, it installs the exact registry version and runs
-  only the artifact smoke before its merge and staging.
-- Publish only after the local matrix is green, install the exact registry
-  version in the gateway before `local-network`, and install it in portals
-  before staging.
-- Registry order is dependency publish and verification, then consumer install
-  and lockfile pin, then package merge, consumer merge, image build and deploy.
-- Every test file's first line must be a `Flow contract:` comment linking this
-  policy. Apply TDD red -> green -> refactor: red must fail because the
-  production behavior is absent or wrong; green must prove the production
-  contract. A skip, accepted error, placeholder, pending setup, fixture-only UI
-  or mock replacing a real boundary is never green.
-- Reuse canonical types and terminology from HL7/FHIR, LOINC, SNOMED CT,
-  ICD-10, WHO ATC, Schema.org or the applicable governed standard before
-  inventing a local type, enum, code, identifier or vocabulary.
-- Put missing reusable types in the versioned domain data package or
-  `common-utils`, with tests in that owning shared package, before downstream
-  use.
-- Reuse canonical fixtures, builders, claims, identifiers and vocabulary from
-  the versioned domain data package (`<version>-data` or
-  `<version>-data-utils`) or `common-utils`; no duplicated literals are
-  allowed. If the reusable datum does not exist, add it first to its owning
-  shared package with tests and consume that export downstream.
-
+Local proof includes the real UI -> BFF -> high-level SDK -> gateway journey
+without blockchain before the affected local-network/Fabric gate. Mocks,
+fixture-only pages, skips and health responses do not replace that evidence.
+Keep local, local-network, staging and production results identified separately.
+Use canonical independent Antifraud, FHIR and SOS contracts and governed examples;
+never infer identity, role or access authority from a transport or deployment label.
 
 ## Frozen shared-v1 boundary
 
 - Treat GW CORE v1 (`gwtemplate-node-ts`) and every `gdc-*` repository or package as frozen for new functionality. Only make a narrowly necessary bug, security, or compatibility fix there, backed by a regression test and without product-behavior expansion.
 - Implement new VetChain, UHC/UNID, or SOSChain behavior in the corresponding `vet-*`, `uhc-*`, or `sos-*` repository. Keep product roadmaps, feature documentation, examples, and skills in those product repositories; do not add them to GW CORE or `gdc-*`.
+
+## npm authorization continuity
+
+Follow [`docs/LOCAL_FIRST_RELEASE_CONTRACT.md`](../../../docs/LOCAL_FIRST_RELEASE_CONTRACT.md).
+Make at most three authorization attempts and keep each session alive for up to
+five minutes. After failure, continue local tests using an immutable `npm pack`
+tarball installed temporarily with `--no-save`; restore the dependency and
+lockfile before committing. Authorization failure never stops the local test
+stage. Resume the smallest failed gate without repeating a green gate unless
+its boundary or required state changed. Publication follows the blocking
+local-first release order above, after the complete local matrix and integrated
+`main`. Do not publish or deploy while a required gate is incomplete.

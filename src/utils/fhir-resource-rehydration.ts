@@ -3,6 +3,7 @@ import { canonicalizeFhirClaims, getClaimValue } from './claims';
 import { normalizeReference, tokenToCoding } from './fhir-data-utils';
 import { determineResourceId } from './resource';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
+import { identifierFromValue } from 'fhir-data-utils-ts/converters';
 import { DIGITAL_TWIN_SEARCH_CLAIM_PREFIX } from './digital-twin-research-projection';
 import { projectGatewayIndexedClaimsToNative } from './gateway-clinical-profile';
 
@@ -116,7 +117,7 @@ export function buildFhirResourceFromIndexedClaims(
   };
 
   if (identifier) {
-    resource.identifier = [{ value: identifier }];
+    resource.identifier = [identifierFromValue(identifier)];
   }
   if (subject) {
     const subjectField = PATIENT_REFERENCE_RESOURCE_TYPES.has(resourceType) ? 'patient' : 'subject';

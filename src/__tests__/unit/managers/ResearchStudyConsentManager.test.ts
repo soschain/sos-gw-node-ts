@@ -1,7 +1,7 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { describe, expect, it, jest } from '@jest/globals';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
-import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent, ConsentDecisions, ConsentStatuses } from "fhir-data-utils-ts/claims";
 import { SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { OrganizationWorkflowCapabilities } from 'sos-data-utils-ts/organization-workflow-access';
 import {

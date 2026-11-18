@@ -1,15 +1,17 @@
+import {DidServiceIds,DidServiceTypes} from 'sos-data-utils-ts/gateway-did-profile';
+import {isFhirSector} from './sector';
 // src/utils/did-document.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { GatewayDidService as DidService } from 'sos-data-utils-ts/gateway-did-profile';
 import { ServiceEndpointSelector } from 'sos-data-utils-ts/confidential-job';
-import { generateServiceId } from 'gdc-common-utils-ts/utils/did';
+import { generateServiceId } from 'sos-data-utils-ts/hosted-did';
 
 /**
  * Creates the standard, public-facing "well-known" service endpoints for a DID Document.
  * These are essential for standard DID resolution and discovery.
  */
-function createWellKnownDidServices(did: string, baseUrl: string): DidService[] {
+function createWellKnownDidServices(did: string, baseUrl: string, publishIdentityMetadata: boolean): DidService[] {
   // The final base URL for well-known services should not have a trailing slash.
   const finalBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   return [
@@ -23,6 +25,10 @@ function createWellKnownDidServices(did: string, baseUrl: string): DidService[] 
       type: 'JsonWebKeyService2020',
       serviceEndpoint: `${finalBaseUrl}/jwks.json`,
     },
+    ...(publishIdentityMetadata ? [
+      {id:did+DidServiceIds.OpenIdConfiguration,type:DidServiceTypes.OpenIdProvider,serviceEndpoint:`${finalBaseUrl}/.well-known/openid-configuration`},
+      {id:did+DidServiceIds.SmartConfiguration,type:DidServiceTypes.SmartOnFhirConfiguration,serviceEndpoint:`${finalBaseUrl}/.well-known/smart-configuration`},
+    ] : []),
   ];
 }
 
@@ -80,7 +86,7 @@ export function populateDidDocumentServices(
     : normalizedPublicBaseUrl;
 
   // 1. Create the standard, W3C-compliant well-known services.
-  const wellKnownServices = createWellKnownDidServices(did, wellKnownBaseUrl);
+  const wellKnownServices = createWellKnownDidServices(did, wellKnownBaseUrl, isFhirSector(tenantContext.sector));
 
   // 2. Multiplex the internal business service templates into discrete, public service endpoints.
   const populatedBusinessServices: DidService[] = businessServicesConfig.flatMap(configService => {

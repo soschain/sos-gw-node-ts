@@ -80,8 +80,8 @@
     "body": {
       "vp_token": "<ica-proof-token>",
       "controller": {
-        "did": "did:web:people.acme.org:controllers:primary",
-        "sameAs": "urn:multibase:zControllerHash",
+        "did": "did:web:example.invalid:example-tenant:controller",
+        "sameAs": "mailto:controller@example.invalid",
         "publicKeyJwk": {
           "kid": "controller-es384-001",
           "kty": "EC",

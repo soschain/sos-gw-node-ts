@@ -1,4 +1,6 @@
-// Flow contract: employee routes use Offer -> Order for licence inventory;
+// Flow contract: route admission uses explicit registered public wallet fixtures and real inner signatures; mocked JWE decoding/bearer validation do not constitute full cryptographic E2E. Existing route, role, payload and persistence assertions remain in force.
+import {getTenantVaultId} from '../../utils/tenant';
+import {registeredRouteFixture} from './helpers/registered-route-fixture';
 // the nonexistent License/_add path is never advertised, queued or accepted.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
@@ -30,7 +32,7 @@ const mockQueueAdapter: jest.Mocked<QueueAdapter> = {
   addJob: jest.fn(),
 };
 const mockAppAuthManager = {
-  verifyBearerToken: jest.fn(async () => ({ payload: { sub: 'employee-api-test' } })),
+  verifyBearerToken: jest.fn(async () => ({ payload: { sub: ORGANIZATION_REGISTRATION_JOB.content!.iss } })),
 } as any;
 
 const setupApp = (asyncResponseStore: IAsyncResponseStore) => {
@@ -40,6 +42,7 @@ const setupApp = (asyncResponseStore: IAsyncResponseStore) => {
 
   const vaultRepository = new VaultMemRepository();
   const tenantsCacheManager = new TenantsCacheManager(vaultRepository, () => mockKmsService, 'test-host-collection');
+  jest.spyOn(tenantsCacheManager,'getCollectionName').mockImplementation(async (vaultId:string)=>vaultId);
   const cryptographyService = new CryptographyService(new AdapterCryptoSdkNode());
 
   const apiRouter = createApiRouter(
@@ -54,18 +57,19 @@ const setupApp = (asyncResponseStore: IAsyncResponseStore) => {
   );
   app.use('/', apiRouter);
 
-  return { app, tenantsCacheManager };
+  return { app, tenantsCacheManager, vaultRepository };
 };
 
 describe('Employee Onboarding API', () => {
   afterEach(() => {
     jest.clearAllMocks();
+    mockAppAuthManager.verifyBearerToken.mockResolvedValue({payload:{sub:ORGANIZATION_REGISTRATION_JOB.content!.iss}});
   });
 
   it('should decode the request, queue a job, and return 202 Accepted', async () => {
     // --- Arrange ---
     const asyncResponseStore = new AsyncResponseStoreMem();
-    const { app, tenantsCacheManager } = setupApp(asyncResponseStore);
+    const { app, tenantsCacheManager, vaultRepository } = setupApp(asyncResponseStore);
 
     const tenantId = testTenant1AlternateName;
     const jurisdiction = testTenant1AddressCountry.toLowerCase();
@@ -97,7 +101,8 @@ describe('Employee Onboarding API', () => {
       ...ORGANIZATION_REGISTRATION_JOB,
       content: withoutIncompleteJwsProof(ORGANIZATION_REGISTRATION_JOB.content as any),
     };
-    mockKmsService.decodeRequest.mockResolvedValue(mockJob);
+    const preparedJob=await registeredRouteFixture(mockJob,vaultRepository,getTenantVaultId('health-care',testTenant1AlternateName),mockKmsService);
+    mockKmsService.decodeRequest.mockResolvedValue(preparedJob);
 
     // --- Act ---
     const response = await invokeExpress(app, {
@@ -118,14 +123,14 @@ describe('Employee Onboarding API', () => {
     expect(queuedJob.format).toBe(format);
     expect(queuedJob.resourceType).toBe(resourceType);
     expect(queuedJob.action).toBe(action);
-    expect(queuedJob.content).toEqual(mockJob.content);
+    expect(queuedJob.content).toEqual(preparedJob.content);
     expect(response.status).toBe(202);
     expect(response.headers.location).toBe(expectedPollingUrl);
   });
 
   it('should accept Employee/_search and return the async polling URL', async () => {
     const asyncResponseStore = new AsyncResponseStoreMem();
-    const { app, tenantsCacheManager } = setupApp(asyncResponseStore);
+    const { app, tenantsCacheManager, vaultRepository } = setupApp(asyncResponseStore);
 
     const tenantId = testTenant1AlternateName;
     const jurisdiction = testTenant1AddressCountry.toLowerCase();
@@ -156,7 +161,8 @@ describe('Employee Onboarding API', () => {
       ...ORGANIZATION_REGISTRATION_JOB,
       content: withoutIncompleteJwsProof(ORGANIZATION_REGISTRATION_JOB.content as any),
     };
-    mockKmsService.decodeRequest.mockResolvedValue(mockJob);
+    const preparedJob=await registeredRouteFixture(mockJob,vaultRepository,getTenantVaultId('health-care',testTenant1AlternateName),mockKmsService);
+    mockKmsService.decodeRequest.mockResolvedValue(preparedJob);
 
     const response = await invokeExpress(app, {
       method: 'POST',
@@ -175,7 +181,7 @@ describe('Employee Onboarding API', () => {
 
   it('preserves the created employee subjectId when queueing License/_issue', async () => {
     const asyncResponseStore = new AsyncResponseStoreMem();
-    const { app, tenantsCacheManager } = setupApp(asyncResponseStore);
+    const { app, tenantsCacheManager, vaultRepository } = setupApp(asyncResponseStore);
     const tenantId = testTenant1AlternateName;
     const jurisdiction = testTenant1AddressCountry.toLowerCase();
     const issueUrl = `/${tenantId}/cds-${jurisdiction}/v1/health-care/identity/openid/License/_issue`;
@@ -211,10 +217,11 @@ describe('Employee Onboarding API', () => {
         }],
       },
     };
-    mockKmsService.decodeRequest.mockResolvedValue({
+    mockAppAuthManager.verifyBearerToken.mockResolvedValue({payload:{sub:content.iss}});
+    mockKmsService.decodeRequest.mockResolvedValue(await registeredRouteFixture({
       ...ORGANIZATION_REGISTRATION_JOB,
       content,
-    } as any);
+    } as any,vaultRepository,getTenantVaultId('health-care',testTenant1AlternateName),mockKmsService));
 
     const response = await invokeExpress(app, {
       method: 'POST',
@@ -230,7 +237,7 @@ describe('Employee Onboarding API', () => {
 
   it('rejects License/_add even for a historical mutable Employee service declaration', async () => {
     const asyncResponseStore = new AsyncResponseStoreMem();
-    const { app, tenantsCacheManager } = setupApp(asyncResponseStore);
+    const { app, tenantsCacheManager, vaultRepository } = setupApp(asyncResponseStore);
 
     const tenantId = testTenant1AlternateName;
     const jurisdiction = testTenant1AddressCountry.toLowerCase();
@@ -251,10 +258,10 @@ describe('Employee Onboarding API', () => {
       didConfig: { service: historicalTenantServices },
     } as any);
 
-    mockKmsService.decodeRequest.mockResolvedValue({
+    mockKmsService.decodeRequest.mockResolvedValue(await registeredRouteFixture({
       ...ORGANIZATION_REGISTRATION_JOB,
       content: withoutIncompleteJwsProof(ORGANIZATION_REGISTRATION_JOB.content as any),
-    });
+    },vaultRepository,getTenantVaultId('health-care',testTenant1AlternateName),mockKmsService));
 
     const response = await invokeExpress(app, {
       method: 'POST',
@@ -270,7 +277,7 @@ describe('Employee Onboarding API', () => {
 
   it('accepts Offer/_create for a historical mutable Employee service declaration', async () => {
     const asyncResponseStore = new AsyncResponseStoreMem();
-    const { app, tenantsCacheManager } = setupApp(asyncResponseStore);
+    const { app, tenantsCacheManager, vaultRepository } = setupApp(asyncResponseStore);
 
     const tenantId = testTenant1AlternateName;
     const jurisdiction = testTenant1AddressCountry.toLowerCase();
@@ -291,10 +298,10 @@ describe('Employee Onboarding API', () => {
       didConfig: { service: historicalTenantServices },
     } as any);
 
-    mockKmsService.decodeRequest.mockResolvedValue({
+    mockKmsService.decodeRequest.mockResolvedValue(await registeredRouteFixture({
       ...ORGANIZATION_REGISTRATION_JOB,
       content: withoutIncompleteJwsProof(ORGANIZATION_REGISTRATION_JOB.content as any),
-    });
+    },vaultRepository,getTenantVaultId('health-care',testTenant1AlternateName),mockKmsService));
 
     const response = await invokeExpress(app, {
       method: 'POST',

@@ -1,13 +1,14 @@
+// Flow contract: consume independent canonical clinical, identity and transport contracts while preserving the existing authorization and persistence assertions.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/__tests__/data/observation.data.ts
 
 import type { ConfidentialStorageDoc, MetaTagCoding } from 'sos-data-utils-ts/confidential-storage';
-import { ObservationCategoryCodes } from 'gdc-common-utils-ts/constants/observation-category';
+import { ObservationCategoryCodes } from "fhir-data-utils-ts/observation-claims";
 import {
   EXAMPLE_OBSERVATION_ANXIETY_CODING,
   EXAMPLE_OBSERVATION_BODY_WEIGHT_CODING,
   EXAMPLE_OBSERVATION_EVENT_TIMING_NIGHT_CODING,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 
 // import { ClaimsObservationContext } from 'gdc-sdk-client-ts/src/uhc-fhir-utils-ts/models/params/Observation.params.model.js';
 // Keep these keys local to avoid pulling gdc-sdk-client-ts into Docker builds for tests.

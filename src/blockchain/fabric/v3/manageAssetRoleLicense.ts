@@ -1,7 +1,7 @@
 import type {
   OrganizationRoleLicense,
   OrganizationRoleLicenseSectorPolicy,
-} from 'gdc-common-utils-ts/models/organization-role-license';
+} from 'sos-data-utils-ts/organization-role-license';
 import { ManageAsset } from './manageAsset';
 
 export type RoleLicenseLedgerSectorPolicy = Omit<OrganizationRoleLicenseSectorPolicy, 'maxDevices'> & {

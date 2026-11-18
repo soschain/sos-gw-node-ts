@@ -8,10 +8,10 @@
  */
 import { verifyOrganizationTestNetworkCredential } from '../../../managers/hosting/organization-test-network-credential';
 import { processOrganizationVerificationTransaction } from '../../../managers/hosting/process-organization-verification';
-import { buildOrganizationTestNetworkCredential } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
-import { buildTestNetworkOrganizationCredentialSet } from 'gdc-common-utils-ts/utils/test-network-organization-credentials';
+import { buildOrganizationTestNetworkCredential } from "antifraud-data-utils-ts/organization-credentials";
+import { buildTestNetworkOrganizationCredentialSet } from "antifraud-data-utils-ts/organization-credentials";
 import { SchemaOrgOfferClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
+import { toJwkThumbprintSha256Urn } from "antifraud-data-utils-ts/jwk-thumbprints";
 import { readFileSync } from 'node:fs';
 import { createECDH } from 'node:crypto';
 import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
@@ -21,6 +21,7 @@ import { toJwkThumbprintSha256Urn as ownedThumbprint } from 'antifraud-data-util
 import { REPOSITORY_SAFE_EXAMPLES as safe } from 'sos-data-utils-ts/repository-privacy';
 import { AdapterCryptoSdkNode } from '../../../gdc-backend-utils-node/adapters/node/crypto';
 import type { JsonValue } from 'antifraud-data-utils-ts/identity-assurance';
+import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import type { ReviewedOrganizationCredential } from 'antifraud-data-utils-ts/organization-credentials';
 
 const controllerJwk = { kty: 'AKP', alg: 'ML-DSA-65', pub: 'controller-public' } as const;
@@ -45,6 +46,9 @@ function credential() {
   });
   return {
     ...unsigned,
+    '@context': [...unsigned['@context']],
+    type: [...unsigned.type],
+    evidence: unsigned.evidence ? [...unsigned.evidence] : undefined,
     credentialSubject: {
       ...unsigned.credentialSubject,
       applicationEvidence: { pdfSha256: 'a'.repeat(64) },
@@ -75,10 +79,16 @@ function domainCredentials() {
     serviceCategory: 'health-care',
     legalRepresentativeEmail: 'developer@dsrc.example',
     legalRepresentativeFullName: 'Example Representative',
+    legalRepresentativeOccupation: HealthcareActorRoles.Receptionist,
+    controllerOccupation: HealthcareActorRoles.Receptionist,
+    controllerAuthorityRole: HealthcareActorRoles.Controller,
     controllerEmail: 'developer@dsrc.example',
     controllerKeyMaterial: toJwkThumbprintSha256Urn(controllerJwk),
   }).map(item => ({
     ...item,
+    '@context': [...item['@context']],
+    type: [...item.type],
+    evidence: item.evidence ? [...item.evidence] : undefined,
     proof: {
       type: 'JsonWebSignature2020',
       proofPurpose: 'assertionMethod',
@@ -393,16 +403,22 @@ describe('reviewed Organization contact with real ML-DSA-65 proofs', () => {
         },
       },
     };
-    const domainDrafts = domainCredentials().map(item => ({
-      ...item,
-      credentialSubject: {
-        ...item.credentialSubject,
-        ...(item.type.includes('LegalRepresentativeCredential') ? { id: actor, sameAs: actor } : {}),
-        ...(item.type.includes('ServiceControllerCredential')
-          ? { owner: { ...item.credentialSubject.owner, sameAs: actor,
-            hasCredential: { material: keyMaterial } } } : {}),
-      },
-    }));
+    const domainDrafts = domainCredentials().map(item => {
+      let controllerOwner: Readonly<Record<string, JsonValue>> | undefined;
+      if (item.type.includes('ServiceControllerCredential')) {
+        const owner = item.credentialSubject.owner;
+        if (!jsonObject(owner)) throw new TypeError('Controller fixture requires its original owner object');
+        controllerOwner = { ...owner, sameAs: actor, hasCredential: { material: keyMaterial } };
+      }
+      return {
+        ...item,
+        credentialSubject: {
+          ...item.credentialSubject,
+          ...(item.type.includes('LegalRepresentativeCredential') ? { id: actor, sameAs: actor } : {}),
+          ...(controllerOwner ? { owner: controllerOwner } : {}),
+        },
+      };
+    });
     const header = Buffer.from(JSON.stringify({ alg: 'ML-DSA-65', b64: false, crit: ['b64'] })).toString('base64url');
     async function detached(canonical: string) {
       const bytes = Buffer.concat([Buffer.from(`${header}.`, 'ascii'), Buffer.from(canonical, 'utf8')]);

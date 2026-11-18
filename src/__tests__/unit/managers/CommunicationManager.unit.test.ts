@@ -12,6 +12,10 @@
 // Description: Unit tests for the CommunicationManager.
 
 import { jest } from '@jest/globals';
+import { createRequire } from 'node:module';
+import { readFileSync } from 'node:fs';
+import { normalizeClaimsFromFhirResource } from 'fhir-data-utils-ts/clinical-resource-adapters';
+import { ObservationClaim } from 'fhir-data-utils-ts/observation-claims';
 import { CommunicationManager } from '../../../managers/CommunicationManager';
 import { TwinCompositionManager } from '../../../managers/TwinCompositionManager';
 import type { TenantsCacheManager } from '../../../managers/TenantsCacheManager';
@@ -24,13 +28,18 @@ import { createServer, type Server } from 'node:http';
 import type { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../../../gdc-backend-utils-node/models/IKmsService';
 import { getSubjectScopedSectionId } from '../../../utils/individual-sections';
-import { buildCommunicationParticipantSearchParameters, buildCommunicationParticipantIndexAttributes, buildExampleCommunicationParticipantProjection, buildExampleCommunicationParticipantSearchInput, BundleEditableResourceTypes, BundleEditor, BundleOperations, CommunicationParticipantPrefixes, CompositionAttesterModes, CompositionClaim, ConfidentialDocumentIndex, ConsentDecisions, ConsentStatuses, ResourceTypesFhirR4 } from 'gdc-common-utils-ts';
+import { buildCommunicationParticipantSearchParameters, buildCommunicationParticipantIndexAttributes, CommunicationParticipantPrefixes } from 'fhir-data-utils-ts/communication-participant-search';
+import { BundleEditableResourceTypes, BundleEditor, BundleOperations } from 'sos-data-utils-ts/bundle-contract';
+import { buildExampleCommunicationParticipantProjection, buildExampleCommunicationParticipantSearchInput } from 'sos-data-utils-ts/gateway-resource-flow-examples';
+import { ConfidentialDocumentIndex } from 'sos-data-utils-ts/confidential-storage';
+import { CompositionAttesterModes, CompositionClaim, ConsentDecisions, ConsentStatuses } from "fhir-data-utils-ts/claims";
+import { ResourceTypesFhirR4 } from "fhir-data-utils-ts/constants";
 import { DataCollectionIds } from 'sos-data-utils-ts/gateway-data-collections';
 import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
-import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-claims/communication-claims';
-import { BundleTypes } from 'gdc-common-utils-ts/models/bundle-editor-types';
+import { CommunicationClaim } from "fhir-data-utils-ts/claims";
+import { BundleTypes } from 'sos-data-utils-ts/bundle-contract';
 import { Format } from 'sos-data-utils-ts/bff-wire-contract';
 import { HttpMediaTypes } from 'sos-data-utils-ts/bff-wire-contract';
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
@@ -54,20 +63,21 @@ import {
   EXAMPLE_RELATED_PERSON_ROLE,
   EXAMPLE_CLIENT_INSTANCE_UUID,
   EXAMPLE_CONTROLLER_SIGN_KEY,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import { FhirIpsCreatorKinds } from 'sos-data-utils-ts/clinical-creator-contract';
-import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
+import { extractBundleSearchResources } from "sos-sdk-core-ts/gateway-response-reader";
+import { getClaimValue } from '../../../utils/claims';
 import { getClinicalCreatorBindingsSectionId } from '../../../utils/ips-bundle';
 import {
   applyDigitalTwinSecondaryUseDecision,
   listEnabledDigitalTwinStudyTargets,
 } from '../../../utils/digital-twin-secondary-use';
 import { buildDemoResearchPermitByRoleConsent } from '../../data/demo-smart-access-local-network.data';
-import { VitalSignsCodes, VitalSignsUnits } from 'gdc-common-utils-ts/constants/vital-signs';
+import { VitalSignsCodes, VitalSignsUnits } from "fhir-data-utils-ts/vital-sign-observations";
 import {
   EXAMPLE_VITAL_SIGNS_EFFECTIVE_DATE_TIME,
   EXAMPLE_VITAL_SIGN_VALUE_BODY_TEMPERATURE,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 
 describe('CommunicationManager Unit Tests', () => {
   let communicationManager: CommunicationManager;
@@ -2420,11 +2430,74 @@ describe('CommunicationManager Unit Tests', () => {
       }, true)).toBe(false);
     });
 
+    it('expands native Observation components into a lossless section-bound graph', () => {
+      type Component = {
+        code: { coding: Array<{ system: string; code: string }> };
+        valueQuantity: { value: number; unit: string; system: string; code: string };
+      };
+      type NativeObservation = Record<string, unknown> & { id: string; component: Component[] };
+      const fixturePath = createRequire(import.meta.url)
+        .resolve('fhir-data-utils-ts/fixtures/fhir-ips-bundle-all-sections.json');
+      const fixture = JSON.parse(readFileSync(fixturePath, 'utf8')) as {
+        entry: Array<{ resource: NativeObservation }>;
+      };
+      const original = fixture.entry.find(({ resource }) =>
+        resource.resourceType === ResourceTypesFhirR4.Observation && resource.component?.length === 2)?.resource;
+      expect(original).toBeDefined();
+      if (!original) throw new Error('Official IPS fixture requires its blood-pressure panel.');
+      const observation = { ...original, subject: { reference: subjectDid } };
+      const attached = {
+        resourceType: ResourceTypesFhirR4.Bundle, type: BundleTypes.document,
+        entry: [{ resource: {
+          resourceType: ResourceTypesFhirR4.Composition,
+          section: [{ code: { coding: [{ system: VitalSignsCodes.BloodPressure.system,
+            code: HealthcareCoreSections.VitalSigns.code }] },
+            entry: [{ reference: `Observation/${original.id}` }] }],
+        } }, { resource: observation }],
+      };
+      const extractor = communicationManager as unknown as {
+        extractProjectedFhirResourcesFromAttachment(attachment: Readonly<Record<string, unknown>>): Array<Record<string, unknown> & { resourceType: string; id?: string }>;
+      };
+      const resources = extractor.extractProjectedFhirResourcesFromAttachment({
+        contentType: EXAMPLE_CONTENT_TYPE_FHIR_JSON,
+        data: Buffer.from(JSON.stringify(attached)).toString('base64'),
+      }).filter(resource => resource.resourceType === ResourceTypesFhirR4.Observation);
+      expect(resources).toHaveLength(3);
+      const claims = resources.map(resource => normalizeClaimsFromFhirResource(resource));
+      expect(claims[0][ObservationClaim.HasMember]).toBe(
+        resources.slice(1).map(resource => `Observation/${resource.id}`).join(','),
+      );
+      original.component.forEach((component, index) => {
+        const coding = component.code.coding[0];
+        expect(claims[index + 1][ObservationClaim.Code]).toBe(`${coding.system}|${coding.code}`);
+        expect(claims[index + 1][ObservationClaim.ValueQuantityNumber]).toBe(String(component.valueQuantity.value));
+        expect(claims[index + 1][ObservationClaim.ValueQuantityUnit])
+          .toBe(`${component.valueQuantity.system}|${component.valueQuantity.code}`);
+      });
+      for (const resourceClaims of claims) {
+        expect(resourceClaims[ObservationClaim.Subject]).toBe(subjectDid);
+        expect(resourceClaims[CompositionClaim.Section]).toBe(HealthcareCoreSections.VitalSigns.claim);
+      }
+    });
+
     it('projects IPS resources from an attached document bundle with indexed claims', async () => {
       mockTenantsCacheManager.getTenantDid.mockResolvedValue(testServerDid as any);
       mockVaultRepository.vaultExists.mockResolvedValue(true as any);
       const twinSubjectId = await enableDigitalTwinSecondaryUse(subjectDid);
 
+      const fixturePath = createRequire(import.meta.url)
+        .resolve('fhir-data-utils-ts/fixtures/fhir-ips-bundle-all-sections.json');
+      const nativeFixture = JSON.parse(readFileSync(fixturePath, 'utf8')) as {
+        entry: Array<{ resource: {
+          resourceType: string;
+          component?: Array<{ code: { coding: Array<{ system: string; code: string }> };
+            valueQuantity: { value: number; system: string; code: string } }>;
+        } }>;
+      };
+      const sourceComponents = nativeFixture.entry.find(({ resource }) =>
+        resource.resourceType === ResourceTypesFhirR4.Observation && resource.component?.length === 2)?.resource.component;
+      expect(sourceComponents).toHaveLength(2);
+      if (!sourceComponents) throw new Error('Official IPS fixture requires component measurements.');
       const documentBundle = {
         resourceType: 'Bundle',
         type: 'document',
@@ -2518,6 +2591,7 @@ describe('CommunicationManager Unit Tests', () => {
                 text: 'Tension arterial',
               },
               identifier: [{ value: 'urn:uuid:observation-001' }],
+              component: sourceComponents,
             },
           },
           {
@@ -2607,7 +2681,8 @@ describe('CommunicationManager Unit Tests', () => {
         content: decoded,
       };
 
-      await communicationManager.process(job);
+      const result = await communicationManager.process(job);
+      expect(result.body).toMatchObject({ data: [{ response: { status: '200' } }] });
 
       const tenantVaultId = 'health-care_acme';
       const medicationsSectionId = getSubjectScopedSectionId(subjectDid, 'individual', 'medications');
@@ -2751,6 +2826,50 @@ describe('CommunicationManager Unit Tests', () => {
       expect(twinClaim('Observation.code-display')).toBeUndefined();
       expect(twinClaim('Observation.code-text')).toBeUndefined();
       expect(twinClaim('Observation.date')).toBe('2026-05-22T11:00:00Z');
+      const sourceSection = getSubjectScopedSectionId(subjectDid, 'individual', 'observations');
+      const sourceGraph = await mockVaultRepository.listContainersInSection<Record<string, unknown> & { id: string }>(
+        tenantVaultId, sourceSection,
+      );
+      const twinGraph = await mockVaultRepository.listContainersInSection<Record<string, unknown> & { id: string }>(
+        tenantVaultId, twinObservationSectionId,
+      );
+      expect(sourceGraph).toHaveLength(3);
+      expect(twinGraph).toHaveLength(3);
+      for (const sourceRecord of sourceGraph) {
+        expect(getClaimValue(sourceRecord, CompositionClaim.Status)).toBe('final');
+      }
+      const readClaim = (record: Record<string, unknown>, claim: string) => record[
+        Object.keys(record).find(key => key === claim || key.endsWith(`.${claim}`)) ?? claim
+      ];
+      for (const component of sourceComponents) {
+        const coding = component.code.coding[0];
+        const expectedCode = `${coding.system}|${coding.code}`;
+        for (const graph of [sourceGraph, twinGraph]) {
+          const child = graph.find(record => readClaim(record, ObservationClaim.Code) === expectedCode);
+          expect(child).toBeDefined();
+          if (!child) throw new Error('Persisted observation graph lost a component.');
+          expect(String(readClaim(child, ObservationClaim.ValueQuantityNumber)))
+            .toBe(String(component.valueQuantity.value));
+          expect(readClaim(child, ObservationClaim.ValueQuantityUnit))
+            .toBe(`${component.valueQuantity.system}|${component.valueQuantity.code}`);
+          expect(readClaim(child, ObservationClaim.Status)).toBeUndefined();
+        }
+      }
+      for (const graph of [sourceGraph, twinGraph]) {
+        const parent = graph.find(record => readClaim(record, ObservationClaim.HasMember));
+        expect(parent).toBeDefined();
+        if (!parent) throw new Error('Persisted observation graph lost its parent.');
+        const childReferences = String(readClaim(parent, ObservationClaim.HasMember)).split(',');
+        expect(childReferences).toHaveLength(2);
+        for (const reference of childReferences) {
+          const childId = reference.replace(/^Observation\//, '');
+          const child = await mockVaultRepository.get<Record<string, unknown> & { id: string }>(
+            tenantVaultId, childId, graph === sourceGraph ? sourceSection : twinObservationSectionId,
+          );
+          expect(child).toBeDefined();
+        }
+      }
+
     });
 
     it('keeps DocumentReference attachments working as a compatibility wrapper around a document bundle', async () => {
@@ -3677,7 +3796,8 @@ describe('CommunicationManager Unit Tests', () => {
         .setBundleOperation(BundleOperations.create)
         .setBundleType(BundleTypes.batch)
         .setAllowedResourceType(BundleEditableResourceTypes.consent);
-      permissionBundleEditor.newEntryAs(BundleEditableResourceTypes.consent)
+      permissionBundleEditor.newEntryAs(BundleEditableResourceTypes.consent, EXAMPLE_CONSENT_IDENTIFIER)
+        .setClaim('@context', Format.FHIR_API)
         .setIdentifier(EXAMPLE_CONSENT_IDENTIFIER)
         .setStatus(ConsentStatuses.Draft)
         .setSubject(EXAMPLE_SUBJECT_DID)
@@ -3685,7 +3805,7 @@ describe('CommunicationManager Unit Tests', () => {
         .setActorIdentifierList([EXAMPLE_PROFESSIONAL_DID])
         .setPurposeList([HealthcareConsentPurposes.Treatment])
         .setSectionList([HealthcareCoreSections.PatientSummaryDocument.attributeValue])
-        .doneEntry();
+        .create();
       const permissionBundle = permissionBundleEditor.buildJsonApi();
 
       const communicationClaims = {

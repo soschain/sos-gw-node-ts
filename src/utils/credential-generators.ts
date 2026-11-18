@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
-import { buildGaiaXLegalPersonCredentialDraft } from 'gdc-common-utils-ts/convert/schemaorg-to-gaia-x';
+import { buildGaiaXLegalPersonCredentialDraft } from 'antifraud-data-utils-ts/gaia-x-projection';
 
 export interface GaiaXLegalParticipantCredentialOptions {
   webDomain: string;              // e.g. "https://example.com"

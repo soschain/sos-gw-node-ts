@@ -2,7 +2,7 @@
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { RulesTestEnvironment, initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { buildExampleConfidentialStorageDoc, buildExampleConfidentialJwe } from 'gdc-common-utils-ts';
+import { buildExampleConfidentialStorageDoc, buildExampleConfidentialJwe } from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import { FirestoreVaultRepository } from '../../../database/repositories/firestore/firestore.vault.repository';
 import { getEnvSectionId } from '../../../utils/section-env';
 import type { IConfidentialBlobStore } from '../../../database/storage/IConfidentialBlobStore';

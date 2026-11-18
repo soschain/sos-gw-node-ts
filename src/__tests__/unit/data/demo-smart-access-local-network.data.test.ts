@@ -12,11 +12,11 @@ import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import {
   EXAMPLE_CONSENT_ATTACHMENT_CONTENT_TYPE,
   EXAMPLE_CONSENT_ATTACHMENT_DATA_BASE64,
-} from 'gdc-common-utils-ts/examples/shared';
-import { EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_PURPOSE } from 'gdc-common-utils-ts/examples/inter-tenant-access-contract';
-import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
-import { MedicationStatementClaim } from 'gdc-common-utils-ts/models/interoperable-claims';
-import { getMatchingInterTenantAccessContractFromVpToken } from 'gdc-common-utils-ts/utils/inter-tenant-access-contract';
+} from 'sos-data-utils-ts/gateway-flow-examples';
+import { EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_PURPOSE } from 'sos-data-utils-ts/gateway-resource-flow-examples';
+import { ClaimConsent, ConsentDecisions, ConsentStatuses } from "fhir-data-utils-ts/claims";
+import { MedicationStatementClaim } from "fhir-data-utils-ts/claims";
+import { getMatchingInterTenantAccessContractFromVpToken } from 'sos-data-utils-ts/inter-tenant-access-contract';
 import { demoCommunicationMedicationIpsDefaults } from '../../data/demo-communication-medications-ips.data';
 import {
   DEMO_SMART_ACCESS_LOCAL_DIDS,
@@ -62,12 +62,21 @@ describe('demo smart access local-network builders', () => {
     expect((summary as any).thid).toBe(DEMO_SMART_ACCESS_LOCAL_IDS.individualScopedSummaryThreadId);
     expect(JSON.stringify(summary)).toContain('Subject/$summary');
     expect(JSON.stringify(summary)).not.toContain('filterSections');
+    const communication=(summary as any).body.data[0].resource;
+    const attachedParameters=JSON.parse(Buffer.from(
+      communication.payload.find((item:any)=>item.contentAttachment).contentAttachment.data,
+      'base64',
+    ).toString('utf8'));
+    expect(communication.subject.reference).toBe(subjectDid);
+    expect(attachedParameters.resourceType).toBe('Parameters');
+    expect(attachedParameters.parameter).toContainEqual({name:'subject',valueString:subjectDid});
+    expect(attachedParameters.parameter.filter((item:any)=>item.name==='section')).toHaveLength(0);
   });
 
   it('builds the exact individual IPS consent required by the SMART smoke', () => {
     expect(buildDemoIndividualIpsPermitConsent({ tenantId, subjectDid })).toMatchObject({
       [ClaimConsent.subject]: subjectDid,
-      [ClaimConsent.actorIdentifier]: `did:web:api.acme.org:employee:${DEMO_SMART_ACCESS_LOCAL_EMAILS.individualProfessional}:${HealthcareActorRoles.Physician}`,
+      [ClaimConsent.actorIdentifier]: `did:web:api.${tenantId}.org:employee:${DEMO_SMART_ACCESS_LOCAL_EMAILS.individualProfessional}:${HealthcareActorRoles.Physician}`,
       [ClaimConsent.actorRole]: HealthcareActorRoles.Physician,
       [ClaimConsent.decision]: ConsentDecisions.Permit,
       [ClaimConsent.status]: ConsentStatuses.Active,

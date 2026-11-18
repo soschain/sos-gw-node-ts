@@ -12,7 +12,7 @@ import {
   ClaimsProductSchemaorg,
   normalizeDirectoryFlatClaimsResource,
   type DirectoryResourceType,
-} from 'vet-data-utils-ts/place-service-directory';
+} from 'sos-data-utils-ts/place-service-directory';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { EntityLifecycleStatus } from '../gdc-backend-utils-node/models/enums';

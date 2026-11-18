@@ -47,27 +47,13 @@ function resolveExtension(specifier, sourceFile) {
   return null;
 }
 
-function resolvePackageExtension(specifier) {
-  if (hasRuntimeExtension(specifier)) return null;
-
-  const isLocalPackage = specifier.startsWith('gdc-common-utils-ts/');
-
-  if (!isLocalPackage) return null;
-
-  const candidate = path.resolve(process.cwd(), 'node_modules', `${specifier}.ts`);
-  if (fs.existsSync(candidate)) {
-    return `${specifier}.ts`;
-  }
-  return null;
-}
-
 function rewriteImports(source, sourceFile) {
   let updated = source;
 
   updated = updated.replace(
     /\bfrom\s+(['"])([^'"]+)\1/g,
     (match, quote, spec) => {
-      const resolved = resolveExtension(spec, sourceFile) ?? resolvePackageExtension(spec);
+      const resolved = resolveExtension(spec, sourceFile);
       if (!resolved) return match;
       return `from ${quote}${resolved}${quote}`;
     },
@@ -76,7 +62,7 @@ function rewriteImports(source, sourceFile) {
   updated = updated.replace(
     /\bimport\(\s*(['"])([^'"]+)\1\s*\)/g,
     (match, quote, spec) => {
-      const resolved = resolveExtension(spec, sourceFile) ?? resolvePackageExtension(spec);
+      const resolved = resolveExtension(spec, sourceFile);
       if (!resolved) return match;
       return `import(${quote}${resolved}${quote})`;
     },

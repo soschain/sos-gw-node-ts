@@ -27,6 +27,7 @@ import {ClaimConsent,ConsentStatuses,ConsentDecisions,HealthcareConsentPurposes}
 import {buildOrganizationControllerWorkflowAssignment,buildOrganizationSubjectRegisterCapability,OrganizationWorkflowGroupKinds,OrganizationWorkflowCapabilities} from 'sos-data-utils-ts/organization-workflow-access';
 import {admitIndividualRegistration} from '../../utils/individual-registration-admission';
 import {computeRfc7638JwkThumbprint} from 'antifraud-data-utils-ts/jwk-thumbprints';
+import {normalizeCodeSystemAndValue} from '../../utils/normalize-codeAndSystem';
 import type {ITenantsManager} from '../../managers/ITenantsManager';
 
 const cleanups:(()=>void)[]=[];
@@ -129,14 +130,18 @@ async function fixture(){
    if(!signingKey)throw new Error('actual_registered_key_missing');
    const admittedJob=Object.assign(professionalJob,{authenticatedTransport:{kind:'registered-didcomm' as const,actorDid:employeeDid,signingKeyId:signingKey.kid,signingKeyThumbprint:await computeRfc7638JwkThumbprint(signingKey),signedClientId:device.resource.client_id}});
    const admission=()=>admitIndividualRegistration({job:admittedJob,claims:{[Service.Category]:sector,[Organization.OwnerTelephone]:SAFE.secondContactPhoneE164},vaultRepository:repository,kmsService:kms,tenantManager:tenants});
-   return {repository,kms,tenants,groups,consents,workflowJob,plan,assign,admission,vaultId,employeeResourceId,memberReference,controllerDid,employeeDid,cleanup:()=>{process.env=previousEnv}};
+   const creatorBindings=await repository.listContainersInSection<any>(vaultId,getClinicalCreatorBindingsSectionId());
+   const creatorBinding=creatorBindings.find(binding=>binding.actorDids?.includes(employeeDid)&&binding.dcrClientIds?.includes(device.resource.client_id));
+   if(!creatorBinding)throw new Error('actual_registered_creator_binding_missing');
+   const expectedProfessionalCreator={actorDid:employeeDid,clientId:device.resource.client_id,authorIdentifier:creatorBinding.authorIdentifier,ownerIdentifier:creatorBinding.ownerIdentifier,role:normalizeCodeSystemAndValue(role)};
+   return {repository,kms,tenants,groups,consents,workflowJob,plan,assign,admission,expectedProfessionalCreator,vaultId,employeeResourceId,memberReference,controllerDid,employeeDid,cleanup:()=>{process.env=previousEnv}};
  }catch(error){process.env=previousEnv;throw error}
 }
 async function ready(){const value=await fixture();cleanups.push(value.cleanup);return value}
 it('actual phone writer and explicit governed workflow grant authorize subject registration',async()=>{
  const f=await ready(),value=f.plan(SAFE.demoOrganizationUuids.publicHealth,true);
  expect(((await f.assign(value)).body as any).data[0].response.status).toBe('201');
- await expect(f.admission()).resolves.toEqual({sector:'health-care'});
+ await expect(f.admission()).resolves.toEqual({sector:'health-care',professionalCreator:f.expectedProfessionalCreator});
 });
 it('full inactive PUT preserves an independent group grant until that grant is separately revoked',async()=>{
  const f=await ready(),first=f.plan(SAFE.demoOrganizationUuids.publicHealth,true),second=f.plan(SAFE.demoOrganizationUuids.healthCare,true);
@@ -149,7 +154,7 @@ it('full inactive PUT preserves an independent group grant until that grant is s
  const stored=(id:string)=>rows.find(row=>row.id===id)?.content.claims;
  expect(stored(first.authorization.resource.id)[ClaimConsent.status]).toEqual([ConsentStatuses.Inactive]);
  expect(stored(second.authorization.resource.id)[ClaimConsent.status]).toEqual([ConsentStatuses.Active]);
- await expect(f.admission()).resolves.toEqual({sector:'health-care'});
+ await expect(f.admission()).resolves.toEqual({sector:'health-care',professionalCreator:f.expectedProfessionalCreator});
  const secondInactive={...second.authorization,request:{method:'PUT',url:`Consent/${second.authorization.resource.id}`},resource:{...second.authorization.resource,meta:{claims:{...second.authorization.resource.meta.claims,[ClaimConsent.status]:ConsentStatuses.Inactive}}}};
  expect(((await f.consents.process(f.workflowJob('Consent',[secondInactive]))).body as any).data[0].response.status).toBe('200');
  await expect(f.admission()).rejects.toThrow('verified controller or an authorized licensed professional');

@@ -40,14 +40,11 @@ describe('VetChain local tenant bootstrap', () => {
     expect(script).not.toContain('/body/data/0/meta/claims/');
   });
 
-  it('signs host authorization with the gateway authority rather than the host-side smoke URL', () => {
+  it('retains explicit gateway authority for original bootstrap authorization callers', () => {
     const proofBuilder = readFileSync(resolve(process.cwd(), 'scripts/build-host-authorization-proof.mjs'), 'utf8');
-    const smokeScript = readFileSync(resolve(process.cwd(), 'scripts/smoke-docker-local-network.sh'), 'utf8');
 
     expect(script).toContain('HOST_AUTHORITY_BASE_URL="$HOST_AUTHORITY_BASE_URL"');
     expect(proofBuilder).toContain("process.env.HOST_AUTHORITY_BASE_URL");
-    expect(smokeScript).toContain('HOST_AUTHORITY_BASE_URL="http://localhost:${CONTAINER_PORT}"');
-    expect(smokeScript).toContain('SERVICE_URL="http://localhost:${CONTAINER_PORT}"');
   });
 
   it('keeps the signed host network and registry route network aligned', () => {
@@ -61,14 +58,15 @@ describe('VetChain local tenant bootstrap', () => {
     expect(script).toContain('SERVICE_URL="${SERVICE_URL:-$HOST_AUTHORITY_BASE_URL}"');
   });
 
-  it('owns the local Connect ICA dependency and injects its container-reachable URL', () => {
+  it('uses the owned asymmetric local ICA fixture and its container-reachable URL', () => {
     const envScript = readFileSync(resolve(process.cwd(), 'scripts/prepare-consentaccess-local-fabric-env.sh'), 'utf8');
     const smokeScript = readFileSync(resolve(process.cwd(), 'scripts/smoke-docker-local-network.sh'), 'utf8');
+    const imageProof = readFileSync(resolve(process.cwd(), 'scripts/local-fabric-image-proof.mjs'), 'utf8');
 
-    expect(smokeScript).toContain('CONNECT_ICA_ROOT');
-    expect(smokeScript).toContain('ICA_PREAUTHORIZED_HOST_DID_DOCUMENTS_JSON');
-    expect(smokeScript).toContain('CONNECT_ICA_PID');
-    expect(smokeScript).toContain('ICA_URL_EXTERNAL_VALUE="$LOCAL_ICA_CONTAINER_URL"');
+    expect(smokeScript).toContain('scripts/local-fabric-image-proof.mjs');
+    expect(imageProof).toContain('startLocalFabricFixtureStatusServer');
+    expect(imageProof).toContain('ICA_URL_EXTERNAL: oracle.advertisedOrigin');
+    expect(imageProof).toContain('ICA_DID_WEB: issuer.issuerDid');
     expect(envScript).toContain('ICA_URL_EXTERNAL_VALUE');
     expect(envScript).toContain('ICA_URL_EXTERNAL=${ICA_URL_EXTERNAL_VALUE}');
     expect(envScript).toContain('ICA_JURISDICTION=${HOST_JURISDICTION_VALUE}');
@@ -100,15 +98,15 @@ describe('VetChain local tenant bootstrap', () => {
 });
 
 describe('VetChain immutable local image prerequisites', () => {
-  it('accepts Node 24 and 26 while retaining Node 24 container images', () => {
+  it('retains package compatibility while pinning both container stages to approved Node 26.13.0', () => {
     const dockerfile = readFileSync(resolve(process.cwd(), 'Dockerfile'), 'utf8');
     const manifest = JSON.parse(readFileSync(resolve(process.cwd(), 'package.json'), 'utf8')) as {
       engines?: { node?: string };
     };
     const baseImages = dockerfile.match(/^FROM .+$/gm) ?? [];
     expect(baseImages).toEqual([
-      'FROM node:24-alpine AS builder',
-      'FROM node:24-alpine',
+      'FROM node:26.13.0-alpine AS builder',
+      'FROM node:26.13.0-alpine',
     ]);
     expect(manifest.engines?.node).toBe('^24.0.0 || ^26.0.0');
   });

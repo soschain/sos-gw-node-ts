@@ -1,24 +1,24 @@
-import { describe, expect, it, jest } from '@jest/globals';
+// Flow contract: verify signed activation consistency and delegate current trust decisions to the configured verifier; evidence collaborators do not represent a live ICA or Fabric run.
+import {REPOSITORY_SAFE_EXAMPLES as SAFE} from 'sos-data-utils-ts/repository-privacy';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import {
   EXAMPLE_ORG_ACTIVATION_LEGAL_REPRESENTATIVE_CREDENTIAL,
   EXAMPLE_ORG_ACTIVATION_CONTROLLER_CREDENTIAL,
   EXAMPLE_ORG_ACTIVATION_ORGANIZATION_CREDENTIAL,
   cloneExample,
-} from 'gdc-common-utils-ts';
+} from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import { DefaultActivationTrustAdapter } from '../../../adapters/activation-trust.adapter';
 import { IClearingHouseService } from '../../../services/ClearingHouseService';
 import { ITrustRegistryAdapter } from '../../../adapters/trust-registry.adapter';
 import { buildDeterministicVpTokenFixture } from '../../utils/deterministic-jwt-fixtures';
 
-const TEST_ORGANIZATION_DID = 'did:web:provider.example:health-care:organization:taxid:VATES-ESB00112233';
+const TEST_ORGANIZATION_DID=SAFE.didWeb;
 
 describe('DefaultActivationTrustAdapter', () => {
   const previousEnv = process.env;
-  const vpTokenCompact = [
-    Buffer.from(JSON.stringify({ alg: 'ML-DSA-44', typ: 'JWT' })).toString('base64url'),
-    Buffer.from(JSON.stringify({ sub: 'did:web:controller.example.com' })).toString('base64url'),
-    'mock-signature',
-  ].join('.');
+  const vpTokenFor=(...credentials:any[])=>buildDeterministicVpTokenFixture({seed:SAFE.resourceUuid,issuerDid:SAFE.didWeb,audience:SAFE.httpsBaseUrl,credentials});
+
+  beforeEach(()=>{process.env={...previousEnv,SECURITY_MODE:'strict',NETWORK_MODE:'test',NODE_ENV:'test'};});
 
   afterEach(() => {
     process.env = previousEnv;
@@ -43,12 +43,15 @@ describe('DefaultActivationTrustAdapter', () => {
     const organizationCredential: any = cloneExample(EXAMPLE_ORG_ACTIVATION_ORGANIZATION_CREDENTIAL);
     organizationCredential.credentialSubject.id = TEST_ORGANIZATION_DID;
 
+    const representativeCredential=cloneExample(EXAMPLE_ORG_ACTIVATION_LEGAL_REPRESENTATIVE_CREDENTIAL);
+    const controllerCredential=cloneExample(EXAMPLE_ORG_ACTIVATION_CONTROLLER_CREDENTIAL);
     const result = await adapter.evaluate({
       networkMode: 'test-network',
-      vpToken: vpTokenCompact,
+      verifierTenantDid:SAFE.httpsBaseUrl,
+      vpToken:(await vpTokenFor(organizationCredential,representativeCredential,controllerCredential)).compactToken,
       organizationCredential,
-      representativeCredential: cloneExample(EXAMPLE_ORG_ACTIVATION_LEGAL_REPRESENTATIVE_CREDENTIAL),
-      controllerCredential: cloneExample(EXAMPLE_ORG_ACTIVATION_CONTROLLER_CREDENTIAL),
+      representativeCredential,
+      controllerCredential,
     });
 
     expect(result.organizationDid).toBe(TEST_ORGANIZATION_DID);
@@ -84,7 +87,8 @@ describe('DefaultActivationTrustAdapter', () => {
 
     await expect(adapter.evaluate({
       networkMode: 'network',
-      vpToken: vpTokenCompact,
+      verifierTenantDid:SAFE.httpsBaseUrl,
+      vpToken:(await vpTokenFor(organizationCredential)).compactToken,
       organizationCredential,
     })).resolves.toMatchObject({
       organizationDid: TEST_ORGANIZATION_DID,
@@ -118,9 +122,9 @@ describe('DefaultActivationTrustAdapter', () => {
     const representativeCredential: any = cloneExample(EXAMPLE_ORG_ACTIVATION_LEGAL_REPRESENTATIVE_CREDENTIAL);
     const controllerCredential: any = cloneExample(EXAMPLE_ORG_ACTIVATION_CONTROLLER_CREDENTIAL);
     const vpFixture = await buildDeterministicVpTokenFixture({
-      seed: 'gw-activation-trust-seed-001',
-      issuerDid: 'did:web:controller.demo.example',
-      audience: 'did:web:host.demo.example',
+      seed: SAFE.resourceUuid,
+      issuerDid: SAFE.didWeb,
+      audience: SAFE.httpsBaseUrl,
       credentials: [
         organizationCredential,
         representativeCredential,
@@ -131,6 +135,7 @@ describe('DefaultActivationTrustAdapter', () => {
 
     await expect(adapter.evaluate({
       networkMode: 'test-network',
+      verifierTenantDid:SAFE.httpsBaseUrl,
       vpToken: vpFixture.compactToken,
       organizationCredential,
       representativeCredential,

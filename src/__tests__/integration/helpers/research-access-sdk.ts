@@ -1,22 +1,31 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import { createRequire } from 'node:module';
+import { randomUUID } from 'node:crypto';
+import { buildOrganizationEmployeeDidWeb, StableActorContactKinds } from 'antifraud-data-utils-ts/organization-identity';
+import { buildClientAssertionJwt } from 'antifraud-sdk-node-ts/examples/client-assertion';
+import { createVP, addVC } from 'sos-data-utils-ts/vp-token';
+import { buildInterTenantAccessContractCredential, ClaimInterTenantAccessContract } from 'sos-data-utils-ts/inter-tenant-access-contract';
 import { readFileSync } from 'fs';
-import path from 'path';
 import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
-import { CompositionAttesterModes } from 'gdc-common-utils-ts';
-import { EXAMPLE_KYC_CONTROLLER_UUID } from 'gdc-common-utils-ts/examples/shared';
+import { CompositionAttesterModes } from "fhir-data-utils-ts/claims";
+import { EXAMPLE_KYC_CONTROLLER_UUID } from 'sos-data-utils-ts/gateway-flow-examples';
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent } from "fhir-data-utils-ts/claims";
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import {
   EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT,
   EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONSUMER_PROFESSIONAL_DID,
-} from 'gdc-common-utils-ts/examples/inter-tenant-access-contract';
+  EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CLAIMS,
+  EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CREDENTIAL,
+  EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_VALID_FROM,
+  EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_VALID_UNTIL,
+  EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_ID,
+} from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import {
   buildDemoResearchPermitByEmailConsent,
   buildDemoResearchPermitByRoleConsent,
   buildDemoResearchRequesterMatrix,
-  buildDemoResearchContractVpToken,
   buildDemoResearchSmartTokenRequest,
 } from '../../data/demo-smart-access-local-network.data';
 import { initializeTenantServicesConfig } from '../../../utils/services';
@@ -30,7 +39,7 @@ import {
   buildDemoCommunicationBatchSubmitRequest,
   demoCommunicationMedicationIpsDefaults,
 } from '../../data/demo-communication-medications-ips.data';
-import { testTenant1AlternateName } from '../../data/organization.data';
+import { EXAMPLE_CONTROLLER_DID } from 'sos-data-utils-ts/gateway-flow-examples';
 import { submitConsentRuleAndPoll } from './consent-flow';
 
 /**
@@ -93,7 +102,33 @@ export const RESEARCH_ACCESS_DEMO_MEDICATION_CASES = Object.freeze({
   }),
 });
 
-export const RESEARCH_ACCESS_REQUESTER_MATRIX = Object.freeze(buildDemoResearchRequesterMatrix());
+const requesterMatrix = buildDemoResearchRequesterMatrix();
+function canonicalResearchRequester<T extends { actorEmail: string; actorRole: string }>(requester: T) {
+  return { ...requester, actorDid: buildOrganizationEmployeeDidWeb({
+    organizationDidWeb: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerOrganizationDid,
+    contactKind: StableActorContactKinds.Email, contact: requester.actorEmail, role: requester.actorRole,
+  }) };
+}
+export const RESEARCH_ACCESS_REQUESTER_MATRIX = Object.freeze({
+  allowByRole: canonicalResearchRequester(requesterMatrix.allowByRole),
+  denyByRole: canonicalResearchRequester(requesterMatrix.denyByRole),
+  allowByEmail: canonicalResearchRequester(requesterMatrix.allowByEmail),
+  denyByEmail: canonicalResearchRequester(requesterMatrix.denyByEmail),
+});
+
+function researchContractVpToken(actorDid: string): string {
+  const vp = createVP({ iss: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerOrganizationDid, sub: actorDid });
+  addVC(vp, buildInterTenantAccessContractCredential({
+    claims: { ...EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CLAIMS,
+      [ClaimInterTenantAccessContract.capability]: ServiceCapability.DigitalTwinReader },
+    issuer: EXAMPLE_CONTROLLER_DID,
+    validFrom: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_VALID_FROM,
+    validUntil: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_VALID_UNTIL,
+    additionalCredential: { id: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_ID,
+      proof: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CREDENTIAL.proof },
+  }));
+  return JSON.stringify(vp);
+}
 
 /**
  * Minimal runtime dependencies from `startServer()` that the high-level test
@@ -135,7 +170,7 @@ export async function pollAcceptedGatewayOperation(input: {
  * references to the requested research subject DID.
  */
 export function loadResearchIpsAllSectionsFixture(subjectDid: string): any {
-  const fixturePath = path.join(process.cwd(), 'node_modules', 'gdc-common-utils-ts', 'fixtures', 'fhir-ips-bundle-all-sections.json');
+  const fixturePath = createRequire(import.meta.url).resolve('fhir-data-utils-ts/fixtures/fhir-ips-bundle-all-sections.json');
   const bundle = JSON.parse(readFileSync(fixturePath, 'utf8'));
   for (const entry of Array.isArray(bundle?.entry) ? bundle.entry : []) {
     const resource = entry?.resource;
@@ -218,7 +253,7 @@ export class TestResearchOrgControllerSdk {
   public async registerProviderTenant(): Promise<void> {
     const providerClaims = testPayloadCreateTenant1.body.data[0].resource.meta.claims as Record<string, unknown>;
     await this.registerHostedTenant({
-      claims: providerClaims,
+      claims: { ...providerClaims, [SchemaOrgOrganizationClaim.AlternateName]: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId },
       didDocumentId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerOrganizationDid,
       sector: GatewaySector.HEALTH_CARE,
     });
@@ -261,7 +296,8 @@ export class TestResearchOrgControllerSdk {
         format: 'org.hl7.fhir.api',
         thid: `${RESEARCH_ACCESS_TEST_IDS.subjectPermitRule}-${index + 1}`,
         authorization: this.authorizationHeader,
-        claims: buildDemoResearchPermitByRoleConsent({ subjectDid }),
+        claims: { ...buildDemoResearchPermitByRoleConsent({ subjectDid }),
+          [ClaimConsent.actorIdentifier]: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerOrganizationDid },
       });
     }));
   }
@@ -280,6 +316,7 @@ export class TestResearchOrgControllerSdk {
         providerVaultId,
         [{
           ...buildDemoResearchPermitByRoleConsent({ subjectDid }),
+          [ClaimConsent.actorIdentifier]: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerOrganizationDid,
           id: `${RESEARCH_ACCESS_TEST_IDS.subjectPermitRule}-role-${index + 1}`,
           [ClaimConsent.identifier]: `urn:uuid:${RESEARCH_ACCESS_TEST_IDS.subjectPermitRule}-role-${index + 1}`,
         }],
@@ -302,6 +339,9 @@ export class TestResearchOrgControllerSdk {
         providerVaultId,
         [{
           ...buildDemoResearchPermitByEmailConsent({ subjectDid }),
+          // The selected verified email resolves to its canonical employee DID;
+          // the consent remains specific to that person, never the whole tenant.
+          [ClaimConsent.actorIdentifier]: RESEARCH_ACCESS_REQUESTER_MATRIX.allowByEmail.actorDid,
           id: `${RESEARCH_ACCESS_TEST_IDS.subjectPermitRule}-email-${index + 1}`,
           [ClaimConsent.identifier]: `urn:uuid:${RESEARCH_ACCESS_TEST_IDS.subjectPermitRule}-email-${index + 1}`,
         }],
@@ -337,7 +377,7 @@ export class TestResearchOrgControllerSdk {
 
     const submitResp = await invokeExpress(this.deps.app, {
       method: 'POST',
-      url: `/${testTenant1AlternateName}/cds-ES/v1/health-care/individual/org.hl7.fhir.r4/Communication/_batch`,
+      url: `/${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId}/cds-ES/v1/health-care/individual/org.hl7.fhir.r4/Communication/_batch`,
       headers: { 'content-type': 'application/json', authorization: this.authorizationHeader },
       body: {
         thid: RESEARCH_ACCESS_TEST_IDS.communicationThreadId,
@@ -374,7 +414,7 @@ export class TestResearchOrgControllerSdk {
 
     return pollAcceptedGatewayOperation({
       app: this.deps.app,
-      url: `/${testTenant1AlternateName}/cds-ES/v1/health-care/individual/org.hl7.fhir.r4/Communication/_batch-response`,
+      url: `/${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId}/cds-ES/v1/health-care/individual/org.hl7.fhir.r4/Communication/_batch-response`,
       thid: RESEARCH_ACCESS_TEST_IDS.communicationThreadId,
     });
   }
@@ -397,7 +437,7 @@ export class TestResearchOrgControllerSdk {
 
     const submitResp = await invokeExpress(this.deps.app, {
       method: 'POST',
-      url: `/${testTenant1AlternateName}/cds-ES/v1/health-care/individual/org.hl7.fhir.r4/Communication/_batch`,
+      url: `/${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId}/cds-ES/v1/health-care/individual/org.hl7.fhir.r4/Communication/_batch`,
       headers: { 'content-type': 'application/json', authorization: this.authorizationHeader },
       body: request,
     });
@@ -408,7 +448,7 @@ export class TestResearchOrgControllerSdk {
 
     return pollAcceptedGatewayOperation({
       app: this.deps.app,
-      url: `/${testTenant1AlternateName}/cds-ES/v1/health-care/individual/org.hl7.fhir.r4/Communication/_batch-response`,
+      url: `/${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId}/cds-ES/v1/health-care/individual/org.hl7.fhir.r4/Communication/_batch-response`,
       thid: input.thidComm,
     });
   }
@@ -417,14 +457,10 @@ export class TestResearchOrgControllerSdk {
    * Builds the VP token that carries the inter-tenant contract VC.
    *
    * This is the proof later consumed by the SMART token endpoint. The contract
-   * VC shape itself comes from `gdc-common-utils-ts`.
+   * VC shape comes from the independent SOS contract owner.
    */
   public buildResearchAccessContractVpToken(): string {
-    return buildDemoResearchContractVpToken({
-      tenantId: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId,
-      subjectDid: RESEARCH_ACCESS_TEST_IDS.doraemonSubjectDid,
-      actorDid: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONSUMER_PROFESSIONAL_DID,
-    });
+    return researchContractVpToken(EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONSUMER_PROFESSIONAL_DID);
   }
 
   private async registerHostedTenant(input: {
@@ -444,6 +480,7 @@ export class TestResearchOrgControllerSdk {
           didConfig: { service: initializeTenantServicesConfig(input.sector) },
           didDocument: {
             id: input.didDocumentId,
+            controller: [EXAMPLE_CONTROLLER_DID],
             '@context': 'https://www.w3.org/ns/did/v1',
           },
         },
@@ -481,7 +518,7 @@ export class TestResearchDigitalTwinSdk {
   public async requestResearchSmartAccessToken(vpToken: string): Promise<any> {
     const submitResp = await invokeExpress(this.deps.app, {
       method: 'POST',
-      url: `/${testTenant1AlternateName}/cds-ES/v1/health-care/identity/openid/smart/token`,
+      url: `/${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId}/cds-ES/v1/health-care/identity/openid/smart/token`,
       headers: { 'content-type': 'application/json', authorization: this.authorizationHeader },
       body: {
         thid: RESEARCH_ACCESS_TEST_IDS.smartTokenThreadId,
@@ -504,7 +541,7 @@ export class TestResearchDigitalTwinSdk {
 
     return pollAcceptedGatewayOperation({
       app: this.deps.app,
-      url: `/${testTenant1AlternateName}/cds-ES/v1/health-care/identity/openid/smart/_batch-response`,
+      url: `/${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId}/cds-ES/v1/health-care/identity/openid/smart/_batch-response`,
       thid: RESEARCH_ACCESS_TEST_IDS.smartTokenThreadId,
     });
   }
@@ -531,9 +568,23 @@ export class TestResearchDigitalTwinSdk {
       thid: input.thid,
     });
 
+    const clientId = buildOrganizationEmployeeDidWeb({
+      organizationDidWeb: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.consumerOrganizationDid,
+      contactKind: StableActorContactKinds.Email, contact: input.actorEmail, role: input.actorRole,
+      deviceId: input.clientSuffix,
+    });
+    requestPayload.iss = clientId;
+    requestPayload.body = { ...(requestPayload.body as Record<string, unknown>),
+      client_id: clientId,
+      client_assertion: await buildClientAssertionJwt({ clientId,
+        audience: EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerOrganizationDid,
+        additionalClaims: { jti: randomUUID() } }),
+      vp_token: researchContractVpToken(input.actorDid),
+    };
+
     const submitResp = await invokeExpress(this.deps.app, {
       method: 'POST',
-      url: `/${testTenant1AlternateName}/cds-ES/v1/health-care/identity/openid/smart/token`,
+      url: `/${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId}/cds-ES/v1/health-care/identity/openid/smart/token`,
       headers: { 'content-type': 'application/json', authorization: this.authorizationHeader },
       body: requestPayload,
     });
@@ -544,7 +595,7 @@ export class TestResearchDigitalTwinSdk {
 
     return pollAcceptedGatewayOperation({
       app: this.deps.app,
-      url: `/${testTenant1AlternateName}/cds-ES/v1/health-care/identity/openid/smart/_batch-response`,
+      url: `/${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId}/cds-ES/v1/health-care/identity/openid/smart/_batch-response`,
       thid: input.thid,
     });
   }
@@ -566,7 +617,7 @@ export class TestResearchDigitalTwinSdk {
     const searchThreadId = `${RESEARCH_ACCESS_TEST_IDS.compositionSearchThreadId}-${String(text || '').toLowerCase()}`;
     const submitResp = await invokeExpress(this.deps.app, {
       method: 'POST',
-      url: `/${testTenant1AlternateName}/cds-ES/v1/health-care/digitaltwin/org.hl7.fhir.api/ResearchSubject/_search`,
+      url: `/${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId}/cds-ES/v1/health-care/digitaltwin/org.hl7.fhir.api/ResearchSubject/_search`,
       headers: { 'content-type': 'application/json', authorization: `Bearer ${accessToken}` },
       body: {
         thid: searchThreadId,
@@ -587,7 +638,7 @@ export class TestResearchDigitalTwinSdk {
 
     return pollAcceptedGatewayOperation({
       app: this.deps.app,
-      url: `/${testTenant1AlternateName}/cds-ES/v1/health-care/digitaltwin/org.hl7.fhir.api/ResearchSubject/_batch-response`,
+      url: `/${EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_CONTEXT.providerTenantId}/cds-ES/v1/health-care/digitaltwin/org.hl7.fhir.api/ResearchSubject/_batch-response`,
       thid: searchThreadId,
     });
   }

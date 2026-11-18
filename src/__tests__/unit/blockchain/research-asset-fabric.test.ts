@@ -1,11 +1,12 @@
+// Flow contract: consume independent canonical clinical, identity and transport contracts while preserving the existing authorization and persistence assertions.
 // Copyright (c) 2026 Connecting Solution & Applications Ltd.
 // Flow contract: SOS submits each code-only ResearchAsset before its opaque VersionAsset and never serializes the source version identifier to Fabric.
 import { jest } from '@jest/globals';
-import { ResourceTypesFhirR4 } from 'gdc-common-utils-ts';
+import { ResourceTypesFhirR4 } from "fhir-data-utils-ts/constants";
 import {
   EXAMPLE_OBSERVATION_IDENTIFIER,
   EXAMPLE_OBSERVATION_PANEL_IDENTIFIER,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import { BlockchainAdapterFabric } from '../../../adapters/BlockchainAdapterFabric';
 import { ManageAssetArtifact } from '../../../blockchain/fabric/v3/manageAssetArtifact';
 import {

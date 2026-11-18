@@ -1,30 +1,20 @@
 # Architecture
 
-SOSCHAIN Gateway is a specialized gateway built on the architecture and
-contracts established by GW CORE in the Global Data Care data-space ecosystem.
-SOSCHAIN owns its emergency-domain behavior; GW CORE remains the upstream
-source for the generic gateway foundation.
+SOSCHAIN Gateway derives from the gateway architecture established by GW CORE
+in the Global Data Care ecosystem. Its current implementation owns its runtime
+and consumes independent Antifraud, FHIR and SOS contracts.
 
 ```text
-Global Data Care data-space foundation
-  ├─ GW CORE --------------------------> SOSCHAIN Gateway service
-  └─ gdc-common-utils-ts --------------> shared utility/identity contracts
-
-FHIR and SOS interoperability libraries
-  └─ fhir-data-utils-ts
-       └─ sos-data-utils-ts
-            └─ sos-sdk-core-ts --------> application/BFF integrations
-                         \-------------> SOSCHAIN Gateway API
-
-Node integration and upstream compatibility
-  ├─ gdc-sdk-core-ts ------------------> inherited SDK contracts
-  ├─ gdc-sdk-node-ts ------------------> upstream gateway integration tooling
-  └─ sos-sdk-node-ts ------------------> SOS Node.js/BFF integrations
+Antifraud neutral identity and cryptography ----> SOS data and SDK contracts
+FHIR interoperability ------------------------> SOS data and SDK contracts
+SOS data and SDK Core ------------------------> SOSCHAIN Gateway service
+SOS SDK Node ---------------------------------> application/BFF integrations
 ```
 
-The diagram describes ownership and integration direction, not a claim that
-every repository is a direct npm dependency of this service. Check the lockfile
-for the exact runtime dependency graph.
+The diagram describes shared ownership. The service manifest and lockfile record
+its direct and transitive packages; the boundary gate checks declarations,
+emitted imports and the registry graph. Historical lineage is documented in
+[Upstream projects and history](upstream-and-history.md).
 
 ## Gateway boundary
 

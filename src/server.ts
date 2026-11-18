@@ -1,3 +1,8 @@
+import { GaiaXComplianceManager } from './managers/GaiaXComplianceManager';
+import { GaiaXComplianceService } from './services/GaiaXComplianceService';
+import { TenantPresentationVerificationManager } from './managers/TenantPresentationVerificationManager';
+import type { JSONWebKeySet } from 'jose';
+import { isLocalDemoSecurityMode, assertConfiguredRuntimeSecurityProfile } from './security/runtime-security-policy';
 const isTestEnv = process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID !== undefined;
 
 import { createApp, resolveRequestBodyLimit } from './app';
@@ -67,8 +72,7 @@ import { AppAuthorizationManager } from './managers/AppAuthorizationManager';
 import { FamilyManager } from './managers/FamilyManager';
 import { registerUhcReminderExtension } from './extensions/unid/register-uhc-reminders';
 import { createUhcPhoneRouter } from './routes/uhc-phone';
-import { TwilioPhoneAdapter } from './adapters/phone/TwilioPhoneAdapter';
-import { MockPhoneAdapter } from './adapters/phone/MockPhoneAdapter';
+import { buildPhoneVerificationAdapter } from './bootstrap/build-phone-verification-adapter';
 import { resolveTokenVerifierFromEnv } from './auth/token-verifier-registry';
 import * as fs from 'fs';
 import { createCredentialLedgerRouter } from './routes/ledger';
@@ -79,12 +83,7 @@ import { CredentialLedgerAdapterFabric } from './adapters/CredentialLedgerAdapte
 import { createAuthorityRouter } from './routes/authority';
 import { loadAuthorityArtifacts } from './utils/authority-artifacts';
 import { generatePkiChainFromEnv } from './utils/pki-chain';
-import {
-  IReplayProtectionStore,
-  ReplayProtectionStoreMem,
-  ReplayProtectionStoreNoop,
-  ReplayProtectionStoreRedis,
-} from './adapters/replay-protection-store';
+
 import { getConfig, resetServerConfig } from './config/server-config';
 import { bootstrapHost } from './bootstrap/host-bootstrap';
 import { registerCoreRouters } from './bootstrap/register-core-routers';
@@ -127,10 +126,7 @@ interface StartServerOptions {
 }
 
 function assertSecurityModeGuardrails(config: ReturnType<typeof getConfig>): void {
-  const isProduction = String(config.nodeEnv || '').toLowerCase() === 'production';
-  if (isProduction && config.securityMode === 'demo') {
-    throw new Error("SECURITY_MODE=demo is not allowed when NODE_ENV=production.");
-  }
+  assertConfiguredRuntimeSecurityProfile(config);
 }
 
 function logSecurityModeCapabilities(config: ReturnType<typeof getConfig>): void {
@@ -212,6 +208,7 @@ async function startServer(options?: StartServerOptions) {
     logger,
     tenantManager,
     kmsService,
+    infrastructureReplayProtectionStore,
   } = await buildInfrastructure({ config, hostCollectionName, initializeKms: false });
 
   if (observedLedgerBindings) {
@@ -276,6 +273,8 @@ async function startServer(options?: StartServerOptions) {
     taskManager,
     discoveryService,
     clearingHouseService,
+    localClearingHouseVerifier,
+    replayProtectionStore,
   } = buildManagers({
     config,
     vaultRepository,
@@ -285,6 +284,7 @@ async function startServer(options?: StartServerOptions) {
     storageAdapter,
     logger,
     cryptographyService,
+    replayProtectionStore: infrastructureReplayProtectionStore,
   });
 
   /**
@@ -389,22 +389,13 @@ async function startServer(options?: StartServerOptions) {
     responseStoreProvider: process.env.ASYNC_RESPONSE_STORE_PROVIDER,
     worker,
   });
-  const replayProvider = (process.env.REPLAY_PROTECTION_PROVIDER || 'none').toLowerCase();
-  const replayProtectionStore: IReplayProtectionStore =
-    replayProvider === 'mem'
-      ? new ReplayProtectionStoreMem()
-      : replayProvider === 'redis'
-        ? new ReplayProtectionStoreRedis({
-            redisUrl: process.env.REDIS_URL,
-            keyPrefix: process.env.REPLAY_REDIS_KEY_PREFIX || 'replay:jti',
-          })
-        : new ReplayProtectionStoreNoop();
   const federatedSmartVerificationManager = new FederatedSmartVerificationManager({
     kmsService,
     tenantsManager: tenantManager,
     vaultRepository,
     clearingHouseService,
     replayProtectionStore,
+    cryptography: cryptographyService,
   });
   
   // This is the FHIR-specific AuthorizationManager, not our AppAuthorizationManager.
@@ -422,7 +413,7 @@ async function startServer(options?: StartServerOptions) {
     const needsIca = roles.has('ICA') && !fs.existsSync(icaDir);
 
     if (needsRoot || needsIca) {
-      const isDemo = config.nodeEnv === 'demo' || process.env.DEV_SEED === 'true';
+      const isDemo = isLocalDemoSecurityMode();
       if (isDemo) {
         console.log('[GW-API] Missing authority artifacts. Generating demo PKI chain from env...');
         await generatePkiChainFromEnv({ cleanOutput: true });
@@ -442,6 +433,31 @@ async function startServer(options?: StartServerOptions) {
   const authorityRouter = Object.keys(authorityArtifacts).length
     ? createAuthorityRouter(authorityArtifacts, asyncResponseStore)
     : undefined;
+  const gaiaXComplianceService = new GaiaXComplianceService({ cryptography: cryptographyService,
+    resolveTrust: async tenantDid => {
+      const entries = JSON.parse(process.env.GXDCH_TENANTS_JSON || '{}');
+      if (!Object.prototype.hasOwnProperty.call(entries, tenantDid)) throw new Error('Tenant GXDCH trust is not configured.');
+      return entries[tenantDid];
+    },
+    resolveTenantKeys: async (tenantDid, vaultId) => {
+      if (!vaultId || (await tenantManager.getDidDocument(vaultId))?.id !== tenantDid) throw new Error('GXDCH tenant vault does not match its registered DID.');
+      return await kmsService.getPublicJwks(vaultId) as unknown as JSONWebKeySet;
+    },
+  });
+  const gaiaXComplianceManager = new GaiaXComplianceManager(tenantManager, federatedSmartVerificationManager, gaiaXComplianceService);
+  const tenantPresentationVerificationManager = new TenantPresentationVerificationManager({
+    tenants: tenantManager, verifier: localClearingHouseVerifier, replay: replayProtectionStore, cryptography: cryptographyService,
+    resolveRequester: (recipient, requester) => {
+      const entries = JSON.parse(process.env.CLEARING_HOUSE_REQUESTERS_JSON || '{}');
+      if (!Object.prototype.hasOwnProperty.call(entries, recipient) || !Object.prototype.hasOwnProperty.call(entries[recipient], requester)) throw new Error('Backend requester is not trusted.');
+      return entries[recipient][requester];
+    },
+    signResult: async (vaultId, payload) => {
+      const key = await kmsService.getPublicVerificationKey(vaultId, undefined, 'comm_sig');
+      if (!key?.kid) throw new Error('Verifier signing key is unavailable.');
+      return kmsService.createCompactJws(payload, key.kid, vaultId, 'comm_sig', { typ: 'JWT' });
+    },
+  });
   const apiRouter = createApiRouter(
     queueAdapter,
     tenantManager,
@@ -455,6 +471,8 @@ async function startServer(options?: StartServerOptions) {
     worker,
     federatedSmartVerificationManager,
     config.networkMode !== 'network',
+    gaiaXComplianceManager,
+    tenantPresentationVerificationManager,
   );
   const networkRouter = createNetworkRouter(queueAdapter, kmsService);
   const fhirRouter = createFhirRouter(queueAdapter, authManager);
@@ -484,19 +502,7 @@ async function startServer(options?: StartServerOptions) {
   });
 
   if (config.uhcTelephony?.verifyEnabled) {
-    const twilioCfg = config.uhcTelephony?.twilio;
-    const phoneAdapter =
-      config.uhcTelephony?.provider === 'twilio' && twilioCfg?.accountSid && twilioCfg?.authToken
-        ? new TwilioPhoneAdapter({
-            accountSid: twilioCfg.accountSid,
-            authToken: twilioCfg.authToken,
-            apiKeySid: twilioCfg.apiKeySid,
-            apiKeySecret: twilioCfg.apiKeySecret,
-            messagingServiceSid: twilioCfg.messagingServiceSid || '',
-            verifyServiceSid: twilioCfg.verifyServiceSid,
-            voiceFromNumber: twilioCfg.voiceFromNumber,
-          })
-        : new MockPhoneAdapter();
+    const phoneAdapter = buildPhoneVerificationAdapter(config);
 
     registerAddonRouters(app, [
       {

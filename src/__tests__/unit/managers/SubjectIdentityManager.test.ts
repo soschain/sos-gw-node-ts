@@ -1,6 +1,6 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { describe, expect, it, jest } from '@jest/globals';
-import { buildSubjectIdentityBundleEntry } from 'gdc-common-utils-ts/utils/subject-identity';
+import { buildSubjectIdentityBundleEntry } from 'sos-data-utils-ts/subject-identity';
 import { SubjectIdentityManager } from '../../../managers/SubjectIdentityManager';
 
 /**

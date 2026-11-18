@@ -5,6 +5,8 @@
 // Stores sent messages and pending verifications so tests can assert outcomes
 // without making real network calls.
 
+import { isLocalDemoSecurityMode } from '../../security/runtime-security-policy.js';
+
 import type {
   CheckVerifyOptions,
   CheckVerifyResult,
@@ -126,8 +128,8 @@ export class MockPhoneAdapter implements IPhoneAdapter {
   }
 
   validateWebhookSignature(_url: string, _params: Record<string, string>, _signature: string): boolean {
-    // In test mode always return true; tests can override by subclassing.
-    return true;
+    // Simulated signatures belong only to an explicit local demonstration.
+    return isLocalDemoSecurityMode();
   }
 
   reset(): void {

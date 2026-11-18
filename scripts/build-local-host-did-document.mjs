@@ -1,5 +1,5 @@
-import { deriveDeterministicEcJwkPair } from 'gdc-common-utils-ts/utils/deterministic-jwk'
-import { buildAuthorityDidWeb } from 'gdc-common-utils-ts/utils/authority-resolution'
+import { deriveDeterministicEcJwkPair } from 'antifraud-sdk-node-ts/examples/deterministic-signing-key'
+import { buildAuthorityDidWeb } from "antifraud-data-utils-ts/organization-identity";
 
 const authority = required(process.env.HOST_AUTHORITY_BASE_URL, 'HOST_AUTHORITY_BASE_URL')
 const seed = required(process.env.HOST_PREAUTHORIZATION_TEST_SEED, 'HOST_PREAUTHORIZATION_TEST_SEED')

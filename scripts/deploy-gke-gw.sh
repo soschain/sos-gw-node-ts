@@ -96,14 +96,14 @@ optional_env_defaults=(
   "LEDGER_CHANNEL_GENESIS_SHA256="
   "AS_LOCAL_HOST=false"
   "LOG_PROVIDER=console"
-  "REPLAY_PROTECTION_PROVIDER=none"
+  "REPLAY_PROTECTION_PROVIDER="
   "RESEARCH_TERMINOLOGY_BASE_URL="
   "RESEARCH_TERMINOLOGY_LABELS_ENABLED=false"
   "EMAIL_NOTIFICATION_PROVIDER=console"
   "BREAK_GLASS_ENABLED=false"
   "BREAK_GLASS_NOTIFICATION_URL="
   "BREAK_GLASS_CONSENT_TTL_SECONDS=86400"
-  "CLEARING_HOUSE_MODE=stub"
+  "CLEARING_HOUSE_MODE=local"
   "ICA_MODE="
   "ICA_JURISDICTION="
   "ICA_DID_WEB="
@@ -125,7 +125,29 @@ for entry in "${optional_env_defaults[@]}"; do
   export "${key}=${!key:-$value}"
 done
 
+# Preserve the selected data backend. Reuse Firestore only when already selected;
+# other enrolled backends require an explicitly configured durable provider.
+if [[ -z "${REPLAY_PROTECTION_PROVIDER}" ]]; then
+  if [[ "${NETWORK_MODE}" == "test-network" || "${NETWORK_MODE}" == "network" ]]; then
+    if [[ "${DB_PROVIDER}" != "firestore" ]]; then
+      echo "Enrolled networks require explicit durable replay or the existing Firestore backend." >&2
+      exit 1
+    fi
+    export REPLAY_PROTECTION_PROVIDER=firestore
+  else
+    export REPLAY_PROTECTION_PROVIDER=mem
+  fi
+fi
+if [[ "${NETWORK_MODE}" == "test-network" || "${NETWORK_MODE}" == "network" || "${DEPLOYMENT_ENV}" == "staging" || "${DEPLOYMENT_ENV}" == "production" ]]; then
+  case "${REPLAY_PROTECTION_PROVIDER}" in firestore|redis) ;; *) echo "Enrolled deployments require durable replay." >&2; exit 1 ;; esac
+  if [[ "${CLEARING_HOUSE_MODE}" == "stub" ]]; then
+    echo "Enrolled deployments require real Clearing House verification." >&2
+    exit 1
+  fi
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+node "${SCRIPT_DIR}/render-deployment-trust-config.mjs" --validate
 bash "${SCRIPT_DIR}/validate-gw-runtime-profile.sh"
 TEMPLATE_DIR="${SCRIPT_DIR%/scripts}/deploy/gke-gw"
 RENDER_DIR="$(mktemp -d)"
@@ -240,6 +262,9 @@ render_template() {
     -e "s|__GDC_GSA_EMAIL__|${GDC_GSA_EMAIL}|g" \
     -e "s|__DATASPACE_ICA_EXTERNAL_URL__|${DATASPACE_ICA_EXTERNAL_URL:-}|g" \
     "$src" > "$dest"
+  if [[ "${src##*/}" == "configmap.yaml" ]]; then
+    node "${SCRIPT_DIR}/render-deployment-trust-config.mjs" "$dest"
+  fi
 }
 
 "${KUBECTL[@]}" get namespace "${K8S_NAMESPACE_GDC}" >/dev/null 2>&1 || "${KUBECTL[@]}" create namespace "${K8S_NAMESPACE_GDC}"

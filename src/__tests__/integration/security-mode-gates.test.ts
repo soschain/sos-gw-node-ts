@@ -1,4 +1,4 @@
-// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+// Flow contract: signed operational envelopes require fresh identifiers and pinned keys; unsigned encrypted input is denied. Injected ML-DSA callbacks isolate transport policy, while dedicated tests separately prove real cryptography.
 /**
  * Transport security contract: encrypted post-DCR traffic resolves keys by
  * issuer and kid. The pre-DCR Token/_exchange verifies the new wallet's
@@ -6,6 +6,8 @@
  * and one-use activation licence remain the authority consumed by the worker.
  */
 import express from 'express';
+import {DCR_REPLAY_PUBLIC_KEYS} from '../data/dcr-replay-public-keys';
+const fixtureReplyKey=DCR_REPLAY_PUBLIC_KEYS.find(key=>key.kty==='OKP')!;
 import request from 'supertest';
 import { createApiRouter } from '../../routes/api';
 import { AppAuthorizationManager } from '../../managers/AppAuthorizationManager';
@@ -17,8 +19,8 @@ import {
 import {
   EXAMPLE_PROFILE_PROVIDER_DID,
   EXAMPLE_TENANT_IDENTIFIER,
-} from 'gdc-common-utils-ts/examples/shared';
-import { buildUnsignedJwt } from 'gdc-common-utils-ts/utils/jwt';
+} from 'sos-data-utils-ts/gateway-flow-examples';
+import { buildUnsignedJwt } from 'sos-data-utils-ts/jwt';
 import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import { IdentityAuthRequestFields } from 'sos-data-utils-ts/identity-auth-wire-contract';
 import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
@@ -28,7 +30,9 @@ import { computeJwkThumbprint, toBaseJwk } from '../../gdc-backend-utils-node/jw
 import {createHash,randomBytes,randomUUID} from 'node:crypto';
 import {CryptographyService} from 'antifraud-data-utils-ts/cryptography';
 
-function buildTestApp(options?: { appAuthManager?: any; tenantsCacheManager?: any; kmsService?: any }) {
+const fixtureControllerDid = `${SAFE.didWeb}:cds-es:v1:health-care:employee:${buildStableActorIdentifier({ contactKind: 'email', contact: SAFE.firstContactEmail }).replace('urn:multibase:', '')}:${encodeURIComponent(HealthcareActorRoles.Controller)}`;
+
+function buildTestApp(options?: { appAuthManager?: any; tenantsCacheManager?: any; kmsService?: any; signedPolicyEnvelope?: boolean }) {
   const app = express();
   app.use(express.json({ type: ['application/json', 'application/didcomm-plain+json', 'application/fhir+json'] }));
   app.use(express.urlencoded({ extended: true }));
@@ -65,6 +69,34 @@ function buildTestApp(options?: { appAuthManager?: any; tenantsCacheManager?: an
     verifyDetachedJws: jest.fn(),
   } as any;
 
+  if (options?.signedPolicyEnvelope) {
+    // These cases isolate bearer/body policy behind an explicit injected
+    // ML-DSA verifier. Real signature boundary proof lives in dedicated cases.
+    const signingKey = { kty: 'AKP', alg: 'ML-DSA-44', pub: 'c3ludGhldGlj', kid: 'policy-signing-key', use: 'sig' };
+    const encryptionKid = fixtureReplyKey.kid;
+    let senderDid = '';
+    const decode = kmsService.decodeRequest;
+    kmsService.decodeRequest = jest.fn(async (...args: any[]) => {
+      const decoded = await decode(...args);
+      senderDid = decoded.content.iss;
+      decoded.content = { ...decoded.content, jti: randomUUID(), meta: { ...decoded.content.meta,
+        jws: { protected: { alg: signingKey.alg, kid: signingKey.kid, jwk: signingKey, skid: encryptionKid }, signature: 'synthetic-signature' },
+        jwe: { header: { skid: encryptionKid, jwk: fixtureReplyKey } },
+      } };
+      return decoded;
+    });
+    cryptographyService.verifyDetachedJws.mockResolvedValue(true);
+    vaultRepository.query.mockResolvedValue([{ id: 'policy-registered-controller' }]);
+    tenantsCacheManager.getCollectionName.mockResolvedValue('policy-tenant-vault');
+    kmsService.getHmacBase64Url.mockImplementation(async (value: string) => value);
+    kmsService.unprotectConfidentialData.mockImplementation(async () => ({ didDocument: {
+      id: senderDid, verificationMethod: [
+        { id: `${senderDid}#${signingKey.kid}`, publicKeyJwk: signingKey },
+        { id: `${senderDid}#${encryptionKid}`, publicKeyJwk: fixtureReplyKey },
+      ],
+    } }));
+  }
+
   app.use(
     createApiRouter(
       queueAdapter,
@@ -81,17 +113,18 @@ function buildTestApp(options?: { appAuthManager?: any; tenantsCacheManager?: an
 }
 
 describe('SECURITY_MODE content-type gates', () => {
-  it.each([true,false])('checks real fresh-wallet DCR signature without promoting it to registered authority: valid=%s', async valid => {
+  it.each([{valid:true,replaceReply:false},{valid:false,replaceReply:false},{valid:true,replaceReply:true}])('checks real fresh-wallet DCR signature and signed reply binding without granting registered authority: valid=$valid, replacedReply=$replaceReply', async ({valid,replaceReply}) => {
     process.env={...previousEnv,SECURITY_MODE:'strict',DEMO_ALLOW_INSECURE_BEARER:'false',JSON_LEGACY:'false',FHIR_LEGACY:'false',DIDCOMM_PLAIN:'false'};
     const crypto=new CryptographyService({getRandomBytes:async count=>randomBytes(count),
       digestString:async(value,algorithm)=>createHash(algorithm.replaceAll('-','').toLowerCase()).update(value).digest('hex'),randomUUID});
     const pair=await crypto.generateKeyPairMlDsa(randomBytes(32),'ML-DSA-44');
     const jwk={...pair.publicJWKey,kid:'synthetic-new-recipient-signing-key'};
     const body={code:'synthetic-activation-code',actor_did:`${SAFE.didWeb}:employee:synthetic-recipient`,profile_did:`${SAFE.didWeb}:employee:synthetic-recipient`,redirect_uris:['https://example.invalid/auth'],jwks:{keys:[jwk]},ext_device_info:{device_id:'synthetic-installation'}};
-    const signed={iss:body.actor_did,aud:SAFE.didWeb,thid:SAFE.resourceUuid,type:'openid-dcr-request',body};
-    const header={alg:'ML-DSA-44',kid:jwk.kid,jwk};
+    const signed={iss:body.actor_did,aud:SAFE.didWeb,thid:SAFE.resourceUuid,jti:randomUUID(),type:'openid-dcr-request',body};
+    const header={alg:'ML-DSA-44',kid:jwk.kid,jwk,skid:fixtureReplyKey.kid};
     const jws=await crypto.signDataJws(signed,header,pair.secretKeyBytes);
-    const decoded={...signed,...(valid?{}:{body:{...body,code:'synthetic-substituted-code'}}),meta:{jws:{protected:header,signature:jws.signature},jwe:{header:{skid:'synthetic-new-encryption-key'}}}};
+    const reply=replaceReply?(await crypto.generateKeyPairMlKem()).publicJWKey:fixtureReplyKey;
+    const decoded={...signed,...(valid?{}:{body:{...body,code:'synthetic-substituted-code'}}),meta:{jws:{protected:header,signature:jws.signature},jwe:{header:{skid:reply.kid,jwk:reply}}}};
     const appAuthManager={verifyInitialAccessToken:jest.fn(async()=>({sub:'verified-recipient',act_code:body.code,scope:'dcr:register'}))};
     const kmsService={decodeRequest:jest.fn(async()=>({content:decoded})),getHmacBase64Url:jest.fn(),unprotectConfidentialData:jest.fn()};
     const tenantsCacheManager={tenantExists:jest.fn(async()=>true),getCollectionName:jest.fn(async()=> 'isolated-tenant'),getTenant:jest.fn(async()=>({authorizationStatus:'active'})),
@@ -100,10 +133,11 @@ describe('SECURITY_MODE content-type gates', () => {
     harness.cryptographyService.verifyDetachedJws.mockImplementation((...args:Parameters<CryptographyService['verifyDetachedJws']>)=>crypto.verifyDetachedJws(...args));
     const response=await request(harness.app).post(`/${SAFE.tenantId}/cds-es-md/v1/health-care/identity/openid/Device/_dcr`)
       .set('Authorization','Bearer synthetic-host-initial-token').type('form').send({request:'synthetic-kms-encrypted-envelope'});
-    expect(response.status).toBe(valid?202:401);
+    expect(response.status).toBe(valid&&!replaceReply?202:401);
     expect(appAuthManager.verifyInitialAccessToken).toHaveBeenCalledWith('synthetic-host-initial-token');
     expect(harness.vaultRepository.query).not.toHaveBeenCalled();
-    if(valid){expect(harness.queueAdapter.addJob).toHaveBeenCalledTimes(1);expect(harness.queueAdapter.addJob.mock.calls[0][1].authenticatedTransport).toBeUndefined();}
+    expect(harness.cryptographyService.verifyDetachedJws).toHaveBeenCalled();
+    if(valid&&!replaceReply){expect(harness.queueAdapter.addJob).toHaveBeenCalledTimes(1);expect(harness.queueAdapter.addJob.mock.calls[0][1].authenticatedTransport).toBeUndefined();}
     else expect(harness.queueAdapter.addJob).not.toHaveBeenCalled();
   });
   const targetPath = '/host/cds-es/v1/health-care/ping/org.schema/Organization/_batch';
@@ -121,7 +155,7 @@ describe('SECURITY_MODE content-type gates', () => {
     const actorDid = `did:web:${SAFE.domain}:${SAFE.tenantId}:cds-es-md:v1:health-care:employee:${stable.replace('urn:multibase:', '')}:${encodeURIComponent(HealthcareActorRoles.Dentist)}`;
     const signingKid = 'registered-dentist-signing-key';
     const encryptionKid = 'registered-dentist-encryption-key';
-    const signingKey = { kty: 'EC', crv: 'P-384', x: 'synthetic-x', y: 'synthetic-y' };
+    const signingKey = { kty: 'AKP', alg: 'ML-DSA-44', pub: 'c3ludGhldGlj', kid: signingKid, use: 'sig' };
     const actualPrincipal = { sub: 'verified-professional-account', email: SAFE.firstContactEmail, email_verified: true };
     const appAuthManager = { verifyBearerToken: jest.fn(async () => ({ valid: true, payload: actualPrincipal })) };
     const tenantsCacheManager = {
@@ -139,7 +173,7 @@ describe('SECURITY_MODE content-type gates', () => {
         client_id: 'caller-selected-client',
         meta: {
           bearer: { jwt: { payload: { sub: 'forged-controller', email: SAFE.individualEmail, email_verified: true } } },
-          jws: { protected: { alg: 'ES384', kid: signingKid }, signature: 'synthetic-signature' },
+          jws: { protected: { alg: 'ML-DSA-44', kid: signingKid }, signature: 'synthetic-signature' },
           jwe: { header: { skid: encryptionKid } },
         }, body: { data: [] },
       } })),
@@ -193,9 +227,13 @@ describe('SECURITY_MODE content-type gates', () => {
       .set('Authorization', 'Bearer verified-professional-token');
     const response = mode === 'json' ? await pending.type('json').send(content)
       : await pending.type('form').send({ request: 'unsigned-envelope' });
-    expect(response.status).toBe(202);
-    expect(harness.queueAdapter.addJob).toHaveBeenCalledTimes(1);
-    expect(harness.queueAdapter.addJob.mock.calls[0][1].authenticatedTransport).toBeUndefined();
+    expect(response.status).toBe(mode === 'json' ? 202 : 401);
+    if (mode === 'json') {
+      expect(harness.queueAdapter.addJob).toHaveBeenCalledTimes(1);
+      expect(harness.queueAdapter.addJob.mock.calls[0][1].authenticatedTransport).toBeUndefined();
+    } else {
+      expect(harness.queueAdapter.addJob).not.toHaveBeenCalled();
+    }
     expect(harness.cryptographyService.verifyDetachedJws).not.toHaveBeenCalled();
   });
 
@@ -441,7 +479,7 @@ describe('SECURITY_MODE content-type gates', () => {
           iss: issuerDid,
           jti: 'professional-order-jti',
           meta: {
-            jws: { protected: { alg: 'ES384', kid: signingKid }, signature: 'signature' },
+            jws: { protected: { alg: 'ML-DSA-44', kid: signingKid }, signature: 'signature' },
             jwe: { header: { skid: encryptionKid } },
           },
           body: { data: [] },
@@ -451,7 +489,7 @@ describe('SECURITY_MODE content-type gates', () => {
       unprotectConfidentialData: jest.fn(async () => ({
         didDocument: {
           verificationMethod: [
-            { id: `${issuerDid}#${signingKid}`, publicKeyJwk: { kty: 'EC', crv: 'P-384', x: 'x', y: 'y' } },
+            { id: `${issuerDid}#${signingKid}`, publicKeyJwk: { kty: 'AKP', alg: 'ML-DSA-44', pub: 'c3ludGhldGlj', kid: signingKid, use: 'sig' } },
             { id: `${issuerDid}#${encryptionKid}`, publicKeyJwk: { kty: 'OKP', crv: 'ML-KEM-768', x: 'enc' } },
           ],
         },
@@ -480,7 +518,7 @@ describe('SECURITY_MODE content-type gates', () => {
     );
   });
 
-  it('normalizes an encrypted SDK token exchange payload into the manager body contract', async () => {
+  it('normalizes a signed encrypted SDK token exchange payload into the manager body contract', async () => {
     process.env = {
       ...previousEnv,
       SECURITY_MODE: 'strict',
@@ -522,7 +560,7 @@ describe('SECURITY_MODE content-type gates', () => {
       }]),
       getTenant: jest.fn(async () => ({ authorizationStatus: 'active' })),
     };
-    const { app, queueAdapter } = buildTestApp({ appAuthManager, kmsService, tenantsCacheManager });
+    const { app, queueAdapter } = buildTestApp({ appAuthManager, kmsService, tenantsCacheManager, signedPolicyEnvelope: true });
 
     const response = await request(app)
       .post('/example-tenant/cds-ca-bc/v1/animal-care/identity/openid/Token/_exchange')
@@ -548,7 +586,7 @@ describe('SECURITY_MODE content-type gates', () => {
       DIDCOMM_PLAIN: 'false',
     };
 
-    const embeddedJwk = { kty: 'EC', crv: 'P-384', x: 'wallet-x', y: 'wallet-y' };
+    const embeddedJwk = { kty: 'AKP', alg: 'ML-DSA-44', pub: 'c3ludGhldGlj', kid: 'new-wallet-signing-key', use: 'sig' };
     const appAuthManager = {
       verifyBearerToken: jest.fn(async () => ({
         valid: true,
@@ -559,13 +597,14 @@ describe('SECURITY_MODE content-type gates', () => {
       decodeRequest: jest.fn(async () => ({
         content: {
           thid: 'profile-activation-exchange-signed',
+          jti: randomUUID(),
           iss: 'did:web:portal.example:card:vetchain:12402:0000855138505354:family:owner:v3-RoleCode%7CRESPRSN',
           meta: {
             jws: {
-              protected: { alg: 'ES384', kid: 'new-wallet-signing-key', jwk: embeddedJwk },
+              protected: { alg: 'ML-DSA-44', kid: 'new-wallet-signing-key', jwk: embeddedJwk, skid: fixtureReplyKey.kid },
               signature: 'wallet-signature',
             },
-            jwe: { header: { skid: 'new-wallet-encryption-key' } },
+            jwe: { header: { skid: fixtureReplyKey.kid, jwk: fixtureReplyKey } },
           },
           body: {
             subject_token: 'single-use-activation-code',
@@ -653,7 +692,7 @@ describe('SECURITY_MODE content-type gates', () => {
         payload: { sub: 'verified-professional-account' },
       })),
     };
-    const { app, queueAdapter } = buildTestApp({ appAuthManager, kmsService, tenantsCacheManager });
+    const { app, queueAdapter } = buildTestApp({ appAuthManager, kmsService, tenantsCacheManager, signedPolicyEnvelope: true });
 
     const response = await request(app)
       .post('/example-tenant/cds-ca-bc/v1/animal-research/identity/openid/Token/_exchange')
@@ -778,7 +817,7 @@ describe('SECURITY_MODE content-type gates', () => {
     const appAuthManager = {
       verifyBearerToken: jest.fn(async () => ({
         valid: true,
-        payload: { email: 'controller@example.org', sub: 'controller-sub-001' },
+        payload: { email: SAFE.firstContactEmail, email_verified: true, sub: 'controller-sub-001' },
       })),
     };
     const tenantsCacheManager = {
@@ -795,7 +834,7 @@ describe('SECURITY_MODE content-type gates', () => {
       decodeRequest: jest.fn(async () => ({
         content: {
           thid: 'issue-thid-001',
-          iss: 'did:web:portal.example.org',
+          iss: fixtureControllerDid,
           meta: {
             jwe: { header: { jwk: { kty: 'EC', crv: 'P-256', x: 'x', y: 'y' } } },
           },
@@ -814,7 +853,7 @@ describe('SECURITY_MODE content-type gates', () => {
       getPublicVerificationKey: jest.fn(),
       createDetachedJws: jest.fn(),
     };
-    const { app, queueAdapter } = buildTestApp({ appAuthManager, tenantsCacheManager, kmsService });
+    const { app, queueAdapter } = buildTestApp({ appAuthManager, tenantsCacheManager, kmsService, signedPolicyEnvelope: true });
     const response = await request(app)
       .post('/host/cds-es/v1/health-care/registry/org.schema/Organization/_issue')
       .set('Authorization', 'Bearer valid-token')
@@ -826,7 +865,8 @@ describe('SECURITY_MODE content-type gates', () => {
     expect(queueAdapter.addJob).toHaveBeenCalledTimes(1);
     const queuedJob = queueAdapter.addJob.mock.calls[0][1];
     expect(queuedJob.content.meta.bearer.jwt.payload).toEqual({
-      email: 'controller@example.org',
+      email: SAFE.firstContactEmail,
+      email_verified: true,
       sub: 'controller-sub-001',
     });
   });
@@ -846,7 +886,7 @@ describe('SECURITY_MODE content-type gates', () => {
       issuer: 'did:web:bff.demo.example',
       audience: 'gw-demo-audience',
       subject: 'controller-sub-001',
-      email: 'controller@example.org',
+      email: SAFE.firstContactEmail,
       extraClaims: {
         tenant_id: 'acme-id',
       },
@@ -911,7 +951,7 @@ describe('SECURITY_MODE content-type gates', () => {
       decodeRequest: jest.fn(async () => ({
         content: {
           thid: 'issue-thid-oidc-001',
-          iss: 'did:web:portal.example.org',
+          iss: fixtureControllerDid,
           meta: {
             jwe: { header: { jwk: { kty: 'EC', crv: 'P-256', x: 'x', y: 'y' } } },
           },
@@ -930,7 +970,7 @@ describe('SECURITY_MODE content-type gates', () => {
       getPublicVerificationKey: jest.fn(),
       createDetachedJws: jest.fn(),
     };
-    const { app, queueAdapter } = buildTestApp({ appAuthManager, tenantsCacheManager, kmsService });
+    const { app, queueAdapter } = buildTestApp({ appAuthManager, tenantsCacheManager, kmsService, signedPolicyEnvelope: true });
     const response = await request(app)
       .post('/host/cds-es/v1/health-care/registry/org.schema/Organization/_issue')
       .set('Authorization', `Bearer ${fixture.compactToken}`)
@@ -941,7 +981,7 @@ describe('SECURITY_MODE content-type gates', () => {
     expect(queueAdapter.addJob).toHaveBeenCalledTimes(1);
     const queuedJob = queueAdapter.addJob.mock.calls[0][1];
     expect(queuedJob.content.meta.bearer.jwt.payload).toMatchObject({
-      email: 'controller@example.org',
+      email: SAFE.firstContactEmail,
       tenant_id: 'acme-id',
       sub: 'controller-sub-001',
     });
@@ -959,6 +999,7 @@ describe('SECURITY_MODE content-type gates', () => {
 
     const fixture = await buildDeterministicVpTokenFixture({
       seed: 'gw-security-mode-vp-seed-001',
+      extraPayload: { iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 600 },
       issuerDid: 'did:web:controller.demo.example',
       audience: 'did:web:gw.demo.example#tenant_lifecycle',
       credentials: [
@@ -1035,7 +1076,7 @@ describe('SECURITY_MODE content-type gates', () => {
       decodeRequest: jest.fn(async () => ({
         content: {
           thid: 'disable-thid-001',
-          iss: 'did:web:portal.example.org',
+          iss: String(fixture.payload.sub),
           meta: {
             jwe: { header: { jwk: { kty: 'EC', crv: 'P-256', x: 'x', y: 'y' } } },
           },
@@ -1053,7 +1094,7 @@ describe('SECURITY_MODE content-type gates', () => {
       getPublicVerificationKey: jest.fn(),
       createDetachedJws: jest.fn(),
     };
-    const { app, queueAdapter } = buildTestApp({ appAuthManager, tenantsCacheManager, kmsService });
+    const { app, queueAdapter } = buildTestApp({ appAuthManager, tenantsCacheManager, kmsService, signedPolicyEnvelope: true });
     const response = await request(app)
       .post('/host/cds-es/v1/test/registry/org.schema/Organization/_disable')
       .set('Authorization', `Bearer ${fixture.compactToken}`)

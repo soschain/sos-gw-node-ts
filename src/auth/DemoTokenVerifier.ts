@@ -1,23 +1,13 @@
+import { isLocalDemoSecurityMode } from '../security/runtime-security-policy';
 // src/auth/DemoTokenVerifier.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { ITokenVerifier, VerificationResult } from "./ITokenVerifier";
 
-/**
- * A demo implementation of ITokenVerifier.
- * In a development or demo environment, this verifier bypasses actual cryptographic
- * signature verification. It only decodes the token to extract its payload.
- *
- * WARNING: DO NOT USE IN PRODUCTION.
- */
+/** Reads demonstration claims only after explicitly selecting the local demo profile. */
 export class DemoTokenVerifier implements ITokenVerifier {
-  /**
-   * "Verifies" a token by decoding it. In this demo implementation, it always
-   * returns a successful result unless the token is malformed.
-   * @param token The token string to "verify".
-   * @returns A promise that resolves to a VerificationResult.
-   */
   public async verify(token: string): Promise<VerificationResult> {
+    if (!isLocalDemoSecurityMode()) return { valid: false, error: 'Demo authentication is unavailable outside explicit local demo.' };
     try {
       // Split the JWT into its three parts.
       const parts = token.split('.');

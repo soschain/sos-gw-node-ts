@@ -1,6 +1,7 @@
+// Flow contract: preserve the existing authorization, request and persistence expectations while using independent neutral helper contracts.
 import { jest } from '@jest/globals';
 import { sha3_384 } from '@noble/hashes/sha3.js';
-import { encodeMultibase58btc } from 'gdc-common-utils-ts/utils/multibase58';
+import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
 import { computeEncodedMultiHash, IpfsStorageAdapter } from '../../../../database/storage/ipfs.storage.adapter';
 
 describe('IpfsStorageAdapter', () => {
@@ -16,7 +17,7 @@ describe('IpfsStorageAdapter', () => {
     const multihashBytes = new Uint8Array(prefix.length + digest.length);
     multihashBytes.set(prefix);
     multihashBytes.set(digest, prefix.length);
-    return encodeMultibase58btc(multihashBytes);
+    return encodeBase58btc(multihashBytes);
   }
 
   it('should compute the canonical encodedMultiHash', () => {

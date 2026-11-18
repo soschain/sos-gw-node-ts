@@ -3,12 +3,10 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
 import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
-import {
-  buildLicenseSearchEntry,
-  LicenseStatuses,
-} from 'gdc-common-utils-ts/utils/license';
+import { buildLicenseSearchEntry } from 'sos-data-utils-ts/license-commercial-contract';
+import { LicenseStatuses } from "sos-data-utils-ts/device-license-contract";
 import { LicenseManager } from '../../managers/LicenseManager';
-import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
+import { extractBundleSearchResources } from "sos-sdk-core-ts/gateway-response-reader";
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 
 /**

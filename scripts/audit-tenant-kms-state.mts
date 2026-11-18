@@ -1,8 +1,8 @@
 import { getConfig } from '../src/config/server-config.js';
 import { buildInfrastructure } from '../src/bootstrap/build-infrastructure.js';
 import { generateTenantCollectionNameFromClaims } from '../src/utils/tenant.js';
-import { ClaimsOrganizationSchemaorg, ClaimsServiceSchemaorg } from 'gdc-common-utils-ts/constants/schemaorg';
-import { Sector } from 'gdc-common-utils-ts/models/urlPath';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { GatewaySector as Sector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { VaultWrappedKeyRepository, type WrappedKeyPurpose } from '../src/services/wrapped-key-repository.js';
 
 const PURPOSES: WrappedKeyPurpose[] = ['comm_sig', 'vc_sign', 'encryption', 'storage', 'hmac'];
@@ -20,10 +20,10 @@ type EntityAudit = {
 async function main(): Promise<void> {
   const config = getConfig();
   const hostBootstrapClaims = {
-    [ClaimsOrganizationSchemaorg.addressCountry]: config.host.jurisdiction,
-    [ClaimsOrganizationSchemaorg.identifierType]: config.host.idType,
-    [ClaimsOrganizationSchemaorg.identifierValue]: config.host.idValue,
-    [ClaimsServiceSchemaorg.category]: Sector.SYSTEM,
+    [SchemaOrgOrganizationClaim.AddressCountry]: config.host.jurisdiction,
+    [SchemaOrgOrganizationClaim.IdentifierType]: config.host.idType,
+    [SchemaOrgOrganizationClaim.IdentifierValue]: config.host.idValue,
+    [SchemaOrgServiceClaim.Category]: Sector.SYSTEM,
   };
   const hostCollectionName = generateTenantCollectionNameFromClaims(hostBootstrapClaims);
 

@@ -1,5 +1,7 @@
 // Flow contract: one active emergency Consent may authorize several independently expiring animal-care SMART tokens.
-import { buildUnsignedProfessionalIdentityVpJwt } from 'gdc-common-utils-ts/utils/professional-smart';
+import { createHash } from 'node:crypto';
+import type { ClearingHouseVerificationRequest } from '../../../services/ClearingHouseService';
+import { buildUnsignedProfessionalIdentityVpJwt } from 'sos-data-utils-ts/professional-smart';
 import { OpenIdAuthManager } from '../../../managers/OpenIdAuthManager';
 
 describe('OpenIdAuthManager break-glass SMART integration', () => {
@@ -34,12 +36,12 @@ describe('OpenIdAuthManager break-glass SMART integration', () => {
         } as any,
         { getContainersInSection: jest.fn().mockResolvedValue([]) } as any,
         {
-          verifyVpToken: jest.fn().mockResolvedValue({
+          verifyVpToken: jest.fn().mockImplementation(async (request: ClearingHouseVerificationRequest) => ({
             acr: 'urn:antifraud:acr:openid4vp:employee',
             amr: ['openid4vp', 'vc'],
-            vpHash: 'hash',
+            vpHash: createHash('sha256').update(request.vpToken).digest('hex'),
             ledgerVerified: true,
-          }),
+          })),
         } as any,
         { authorize },
       );

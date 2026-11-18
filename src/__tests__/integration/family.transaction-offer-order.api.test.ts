@@ -1,6 +1,6 @@
 // Flow contract: organization onboarding creates inventory through Offer -> Order and search readers accept both rollout envelopes.
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
+import { extractBundleSearchResources } from "sos-sdk-core-ts/gateway-response-reader";
 import type { StoryHarness } from './helpers/story-flow';
 import {
   installBasicJsonFetchMock,
@@ -10,6 +10,7 @@ import {
   stopStoryServer,
 } from './helpers/story-flow';
 import { invokeExpress } from './helpers/invokeExpress';
+import { configureAuthenticatedTestActor } from './helpers/authenticated-test-actor';
 import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   FAMILY_ORDER_REQUEST,
@@ -21,18 +22,20 @@ import {
   EXAMPLE_LICENSE_INVOICE_ID,
   EXAMPLE_LICENSE_PAYMENT_METHOD_STRIPE,
   EXAMPLE_PRIVATE_INDIVIDUAL_UUID,
-} from 'gdc-common-utils-ts/examples/shared';
-import { EXAMPLE_FAMILY_ORGANIZATION_SEARCH_RESPONSE_BODY } from 'gdc-common-utils-ts/examples/individual-controller';
+} from 'sos-data-utils-ts/gateway-flow-examples';
+import { EXAMPLE_FAMILY_ORGANIZATION_SEARCH_RESPONSE_BODY } from 'sos-data-utils-ts/gateway-resource-flow-examples';
 
 describe('Family transaction Offer/Order route story', () => {
   let harness: StoryHarness;
   let tenantId: string;
   let originalFetch: typeof global.fetch;
+  let authenticatedActor: Awaited<ReturnType<typeof configureAuthenticatedTestActor>>;
 
   beforeAll(async () => {
     originalFetch = installBasicJsonFetchMock();
+    authenticatedActor = await configureAuthenticatedTestActor({ email: 'adult1@example.com' });
     harness = await startStoryServer();
-    tenantId = await onboardTenantViaActivateAndOrder(harness.app, harness.queueAdapter);
+    tenantId = await onboardTenantViaActivateAndOrder(harness.app, harness.queueAdapter, authenticatedActor.authorizationHeader);
   });
 
   afterAll(async () => {
@@ -42,6 +45,7 @@ describe('Family transaction Offer/Order route story', () => {
 
   it('submit family _transaction, poll Offer, submit Order, and poll family confirmation', async () => {
     const registrationPayload = structuredClone(FAMILY_REGISTRATION_TRANSACTION_REQUEST) as any;
+    registrationPayload.iss = authenticatedActor.actorDid;
     registrationPayload.thid = 'family-transaction-story-thid';
     registrationPayload.jti = 'family-transaction-story-jti';
     const familyClaims = {
@@ -65,7 +69,7 @@ describe('Family transaction Offer/Order route story', () => {
     const transactionSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: `/${tenantId}/cds-es/v1/health-care/individual/org.schema/Organization/_transaction`,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: registrationPayload,
     });
 
@@ -87,6 +91,7 @@ describe('Family transaction Offer/Order route story', () => {
     expect(offerId).not.toContain('undefined');
 
     const orderPayload = structuredClone(FAMILY_ORDER_REQUEST) as any;
+    orderPayload.iss = authenticatedActor.actorDid;
     orderPayload.thid = 'family-order-story-thid';
     orderPayload.jti = 'family-order-story-jti';
     orderPayload.body.data[0] = withCanonicalEntryClaims(orderPayload.body.data[0], {
@@ -98,7 +103,7 @@ describe('Family transaction Offer/Order route story', () => {
     const orderSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: `/${tenantId}/cds-es/v1/health-care/individual/org.schema/Order/_batch`,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: orderPayload,
     });
 
@@ -122,7 +127,7 @@ describe('Family transaction Offer/Order route story', () => {
     const offerSearchPayload = {
       thid: 'family-offer-search-story-thid',
       jti: 'family-offer-search-story-jti',
-      iss: 'did:web:controller.example.com',
+      iss: authenticatedActor.actorDid,
       aud: 'did:web:api.acme.org',
       type: 'application/json',
       body: {
@@ -135,7 +140,7 @@ describe('Family transaction Offer/Order route story', () => {
     const offerSearchSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: `/${tenantId}/cds-es/v1/health-care/individual/org.schema/Offer/_search`,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: offerSearchPayload,
     });
     expect(offerSearchSubmit.status).toBe(202);
@@ -158,7 +163,7 @@ describe('Family transaction Offer/Order route story', () => {
     const repeatedSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: `/${tenantId}/cds-es/v1/health-care/individual/org.schema/Organization/_transaction`,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: repeatedRegistrationPayload,
     });
     expect(repeatedSubmit.status).toBe(202);

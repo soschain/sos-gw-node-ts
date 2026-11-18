@@ -7,8 +7,9 @@ import {
   EXAMPLE_CLINICAL_CODE_PROBLEM,
   EXAMPLE_CLINICAL_SECTION_HISTORY_MEDICATION,
   EXAMPLE_SUBJECT_DID,
-} from 'gdc-common-utils-ts/examples/shared';
-import { HealthcareTypeOfServiceSections } from 'gdc-common-utils-ts/constants/healthcare';
+} from 'sos-data-utils-ts/gateway-flow-examples';
+import { LoincSubjectMatterDomain } from 'fhir-data-utils-ts';
+import { getHealthcarePermissionSectionByCode } from 'sos-data-utils-ts/healthcare-sections';
 import { HealthcareCoreSections } from 'sos-data-utils-ts/healthcare-sections';
 
 describe('smart scope route authorization', () => {
@@ -95,7 +96,7 @@ describe('smart scope route authorization', () => {
   });
 
   it('preserves a governed non-IPS section instead of applying an IPS-only allowlist', () => {
-    const appointmentSection = HealthcareTypeOfServiceSections['LP438240-6'].attributeValue;
+    const appointmentSection = getHealthcarePermissionSectionByCode(LoincSubjectMatterDomain[0].code)!.attributeValue;
     expect(constrainSmartCompositionReadSections({
       subject: EXAMPLE_SUBJECT_DID,
       requestedSections: [],

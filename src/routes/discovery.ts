@@ -12,7 +12,7 @@ import { findSigningMethod, toPublicJwkSet } from '../utils/did-backend';
 import { buildStatusListCredential, buildStatusListEntry, createStatusListEncodedList } from '../utils/status-list';
 import { DataspaceWellKnownPaths } from 'sos-data-utils-ts/gateway-did-profile';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { isEuCountryCode, normalizeCountryCode } from 'gdc-common-utils-ts/constants/eu-countries';
+import { isEuCountryCode, normalizeCountryCode } from 'sos-data-utils-ts/eu-countries';
 import {
   parseServiceCapabilityTokens,
 } from 'sos-data-utils-ts/service-capabilities';
@@ -28,7 +28,7 @@ import { getBaseUrlFromDidWeb } from '../utils/did-backend';
 import { isFhirSector, isResearchSector } from '../utils/sector';
 import { hasProviderServiceCapabilityClaim } from '../utils/services';
 import { getTenantServiceCapabilityClaim } from '../utils/service-capability-claims';
-import { buildGaiaXServiceOfferingCredentialDraft } from 'gdc-common-utils-ts/convert/schemaorg-to-gaia-x';
+import { buildGaiaXServiceOfferingCredentialDraft } from 'antifraud-data-utils-ts/gaia-x-projection';
 
 import { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import { ILogger } from '../loggers/ILogger';

@@ -191,12 +191,12 @@ export function buildActivationPayload(): Record<string, unknown> {
   };
 }
 
-export async function onboardTenantViaActivateAndOrder(app: express.Express, queueAdapter: QueueAdapterMem): Promise<string> {
+export async function onboardTenantViaActivateAndOrder(app: express.Express, queueAdapter: QueueAdapterMem, authorizationHeader?: string): Promise<string> {
   const activationPayload = buildActivationPayload() as any;
   const activationSubmit = await invokeExpress(app, {
     method: 'POST',
     url: '/host/cds-es/v1/test/registry/org.schema/Organization/_activate',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...(authorizationHeader ? {authorization:authorizationHeader} : {}) },
     body: activationPayload,
   });
   if (activationSubmit.status !== 202) {
@@ -234,7 +234,7 @@ export async function onboardTenantViaActivateAndOrder(app: express.Express, que
   const orderSubmit = await invokeExpress(app, {
     method: 'POST',
     url: '/host/cds-es/v1/test/registry/org.schema/Order/_batch',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...(authorizationHeader ? {authorization:authorizationHeader} : {}) },
     body: orderPayload,
   });
   if (orderSubmit.status !== 202) {

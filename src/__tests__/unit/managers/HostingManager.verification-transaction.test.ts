@@ -4,10 +4,6 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { getEnvSectionId } from '../../../utils/section-env';
 import { DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE } from 'antifraud-data-utils-ts/didcomm-contracts';
-import {
-  getLegalOrganizationVerificationController,
-  getLegalOrganizationVerificationRepresentativePayload,
-} from 'gdc-common-utils-ts/utils/legal-organization-verification-transaction';
 import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import type { IServerConfig } from '../../../config';
@@ -21,6 +17,8 @@ import { ORGANIZATION_VERIFICATION_TRANSACTION_REQUEST } from '../../data/exampl
 import { testClaimsRegisterTenantExpanded } from '../../data/organization.data';
 import { HOST_TRANSACTION_REQUIRED_INPUT_CLAIMS } from '../../../managers/hosting/hosting-claim-contracts';
 
+const unexpectedFabric=()=>{throw new Error('Unexpected Fabric transport in isolated host/device unit.');};
+jest.unstable_mockModule('@hyperledger/fabric-gateway',()=>({connect:unexpectedFabric,signers:{newPrivateKeySigner:unexpectedFabric},checkpointers:{inMemory:unexpectedFabric,file:unexpectedFabric}}));
 const { HostingManager } = await import('../../../managers/HostingManager');
 const EXAMPLE_SECTOR = GatewaySector.HEALTH_CARE;
 const EXAMPLE_HOST_COLLECTION = 'system_host';
@@ -263,10 +261,10 @@ describe('HostingManager legal organization verification transaction', () => {
     });
 
     const sentBody = JSON.parse(String(fetchCalls[0]?.init?.body || '{}'));
-    expect(getLegalOrganizationVerificationController(sentBody.body)?.publicKeyJwk).toEqual(
+    expect(sentBody.body?.data?.[0]?.resource?.controller?.publicKeyJwk).toEqual(
       ORGANIZATION_VERIFICATION_TRANSACTION_REQUEST.body.data[0]?.resource?.controller?.publicKeyJwk,
     );
-    expect(getLegalOrganizationVerificationRepresentativePayload(sentBody.body)?.email).toBe(
+    expect(sentBody.body?.data?.[0]?.resource?.legalRepresentative?.email).toBe(
       ORGANIZATION_VERIFICATION_TRANSACTION_REQUEST.body.data[0]?.resource?.legalRepresentativePayload?.email,
     );
     expect(sentBody.attachments?.[0]?.data?.links?.[0]).toBe(
@@ -923,6 +921,7 @@ describe('HostingManager legal organization verification transaction', () => {
       mockHostRuntime,
     );
 
+    const before=structuredClone(assignedControllerLicenseDoc);
     const response = await manager.process(buildIssueJob(), 'test', false);
     const claims = (response.body.data[0]?.resource as any)?.meta?.claims || {};
 
@@ -930,19 +929,9 @@ describe('HostingManager legal organization verification transaction', () => {
     expect(fetchCalls[0]?.url).toBe(
       `${EXAMPLE_ICA_BASE_URL}/ica/cds-ES/v1/${EXAMPLE_SECTOR}/terms/pdf/${EXAMPLE_VERIFY_RESOURCE_TYPE}/_verify`,
     );
-    expect(claims['org.schema.IndividualProduct.serialNumber']).toEqual(expect.any(String));
-    expect(mockVaultRepository.put).toHaveBeenCalledWith(
-      `${EXAMPLE_SECTOR}_${EXAMPLE_TENANT_ALTERNATE_NAME}`,
-      [expect.objectContaining({
-        id: 'license-seat-reuse-001',
-        content: expect.objectContaining({
-          status: 'issued',
-          issuedToEmail: 'controller@example.org',
-          issuedToRole: 'RESPRSN',
-        }),
-      })],
-      getEnvSectionId('device-licenses'),
-    );
+    expect(claims['org.schema.IndividualProduct.serialNumber']).toBe(before.content.activationCode);
+    expect(assignedControllerLicenseDoc).toEqual(before);
+    expect(mockVaultRepository.put).not.toHaveBeenCalled();
   });
 
   it('returns the canonical Offer identifier only for first-time legal _transaction onboarding', async () => {

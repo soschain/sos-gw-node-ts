@@ -1,4 +1,4 @@
-// Flow contract: real individual registration admits a verified self/controller or an exact licensed, DCR-bound practitioner with active organization Subject registration Consent; all other creators are denied before document or vault writes.
+// Flow contract: registration and its reserved Order require a verified controller or the same recorded, currently licensed/DCR-bound practitioner with active organization Subject registration Consent; issued controller metadata never creates a device session or clinical consent.
 import { describe, expect, it, jest } from '@jest/globals';
 import { mock } from 'jest-mock-extended';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
@@ -192,8 +192,11 @@ function harness(variant: Variant = 'allowed') {
 }
 
 /** Keeps section writes readable for a real Offer -> Order lifecycle, including issued seats. */
-async function pendingOrderHarness(verifiedRecipient: boolean) {
-  const state = harness('self');
+async function pendingOrderHarness(verifiedRecipient: boolean, creator: 'self' | 'allowed' = 'self') {
+  const state = harness(creator);
+  const baseGet = state.repository.get.getMockImplementation()!;
+  const baseContainers = state.repository.getContainersInSection.getMockImplementation()!;
+  const baseList = state.repository.listContainersInSection.getMockImplementation()!;
   const sections = new Map<string, Map<string, any>>();
   const section = (collection: string, sectionId?: string) => {
     const key = JSON.stringify([collection, sectionId]);
@@ -208,10 +211,14 @@ async function pendingOrderHarness(verifiedRecipient: boolean) {
   });
   state.repository.get.mockImplementation(async (collection, id, sectionId) => {
     const row = section(collection, sectionId).get(id);
-    return row ? structuredClone(row) : undefined;
+    return row ? structuredClone(row) : baseGet(collection, id, sectionId);
   });
-  state.repository.getContainersInSection.mockImplementation(async (collection, sectionId) => readRows(collection, sectionId));
-  state.repository.listContainersInSection.mockImplementation(async (collection, sectionId) => readRows(collection, sectionId));
+  state.repository.getContainersInSection.mockImplementation(async (collection, sectionId) => [
+    ...await baseContainers(collection, sectionId), ...readRows(collection, sectionId),
+  ]);
+  state.repository.listContainersInSection.mockImplementation(async (collection, sectionId) => [
+    ...await baseList(collection, sectionId), ...readRows(collection, sectionId),
+  ]);
   state.repository.query.mockImplementation(async (collection, query) => readRows(collection, query.sectionId!).filter(row =>
     ((query as any).where || []).every((condition: any) => row.content?.claims?.[condition.name] === condition.value
       || row.indexed?.attributes?.some((attribute: any) => attribute.name === condition.name && attribute.value === condition.value))));
@@ -286,13 +293,91 @@ describe('FamilyManager professional registration admission', () => {
     expect(state.repository.put).not.toHaveBeenCalled();
   });
 
-  it('requires the actual proposed controller to confirm a pending Offer before the first activation write', async () => {
+  it('denies a professional continuation when the pending Offer has no recorded professional creator', async () => {
     const state = await pendingOrderHarness(false);
     const response = await state.manager.process(state.order);
     expect((response.body as any).data[0].response.status).toBe('403');
     expect(state.protect).not.toHaveBeenCalled();
     expect(state.repository.put).not.toHaveBeenCalled();
   });
+
+  it('lets the same currently authorized proposer finish the reserved registration without activating the controller or granting clinical access', async () => {
+    const state = await pendingOrderHarness(false, 'allowed');
+    const response = await state.manager.process(state.order);
+    const entries = (response.body as any).data;
+    expect(entries[0].response.status).toBe('201');
+    expect(entries).toEqual(expect.arrayContaining([expect.objectContaining({
+      resource: expect.objectContaining({ resourceType: 'RelatedPerson' }), response: { status: '201' },
+    })]));
+    expect(state.readRows(vaultId, getEnvSectionId('device-licenses'))).toEqual(expect.arrayContaining([
+      expect.objectContaining({ content: expect.objectContaining({ issuedToEmail: fixture.controllerEmail, status: 'issued' }) }),
+    ]));
+    expect(state.readRows(vaultId, getEnvSectionId('device-profiles'))).toEqual([]);
+    expect(state.readRows(fixture.collection, 'organization-workflow-consents')).toEqual([]);
+    expect(state.repository.put.mock.calls.flatMap(([, rows]) => rows)
+      .filter(row => 'content' in row
+        && (row.content as { claims?: Record<string, unknown> } | undefined)?.claims?.[ClaimConsent.status])).toEqual([]);
+  });
+
+  it('keeps an authorized creator replay idempotent without adding controller access', async () => {
+    const state = await pendingOrderHarness(false, 'allowed');
+    const first = await state.manager.process(state.order);
+    expect((first.body as any).data[0].response.status).toBe('201');
+    const assignmentId = (first.body as any).data[1].resource.id;
+    state.repository.put.mockClear();
+    state.protect.mockClear();
+    const replay = await state.manager.process(state.order);
+    expect((replay.body as any).data[0].response.status).toBe('200');
+    expect((replay.body as any).data[1].resource.id).toBe(assignmentId);
+    expect(state.repository.put).not.toHaveBeenCalled();
+    expect(state.protect).not.toHaveBeenCalled();
+  });
+
+  it('does not accept caller-supplied creator metadata for an older pending Offer', async () => {
+    const state = await pendingOrderHarness(false);
+    (state.order.content as any).body.data[0].meta = { professionalCreator: {
+      actorDid: professionalDid, clientId: fixture.clientId,
+      authorIdentifier: `urn:uuid:${fixture.roleId}`, ownerIdentifier: organizationOwnerUrn,
+      role: HealthcareActorRoles.Dentist,
+    } };
+    const response = await state.manager.process(state.order);
+    expect((response.body as any).data[0].response.status).toBe('403');
+    expect(state.repository.put).not.toHaveBeenCalled();
+  });
+
+  it.each(['revoked-consent', 'inactive-client', 'unlicensed', 'expired-license', 'foreign-actor'] as const)(
+    'rejects proposer continuation after its original authority changes: %s', async (change) => {
+      const state = await pendingOrderHarness(false, 'allowed');
+      if (change === 'revoked-consent') {
+        const original = state.repository.listContainersInSection.getMockImplementation()!;
+        state.repository.listContainersInSection.mockImplementation(async (collection, sectionId) =>
+          sectionId === 'organization-workflow-consents' ? [] : original(collection, sectionId));
+      } else if (change === 'inactive-client') {
+        const original = state.repository.get.getMockImplementation()!;
+        state.repository.get.mockImplementation(async (collection, id, sectionId) => {
+          const record = await original(collection, id, sectionId);
+          return sectionId === getEnvSectionId('device-profiles') && record
+            ? { ...record, status: 'inactive' } : record;
+        });
+      } else if (change === 'unlicensed' || change === 'expired-license') {
+        const original = state.repository.getContainersInSection.getMockImplementation()!;
+        state.repository.getContainersInSection.mockImplementation(async (collection, sectionId) => {
+          const records = await original(collection, sectionId);
+          if (sectionId !== getEnvSectionId('device-licenses')) return records;
+          return change === 'unlicensed' ? [] : records.map(record => {
+            const content = 'content' in record && record.content && typeof record.content === 'object'
+              ? record.content : {};
+            return { ...record, content: { ...content, exp: 1 } };
+          });
+        });
+      } else {
+        (state.order.content as any).iss = `${professionalDid}:another-role`;
+        (state.order as any).authenticatedTransport.actorDid = (state.order.content as any).iss;
+      }
+      const response = await state.manager.process(state.order);
+      expect((response.body as any).data[0].response.status).toBe('403');
+      expect(state.repository.put).not.toHaveBeenCalled();
+    });
 
   it('allows the verified proposed controller to confirm and persists its distinct responsibility assignment', async () => {
     const state = await pendingOrderHarness(true);

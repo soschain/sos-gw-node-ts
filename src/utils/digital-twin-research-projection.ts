@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'crypto';
 import type { RecordBase } from 'sos-data-utils-ts/confidential-storage';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
+import { CompositionClaim } from 'fhir-data-utils-ts/claims';
 import { getEnvSectionId } from './section-env';
 import { getClaimValue } from './claims';
 import type { OperationOutcome } from 'fhir-data-utils-ts/operation-outcome';
@@ -186,6 +187,62 @@ export function isFinalizedDigitalTwinResearchRecord(
     return FINALIZED_COMPOSITION_STATUSES.has(status);
   }
   return true;
+}
+
+/** Existing storage identity shared by immediate projection, rebuild and graph references. */
+export function buildDigitalTwinResearchRecordId(resourceType: string, sourceRecordId: string): string {
+  return createHash('sha256').update(`${resourceType}|${sourceRecordId}`, 'utf8').digest('hex');
+}
+
+/** Reduced components inherit finalization only from their persisted, same-subject parent edge. */
+export function isFinalizedDigitalTwinResearchGraphRecord(
+  resourceType: string,
+  record: Readonly<Record<string, unknown>>,
+  sourceRecords: readonly Readonly<Record<string, unknown>>[],
+): boolean {
+  const documentIsFinalized = (source: Readonly<Record<string, unknown>>) =>
+    !String(getClaimValue(source, CompositionClaim.Status) ?? '').trim()
+    || isFinalizedDigitalTwinResearchRecord(ResourceTypesFhirR4.Composition, source);
+  if (!documentIsFinalized(record)) return false;
+  if (isFinalizedDigitalTwinResearchRecord(resourceType, record)) return true;
+  if (resourceType !== ResourceTypesFhirR4.Observation
+    || String(getClaimValue(record, 'Observation.status') ?? '').trim()) return false;
+  const audit = record.audit;
+  if (!audit || typeof audit !== 'object' || Array.isArray(audit)) return false;
+  const parentId = String((audit as Record<string, unknown>).componentParentRecordId || '').trim();
+  const subject = String(getClaimValue(record, 'Observation.subject') || '').trim();
+  const recordId = String(record.id || '').trim();
+  if (!parentId || !subject || !recordId || parentId === recordId) return false;
+  const parent = sourceRecords.find(candidate => candidate.id === parentId);
+  if (!parent || String(getClaimValue(parent, 'Observation.subject') || '').trim() !== subject
+    || !isProfessionallyAttestedResearchRecord(parent)
+    || !documentIsFinalized(parent)
+    || !isFinalizedDigitalTwinResearchRecord(resourceType, parent)) return false;
+  const members = String(getClaimValue(parent, 'Observation.has-member') || '').split(',').map(value => value.trim());
+  return members.includes(`Observation/${recordId}`);
+}
+
+/** Retains only eligible graph edges and resolves them to the projected storage identities. */
+export function rebindDigitalTwinObservationMembers(
+  claims: Record<string, unknown>,
+  sourceRecords: readonly Readonly<Record<string, unknown>>[],
+): Record<string, unknown> {
+  const memberKeys = Object.keys(claims).filter(key => /(?:^|\.)Observation\.has-member$/u.test(key));
+  if (!memberKeys.length) return claims;
+  const subject = String(getClaimValue(claims, 'Observation.subject') || '').trim();
+  const eligible = new Set(sourceRecords.filter(record =>
+    String(getClaimValue(record, 'Observation.subject') || '').trim() === subject
+    && isProfessionallyAttestedResearchRecord(record)
+    && isFinalizedDigitalTwinResearchGraphRecord(ResourceTypesFhirR4.Observation, record, sourceRecords),
+  ).map(record => String(record.id)));
+  const result = { ...claims };
+  for (const key of memberKeys) {
+    result[key] = String(claims[key] || '').split(',').map(value => value.trim())
+      .filter(reference => reference.startsWith('Observation/') && eligible.has(reference.slice('Observation/'.length)))
+      .map(reference => `Observation/${buildDigitalTwinResearchRecordId(ResourceTypesFhirR4.Observation, reference.slice('Observation/'.length))}`)
+      .join(',');
+  }
+  return result;
 }
 
 /**

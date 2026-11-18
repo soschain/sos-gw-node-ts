@@ -1,7 +1,8 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+import {registeredRouteFixture} from '../helpers/registered-route-fixture';
 import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { resolveHostPhysicalCollectionName } from '../../../config/storage-layout';
-// TDD contract: family route fixtures either carry a complete valid signature or make no signature claim.
+// TDD contract: family route decoder fixtures carry real inner signatures and explicitly registered wallet keys; JWE decoding and bearer verification remain unit collaborators.
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
 
 import express from 'express';
@@ -124,7 +125,7 @@ describe('[/individual/org.schema/Organization/_batch] Integration Tests (sandbo
   const mockStorageAdapter: jest.Mocked<IStorageAdapter> = { upload: jest.fn() };
   const mockLogger: jest.Mocked<ILogger> = { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() };
   const mockAppAuthManager = {
-    verifyBearerToken: jest.fn(async () => ({ payload: { sub: 'test-user', tenant_id: testTenant1TenantId } })),
+    verifyBearerToken: jest.fn(async () => ({ payload: { sub: FAMILY_REGISTRATION_REQUEST.iss, tenant_id: testTenant1TenantId } })),
   } as unknown as AppAuthorizationManager;
 
   let app: express.Express;
@@ -251,7 +252,7 @@ describe('[/individual/org.schema/Organization/_batch] Integration Tests (sandbo
 	      resourceType: 'Organization',
 	      content: withoutIncompleteJwsProof(FAMILY_REGISTRATION_REQUEST) as any,
 	    };
-    mockKmsService.decodeRequest.mockResolvedValueOnce(decodedJob as any);
+    mockKmsService.decodeRequest.mockResolvedValueOnce(await registeredRouteFixture(decodedJob,vaultRepository,getTenantVaultId(GatewaySector.HEALTH_CARE,tenantId),mockKmsService));
 
     const response = await invokeExpress(app, {
       method: 'POST',
@@ -293,7 +294,7 @@ describe('[/individual/org.schema/Organization/_batch] Integration Tests (sandbo
       resourceType: 'Organization',
       content: withoutIncompleteJwsProof(FAMILY_REGISTRATION_REQUEST) as any,
     };
-    mockKmsService.decodeRequest.mockResolvedValueOnce(decodedJob as any);
+    mockKmsService.decodeRequest.mockResolvedValueOnce(await registeredRouteFixture(decodedJob,vaultRepository,getTenantVaultId(GatewaySector.HEALTH_CARE,tenantId),mockKmsService));
 
     const response = await invokeExpress(app, {
       method: 'POST',
@@ -348,7 +349,7 @@ describe('[/individual/org.schema/Organization/_batch] Integration Tests (sandbo
         },
       } as any,
     };
-    mockKmsService.decodeRequest.mockResolvedValueOnce(decodedJob as any);
+    mockKmsService.decodeRequest.mockResolvedValueOnce(await registeredRouteFixture(decodedJob,vaultRepository,getTenantVaultId(GatewaySector.HEALTH_CARE,tenantId),mockKmsService));
 
     const response = await invokeExpress(app, {
       method: 'POST',

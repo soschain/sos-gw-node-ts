@@ -34,7 +34,7 @@ import { ORGANIZATION_ORDER_REQUEST, EMPLOYEE_REGISTRATION_REQUEST } from '../da
 import { SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { IHostRuntime } from '../../managers/IHostRuntime';
 import { testClaimsHostInitialization } from '../data/end-to-end.data';
-import { buildLicensePurchaseEntry } from 'gdc-common-utils-ts';
+import { buildLicensePurchaseEntry } from 'sos-data-utils-ts/license-commercial-contract';
 import { HttpRequestMethods } from 'sos-data-utils-ts/bff-wire-contract';
 import { getTenantVaultId } from '../../utils/tenant';
 import { AppAuthorizationManager } from '../../managers/AppAuthorizationManager';

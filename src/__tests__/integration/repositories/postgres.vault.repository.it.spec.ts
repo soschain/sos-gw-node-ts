@@ -1,6 +1,6 @@
 import { newDb } from 'pg-mem';
 import type { Pool } from 'pg';
-import { buildExampleConfidentialJwe, buildExampleConfidentialStorageDoc } from 'gdc-common-utils-ts';
+import { buildExampleConfidentialJwe, buildExampleConfidentialStorageDoc } from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import { PostgresVaultRepository } from '../../../database/repositories/postgres/postgres.vault.repository';
 import { ensurePostgresVaultSchema } from '../../../database/repositories/postgres/postgres.schema';
 import { getEnvSectionId } from '../../../utils/section-env';

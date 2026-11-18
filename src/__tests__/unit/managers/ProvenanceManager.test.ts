@@ -3,7 +3,7 @@ import { describe, expect, it, jest } from '@jest/globals';
 import {
   buildPractitionerRoleReferenceFromAssignmentIdentifier,
   buildResearchStudyProvenanceResource,
-} from 'vet-data-utils-ts/provenance';
+} from 'sos-data-utils-ts/provenance';
 import { ProvenanceManager } from '../../../managers/ProvenanceManager';
 
 describe('ProvenanceManager', () => {

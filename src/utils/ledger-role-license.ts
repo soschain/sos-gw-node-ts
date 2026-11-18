@@ -3,11 +3,11 @@ import {
   buildOrganizationRoleLicenseId,
   DEFAULT_ORGANIZATION_ROLE_LICENSE_POLICY,
   normalizeOrganizationRoleLicensePolicies,
-} from 'gdc-common-utils-ts/utils/organization-role-license';
+} from 'sos-data-utils-ts/organization-role-license';
 import type {
   OrganizationRoleLicense,
   OrganizationRoleLicenseSectorPolicy,
-} from 'gdc-common-utils-ts/models/organization-role-license';
+} from 'sos-data-utils-ts/organization-role-license';
 import type { ManageAssetRoleLicense } from '../blockchain/fabric/v3/manageAssetRoleLicense';
 import { shouldUseFabricLedger } from '../adapters/credential-ledger-resolver';
 import { resolveOrganizationIdentityChannel } from './ledger';

@@ -2,11 +2,12 @@
 // src/__tests__/data/consent-rules.data.ts
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
 
+import { EXAMPLE_API_ORGANIZATION_DID } from 'sos-data-utils-ts/gateway-flow-examples';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
-import { HealthcareConsentActions } from 'gdc-common-utils-ts/constants/healthcare';
+import { HealthcareConsentActions } from 'sos-data-utils-ts/gateway-profile-values';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
-import { EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_SUBJECT_DID } from 'gdc-common-utils-ts/examples/inter-tenant-access-contract';
-import { ClaimConsent, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
+import { EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_SUBJECT_DID } from 'sos-data-utils-ts/gateway-resource-flow-examples';
+import { ClaimConsent, ConsentStatuses } from "fhir-data-utils-ts/claims";
 
 const testConsentSubject = EXAMPLE_INTER_TENANT_ACCESS_CONTRACT_SUBJECT_DID;
 
@@ -17,7 +18,7 @@ export const testConsentRulePermitOrgDid = {
   [ClaimConsent.identifier]: 'urn:uuid:rule-org',
   [ClaimConsent.decision]: 'permit',
   [ClaimConsent.status]: ConsentStatuses.Active,
-  [ClaimConsent.actorIdentifier]: 'did:web:api.acme.org',
+  [ClaimConsent.actorIdentifier]: EXAMPLE_API_ORGANIZATION_DID,
   [ClaimConsent.actorRole]: HealthcareActorRoles.Physician,
   [ClaimConsent.action]: HealthcareConsentActions.AllergiesAndIntolerances,
   [ClaimConsent.purpose]: HealthcareConsentPurposes.Treatment,

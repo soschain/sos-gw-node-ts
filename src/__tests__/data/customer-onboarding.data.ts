@@ -2,7 +2,10 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { JobAction, Resource, Format, Section } from 'gdc-common-utils-ts/models/urlPath';
+import { GatewayJobActions as JobAction } from 'sos-data-utils-ts/gateway-profile-values';
+import { GatewayRouteSections } from 'sos-data-utils-ts/gateway-response-contract';
+import { Format } from 'sos-data-utils-ts/bff-wire-contract';
+import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { IDecodedDidcommPayload } from 'sos-data-utils-ts/confidential-job';
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
@@ -35,7 +38,7 @@ export const testCustomer1OnboardingClaimsWithTerms = {
 // --- Full Job Request for this User Story ---
 
 /** Rule: path ends with slash `/`: `individual/org.schema/Person/` */
-export const testCustomerOnboardingRelativePath = `${Section.individual}/${Format.Schema}/${Resource.Person}/`
+export const testCustomerOnboardingRelativePath = `${GatewayRouteSections.Individual}/${Format.SCHEMA}/${ResourceTypesFhirR4.Person}/`
 
 /** https://api.acme.org/individual/org.schema/Person/_batch' */
 export const testCustomerBatchRequestUrlExternal =
@@ -57,7 +60,7 @@ export const testCustomer1ConsentSignedOnboardingEvidenceEmbedded = {
 /** Claims-first Bundle entry; business claims and evidence belong to the resource. */
 export const testIndividualConsentSignedOnboardingEntry =     {
     resource: {
-        resourceType: Resource.Person,
+        resourceType: ResourceTypesFhirR4.Person,
         meta: {
             claims: testCustomer1OnboardingClaimsWithTerms,
             verification: {
@@ -90,7 +93,7 @@ export const testIndividualOnboardingBatchEntries = [
     // Adds the Legal Identity. The anchor ID links it to the same individual.
     {
         resource: {
-            resourceType: Resource.Person,
+            resourceType: ResourceTypesFhirR4.Person,
             meta: {
                 claims: {
                     [SchemaOrgPersonClaim.Identifier]: testCustomer1Data.uuidIdentifier,
@@ -114,9 +117,9 @@ export const testCreateCustomerJobRequestProfessionalOnboarding: JobRequest = {
     tenantId: `${testTenant1AlternateName}`, // "acme"
     jurisdiction: `${testTenant1AddressCountry}`, // "US"
     sector: `${testCustomer1ServiceProviderCategory}`, // "health-care"
-    section: `${Section.individual}`, // "individual"
-    format: `${Format.Schema}`, // "org.schema"
-    resourceType: `${Resource.Person}`, // "Person"
+    section: `${GatewayRouteSections.Individual}`, // "individual"
+    format: `${Format.SCHEMA}`, // "org.schema"
+    resourceType: `${ResourceTypesFhirR4.Person}`, // "Person"
     action: `${JobAction._create}`, // "_create"
     content: {
         iss: 'did:web:professional.app.example.com', // Issuer of the request

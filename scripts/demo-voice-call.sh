@@ -2,7 +2,6 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-UHC_CORE_DIST_INDEX="$SCRIPT_DIR/../../uhc-sdk-core-ts/dist/index.js"
 
 BASE_URL="${BASE_URL:-}"
 SUBJECT_PHONE="${SUBJECT_PHONE:-}"
@@ -35,16 +34,16 @@ DESCRIPTION="${DESCRIPTION:-You have multiple medications to review.}"
 PROMPT="${PROMPT:-}"
 AUTHORED_ON="${AUTHORED_ON:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
 
-UHC_DEMO_CONTEXT_JSON="$(
-  node --input-type=module -e "import { buildUhcVoiceReminderDemoContext } from 'file://${UHC_CORE_DIST_INDEX}'; process.stdout.write(JSON.stringify(buildUhcVoiceReminderDemoContext()));"
+REMINDER_DEMO_CONTEXT_JSON="$(
+  (cd "$SCRIPT_DIR/.." && node --input-type=module -e 'import {buildVoiceReminderDemoContext} from "sos-data-utils-ts/gateway-resource-flow-examples"; process.stdout.write(JSON.stringify(buildVoiceReminderDemoContext()));')
 )"
 
-DEMO_TENANT_ID="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.tenantId')"
-DEMO_JURISDICTION="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.jurisdiction')"
-DEMO_SECTOR="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.sector')"
-DEMO_SUBJECT_ID="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.subjectId')"
-DEMO_OWNER_ID="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.ownerId')"
-DEMO_SUBJECT_ALIAS="$(printf '%s' "$UHC_DEMO_CONTEXT_JSON" | jq -r '.subjectAlias')"
+DEMO_TENANT_ID="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.tenantId')"
+DEMO_JURISDICTION="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.jurisdiction')"
+DEMO_SECTOR="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.sector')"
+DEMO_SUBJECT_ID="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.subjectId')"
+DEMO_OWNER_ID="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.ownerId')"
+DEMO_SUBJECT_ALIAS="$(printf '%s' "$REMINDER_DEMO_CONTEXT_JSON" | jq -r '.subjectAlias')"
 
 TENANT_ID="${TENANT_ID:-$DEMO_TENANT_ID}"
 JURISDICTION="${JURISDICTION:-$DEMO_JURISDICTION}"

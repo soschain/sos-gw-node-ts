@@ -1,11 +1,13 @@
-// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+// Flow contract: verify host activation persistence/lifecycle using an explicit unit verifier boundary and real credential-consistency policy. Cryptographic verification is covered by the separate activation security/native-verifier suites; this suite does not represent a live ICA or Fabric run.
+import type {PublicJwk} from 'antifraud-data-utils-ts/cryptography';
+import {assertActivationCredentialConsistency,type IActivationTrustAdapter} from '../../../adapters/activation-trust.adapter';
 import { REPOSITORY_SAFE_EXAMPLES as SAFE } from 'sos-data-utils-ts/repository-privacy';
 import { resolveHostPhysicalCollectionName } from '../../../config/storage-layout';
 // Authorization invariant: a tenant controller cannot disable a tenant while an active individual organization remains hosted by it.
 // Persistence invariant: rejected lifecycle transitions leave tenant and descendant records active and unchanged.
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
-import { buildOrganizationDidWeb, buildProfessionalDidWeb } from 'gdc-common-utils-ts/utils/did';
+import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprints';
+import { buildOrganizationDidWeb, buildProfessionalDidWeb } from 'sos-data-utils-ts/hosted-did';
 import { VaultMemRepository } from '../../../database/repositories/vault/vault.mem.repository';
 import { IServerConfig } from '../../../config';
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
@@ -18,7 +20,7 @@ import type { DeviceLicense } from 'sos-data-utils-ts/device-license-contract';
 import { LICENSE_STATUS_AVAILABLE, LICENSE_STATUS_ISSUED, SUBJECT_SECTION_INDIVIDUAL } from '../../../constants/domain';
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { LifecycleRequestType } from 'gdc-common-utils-ts/constants/lifecycle';
+import {LifecycleRequestType} from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import { testClaimsHostInitialization, testClaimsTenant1Registration } from '../../data/end-to-end.data';
 import { testDefaultHostServiceTypeClaim } from '../../data/organization.data';
 import { ORGANIZATION_ORDER_REQUEST } from '../../data/example-payloads';
@@ -35,6 +37,8 @@ const uuidMock = {
 };
 
 jest.unstable_mockModule('uuid', () => uuidMock);
+const unexpectedFabric=()=>{throw new Error('Unexpected Fabric transport in host persistence unit.');};
+jest.unstable_mockModule('@hyperledger/fabric-gateway',()=>({connect:unexpectedFabric,signers:{newPrivateKeySigner:unexpectedFabric},checkpointers:{inMemory:unexpectedFabric,file:unexpectedFabric}}));
 
 const { v4: uuidv4 } = await import('uuid');
 const { HostingManager } = await import('../../../managers/HostingManager');
@@ -122,6 +126,14 @@ describe('HostingManager activation flow', () => {
   let hostCollectionName: string;
   let hostRuntime: IHostRuntime;
   const originalFetch = global.fetch;
+  let verifiedFixtureSigningKey:PublicJwk|undefined;
+  // This collaborator models an already-verified activation result; it does not
+  // replace the real signer, current-status or ICA verification security gates.
+  const persistenceActivationAdapter:IActivationTrustAdapter={async evaluate(input){
+    const consistency=assertActivationCredentialConsistency(input);
+    return {...consistency,controllerSigningKey:input.controllerBinding?.publicKeyJwk||verifiedFixtureSigningKey,clearingHouse:{acr:'activation-persistence-unit',ledgerVerified:true},trustPolicy:{networkMode:input.networkMode,revocationChecked:true,issuerKeyStatusChecked:true,subjectKeyStatusChecked:true,onChainChecked:false}};
+  }};
+
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -176,6 +188,8 @@ describe('HostingManager activation flow', () => {
       mockLogger,
       mockConfig,
       hostRuntime,
+      undefined,
+      persistenceActivationAdapter,
     );
 
     mockKmsService.getPublicJwks.mockResolvedValue({
@@ -201,7 +215,7 @@ describe('HostingManager activation flow', () => {
   });
 
   function buildActivationJob(overrides?: Partial<JobRequest>): JobRequest {
-    return {
+    const job:JobRequest={
       id: 'activation-job-id',
       status: JobStatus.DRAFT,
       sequence: 0,
@@ -279,6 +293,8 @@ describe('HostingManager activation flow', () => {
       requestUrl: '/host/cds-es/v1/test-network/registry/org.schema/Organization/_activate',
       ...overrides,
     };
+    verifiedFixtureSigningKey={...(job.content?.meta as any)?.jws?.protected?.jwk,kid:(job.content?.meta as any)?.jws?.protected?.kid};
+    return job;
   }
 
   function buildLifecycleJob(action: '_disable' | '_enable' | '_purge' | '_status'): JobRequest {
@@ -451,6 +467,7 @@ describe('HostingManager activation flow', () => {
     const responsePayload = await hostingManager.process(job);
     const entry = responsePayload.body.data[0];
 
+    expect(entry.response.outcome).toBeUndefined();
     expect(entry.response.status).toBe('201');
     expect(entry.type).toBe('Organization-activation-response-v1.0');
     expect(entry.resource.meta.claims[GatewayClaim.OrganizationDid]).toBe(
@@ -777,6 +794,8 @@ describe('HostingManager activation flow', () => {
         skid: 'controller-enc-kid-rotated',
         jwk: { kty: 'OKP', crv: 'ML-KEM-768', x: 'controller-enc-x-rotated' },
       };
+      // The persistence fixture models a newly verified ICA controller key.
+      verifiedFixtureSigningKey={...(job.content!.meta as any).jws.protected.jwk,kid:(job.content!.meta as any).jws.protected.kid};
       const reRegistrationResponse = await hostingManager.process(job);
       expect(reRegistrationResponse.body.data[0].response.status).toBe('200');
       const reRegisteredTenantDoc = await vaultRepository.get(
@@ -805,6 +824,7 @@ describe('HostingManager activation flow', () => {
   it('should apply demo representative binding fallback from meta.jws when ICA omits hasCredential', async () => {
     const job = buildActivationJob();
     mockConfig.securityMode = 'demo';
+    mockConfig.networkMode='test';
     delete (job.content!.body as any).representativeCredential.credentialSubject.hasCredential;
 
     const responsePayload = await hostingManager.process(job);
@@ -833,6 +853,7 @@ describe('HostingManager activation flow', () => {
   it('should backfill addressCountry before tenant vault creation instead of crashing activation', async () => {
     const job = buildActivationJob();
     mockConfig.securityMode = 'demo';
+    mockConfig.networkMode='test';
     const activationClaims = { ...job.content!.body!.data[0]!.resource!.meta!.claims } as Record<string, unknown>;
     delete activationClaims[SchemaOrgOrganizationClaim.AddressCountry];
     job.content!.body!.data[0]!.resource!.meta!.claims = activationClaims;
@@ -1063,6 +1084,8 @@ describe('HostingManager activation flow', () => {
       mockLogger,
       mockConfig,
       hostRuntime,
+      undefined,
+      persistenceActivationAdapter,
     );
     await hostingManager.bootstrapHost(testClaimsHostInitialization);
     await mockTenantsCacheManager.loadHost();
@@ -1172,6 +1195,8 @@ describe('HostingManager activation flow', () => {
       mockLogger,
       mockConfig,
       hostRuntime,
+      undefined,
+      persistenceActivationAdapter,
     );
     await hostingManager.bootstrapHost(testClaimsHostInitialization);
     await mockTenantsCacheManager.loadHost();

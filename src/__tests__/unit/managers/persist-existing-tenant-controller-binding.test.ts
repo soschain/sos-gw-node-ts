@@ -3,7 +3,7 @@ import { describe, expect, it, jest } from '@jest/globals';
 import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { getEnvSectionId } from '../../../utils/section-env';
 import { persistExistingTenantControllerBinding } from '../../../managers/hosting/persist-existing-tenant-controller-binding';
-import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
+import { toJwkThumbprintSha256Urn } from "antifraud-data-utils-ts/jwk-thumbprints";
 
 const CONTROLLER_DID = 'did:web:gateway.example.org:VATES-B00000000:cds-EU:v1:research:employee:second-controller';
 const EXISTING_CONTROLLER_DID = 'did:web:gateway.example.org:VATES-B00000000:cds-EU:v1:research:employee:first-controller';

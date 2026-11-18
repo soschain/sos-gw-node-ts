@@ -1,11 +1,11 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 // Flow contract: locally authored Consent projections require one cryptographically verified actor and dual-profile search readback.
-import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
+import { extractBundleSearchResources } from "sos-sdk-core-ts/gateway-response-reader";
 import { invokeExpress } from './helpers/invokeExpress';
 import { getTenantVaultId, generateTenantCollectionNameFromClaims } from '../../utils/tenant';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { HealthcareConsentActions } from 'gdc-common-utils-ts/constants/index';
+import { HealthcareConsentActions } from 'sos-data-utils-ts/gateway-profile-values';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { getHealthcareRoleByClaim, HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import { testPayloadCreateTenant1 } from '../data/end-to-end.data';
@@ -14,11 +14,11 @@ import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { startServer, resetServerConfig } from '../../server';
 import { getEnvSectionId } from '../../utils/section-env';
 import { getIndividualSectionId, getSubjectScopedSectionId } from '../../utils/individual-sections';
-import { ClaimConsent } from 'gdc-common-utils-ts/models/consent-rule';
-import { ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent } from "fhir-data-utils-ts/claims";
+import { ConsentDecisions, ConsentStatuses } from "fhir-data-utils-ts/claims";
 import { getClaimValue } from '../../utils/claims';
 import { testTenant1TenantId } from '../data/organization.data';
-import { knownDomainsReversedEnum } from 'gdc-common-utils-ts/models/urlPath';
+import { KnownClaimNamespaces } from 'sos-data-utils-ts/gateway-transport-values';
 import {
   EXAMPLE_CONSENT_DATE,
   EXAMPLE_EMAIL_PROFESSIONAL,
@@ -27,9 +27,9 @@ import {
   EXAMPLE_PROVIDER_ORGANIZATION_DID,
   EXAMPLE_SECONDARY_EU_COUNTRY,
   EXAMPLE_SUBJECT_DID,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import { configureAuthenticatedTestActor } from './helpers/authenticated-test-actor';
-import { CommunicationClaim } from 'gdc-common-utils-ts/models/interoperable-claims/communication-claims';
+import { CommunicationClaim } from "fhir-data-utils-ts/claims";
 
 const ODRL_MEDIA_TYPE = 'application/odrl+json';
 const FHIR_JSON_MEDIA_TYPE = 'application/fhir+json';
@@ -108,8 +108,8 @@ describe('Consent via Communication API (integration)', () => {
       const subjectDid = EXAMPLE_SUBJECT_DID;
       const consentBundleSummaryNote = 'Bundle of Consents containing: 0 personal consents, 1 professional consent, 1 organizational consent, 1 jurisdictional consent.';
       const allSectionsWildcard = '*';
-      const communicationFormat = knownDomainsReversedEnum['org.hl7.fhir.r4'];
-      const consentClaimsContext = knownDomainsReversedEnum['org.hl7.fhir.api'];
+      const communicationFormat = KnownClaimNamespaces['org.hl7.fhir.r4'];
+      const consentClaimsContext = KnownClaimNamespaces['org.hl7.fhir.api'];
       const makeAttachment = (agreement: string) => Buffer.from(
         JSON.stringify({ agreement }),
         'utf8',

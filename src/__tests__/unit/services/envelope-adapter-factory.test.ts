@@ -3,6 +3,7 @@ import { jest } from '@jest/globals';
 import type { IServerConfig } from '../../../config';
 import { createEnvelopeAdapter, resolveKmsProvider } from '../../../services/envelope-adapter-factory';
 import {
+  type KmsEnvelopeAdapter,
   AesGcmEnvelopeAdapter,
   KmsEnvelopeAdapterAws,
   CloudKmsEnvelopeAdapter,
@@ -62,7 +63,7 @@ describe('envelope-adapter-factory', () => {
   });
 
   it('unwraps one runtime KEK with Cloud KMS and returns a local adapter', async () => {
-    const rootAdapter = { wrapKeyMaterial: jest.fn(async () => 'unused'), unwrapKeyMaterial: jest.fn<any>().mockResolvedValue(Buffer.alloc(32, 7)) };
+    const rootAdapter = { wrapKeyMaterial: jest.fn(async () => 'unused'), unwrapKeyMaterial: jest.fn<KmsEnvelopeAdapter['unwrapKeyMaterial']>().mockResolvedValue(Buffer.alloc(32, 7)) };
     const config = buildConfig({
       kms: {
         provider: 'gcp',
@@ -76,7 +77,7 @@ describe('envelope-adapter-factory', () => {
   });
 
   it('unwraps one runtime KEK with AWS KMS through provider-neutral configuration', async () => {
-    const rootAdapter = { wrapKeyMaterial: jest.fn(async () => 'unused'), unwrapKeyMaterial: jest.fn<any>().mockResolvedValue(Buffer.alloc(32, 7)) };
+    const rootAdapter = { wrapKeyMaterial: jest.fn(async () => 'unused'), unwrapKeyMaterial: jest.fn<KmsEnvelopeAdapter['unwrapKeyMaterial']>().mockResolvedValue(Buffer.alloc(32, 7)) };
     const config = buildConfig({
       kms: {
         provider: 'aws',
@@ -104,7 +105,7 @@ describe('envelope-adapter-factory', () => {
   });
 
   it('unwraps one runtime KEK with HashiCorp Transit and returns a local adapter', async () => {
-    const rootAdapter = { wrapKeyMaterial: jest.fn(async () => 'unused'), unwrapKeyMaterial: jest.fn<any>().mockResolvedValue(Buffer.alloc(32, 7)) };
+    const rootAdapter = { wrapKeyMaterial: jest.fn(async () => 'unused'), unwrapKeyMaterial: jest.fn<KmsEnvelopeAdapter['unwrapKeyMaterial']>().mockResolvedValue(Buffer.alloc(32, 7)) };
     const config = buildConfig({
       kms: {
         provider: 'hashicorp-transit',
@@ -182,7 +183,7 @@ describe('external envelope adapters', () => {
   });
 
   it('uses Cloud KMS encrypt/decrypt REST calls with authenticated context', async () => {
-    const fetchImpl = jest.fn<any>()
+    const fetchImpl = jest.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(JSON.stringify({ ciphertext: 'wrapped-1' }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ plaintext: Buffer.from('secret').toString('base64') }), { status: 200 }));
     const adapter = new CloudKmsEnvelopeAdapter(
@@ -201,7 +202,7 @@ describe('external envelope adapters', () => {
   });
 
   it('uses AWS KMS encryption context for wrap and unwrap', async () => {
-    const send = jest.fn<any>()
+    const send = jest.fn<NonNullable<NonNullable<ConstructorParameters<typeof KmsEnvelopeAdapterAws>[1]>['send']>>()
       .mockResolvedValueOnce({ CiphertextBlob: Buffer.from('wrapped') })
       .mockResolvedValueOnce({ Plaintext: Buffer.from('secret') });
     const adapter = new KmsEnvelopeAdapterAws('alias/gw-production', { send });
@@ -211,12 +212,12 @@ describe('external envelope adapters', () => {
     const plain = await adapter.unwrapKeyMaterial(wrapped, context);
 
     expect(Buffer.from(plain).toString()).toBe('secret');
-    expect((send.mock.calls[0][0] as any).input.EncryptionContext).toEqual(context);
-    expect((send.mock.calls[1][0] as any).input.EncryptionContext).toEqual(context);
+    expect(send.mock.calls[0][0].input.EncryptionContext).toEqual(context);
+    expect(send.mock.calls[1][0].input.EncryptionContext).toEqual(context);
   });
 
   it('uses HashiCorp Transit encrypt/decrypt REST calls without colliding with storage vault naming', async () => {
-    const fetchImpl = jest.fn<any>()
+    const fetchImpl = jest.fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(JSON.stringify({ data: { ciphertext: 'vault:v1:abc' } }), { status: 200 }))
       .mockResolvedValueOnce(new Response(JSON.stringify({ data: { plaintext: Buffer.from('secret').toString('base64') } }), { status: 200 }));
     const adapter = new HashicorpTransitEnvelopeAdapter({

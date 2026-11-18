@@ -1,6 +1,7 @@
+// Flow contract: consume independent canonical clinical, identity and transport contracts while preserving the existing authorization and persistence assertions.
 // Copyright (c) 2026 Connecting Solution & Applications Ltd.
 // Flow contract: SOS creates code-only research parents and opaque version assets, and derives the research channel only from trusted sector, jurisdiction, and network context.
-import { VitalSignsCodes } from 'gdc-common-utils-ts/constants/vital-signs';
+import { VitalSignsCodes } from "fhir-data-utils-ts/vital-sign-observations";
 import {
   buildResearchAssetVersionMapping,
   resolveResearchDataChannel,

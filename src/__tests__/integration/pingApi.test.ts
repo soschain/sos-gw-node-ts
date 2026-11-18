@@ -1,4 +1,4 @@
-// Flow contract: ping routing fixtures make no JWS claim unless a complete signature is under test.
+// Flow contract: public Ping routing uses its plain JSON health contract; encrypted polling is covered separately and never fabricates a signed request.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import express from 'express';
@@ -15,7 +15,7 @@ import { testCompletedJob, testPendingJob } from '../data/async-response.data';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import { DidService } from '../../gdc-backend-utils-node/models/did';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { Content } from "antifraud-data-utils-ts/cryptography";
 import { invokeExpress } from './helpers/invokeExpress';
 import { AdapterCryptoSdkNode } from '../../gdc-backend-utils-node/adapters/node/crypto';
 
@@ -51,8 +51,11 @@ const setupApp = (asyncResponseStore: IAsyncResponseStore) => {
 };
 
 describe('Ping API Endpoint', () => {
+  const originalEnvironment=process.env;
+  beforeEach(()=>{process.env={...originalEnvironment,SECURITY_MODE:'compat',JSON_LEGACY:'true'};});
   afterEach(() => {
     jest.clearAllMocks();
+    process.env=originalEnvironment;
   });
 
   const pingServiceConfig: DidService = {
@@ -106,8 +109,8 @@ describe('Ping API Endpoint', () => {
       const response = await invokeExpress(app, {
         method: 'POST',
         url: pingUrl,
-        headers: { 'content-type': 'application/x-www-form-urlencoded' },
-        body: { request: testEncryptedJwePing },
+        headers: { 'content-type': 'application/json' },
+        body: mockDecodedJob.content,
       });
         
       // --- Assert ---
@@ -166,8 +169,8 @@ describe('Ping API Endpoint', () => {
       const response = await invokeExpress(app, {
         method: 'POST',
         url: pingUrl,
-        headers: { 'content-type': 'application/x-www-form-urlencoded' },
-        body: { request: testEncryptedJwePing },
+        headers: { 'content-type': 'application/json' },
+        body: mockDecodedJob.content,
       });
 
       // --- Assert ---
@@ -194,8 +197,8 @@ describe('Ping API Endpoint', () => {
         const response = await invokeExpress(app, {
           method: 'POST',
           url: pingUrl,
-          headers: { 'content-type': 'application/x-www-form-urlencoded' },
-          body: { request: testEncryptedJwePing },
+          headers: { 'content-type': 'application/json' },
+          body: {thid:decodedPingMessage.thid,body:{data:[]}},
         });
 
         expect(response.status).toBe(404);
@@ -215,8 +218,8 @@ describe('Ping API Endpoint', () => {
         const response = await invokeExpress(app, {
           method: 'POST',
           url: pingUrl,
-          headers: { 'content-type': 'application/x-www-form-urlencoded' },
-          body: { request: testEncryptedJwePing },
+          headers: { 'content-type': 'application/json' },
+          body: {thid:decodedPingMessage.thid,body:{data:[]}},
         });
 
         expect(response.status).toBe(404);

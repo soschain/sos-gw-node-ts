@@ -2,7 +2,11 @@
 // Copyright 2026 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { describe, expect, it } from '@jest/globals';
-import { DeviceAppTypes, DeviceUserClasses, EXAMPLE_LICENSE_ACTIVE_RECORD, EXAMPLE_LICENSE_AVAILABLE_RECORD, EXAMPLE_LICENSE_OFFER_ID, EXAMPLE_LICENSE_SEAT_UUID_ACTIVE, EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE, LicenseCategories, LicenseClaimContext, LicenseStatuses } from 'gdc-common-utils-ts';
+import { EXAMPLE_LICENSE_AVAILABLE_RECORD, EXAMPLE_LICENSE_OFFER_ID } from 'sos-data-utils-ts/gateway-resource-flow-examples';
+import { EXAMPLE_LICENSE_ACTIVE_RECORD } from 'sos-data-utils-ts/gateway-resource-flow-examples';
+import { EXAMPLE_LICENSE_SEAT_UUID_ACTIVE, EXAMPLE_LICENSE_SUBJECT_ID_ACTIVE } from 'sos-data-utils-ts/gateway-flow-examples';
+import { LicenseCategories, LicenseClaimContext } from 'sos-data-utils-ts/license-commercial-contract';
+import { DeviceAppTypes, DeviceUserClasses, LicenseStatuses } from "sos-data-utils-ts/device-license-contract";
 import { SchemaOrgOfferClaim, SchemaOrgPersonClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import {
   buildLicenseSearchClaims,

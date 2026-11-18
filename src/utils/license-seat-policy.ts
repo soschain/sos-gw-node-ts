@@ -1,3 +1,4 @@
+import {DEFAULT_LICENSE_DEVICE_ALLOWANCE} from '../constants/domain';
 import { isIsco08CodingSystem } from 'antifraud-data-utils-ts/isco-08';
 import { HL7_CODING_SYSTEM_V3_ROLE_CODE } from 'fhir-data-utils-ts';
 
@@ -25,8 +26,8 @@ export function classifyLicenseRole(role: string): LicenseRoleKind {
   return LicenseRoleKinds.Unsupported;
 }
 
-/** Issuance receipt compatibility defaults to two; the separate historical GW device/search fallback remains five. */
+/** The receipt and registration capacity share the same canonical default. */
 export function resolveIssuedSeatDeviceAllowance(maxDevices: unknown): number {
   const value = Number(maxDevices);
-  return Number.isInteger(value) && value > 0 ? value : 2;
+  return Number.isInteger(value) && value > 0 ? value : DEFAULT_LICENSE_DEVICE_ALLOWANCE;
 }

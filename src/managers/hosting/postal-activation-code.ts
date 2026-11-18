@@ -2,7 +2,7 @@ import { scryptSync, timingSafeEqual } from 'node:crypto';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import { SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { POSTAL_ACTIVATION_CODE_BINDING_ALGORITHM, type PostalActivationCodeBinding } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
+import { POSTAL_ACTIVATION_CODE_BINDING_ALGORITHM, type PostalActivationCodeBinding } from 'sos-data-utils-ts/postal-activation-binding';
 
 /**
  * Verifies the clear code supplied at Order against the protected VC binding.

@@ -1,3 +1,4 @@
+import { isLocalDemoSecurityMode } from '../security/runtime-security-policy';
 // src/services/DemoKmsService.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
@@ -29,6 +30,7 @@ export class DemoKmsService implements IKmsService {
 
   // The Demo service now wraps a real KMS instance to handle key generation and signing.
   constructor(realKmsService: IKmsService) {
+    if (!isLocalDemoSecurityMode()) throw new Error('Demo key custody requires explicit local demo.');
     this._realKmsService = realKmsService;
   }
 
@@ -96,9 +98,9 @@ export class DemoKmsService implements IKmsService {
     return this._realKmsService.createDetachedJws(payload, signerKid, signerVaultId, purpose);
   }
 
-  async createCompactJws(payload: object, signerKid: string, signerVaultId: string, purpose?: SigningPurpose): Promise<string> {
+  async createCompactJws(payload: object, signerKid: string, signerVaultId: string, purpose?: SigningPurpose, protectedHeader?: Readonly<Record<string, string>>): Promise<string> {
     console.warn(`[DemoKmsService] Delegating real compact JWS creation for: ${signerVaultId}`);
-    return this._realKmsService.createCompactJws(payload, signerKid, signerVaultId, purpose);
+    return this._realKmsService.createCompactJws(payload, signerKid, signerVaultId, purpose, protectedHeader);
   }
 
   // --- SIMULATED METHODS (Communication Bypass) ---

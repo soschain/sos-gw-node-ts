@@ -17,19 +17,16 @@ import { getEnvSectionId } from '../../utils/section-env';
 import { getSubjectScopedSectionId } from '../../utils/individual-sections';
 import { testTenant1TenantId } from '../data/organization.data';
 import { getDigitalTwinSubjectAliasSectionId } from '../../utils/digital-twin-research-projection';
-import { extractBundleSearchResources } from 'gdc-common-utils-ts/utils/organization-employee-lifecycle';
+import { extractBundleSearchResources } from "sos-sdk-core-ts/gateway-response-reader";
 import { buildDemoResearchPermitByRoleConsent } from '../data/demo-smart-access-local-network.data';
 import { submitConsentRuleAndPoll } from './helpers/consent-flow';
-import {
-  CompositionAttesterModes,
-  CompositionClaim,
-  ConfidentialDocumentIndex,
-} from 'gdc-common-utils-ts';
+import { ConfidentialDocumentIndex } from 'sos-data-utils-ts/confidential-storage';
+import { CompositionAttesterModes, CompositionClaim } from "fhir-data-utils-ts/claims";
 import {
   EXAMPLE_IPS_COMPOSITION_IDENTIFIER,
   EXAMPLE_KYC_CONTROLLER_USER_UUID,
   EXAMPLE_KYC_CONTROLLER_UUID,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 
 describe('MedicationStatement API (integration)', () => {
   afterEach(() => {

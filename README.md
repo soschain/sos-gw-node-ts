@@ -16,8 +16,9 @@ The bounded non-production synthetic-card directory also uses the GW adapter,
 so Personal and Professional Demo portals discover the same generated card
 without starting an assistant service.
 
-SOSCHAIN Gateway extends **GW CORE**, the open-source gateway infrastructure
-developed within the **Global Data Care ecosystem**:
+SOSCHAIN Gateway derives from **GW CORE**, the open-source gateway infrastructure
+developed within the **Global Data Care ecosystem**. Its current runtime uses
+independent Antifraud, FHIR and SOS packages:
 
 - [GW CORE source](https://github.com/Global-DataCare/gwtemplate-node-ts)
 - [GW CORE v1 documentation](https://github.com/Global-DataCare/gwtemplate-node-ts/tree/main/docs-v1)
@@ -40,10 +41,9 @@ in its owning repositories and is not part of this public source history.
 
 | Repository | Responsibility |
 | --- | --- |
-| [GW CORE](https://github.com/Global-DataCare/gwtemplate-node-ts) | Upstream gateway and data-space foundation |
-| [gdc-common-utils-ts](https://github.com/Global-DataCare/gdc-common-utils-ts) | Shared Global Data Care utility and identity contracts still consumed by this gateway |
-| [gdc-sdk-core-ts](https://github.com/Global-DataCare/gdc-sdk-core-ts) | Upstream SDK contracts present through the dependency graph |
-| [gdc-sdk-node-ts](https://github.com/Global-DataCare/gdc-sdk-node-ts) | Node.js SDK and live gateway integration tooling |
+| [GW CORE](https://github.com/Global-DataCare/gwtemplate-node-ts) | Historical gateway and data-space foundation |
+| [antifraud-data-utils-ts](https://github.com/antifraudservices/antifraud-data-utils-ts) | Neutral identity, verification and cryptography contracts |
+| [antifraud-sdk-node-ts](https://github.com/antifraudservices/antifraud-sdk-node-ts) | Neutral verification clients |
 | [fhir-data-utils-ts](https://github.com/Fundacion-UNID/fhir-data-utils-ts) | Product-neutral HL7 FHIR data utilities |
 | [sos-data-utils-ts](https://github.com/soschain/sos-data-utils-ts) | Shared SOS domain data contracts |
 | [sos-sdk-core-ts](https://github.com/soschain/sos-sdk-core-ts) | High-level SOS client SDK contracts |

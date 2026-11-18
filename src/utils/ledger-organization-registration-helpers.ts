@@ -6,7 +6,7 @@ import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprint
 import {
   buildOrganizationAuthorizationUrn,
   normalizeOrganizationAuthorizationUrn,
-} from 'gdc-common-utils-ts/utils/organization-authorization-urn';
+} from 'sos-data-utils-ts/organization-authorization-urn';
 
 export function tryGetJwkThumbprint(jwk?: PublicJwk): string | undefined {
   if (!jwk) return undefined;

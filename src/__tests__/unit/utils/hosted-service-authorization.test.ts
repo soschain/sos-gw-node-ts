@@ -11,10 +11,10 @@ const credential = (makesOffer:unknown) => ({credentialSubject:{makesOffer}});
 describe('hosted service authorization profile', () => {
  it('uses the GW owner at the actual activation boundary', () => {
   const source=readFileSync('src/managers/hosting/process-organization-activation.ts','utf8');
-  expect(source.includes('gdc-common-utils-ts/utils/activation-policy')).toBe(false);
+  expect(source).not.toMatch(/import\s*\{[^}]*\bvalidateHostedServiceAuthorization\b[^}]*\}\s*from\s*['"]sos-data-utils-ts\/activation-policy['"]/u);
   expect(source.includes('validateHostedServiceAuthorization')).toBe(true);
   const manager=readFileSync('src/managers/HostingManager.ts','utf8');
-  expect(manager.includes('gdc-common-utils-ts/utils/activation-policy')).toBe(false);
+  expect(manager).not.toMatch(/import\s*\{[^}]*\bvalidateHostedServiceAuthorization\b[^}]*\}\s*from\s*['"]sos-data-utils-ts\/activation-policy['"]/u);
  });
  it('admits explicitly authorized category and canonical or historical capability spellings',async()=>{
   const {validateHostedServiceAuthorization:validate}=await load();

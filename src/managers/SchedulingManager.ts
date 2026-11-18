@@ -9,7 +9,7 @@ import {
   SchedulingFlatClaimCatalog,
   normalizeSchedulingFlatClaimsResource,
   type SchedulingResourceType,
-} from 'vet-data-utils-ts/scheduling';
+} from 'sos-data-utils-ts/scheduling';
 import type { NotificationManager } from '../services/notifications/NotificationManager';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';

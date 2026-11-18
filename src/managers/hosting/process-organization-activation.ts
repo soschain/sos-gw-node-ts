@@ -107,6 +107,7 @@ type ActivationDeps = Readonly<{
   reregisterExistingLegacyRepresentativeController: (input: {
     claims: ClaimsRecord;
     representativeCredential?: Record<string, unknown>;
+    verifiedControllerSigningKey?:PublicJwk;
     environment?: string;
     jobMeta?: DidCommDecodedMetadata;
   }) => Promise<ClaimsRecord | undefined>;
@@ -199,6 +200,8 @@ async function processActivationEntry(
     vpToken: activation.vpToken,
     presentationSubmission: activation.presentationSubmission,
     primaryDid: activation.primaryDid,
+    verifierTenantDid:deps.issuerDid,
+    controllerBinding:activation.controllerBinding,
     organizationCredential: activation.organizationCredential,
     representativeCredential: activation.representativeCredential,
     controllerCredential: activation.controllerCredential,
@@ -207,6 +210,9 @@ async function processActivationEntry(
     allowLegacyRepresentativeBootstrap,
   });
   const clearingResult = trustResult.clearingHouse;
+  if(trustResult.controllerSigningKey){
+    activation.controllerBinding={...activation.controllerBinding,publicKeyJwk:trustResult.controllerSigningKey};
+  }
   const { organizationDid } = trustResult;
 
   const normalizedClaims = deps.backfillOrganizationActivationRouteDefaults(
@@ -250,6 +256,7 @@ async function processActivationEntry(
     const reRegisteredClaims = await deps.reregisterExistingLegacyRepresentativeController({
       claims: normalizedClaims,
       representativeCredential: activation.representativeCredential,
+      verifiedControllerSigningKey:trustResult.controllerSigningKey,
       environment: deps.environment,
       jobMeta: deps.jobMeta,
     });

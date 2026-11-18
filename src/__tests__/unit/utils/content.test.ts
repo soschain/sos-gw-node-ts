@@ -1,6 +1,7 @@
-// src/__tests__/unit/utils/convert.test.ts
+// Flow contract: the gateway uses independent multibase and JSON encoding contracts; byte roundtrips preserve the original message without granting identity or access.
 
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { Content } from 'antifraud-data-utils-ts/cryptography';
+import { encodeBase58btc, decodeBase58btc } from 'antifraud-data-utils-ts/encoding';
 
 describe("Content Class - Conversion Utilities", () => {
 
@@ -10,11 +11,11 @@ describe("Content Class - Conversion Utilities", () => {
             const testBytes = Content.stringToBytesUTF8(testString);
 
             // Encode
-            const encoded = Content.bytesToBase58(testBytes);
-            expect(encoded).toBe("2NEpo7TZRhna7vSvL");
+            const encoded = encodeBase58btc(testBytes);
+            expect(encoded).toBe("z2NEpo7TZRhna7vSvL");
 
             // Decode
-            const decodedBytes = Content.base58ToBytes(encoded);
+            const decodedBytes = decodeBase58btc(encoded);
             const decodedString = Content.bytesToStringUTF8(decodedBytes);
 
             expect(decodedString).toBe(testString);
@@ -55,18 +56,5 @@ describe("Content Class - Conversion Utilities", () => {
         });
     });
 
-    describe("Array Utilities", () => {
-        it("should correctly compare two identical arrays of primitives", () => {
-            const arr1 = [1, 2, "hello", true, null];
-            const arr2 = [1, 2, "hello", true, null];
-            expect(Content.arrayCompare(arr1, arr2)).toBe(true);
-        });
-
-        it("should correctly identify two different arrays", () => {
-            const arr1 = [1, 2, 5];
-            const arr2 = [1, 2, 9];
-            expect(Content.arrayCompare(arr1, arr2)).toBe(false);
-        });
-    });
 });
 

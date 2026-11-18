@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 077
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORKSPACE_ROOT="$(dirname "$(dirname "${ROOT}")")"
 DEVNET_ROOT="${FABRIC_MULTICLOUD_DIR:-${WORKSPACE_ROOT}/fabric-multicloud}/devnet/fabric-v3"
 BASE_ENV="${BASE_ENV_FILE:-${ROOT}/.env.local-network}"
-OUT_ENV="${ROOT}/.env.local-fabric"
+OUT_ENV="${OUT_ENV_FILE:-${ROOT}/.env.local-fabric}"
 LEGACY_OUT_ENV="${ROOT}/.env.local-fabric-devnet"
 DEVNET_ENV="${DEVNET_ROOT}/.env.fabric-devnet"
 ENSURE_DEVNET_ENV_SCRIPT="${ROOT}/scripts/ensure-fabric-devnet-env.sh"
@@ -17,7 +18,7 @@ LEDGER_MSP_ID_VALUE="${LEDGER_MSP_ID_VALUE:-Host1MSP}"
 HOST_JURISDICTION_VALUE="${HOST_JURISDICTION_VALUE:-CA-BC}"
 TENANT_JURISDICTION_VALUE="${TENANT_JURISDICTION_VALUE:-CA-BC}"
 SECTOR_VALUE="${SECTOR_VALUE:-animal-care}"
-NETWORK_MODE_VALUE="${NETWORK_MODE_VALUE:-local-network}"
+NETWORK_MODE_VALUE="${NETWORK_MODE_VALUE:-test-network}"
 IDENTITY_CHANNEL_NAME="${IDENTITY_CHANNEL_NAME:-identity-local}"
 RESEARCH_CHANNEL_NAME="${RESEARCH_CHANNEL_NAME:-${SECTOR_VALUE}-local-research}"
 BOOTSTRAP_CHANNELS_VALUE="${BOOTSTRAP_CHANNELS_VALUE:-${IDENTITY_CHANNEL_NAME},${CHANNEL_NAME},${RESEARCH_CHANNEL_NAME}}"
@@ -86,6 +87,17 @@ cat >> "${OUT_ENV}" <<EOF
 # - host/tenant onboarding writes go to identity-local
 # - consent lifecycle writes go to health-care-local
 NETWORK_MODE=${NETWORK_MODE_VALUE}
+NODE_ENV=test
+DEPLOYMENT_ENV=dev
+SECURITY_MODE=strict
+CLEARING_HOUSE_MODE=local
+AUTH_TOKEN_VERIFIER=trusted-oidc
+KMS_PROVIDER=memory
+DB_PROVIDER=mem
+STORAGE_PROVIDER=mem
+QUEUE_PROVIDER=mem
+REPLAY_PROTECTION_PROVIDER=redis
+REDIS_URL=${REDIS_URL_VALUE:-}
 LEDGER_ENABLED=true
 LEDGER_PROVIDER_DEFAULT=mem
 LEDGER_PROVIDER_MAP=test=mem,local-network=fabric,test-network=fabric,network=fabric
@@ -156,5 +168,7 @@ Run GW VetChain with:
   npm run api:local-fabric
 EOF
 
-cp "${OUT_ENV}" "${LEGACY_OUT_ENV}"
+chmod 600 "${OUT_ENV}"
+if [[ "${OUT_ENV}" != "${LEGACY_OUT_ENV}" ]]; then cp "${OUT_ENV}" "${LEGACY_OUT_ENV}"; fi
+chmod 600 "${LEGACY_OUT_ENV}"
 printf 'Wrote compatibility alias %s\n' "${LEGACY_OUT_ENV}"

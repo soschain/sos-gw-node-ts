@@ -1,3 +1,11 @@
+import {SchemaOrgPersonClaim} from 'antifraud-data-utils-ts/schema-org-claims';
+import {HealthcareActorRoles} from 'sos-data-utils-ts/healthcare-roles';
+import {resolveLegacyControllerLicenseBinding,type LegacyControllerLicenseBinding} from '../utils/legacy-controller-license-binding';
+import {loadRegisteredIndividualMemberAuthority} from '../services/registered-individual-member-authority';
+import {shouldUseFabricLedger} from '../adapters/credential-ledger-resolver';
+import {EntityLifecycleStatus} from '../gdc-backend-utils-node/models/enums';
+import {registerProfessionalAssignmentOnLedger} from '../utils/professional-assignment-ledger';
+import {toJwkThumbprintSha256Urn} from 'antifraud-data-utils-ts/jwk-thumbprints';
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/managers/DeviceRegistrationManager.ts
 import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
@@ -30,13 +38,13 @@ import { IdentityAuthActions, IdentityAuthRequestFields, IdentityAuthResponseTyp
 import { IdentityAuthResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { DEFAULT_LICENSE_DEVICE_ALLOWANCE, LICENSE_USER_CLASS_EMPLOYEE, LICENSE_USER_CLASS_INDIVIDUAL } from '../constants/domain';
 import type { ITenantsManager } from './ITenantsManager';
-import { hasRoleCode } from 'gdc-common-utils-ts/utils/activation-policy';
-import { SecureIdTypesIndividual } from 'gdc-common-utils-ts/constants/identity-identifiers';
+import { hasRoleCode } from 'sos-data-utils-ts/activation-policy';
+import { SecureIdTypesIndividual } from 'sos-data-utils-ts/identity-identifiers';
 import {
   buildSecureIdValueIndividual,
   buildSecureIdValueMember,
   parseIndividualMemberDidWeb,
-} from 'gdc-common-utils-ts/utils/did';
+} from 'sos-data-utils-ts/hosted-did';
 import { buildIssuedRoleLicenseLedgerIdentityFromSeat } from '../utils/ledger-role-license';
 import {
   getEmployeeRoleFromUrn,
@@ -160,7 +168,7 @@ export class DeviceRegistrationManager implements IJobProcessor {
         softwareClaims['org.schema.SoftwareApplication.description'] = `Registered on device: ${deviceInfo.device_name}`;
       }
 
-      // --- Persist device profile + bind license (best-effort) ---
+      // Resolve current licence and identity before writing the device profile.
       const tenantId = job.tenantId;
       const sector = job.sector;
       if (!tenantId || !sector) {
@@ -170,7 +178,7 @@ export class DeviceRegistrationManager implements IJobProcessor {
       const vaultId = getTenantVaultId(sector as any, tenantId);
       const licenseDoc = await this.resolveLicenseByActivationCode(code as string, vaultId);
       const license = licenseDoc
-        ? await this.readLicense(licenseDoc, vaultId)
+        ? {...await this.readLicense(licenseDoc, vaultId)}
         : undefined;
       const individualAuthorization = license?.userClass === LICENSE_USER_CLASS_INDIVIDUAL
         ? this.validateIndividualControllerRegistration({
@@ -195,7 +203,8 @@ export class DeviceRegistrationManager implements IJobProcessor {
         license,
         clientId,
       });
-      if (license?.userClass === LICENSE_USER_CLASS_EMPLOYEE && license.subjectId && !deviceIdentityContext) {
+      if(license?.userClass===LICENSE_USER_CLASS_EMPLOYEE&&deviceIdentityContext&&!license.subjectId)license.subjectId=deviceIdentityContext.subjectId;
+      if (license?.userClass === LICENSE_USER_CLASS_EMPLOYEE && !deviceIdentityContext) {
         throw new ManagerError(
           'DCR could not bind the device keys to the licensed controller identity.',
           IssueType.Conflict,
@@ -208,6 +217,9 @@ export class DeviceRegistrationManager implements IJobProcessor {
         clientId,
         clientInstanceId: fingerprint.clientInstanceId,
       });
+      if(deviceIdentityContext&&clinicalCreatorBinding?.kind===FhirIpsCreatorKinds.Professional){
+        this.assertProfessionalAssignmentMatchesEmployee(deviceIdentityContext,clinicalCreatorBinding);
+      }
       const bearer = (job.content as any)?.meta?.bearer?.jwt?.payload;
       const replayContext = licenseDoc && license && typeof bearer?.sub === 'string'
         && bearer.sub.trim() && bearer.scope === 'dcr:register' && bearer.act_code === code
@@ -233,6 +245,9 @@ export class DeviceRegistrationManager implements IJobProcessor {
           registration_client_uri: replayProfile.registrationClientUri,
         });
         softwareClaims['org.schema.SoftwareApplication.identifier'] = clientId;
+        if(deviceIdentityContext){
+          await this.synchronizeProfessionalAssignmentOnLedger({context:deviceIdentityContext,clinicalCreatorBinding,clientId,registeredKeysOnly:true});
+        }
       }
       if (!replayProfile) {
       const deviceProfile = {
@@ -319,9 +334,14 @@ export class DeviceRegistrationManager implements IJobProcessor {
           vaultId,
           clientId,
           context: deviceIdentityContext,
+          clinicalCreatorBinding,
         });
       }
 
+      }
+
+      if(individualAuthorization){
+        await this.synchronizeIndividualMemberKeysOnLedger({job,vaultId,clientId});
       }
 
       // --- Response Formatting Step ---
@@ -775,8 +795,13 @@ export class DeviceRegistrationManager implements IJobProcessor {
     previousVerificationMethods: VerificationMethod[];
     newVerificationMethods: VerificationMethod[];
   } | undefined> {
-    const subjectId = String(params.license?.subjectId || '').trim();
-    if (!subjectId) return undefined;
+    let subjectId=String(params.license?.subjectId||'').trim();
+    let controllerBinding:LegacyControllerLicenseBinding|undefined;
+    if(!subjectId&&params.license?.userClass===LICENSE_USER_CLASS_EMPLOYEE){
+      controllerBinding=await resolveLegacyControllerLicenseBinding({tenantVaultId:params.vaultId,license:params.license,vaultRepository:this.vaultRepository,kmsService:this.kmsService});
+      subjectId=controllerBinding.subjectId;
+    }
+    if(!subjectId)return undefined;
 
     const employeeCollectionName = await this.resolveEmployeeCollectionName(params.vaultId);
     const employeeDoc = await this.vaultRepository.get<ConfidentialStorageDoc>(
@@ -786,17 +811,21 @@ export class DeviceRegistrationManager implements IJobProcessor {
     );
     if (!employeeDoc) return undefined;
 
-    const employeeContent = this.kmsService
+    let employeeContent = this.kmsService
       ? await this.kmsService.unprotectConfidentialData<EntityConfig>(employeeDoc, params.vaultId)
       : (employeeDoc.content as EntityConfig);
     if (!employeeContent?.didDocument?.id) return undefined;
+    if(employeeContent.status!==EntityLifecycleStatus.Active||employeeDoc.status==='inactive'||employeeDoc.status==='revoked')throw new ManagerError('DCR requires an active licensed employee.',IssueType.Forbidden);
+    if(employeeContent.claims?.[SchemaOrgPersonClaim.AdditionalType]===HealthcareActorRoles.Controller&&!controllerBinding){
+      controllerBinding=await resolveLegacyControllerLicenseBinding({tenantVaultId:params.vaultId,license:params.license!,vaultRepository:this.vaultRepository,kmsService:this.kmsService});
+    }
 
     const license = params.license || {} as DeviceLicense & Record<string, any>;
     const actorIdentifier = String(license.activatedBy || '').trim();
     if (!/^urn:multibase:z[^:]+$/.test(actorIdentifier)) {
       throw new ManagerError('DCR license is missing its stable actor identifier.', IssueType.BusinessRule);
     }
-    const employeeUrn = resolveRoleBearingEmployeeUrn(employeeContent.didDocument);
+    const employeeUrn=resolveRoleBearingEmployeeUrn(employeeContent.didDocument,String(license.issuedToRole||''))||controllerBinding?.employeeUrn;
     if (!employeeUrn) {
       throw new ManagerError('DCR employee identity is missing its role-bearing employee URN.', IssueType.BusinessRule);
     }
@@ -804,6 +833,10 @@ export class DeviceRegistrationManager implements IJobProcessor {
     if (getEmployeeRoleFromUrn(employeeUrn) !== normalizeEmployeeRole(licensedRole)) {
       throw new ManagerError('DCR licence role does not match the role-bearing employee identity.', IssueType.Conflict);
     }
+    if(controllerBinding&&!employeeContent.didDocument.alsoKnownAs?.includes(employeeUrn)){
+      employeeContent={...employeeContent,didDocument:{...employeeContent.didDocument,alsoKnownAs:[...(employeeContent.didDocument.alsoKnownAs||[]),employeeUrn]}};
+    }
+    if(!employeeContent.didDocument?.id)return undefined;
     const employeeTenantUrn = parseTenantUrn(getTenantIdentifierUrnPrefix(employeeUrn));
     const licensedEmployeeDid = String(employeeContent.didDocument.id).trim();
     const registrationMetadata = params.registrationRequest as DcrRegistrationRequest & Record<string, unknown>;
@@ -897,10 +930,55 @@ export class DeviceRegistrationManager implements IJobProcessor {
     return await this.tenantsManager?.getCollectionName?.(vaultId) || vaultId;
   }
 
+  /** Publish only the active protected personal registration; no target UUID or account subject becomes a person ledger ID. */
+  private async synchronizeIndividualMemberKeysOnLedger(params:{job:JobRequest;vaultId:string;clientId:string}):Promise<void>{
+    if(!shouldUseFabricLedger())return;
+    if(!this.kmsService)throw new ManagerError('Personal identity ledger registration requires protected current authority.',IssueType.Security);
+    const authority=await loadRegisteredIndividualMemberAuthority({holder:params.clientId,vaultId:params.vaultId,kmsService:this.kmsService,vaultRepository:this.vaultRepository});
+    const organizationId=String(await this.tenantsManager?.getOrganizationIdentifierUrn?.(params.vaultId)||'').trim();
+    if(!organizationId)throw new ManagerError('Personal identity ledger registration requires the current index-provider organization.',IssueType.Security);
+    const methods=this.buildVerificationMethodsForDid(authority.profile.actorDid,authority.profile.jwks);
+    if(!methods.length)throw new ManagerError('Personal identity ledger registration requires registered public keys.',IssueType.Security);
+    await registerSubjectKeysOnLedger({jurisdiction:params.job.jurisdiction,organizationId,subjectType:'person',subjectId:authority.stableActorIdentifier,subjectDid:authority.profile.actorDid,verificationMethods:methods,deviceId:params.clientId});
+  }
+
+  private assertProfessionalAssignmentMatchesEmployee(context:{subjectId:string;licensedRole:string;employeeContent:EntityConfig},binding:ClinicalCreatorBinding):void{
+    const employeeUuid=normalizeUuid(context.subjectId);
+    if(context.employeeContent.status!==EntityLifecycleStatus.Active||!employeeUuid||normalizeUuid(binding.actorIdentifier)!==employeeUuid||!sameGovernedClinicalRole(binding.role,context.licensedRole)){
+      throw new ManagerError('Professional assignment does not match the current active employee and licensed role.',IssueType.Security);
+    }
+  }
+
+  /** Reconcile only the existing server-authorized professional assignment; replay never adds or rotates keys. */
+  private async synchronizeProfessionalAssignmentOnLedger(params:{
+    clinicalCreatorBinding?:ClinicalCreatorBinding;
+    context:{subjectId:string;employeeUrn:string;licensedRole:string;roleLicenseId:string;organizationId:string;jurisdiction:string;employeeContent:EntityConfig;newVerificationMethods:VerificationMethod[]};
+    clientId:string;
+    registeredKeysOnly:boolean;
+  }):Promise<{assignmentIdentifier:string;employeeIdentifier:string;organizationIdentifier:string}|undefined>{
+    const binding=params.clinicalCreatorBinding;
+    if(binding?.kind!==FhirIpsCreatorKinds.Professional)return undefined;
+    const context=params.context;
+    this.assertProfessionalAssignmentMatchesEmployee(context,binding);
+    if(params.registeredKeysOnly){
+      const registered=context.employeeContent.didDocument?.verificationMethod||[];
+      if(!context.newVerificationMethods.length||context.newVerificationMethods.some(method=>!method.publicKeyJwk||!registered.some(current=>current.id===method.id&&current.publicKeyJwk&&toJwkThumbprintSha256Urn(current.publicKeyJwk)===toJwkThumbprintSha256Urn(method.publicKeyJwk!)))){
+        throw new ManagerError('Professional ledger re-registration requires the same current registered signing keys.',IssueType.Security);
+      }
+    }
+    const professionalAssignment={assignmentIdentifier:binding.authorIdentifier,employeeIdentifier:binding.actorIdentifier,organizationIdentifier:binding.ownerIdentifier};
+    await registerProfessionalAssignmentOnLedger({jurisdiction:context.jurisdiction,...professionalAssignment,role:binding.role});
+    if(params.registeredKeysOnly){
+      await registerSubjectKeysOnLedger({jurisdiction:context.jurisdiction,organizationId:context.organizationId,subjectType:'employee',subjectId:context.employeeUrn,subjectDid:context.employeeContent.didDocument?.id,licensedRole:context.licensedRole,roleLicenseId:context.roleLicenseId,verificationMethods:context.newVerificationMethods,deviceId:params.clientId,professionalAssignment});
+    }
+    return professionalAssignment;
+  }
+
   private async finalizeEmployeeDeviceIdentityContext(params: {
     job: JobRequest;
     vaultId: string;
     clientId: string;
+    clinicalCreatorBinding?:ClinicalCreatorBinding;
     context: {
       subjectId: string;
       actorIdentifier: string;
@@ -978,6 +1056,8 @@ export class DeviceRegistrationManager implements IJobProcessor {
     const employeeCollectionName = await this.resolveEmployeeCollectionName(params.vaultId);
     await this.vaultRepository.put(employeeCollectionName, [protectedEmployeeDoc], getEnvSectionId('employees'));
 
+    const professionalAssignment=await this.synchronizeProfessionalAssignmentOnLedger({context:params.context,clinicalCreatorBinding:params.clinicalCreatorBinding,clientId:params.clientId,registeredKeysOnly:false});
+
     if (previousVerificationMethods.length > 0) {
       await revokeSubjectKeysOnLedger({
         jurisdiction,
@@ -1002,6 +1082,7 @@ export class DeviceRegistrationManager implements IJobProcessor {
         roleLicenseId,
         verificationMethods: newVerificationMethods,
         deviceId: params.clientId,
+        ...(professionalAssignment?{professionalAssignment}:{}),
       });
     }
 
@@ -1248,7 +1329,7 @@ export class DeviceRegistrationManager implements IJobProcessor {
           ? await this.kmsService.unprotectConfidentialData<EntityConfig>(employeeDoc, vaultId)
           : employeeDoc.content as EntityConfig;
         if (employee.didDocument) {
-          const employeeUrn = resolveRoleBearingEmployeeUrn(employee.didDocument);
+          const employeeUrn = resolveRoleBearingEmployeeUrn(employee.didDocument,String(license.issuedToRole||''));
           if (!employeeUrn) {
             throw new ManagerError('DCR employee identity is missing its role-bearing employee URN.', IssueType.BusinessRule);
           }

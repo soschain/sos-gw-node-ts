@@ -11,6 +11,7 @@ import { UhcReminderDaemon } from '../../services/UhcReminderDaemon';
 import { createSubjectVaultVoiceTargetResolver } from '../../services/SubjectVaultVoiceTargetResolver';
 import { TwilioPhoneAdapter } from '../../adapters/phone/TwilioPhoneAdapter';
 import { MockPhoneAdapter } from '../../adapters/phone/MockPhoneAdapter';
+import { isLocalDemoSecurityMode } from '../../security/runtime-security-policy';
 import { registerAddonRouters } from '../../bootstrap/register-addon-routers';
 
 export function registerUhcReminderExtension(options: {
@@ -28,9 +29,18 @@ export function registerUhcReminderExtension(options: {
     return;
   }
 
+  if (config.uhcTelephony?.voiceEnabled !== true) {
+    return;
+  }
+  const demo = isLocalDemoSecurityMode();
   const twilioCfg = config.uhcTelephony?.twilio;
+  const realProviderReady = config.uhcTelephony?.provider === 'twilio'
+    && Boolean(twilioCfg?.accountSid && twilioCfg.authToken && twilioCfg.voiceFromNumber);
+  if (!realProviderReady && !demo) {
+    throw new Error('Enabled voice reminders require a configured phone provider.');
+  }
   const phoneAdapter =
-    config.uhcTelephony?.provider === 'twilio' && twilioCfg?.accountSid && twilioCfg?.authToken
+    realProviderReady && twilioCfg?.accountSid && twilioCfg.authToken
       ? new TwilioPhoneAdapter({
           accountSid: twilioCfg.accountSid,
           authToken: twilioCfg.authToken,
@@ -43,7 +53,7 @@ export function registerUhcReminderExtension(options: {
       : new MockPhoneAdapter();
 
   console.log(
-    `[GW-API] UHC Telephony: using ${config.uhcTelephony?.provider === 'twilio' ? 'TwilioPhoneAdapter' : 'MockPhoneAdapter'}.`,
+    `[GW-API] UHC Telephony: using ${realProviderReady ? 'TwilioPhoneAdapter' : 'MockPhoneAdapter'}.`,
   );
 
   const voiceTargetResolver = createSubjectVaultVoiceTargetResolver({

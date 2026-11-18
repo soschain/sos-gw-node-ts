@@ -1,33 +1,59 @@
 ## Unreleased
 
+- Reuse the original active licence credential and device bindings when an
+  authorized actor enrolls another installation. Reconcile a missing legacy
+  controller subject only from its current protected tenant designation and
+  exact licensed contact. Preserve separate controller and occupational roles,
+  current DCR actor/profile checks and the ledger issuance callback; use the
+  same five-device default for licence receipts and registration capacity.
+  Device revocation selects the licensed role while retaining other role aliases
+  and independently active device keys.
+
+## 2.1.0 (2026-11-17)
+
+- Sign encrypted responses with the provider communication key and bind the
+  pre-registration reply key to the authenticated request signature.
+- Require explicitly prepared local Fabric infrastructure for image verification;
+  the smoke runner never resets a shared development ledger.
+
+- Keep published JavaScript dependencies under native Node module resolution
+  while transpiling local TypeScript, preserving PKI key and signature behavior.
+
+- Preserve component Observation graphs through clinical import and research
+  projection, including correlated references and consent-driven rebuilds.
+  Component records retain their own clinical state without manufacturing one.
+
+- Match person-specific consent rules to the exact authorized actor while
+  retaining explicit organization-wide grants and current device checks.
+
+- Verify all approved ICA status sources for shared issuers; any revocation or unavailable source denies activation, and unknown records cannot override revocation.
+
+- Require an explicit server-owned authorization decision for the standalone native-FHIR router; missing identity, missing policy and policy errors deny access.
+
 - Use the owned SOS IndividualCustomer response discriminator for Individual
   creation, retaining the exact Customer wire tag and Person resource. Remove
   an unreferenced internal healthcare re-export module; governance checks now
   examine actual emergency-purpose and operational-section imports directly.
-  This functional source is integrated on main. Public dependency pins and the
-  remaining GDC migration are required before service promotion.
 
 - Move indexed clinical native conversion to explicit owned FHIR profiles:
   fourteen semantic and five separately selected structural input families,
   with thirteen R4-shaped compatibility output families. Preserve GW metadata
   precedence, creator/subject guards and existing output overlays. Keep clinical
   identifier systems separate from established business index keys, and reject
-  ambiguous raw/token index records before clinical writes. This is a local
-  candidate integration pending the cumulative public FHIR release and pin;
-  it does not close the remaining project GDC boundary or add native R5 output.
+  ambiguous raw/token index records before clinical writes.
 
 - Inject the existing process-owned Antifraud crypto port into discovery ping.
   Preserve its fixed unsigned UTF-8 JSON/base64url form response and ordinary
   JSON output. Correct the negotiated FHIR batch response to contain the actual
   OperationOutcome, response status and FHIR media type. Describe the compact
-  response as unsigned rather than claiming JARM authenticity. The remaining
-  Gateway GDC dependency boundary stays blocked.
+  response as unsigned. Complete gateway independence through the native
+  contracts described below.
 
 - Type discovery's protected CommunicationRequest and DocumentReference
   section reads with the existing SOS Data record contract. Preserve emitted
   route bytes and every storage, publication and authority check.
 
-- Use public FHIR 0.7.1 R5 subscription event selection and notification
+- Use public FHIR R5 subscription event selection and notification
   construction. Project historical topic filter `resourceType` spelling at
   this boundary, deny unsupported modifiers, and persist caller-owned UUID
   entry identities, timestamp and serialized notification bytes with the
@@ -38,10 +64,8 @@
 - Resolve FHIR code-system identifiers and appointment fixtures from the
   canonical FHIR package, and search-response HTTP status values from SOS Data.
   Preserve successful response strings and remove unused legacy clinical
-  catalog forwarders. Pin public SOS Data 0.8.2 and Antifraud Data 0.3.3 so
-  existing response envelopes and neutral credential canonicalizer types
-  resolve after a clean install. The remaining GDC dependency boundary is
-  still blocked.
+  catalog forwarders. Keep response envelopes and credential canonicalizer
+  types under their independent package owners.
 
 - Persist a bound pending state while reconciling the configured host DID.
   Restart retries publish the exact stored self-credentials before clearing
@@ -69,8 +93,7 @@
 
 - Use published SOS operational search/lifecycle constants and DSP metadata in
   Communication search, RelatedPerson purge/readback and discovery. Preserve
-  existing wire values and authorization; pin AF 0.3.2, SOS Data 0.8.1 and the
-  development-only Node SDK 0.5.1 with all other direct versions retained.
+  existing wire values and authorization.
 
 - Resolve queued actor DID identifier extraction from the neutral Antifraud
   identity owner, preserving existing contact binding and rejection behavior.
@@ -182,12 +205,14 @@
   flags cannot supply that proof.
 - Derive hosted Individual Organization DIDs from the configured provider and
   persisted UUID on new registration and replay, preserving public card aliases.
-  Reject non-UUID historical rows that need identity migration. Focused manager
-  and API provenance tests pass; cumulative backend and network gates remain pending.
-- Require the verified proposed controller to confirm an individual Offer before
-  initial activation or controller-seat issuance, including active Order replay.
-  A professional's registration capability does not accept responsibility for
-  the proposed controller.
+  Reject non-UUID historical rows that need identity migration.
+- Preserve the admitted professional creator in encrypted registration state.
+  That same creator can complete its individual Order only while its registered
+  device, licence and organization registration permission remain current.
+  Order creates the controller assignment and issued seat; controller device
+  activation and acceptance of clinical access permissions remain separate.
+  Historical Offers without recorded creator provenance retain their verified
+  controller continuation. Replays cannot create another assignment or grant.
 - Use independent SOS response/routing catalogs and included-resource contracts
   without changing entry discriminators or terminal response correlation.
 - Consume clinical creator profile data from SOS Data and portable binding,
@@ -197,10 +222,6 @@
   neutral DIDComm envelope contracts, SOS message entries and wire formats, and
   FHIR's native Communication projection and claim-key normalization. Preserve
   existing field spellings and require verification independently of data shapes.
-- Validate these response/clinical/OpenID/message slices with the type check,
-  14 scoped ownership guards and 22 backend consumer suites (399 assertions,
-  no pending cases). The full project dependency guard remains red; browser and
-  configured network journeys still require cumulative acceptance.
 - Use neutral Antifraud person, organization, service, action and commerce claim
   catalogs across onboarding, identity, indexed search and order flows. Preserve
   each stored wire key, including identifier references versus identifier values,
@@ -228,11 +249,9 @@
   Dentistry in clinical creator metadata while excluding Controller authority
   and preserving reverse-DNS occupation values and persisted Consent identifiers.
 
-- Remove the unused frozen SDK client dependency and its Jest, TypeScript and
-  emitted-import resolution entries. Remaining GDC imports and transitive paths
-  are still tracked separately; this is not complete dependency independence.
-- Add the complete declaration/source/registry independence gate. It remains
-  red during migration and must pass before service promotion.
+- Remove the inherited SDK client dependency and its Jest, TypeScript and
+  emitted-import resolution entries. Check direct and transitive independence
+  through declarations, source/emitted imports and the registry lock.
 
 - Use the neutral Antifraud cryptography engine and key/byte contracts for
   Gateway bootstrap, KMS, key handling and consuming tests. Preserve caller-
@@ -247,11 +266,9 @@
 - Consume standard OperationOutcome issue codes from FHIR utilities and the
   runtime ManagerError/status policy from SOS SDK Core in production and tests.
   Unknown runtime issue codes now fail with exception/500 rather than reading
-  inherited mapping properties. Corrected registry pins remain pending.
+  inherited mapping properties.
 - Resolve the Fabric submit test's module URL with `fileURLToPath` so its commit
   success/failure checks run on Windows as well as Unix.
-- Refresh stale source-manifest pin assertions. Document that this assertion
-  does not prove unpublished API availability or a GDC-free registry graph.
 
 - Import canonical FHIR resource names and Consent, Composition, Communication,
   RelatedPerson and Task claim vocabularies from FHIR data utilities. Read-only
@@ -262,7 +279,6 @@
 - Consume neutral UUID normalization and base58 encoding directly from
   Antifraud data utilities in Gateway storage, versioning and identity flows.
   Reject encoded employee identities unless they contain exactly 16 bytes.
-  Replacement registry pins and full dependency removal remain pending.
 
 - Retire the inherited release-chain command, which could mutate and publish
   sibling libraries. The command now stops without changing packages; shared

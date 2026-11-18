@@ -1,10 +1,11 @@
+// Flow contract: consume independent canonical clinical, identity and transport contracts while preserving the existing authorization and persistence assertions.
 // src/__tests__/mocks/kms.mock.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { jest } from '@jest/globals';
 import { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
-import { Content } from 'gdc-common-utils-ts/utils/content';
+import { Content } from "antifraud-data-utils-ts/cryptography";
 
 // This is the definitive, globally-safe mock.
 // It uses the original JWE structure and Content helpers to be compatible with all tests.

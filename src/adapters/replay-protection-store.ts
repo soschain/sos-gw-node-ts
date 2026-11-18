@@ -1,3 +1,4 @@
+import { isLocalDemoSecurityMode } from '../security/runtime-security-policy';
 // src/adapters/replay-protection-store.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
@@ -10,10 +11,11 @@ export interface IReplayProtectionStore {
 }
 
 /**
- * No-op implementation used when replay protection is disabled.
+ * Explicit local demo replay policy; other profiles retain replay protection.
  */
 export class ReplayProtectionStoreNoop implements IReplayProtectionStore {
   async reserveIfNotExists(_key: string, _ttlSeconds: number): Promise<boolean> {
+    if (!isLocalDemoSecurityMode()) throw new Error('Disabled replay protection requires explicit local demo.');
     return true;
   }
 }
@@ -89,4 +91,14 @@ export class ReplayProtectionStoreRedis implements IReplayProtectionStore {
     const result = await client.set(namespacedKey, '1', { NX: true, EX: ttl });
     return result === 'OK';
   }
+}
+
+/** Local route composition retains replay checks; deployed networks inject their durable process-owned store. */
+export function createLocalRouteReplayProtectionStore(env: NodeJS.ProcessEnv = process.env): IReplayProtectionStore {
+  const deployment = [env.NODE_ENV, env.DEPLOYMENT_ENV].map(value => String(value || '').trim().toLowerCase());
+  const network = String(env.NETWORK_MODE || 'test').trim().toLowerCase();
+  if (!['test', 'local-network'].includes(network) || deployment.some(value => ['staging', 'production', 'prod'].includes(value))) {
+    throw new Error('Deployed and enrolled routes require an explicitly composed durable replay store.');
+  }
+  return new ReplayProtectionStoreMem();
 }

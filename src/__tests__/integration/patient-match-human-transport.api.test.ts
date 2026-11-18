@@ -1,4 +1,7 @@
 // Flow contract: 1) resolve the provider route; 2) submit exactly one Patient in Parameters; 3) authenticate the selected transport; 4) return one synchronous FHIR searchset without queueing; 5) never expose the Fabric lookup hash.
+import {registeredRouteFixture} from './helpers/registered-route-fixture';
+import {VaultMemRepository} from '../../database/repositories/vault/vault.mem.repository';
+import {getTenantVaultId} from '../../utils/tenant';
 import express from 'express';
 import request from 'supertest';
 import { createApiRouter } from '../../routes/api';
@@ -45,6 +48,7 @@ describe('IHE PDQm ITI-119 Patient/$match transport boundary', () => {
   });
 
   function buildApp() {
+    const vault=new VaultMemRepository();
     const queueAdapter = { addJob: jest.fn() } as any;
     const tenantServices = [{
       id: '#individual:org.hl7.fhir.api',
@@ -63,6 +67,8 @@ describe('IHE PDQm ITI-119 Patient/$match transport boundary', () => {
       getTenantAuthorizationStatus: jest.fn(async () => 'active'),
     } as any;
     const kms = {
+      getHmacBase64Url:jest.fn(async(value:string)=>value),
+      unprotectConfidentialData:jest.fn(async(doc:any)=>doc.content),
       decodeRequest: jest.fn(async () => ({ content: {
         thid: 'thread-123',
         iss: 'did:web:provider.example',
@@ -81,14 +87,14 @@ describe('IHE PDQm ITI-119 Patient/$match transport boundary', () => {
       tenants,
       kms,
       { set: jest.fn() } as any,
-      { query: jest.fn() } as any,
+      vault,
       { verifyDetachedJws: jest.fn() } as any,
       'http://localhost:3000',
       appAuthManager,
       undefined,
       directJobProcessor,
     ));
-    return { app, queueAdapter, kms, directJobProcessor, appAuthManager };
+    return { app, queueAdapter, kms, directJobProcessor, appAuthManager, vault };
   }
 
   it('accepts direct legacy FHIR Parameters and returns a native searchset synchronously', async () => {
@@ -127,9 +133,10 @@ describe('IHE PDQm ITI-119 Patient/$match transport boundary', () => {
 
   it('returns response=<compact JWE> for an authenticated strict request', async () => {
     process.env = { ...previousEnv, SECURITY_MODE: 'strict' };
-    const { app, queueAdapter, kms, directJobProcessor, appAuthManager } = buildApp();
+    const { app, queueAdapter, kms, directJobProcessor, appAuthManager, vault } = buildApp();
+    appAuthManager.verifyBearerToken.mockResolvedValue({payload:{sub:'did:web:caller.example'}});
     const requesterJwk = { kty: 'OKP', crv: 'X25519', x: 'requester', kid: 'enc-1' };
-    kms.decodeRequest.mockResolvedValue({
+    kms.decodeRequest.mockResolvedValue(await registeredRouteFixture({
       id: 'job-1', sequence: 0, status: 'DRAFT', createdAtTimestamp: Date.now(),
       content: {
         jti: 'request-jti', thid: 'thread-123', iss: 'did:web:caller.example', aud: 'did:web:provider.example',
@@ -137,7 +144,7 @@ describe('IHE PDQm ITI-119 Patient/$match transport boundary', () => {
         body: { data: [{ resource: parameters, request: { method: HttpRequestMethods.Post, url: 'Patient/$match' } }] },
         meta: { jwe: { header: { jwk: requesterJwk } } },
       },
-    });
+    },vault,getTenantVaultId('health-care','clinic'),kms as any));
 
     const response = await request(app)
       .post(path)

@@ -1,6 +1,5 @@
-import { Gateway, Network } from '@hyperledger/fabric-gateway';
+import type { Gateway, Network } from '@hyperledger/fabric-gateway';
 import { newGatewayConnection, newGrpcConnection } from './connect';
-import * as config from './fabric-config';
 import { assertFabricChannelAllowed } from './fabric-target-policy';
 
 export async function createGateway(mspId: string): Promise<Gateway> {
@@ -16,6 +15,7 @@ export async function createGateway(mspId: string): Promise<Gateway> {
 }
 
 export const getNetwork = async (gateway: Gateway): Promise<Network> => {
+  const config=await import('./fabric-config');
   assertFabricChannelAllowed(config.channelName);
   const network = await gateway.getNetwork(config.channelName);
   return network;

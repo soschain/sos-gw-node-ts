@@ -143,8 +143,14 @@ export class SubscriptionManager implements ISubscriptionProcessor {
         const subscription = stored.resource;
         if (subscription?.status !== 'active') continue;
         const topic = topics.find((candidate) => candidate.resource?.url === subscription.topic)?.resource;
-        const selectionTopic = topic && notificationTopic(topic);
-        if (!selectionTopic || !matchesSubscriptionEventR5(subscription, selectionTopic, resource)) continue;
+        if (!topic) continue;
+        let matchingTopic: SubscriptionEventTopicR5 | undefined;
+        try { matchingTopic = notificationTopic(this.projectTopicFilterResources(topic)); }
+        catch {
+          console.warn('[SubscriptionManager] Unsupported topic filters; delivery denied.');
+          continue;
+        }
+        if (!matchingTopic || !matchesSubscriptionEventR5(subscription, matchingTopic, resource)) continue;
         const eventNumber = Number(stored.eventCount || 0) + 1;
         const notification = this.buildNotification(subscription, topic, resource, eventNumber);
         stored.eventCount = eventNumber;
@@ -189,6 +195,30 @@ export class SubscriptionManager implements ISubscriptionProcessor {
     if (!Array.isArray(topic.resourceTrigger) || !topic.resourceTrigger.some((trigger: any) => trigger.resource)) {
       throw new Error('SubscriptionTopic requires at least one resourceTrigger.resource.');
     }
+    this.projectTopicFilterResources(topic);
+  }
+
+  /** Reads historical topic filter spelling without rewriting the stored native configuration. */
+  private projectTopicFilterResources(topic: any): any {
+    if (topic.canFilterBy === undefined) return topic;
+    if (!Array.isArray(topic.canFilterBy)) throw new Error('SubscriptionTopic.canFilterBy must be an array.');
+    return { ...topic, canFilterBy: topic.canFilterBy.map((filter: any) => {
+      if (!filter || typeof filter !== 'object' || Array.isArray(filter)) throw new Error('SubscriptionTopic filter definition must be an object.');
+      const { resourceType: historicalResource, resource: standardResource, ...definition } = filter;
+      const legacy = this.resourceDefinitionKind(historicalResource);
+      const canonical = this.resourceDefinitionKind(standardResource);
+      if (legacy !== undefined && canonical !== undefined && legacy !== canonical) {
+        throw new Error('SubscriptionTopic filter resource fields contradict each other.');
+      }
+      const resource = canonical ?? legacy;
+      return { ...definition, ...(resource !== undefined ? { resource } : {}) };
+    }) };
+  }
+
+  private resourceDefinitionKind(value: unknown): string | undefined {
+    if (value === undefined) return undefined;
+    if (typeof value !== 'string' || !value.trim()) throw new Error('Subscription filter resource must be a nonempty URI.');
+    return value.trim().replace(/^http:\/\/hl7\.org\/fhir\/StructureDefinition\//, '');
   }
 
   private validateSubscription(resource: any, section: string): void {
@@ -216,13 +246,19 @@ export class SubscriptionManager implements ISubscriptionProcessor {
   }
 
   private validateFilters(subscription: any, topic: any): void {
+    const matchingTopic = this.projectTopicFilterResources(topic);
     for (const filter of subscription.filterBy || []) {
-      const allowed = (topic.canFilterBy || []).find((candidate: any) =>
+      const resource = this.resourceDefinitionKind(filter.resourceType);
+      const allowed = (matchingTopic.canFilterBy || []).find((candidate: any) =>
         candidate.filterParameter === filter.filterParameter
-        && (!candidate.resourceType || !filter.resourceType || candidate.resourceType === filter.resourceType));
+        && (!candidate.resource || !resource || candidate.resource === resource));
       if (!allowed) throw new Error(`SubscriptionTopic does not allow filter '${filter.filterParameter}'.`);
       const comparator = filter.comparator || 'eq';
-      if (allowed.comparator?.length && !allowed.comparator.includes(comparator)) {
+      if (filter.modifier !== undefined || !['eq', 'ne'].includes(comparator)) {
+        throw new Error('The current Subscription filter profile supports eq/ne without modifiers.');
+      }
+      if ((filter.comparator && !allowed.comparator?.includes(comparator))
+        || (allowed.comparator?.length && !allowed.comparator.includes(comparator))) {
         throw new Error(`SubscriptionTopic does not allow comparator '${comparator}'.`);
       }
     }
@@ -251,7 +287,7 @@ export class SubscriptionManager implements ISubscriptionProcessor {
 
   private buildStatusBundle(subscription: any, topic: any, type: string, eventNumber?: number, focus?: string): any {
     const timestamp = new Date().toISOString();
-    return { resourceType: ResourceTypesFhirR4.Bundle, type: 'subscription-notification', timestamp, entry: [{ resource: {
+    return { resourceType: ResourceTypesFhirR4.Bundle, type: 'subscription-notification', timestamp, entry: [{ fullUrl: `urn:uuid:${randomUUID()}`, resource: {
       resourceType: ResourceTypesFhirR5.SubscriptionStatus, status: subscription.status === 'requested' ? 'requested' : 'active', type,
       subscription: { reference: `Subscription/${subscription.id}` }, topic: topic.url,
       ...(eventNumber ? { eventsSinceSubscriptionStart: String(eventNumber), notificationEvent: [{ eventNumber: String(eventNumber), timestamp, focus: { reference: focus } }] } : {}),

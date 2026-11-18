@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Identity } from '@hyperledger/fabric-gateway';
-import * as config from './fabric-config';
+import type { Identity } from '@hyperledger/fabric-gateway';
 import { WalletsInMemory } from './walletsInMemory-v3';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -14,6 +13,7 @@ let walletsInMemory: WalletsInMemory<any>;
  * a client app might submit transactions for different users.
  */
 export const createWalletInMemory = async (): Promise<any> => {
+  const config=await import('./fabric-config');
   // Initialize walletsInMemory if it hasn't been initialized yet
   if (!walletsInMemory) {
     walletsInMemory = new WalletsInMemory();

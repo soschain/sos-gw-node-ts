@@ -12,6 +12,13 @@ describe('npm authorization continuity policy', () => {
     for (const file of skillFiles) {
       const contract = readFileSync(resolve(skillsRoot, file), 'utf8');
       expect(contract).toMatch(/three.*attempts.*five\s+minutes/is);
+      if (file === 'gw-unid-local-image-release/SKILL.md') {
+        expect(contract).toMatch(/local packages.*local test matrix.*merge every validated branch to `main`.*publish.*bottom-up.*exact registry versions.*lockfiles on `main`.*stage/is);
+        expect(contract).toMatch(/immutable `npm pack`.*tarball.*--no-save.*restore.*lockfile/is);
+        expect(contract).toMatch(/Authorization failure never stops the local test.*stage/is);
+        expect(contract).toContain('docs/LOCAL_FIRST_RELEASE_CONTRACT.md');
+        continue;
+      }
       expect(contract).toMatch(/npm pack.*tarball.*local.*test/is);
       expect(contract).toMatch(/registry.*publish.*consumer.*merge.*deploy/is);
       expect(contract).toMatch(/do not attempt.*npm publish.*every affected local.*unit.*integration.*local services.*real UI.*Playwright/is);

@@ -2,12 +2,9 @@ import { createHash, randomUUID } from 'node:crypto';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { ClaimConsent, ConsentDecisions } from 'fhir-data-utils-ts';
 import type { RecordBase } from 'sos-data-utils-ts/confidential-storage';
-import {
-  isVetChainAnimalCardDid,
-  VeterinaryBreakGlassMaxLifetimeSeconds,
-  VeterinaryEmergencyReasonCodes,
-  VeterinaryOccupationCodes,
-} from 'vet-data-utils-ts';
+import { parseAnimalCardDidWeb } from 'sos-data-utils-ts/animal-card-interoperability';
+import { AnimalEmergencyProfile } from 'sos-data-utils-ts/gateway-profile-values';
+import { HealthcareActorRoleCodes } from 'sos-data-utils-ts/healthcare-roles';
 import type { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { getIndividualSectionId } from '../utils/individual-sections';
@@ -63,7 +60,7 @@ function subjectDidMatchesKind(subjectDid: string, subjectKind: BreakGlassSubjec
   const normalized = String(subjectDid || '').trim().toLowerCase();
   return subjectKind === 'human'
     ? normalized.includes(':individual:')
-    : isVetChainAnimalCardDid(subjectDid);
+    : Boolean(parseAnimalCardDidWeb(subjectDid));
 }
 
 /**
@@ -84,9 +81,9 @@ export function evaluateBreakGlassPolicy(input: BreakGlassPolicyInput): BreakGla
   }
 
   if (routeSector !== 'animal-care') return { allowed: false, reason: 'animal_sector_mismatch' };
-  if (role !== VeterinaryOccupationCodes.Veterinarian) return { allowed: false, reason: 'professional_role_not_authorized' };
-  if (input.reasonCode !== VeterinaryEmergencyReasonCodes.AnimalEmergency) return { allowed: false, reason: 'reason_subject_mismatch' };
-  return { allowed: true, maxLifetimeSeconds: VeterinaryBreakGlassMaxLifetimeSeconds };
+  if (role !== HealthcareActorRoleCodes.Veterinarian) return { allowed: false, reason: 'professional_role_not_authorized' };
+  if (input.reasonCode !== AnimalEmergencyProfile.ReasonCode) return { allowed: false, reason: 'reason_subject_mismatch' };
+  return { allowed: true, maxLifetimeSeconds: AnimalEmergencyProfile.MaxLifetimeSeconds };
 }
 
 export type BreakGlassAuthorizationInput = Readonly<{
@@ -171,7 +168,7 @@ function emergencyConsentClaimsHash(consent: Record<string, unknown>): string {
 function resolveConsentLifetimeSeconds(configured: number | string | undefined): number {
   const parsed = Number(configured ?? 86_400);
   if (!Number.isFinite(parsed)) return 86_400;
-  return Math.max(VeterinaryBreakGlassMaxLifetimeSeconds, Math.min(86_400, Math.floor(parsed)));
+  return Math.max(AnimalEmergencyProfile.MaxLifetimeSeconds, Math.min(86_400, Math.floor(parsed)));
 }
 
 export class BreakGlassService implements BreakGlassAuthorizer {

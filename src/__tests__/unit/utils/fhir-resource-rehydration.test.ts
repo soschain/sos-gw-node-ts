@@ -2,8 +2,23 @@
 import { describe, expect, it } from '@jest/globals';
 import { buildFhirResourceFromIndexedClaims } from '../../../utils/fhir-resource-rehydration';
 import { ResourceTypesFhirR4 } from '../../../shared/fhir-constants';
+import { CodingSystem } from 'fhir-data-utils-ts/terminology-models';
+import { identifierToValue } from 'fhir-data-utils-ts/converters';
+import { REPOSITORY_SAFE_EXAMPLES as safe } from 'sos-data-utils-ts/repository-privacy';
 
 describe('fhir-resource-rehydration utils', () => {
+  it('restores identifier system and value separately without rewriting the stored token', () => {
+    const identifier = {system: CodingSystem.uuid, value: `urn:uuid:${safe.resourceUuid}`};
+    const token = identifierToValue(identifier);
+    const record = {id: safe.resourceUuid, 'MedicationStatement.identifier': token,
+      'MedicationStatement.subject': safe.didWeb, 'MedicationStatement.status': 'active',
+      'MedicationStatement.medication-text': 'Aspirin 100 mg'};
+    const resource = buildFhirResourceFromIndexedClaims(ResourceTypesFhirR4.MedicationStatement, record);
+    expect(resource.identifier).toEqual([identifier]);
+    expect(record['MedicationStatement.identifier']).toBe(token);
+    expect(resource.meta.claims['MedicationStatement.identifier']).toBe(token);
+  });
+
   it('publishes coded animal observations without persistence envelopes or private index text', () => {
     const animalObservation = buildFhirResourceFromIndexedClaims(ResourceTypesFhirR4.Observation, {
       id: 'animal-observation-research-1',

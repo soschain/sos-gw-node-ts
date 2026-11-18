@@ -59,7 +59,7 @@ import { ClientAccessTokenClaims as IAccessTokenClaims } from 'antifraud-data-ut
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { getTenantVaultId, generateTenantCollectionNameFromClaims } from '../../utils/tenant';
 import { IncludedResource } from 'sos-data-utils-ts/bundle-contract';
-import { getClaimsInFirstDataEntry } from 'gdc-common-utils-ts/utils/bundle-reader';
+import { getClaimsInFirstDataEntry } from 'sos-sdk-core-ts/gateway-response-reader';
 import { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import { invokeExpress } from './helpers/invokeExpress';
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';

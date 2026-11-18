@@ -13,6 +13,7 @@ import {
   stopStoryServer,
 } from './helpers/story-flow';
 import { invokeExpress } from './helpers/invokeExpress';
+import { configureAuthenticatedTestActor, configureAuthenticatedTenantController } from './helpers/authenticated-test-actor';
 import {
   EMPLOYEE_DISABLE_REQUEST,
   EMPLOYEE_PURGE_REQUEST,
@@ -20,7 +21,7 @@ import {
 } from '../data/example-payloads';
 import { ORGANIZATION_ORDER_REQUEST } from '../data/example-payloads';
 import { SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { EXAMPLE_LICENSE_INVOICE_ID, EXAMPLE_LICENSE_PAYMENT_METHOD_STRIPE } from 'gdc-common-utils-ts/examples/shared';
+import { EXAMPLE_LICENSE_INVOICE_ID, EXAMPLE_LICENSE_PAYMENT_METHOD_STRIPE } from 'sos-data-utils-ts/gateway-flow-examples';
 import { withCanonicalEntryClaims } from '../helpers/canonical-bundle-entry';
 
 /**
@@ -33,11 +34,14 @@ describe('Employee create/disable/re-enable route story', () => {
   let harness: StoryHarness;
   let tenantId: string;
   let originalFetch: typeof global.fetch;
+  let authenticatedActor: Awaited<ReturnType<typeof configureAuthenticatedTestActor>>;
 
   beforeAll(async () => {
     originalFetch = installBasicJsonFetchMock();
+    authenticatedActor = await configureAuthenticatedTestActor({ actorDid: 'did:web:controller.example.com' });
     harness = await startStoryServer();
-    tenantId = await onboardTenantViaActivateAndOrder(harness.app, harness.queueAdapter);
+    tenantId = await onboardTenantViaActivateAndOrder(harness.app, harness.queueAdapter, authenticatedActor.authorizationHeader);
+    authenticatedActor = await configureAuthenticatedTenantController({app:harness.app,tenantId,jurisdiction:'es',sector:'health-care'});
   });
 
   afterAll(async () => {
@@ -48,6 +52,7 @@ describe('Employee create/disable/re-enable route story', () => {
   it('returns a commercial Offer before creating an interactive employee when no seat is free', async () => {
     const employeeUrl = `/${tenantId}/cds-es/v1/health-care/entity/org.schema/Employee/_batch`;
     const payload = structuredClone(EMPLOYEE_REGISTRATION_REQUEST) as any;
+    payload.iss = authenticatedActor.actorDid;
     payload.thid = 'employee-strict-license-offer-story-thid';
     payload.jti = 'employee-strict-license-offer-story-jti';
     payload.body.data[0] = withCanonicalEntryClaims(payload.body.data[0], {});
@@ -55,7 +60,7 @@ describe('Employee create/disable/re-enable route story', () => {
 
     const submit = await invokeExpress(harness.app, {
       method: 'POST', url: employeeUrl,
-      headers: { 'content-type': 'application/json' }, body: payload,
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader }, body: payload,
     });
     expect(submit.status).toBe(202);
     await harness.queueAdapter.waitForEmptyQueue();
@@ -70,6 +75,7 @@ describe('Employee create/disable/re-enable route story', () => {
     // used by staging; the following lifecycle tests then consume that seat.
     const offerId = poll.body.data[0].resource.meta.claims[SchemaOrgOfferClaim.Identifier];
     const orderPayload = structuredClone(ORGANIZATION_ORDER_REQUEST) as any;
+    orderPayload.iss = authenticatedActor.actorDid;
     orderPayload.body.data[0].meta = {};
     orderPayload.body.data[0].resource = { meta: { claims: {
       [SchemaOrgOrderClaim.AcceptedOfferIdentifier]: offerId,
@@ -79,7 +85,7 @@ describe('Employee create/disable/re-enable route story', () => {
     const orderSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: '/host/cds-es/v1/test/registry/org.schema/Order/_batch',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: orderPayload,
     });
     expect(orderSubmit.status).toBe(202);
@@ -93,6 +99,7 @@ describe('Employee create/disable/re-enable route story', () => {
     const employeeUrl = `/${tenantId}/cds-es/v1/health-care/entity/org.schema/Employee/_batch`;
 
     const createPayload = structuredClone(EMPLOYEE_REGISTRATION_REQUEST) as any;
+    createPayload.iss = authenticatedActor.actorDid;
     createPayload.thid = 'employee-create-story-thid';
     createPayload.jti = 'employee-create-story-jti';
     createPayload.body.data[0] = withCanonicalEntryClaims(createPayload.body.data[0], {});
@@ -101,7 +108,7 @@ describe('Employee create/disable/re-enable route story', () => {
     const createSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: employeeUrl,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: createPayload,
     });
 
@@ -119,6 +126,7 @@ describe('Employee create/disable/re-enable route story', () => {
     const occupationId = String(createdEntry.resource?.contained?.[0]?.id || '');
     expect(occupationId).toBeTruthy();
     const searchPayload = structuredClone(createPayload) as any;
+    searchPayload.iss = authenticatedActor.actorDid;
     searchPayload.thid = 'employee-search-with-occupation-story-thid';
     searchPayload.jti = 'employee-search-with-occupation-story-jti';
     searchPayload.body = {
@@ -132,7 +140,7 @@ describe('Employee create/disable/re-enable route story', () => {
     const searchSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: employeeUrl.replace('/_batch', '/_search'),
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: searchPayload,
     });
     expect(searchSubmit.status).toBe(202);
@@ -169,7 +177,7 @@ describe('Employee create/disable/re-enable route story', () => {
       filtered.body.entry[0].resource.parameter = [{ name: Person.HasOccupation, valueCoding: { system, code } }];
       const submitted = await invokeExpress(harness.app, {
         method: 'POST', url: employeeUrl.replace('/_batch', '/_search'),
-        headers: { 'content-type': 'application/json' }, body: filtered,
+        headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader }, body: filtered,
       });
       expect(submitted.status).toBe(202);
       await harness.queueAdapter.waitForEmptyQueue();
@@ -183,6 +191,7 @@ describe('Employee create/disable/re-enable route story', () => {
     }
 
     const disablePayload = structuredClone(EMPLOYEE_DISABLE_REQUEST) as any;
+    disablePayload.iss = authenticatedActor.actorDid;
     disablePayload.thid = 'employee-disable-story-thid';
     disablePayload.jti = 'employee-disable-story-jti';
     disablePayload.body.data[0].resource.id = employeeId;
@@ -190,7 +199,7 @@ describe('Employee create/disable/re-enable route story', () => {
     const disableSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: employeeUrl,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: disablePayload,
     });
 
@@ -205,6 +214,7 @@ describe('Employee create/disable/re-enable route story', () => {
     expect(disabledEntry.resource?.id).toBe(employeeId);
 
     const reenablePayload = structuredClone(EMPLOYEE_REGISTRATION_REQUEST) as any;
+    reenablePayload.iss = authenticatedActor.actorDid;
     reenablePayload.thid = 'employee-reenable-story-thid';
     reenablePayload.jti = 'employee-reenable-story-jti';
     reenablePayload.body.data[0] = withCanonicalEntryClaims(reenablePayload.body.data[0], {});
@@ -214,7 +224,7 @@ describe('Employee create/disable/re-enable route story', () => {
     const reenableSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: employeeUrl,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: reenablePayload,
     });
 
@@ -233,6 +243,7 @@ describe('Employee create/disable/re-enable route story', () => {
     const employeeUrl = `/${tenantId}/cds-es/v1/health-care/entity/org.schema/Employee/_batch`;
 
     const createPayload = structuredClone(EMPLOYEE_REGISTRATION_REQUEST) as any;
+    createPayload.iss = authenticatedActor.actorDid;
     createPayload.thid = 'employee-create-purge-story-thid';
     createPayload.jti = 'employee-create-purge-story-jti';
     createPayload.body.data[0] = withCanonicalEntryClaims(createPayload.body.data[0], {});
@@ -241,7 +252,7 @@ describe('Employee create/disable/re-enable route story', () => {
     const createSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: employeeUrl,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: createPayload,
     });
 
@@ -255,6 +266,7 @@ describe('Employee create/disable/re-enable route story', () => {
     expect(employeeId).toBeTruthy();
 
     const disablePayload = structuredClone(EMPLOYEE_DISABLE_REQUEST) as any;
+    disablePayload.iss = authenticatedActor.actorDid;
     disablePayload.thid = 'employee-disable-purge-story-thid';
     disablePayload.jti = 'employee-disable-purge-story-jti';
     disablePayload.body.data[0].resource.id = employeeId;
@@ -262,7 +274,7 @@ describe('Employee create/disable/re-enable route story', () => {
     const disableSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: employeeUrl,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: disablePayload,
     });
 
@@ -274,6 +286,7 @@ describe('Employee create/disable/re-enable route story', () => {
     expect(disablePoll.body.data[0].response.status).toBe('200');
 
     const purgePayload = structuredClone(EMPLOYEE_PURGE_REQUEST) as any;
+    purgePayload.iss = authenticatedActor.actorDid;
     purgePayload.thid = 'employee-purge-story-thid';
     purgePayload.jti = 'employee-purge-story-jti';
     purgePayload.body.data[0].resource.id = employeeId;
@@ -281,7 +294,7 @@ describe('Employee create/disable/re-enable route story', () => {
     const purgeSubmit = await invokeExpress(harness.app, {
       method: 'POST',
       url: employeeUrl.replace('/_batch', '/_purge'),
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: authenticatedActor.authorizationHeader },
       body: purgePayload,
     });
 

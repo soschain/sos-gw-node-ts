@@ -1,7 +1,7 @@
 // src/__tests__/data/identity.data.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
-import { encodeMultibase58btc } from "gdc-common-utils-ts/utils/multibase58";
+import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
 import { uuidToBytes } from "../../utils/uuid";
 import {
   EXAMPLE_ACCOUNT_OWNER_ID,
@@ -9,15 +9,15 @@ import {
   EXAMPLE_HOSTED_INDIVIDUAL_DID,
   EXAMPLE_INDIVIDUAL_CONTROLLER_ROLE_TYPE,
   EXAMPLE_INDIVIDUAL_CONTROLLER_ROLE_VALUE,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 
 // A standard UUID for deterministic testing.
 export const INDIVIDUAL_UUID = 'a87e5b15-aea4-4475-9c7c-40aa88354b6f';
 export const RELATED_PERSON_UUID = 'b98f6c24-bfb5-4584-9d8d-51bb99465c7e';
 
 // The shortened, URL-friendly multibase representation of the UUID.
-export const INDIVIDUAL_MULTIBASE_ID = encodeMultibase58btc(uuidToBytes(INDIVIDUAL_UUID));
-export const RELATED_PERSON_MULTIBASE_ID = encodeMultibase58btc(uuidToBytes(RELATED_PERSON_UUID));
+export const INDIVIDUAL_MULTIBASE_ID = encodeBase58btc(uuidToBytes(INDIVIDUAL_UUID));
+export const RELATED_PERSON_MULTIBASE_ID = encodeBase58btc(uuidToBytes(RELATED_PERSON_UUID));
 
 export const testExamplesDidWeb = {
   professional: 'did:web:api.acme.org:employee:receptionist1@api.acme.org:ISCO-08|4226',

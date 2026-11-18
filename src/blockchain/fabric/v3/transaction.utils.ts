@@ -4,7 +4,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {
+import type {
   Contract,
   Proposal,
   SubmittedTransaction,
@@ -13,7 +13,6 @@ import {
 // import { CallOptions } from '@grpc/grpc-js';
 import { common, ledger, msp, peer } from '@hyperledger/fabric-protos';
 import Long from 'long';
-import * as config from './fabric-config';
 // Using console for logging to remove dependency
 const logger = console;
 // import { handleError } from '../../../app/errors-v3';
@@ -85,6 +84,7 @@ export const getTransactionValidationCode = async (
   qsccContract: Contract,
   transactionId: string
 ): Promise<string> => {
+  const config=await import('./fabric-config');
   const transactionProposal: Proposal = await evaluateTransaction(
     qsccContract,
     'GetTransactionByID',
@@ -108,6 +108,7 @@ export const getTransactionValidationCode = async (
 export const getBlockHeight = async (
   qscc: Contract
 ): Promise<number | Long> => {
+  const config=await import('./fabric-config');
   const resultBytes = await qscc.evaluateTransaction(
     'GetChainInfo',
     config.channelName

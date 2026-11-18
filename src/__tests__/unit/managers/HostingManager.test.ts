@@ -17,12 +17,12 @@ import {
 } from '../../data/end-to-end.data';
 import * as tenantUtils from '../../../utils/tenant';
 import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { toJwkThumbprintSha256Urn } from 'gdc-common-utils-ts/utils/jwk-thumbprint';
+import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprints';
 import {
   buildLegalSectorOrganizationAssetId,
   buildLegalSectorOrganizationUrn,
-} from 'gdc-common-utils-ts/utils/legal-sector-organization-urn';
-import { buildPublicAliasLedgerAssetId } from 'gdc-common-utils-ts/utils/same-as';
+} from 'sos-data-utils-ts/legal-sector-organization-urn';
+import { buildPublicAliasLedgerAssetId } from 'sos-data-utils-ts/public-alias-ledger';
 import { getEnvSectionId } from '../../../utils/section-env';
 import { resolveHostPhysicalCollectionName } from '../../../config/storage-layout';
 import type { IVaultRepository } from '../../../database/repositories/vault/vault.repository';

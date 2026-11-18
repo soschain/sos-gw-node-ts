@@ -1,7 +1,7 @@
 // Flow contract: follow docs/LOCAL_FIRST_RELEASE_CONTRACT.md; GW accepts only BFF-reconciled provider-neutral EVM orders and never receives wallet or RPC evidence.
 import { describe, expect, it, beforeEach, afterEach } from '@jest/globals';
 import { SchemaOrgOfferClaim, SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { VET_PAYMENT_TEST_DATA } from 'vet-data-utils-ts/payment';
+import { PAYMENT_TEST_EXAMPLES } from 'sos-data-utils-ts/payment';
 import {
   PAYMENT_METHOD_STRIPE,
   PAYMENT_METHOD_TEST_NETWORK_VIRTUAL,
@@ -125,26 +125,26 @@ describe('payment-confirmation', () => {
     process.env.PAYMENT_ORCHESTRATION_MODE = PAYMENT_ORCHESTRATION_MODE_PORTAL_BFF;
     const result = await verifyOrderPaymentConfirmation({
       offerClaims: {
-        [SchemaOrgOfferClaim.Price]: VET_PAYMENT_TEST_DATA.priceText,
-        [SchemaOrgOfferClaim.PriceCurrency]: VET_PAYMENT_TEST_DATA.currency,
+        [SchemaOrgOfferClaim.Price]: PAYMENT_TEST_EXAMPLES.priceText,
+        [SchemaOrgOfferClaim.PriceCurrency]: PAYMENT_TEST_EXAMPLES.currency,
       },
       orderClaims: {
         [SchemaOrgOrderClaim.PaymentMethod]: PAYMENT_METHOD_EVM_TRANSFER,
-        [SchemaOrgOrderClaim.PartOfInvoice]: VET_PAYMENT_TEST_DATA.invoiceId,
+        [SchemaOrgOrderClaim.PartOfInvoice]: PAYMENT_TEST_EXAMPLES.invoiceId,
       },
     });
     expect(result).toEqual({
       verified: true,
       paymentMethod: PAYMENT_METHOD_EVM_TRANSFER,
-      invoiceId: VET_PAYMENT_TEST_DATA.invoiceId,
+      invoiceId: PAYMENT_TEST_EXAMPLES.invoiceId,
       paymentUrl: undefined,
     });
     await expect(verifyOrderPaymentConfirmation({
-      offerClaims: { [SchemaOrgOfferClaim.Price]: VET_PAYMENT_TEST_DATA.priceText },
+      offerClaims: { [SchemaOrgOfferClaim.Price]: PAYMENT_TEST_EXAMPLES.priceText },
       orderClaims: {
         [SchemaOrgOrderClaim.PaymentMethod]: PAYMENT_METHOD_EVM_TRANSFER,
-        [SchemaOrgOrderClaim.PartOfInvoice]: VET_PAYMENT_TEST_DATA.invoiceId,
-        [SchemaOrgOrderClaim.PaymentUrl]: VET_PAYMENT_TEST_DATA.transactionHash,
+        [SchemaOrgOrderClaim.PartOfInvoice]: PAYMENT_TEST_EXAMPLES.invoiceId,
+        [SchemaOrgOrderClaim.PaymentUrl]: PAYMENT_TEST_EXAMPLES.transactionHash,
       },
     })).rejects.toThrow('must not send wallet or transaction data to GW');
   });

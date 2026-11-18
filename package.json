@@ -1,8 +1,8 @@
 {
   "name": "sos-gw-node-ts",
-  "version": "2.0.2",
+  "version": "2.1.0",
   "private": true,
-  "description": "SOSCHAIN Gateway service extending GW CORE for secure emergency data interoperability",
+  "description": "SOSChain Gateway for secure emergency data interoperability",
   "repository": {
     "type": "git",
     "url": "https://github.com/soschain/sos-gw-node-ts.git"
@@ -133,7 +133,6 @@
     "express": "4.22.2",
     "fhir-data-utils-ts": "0.7.1",
     "firebase-admin": "^14.2.0",
-    "gdc-common-utils-ts": "2.9.30",
     "google-auth-library": "^10.9.1",
     "jose": "^4.15.9",
     "js-base64": "^3.7.8",
@@ -146,7 +145,7 @@
     "pkijs": "^3.2.5",
     "redis": "^5.10.0",
     "sos-data-utils-ts": "0.8.2",
-    "sos-sdk-core-ts": "0.7.0",
+    "sos-sdk-core-ts": "0.7.1",
     "stripe": "^20.4.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
@@ -155,9 +154,7 @@
     "ts-node": "^10.9.2",
     "twilio": "^6.0.2",
     "typescript": "^5.1.6",
-    "uhc-sdk-core-ts": "^0.5.1",
-    "uuid": "^14.0.1",
-    "vet-data-utils-ts": "0.8.7"
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.28.4",
@@ -181,10 +178,10 @@
     "lodash.clonedeep": "^4.5.0",
     "nodemon": "^3.1.10",
     "pg-mem": "^3.0.5",
-    "sos-sdk-node-ts": "0.5.1",
+    "sos-sdk-node-ts": "0.5.4",
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.1",
-    "vet-sdk-core-ts": "0.7.1"
+    "antifraud-sdk-node-ts": "0.2.6"
   },
   "overrides": {
     "uuid": "$uuid",

@@ -54,8 +54,8 @@ test('caller-owned entry identities and exact retry bytes survive encrypted stor
  assert.equal(f.calls.length,3);assert.equal(f.calls[2].init.body,first);assert.equal((await f.outbox())[0].status,'delivered');
 });
 test('unsupported modifiers cannot become equality grants',async t=>{
- const f=await fixture(t);await f.register(topic('Observation',[{resource:'Observation',filterParameter:'patient'}]));await f.register(subscription({filterBy:[{resourceType:'Observation',filterParameter:'patient',modifier:'contains',value:`Patient/${safe.resourceUuid}`}]}));
- await f.manager.captureEvents(job([observation]));assert.equal((await f.outbox()).length,0);assert.equal(f.calls.length,1);
+ const f=await fixture(t);await f.register(topic('Observation',[{resource:'Observation',filterParameter:'patient'}]));await f.register(subscription({filterBy:[{resourceType:'Observation',filterParameter:'patient',modifier:'contains',value:`Patient/${safe.resourceUuid}`}]}),'400');
+ await f.manager.captureEvents(job([observation]));assert.equal((await f.outbox()).length,0);assert.equal(f.calls.length,0);
 });
 test('inactive topic denies subscription before handshake or persistence',async t=>{
  const f=await fixture(t);await f.register({...topic(),status:'draft'});await f.register(subscription(),'404');assert.equal(f.calls.length,0);assert.equal((await f.outbox()).length,0);

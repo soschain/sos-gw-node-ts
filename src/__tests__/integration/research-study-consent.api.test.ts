@@ -22,10 +22,10 @@ import { afterEach, expect, it } from '@jest/globals';
 import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
-import { ClaimConsent, ConsentDecisions, ConsentStatuses } from 'gdc-common-utils-ts/models/consent-rule';
+import { ClaimConsent, ConsentDecisions, ConsentStatuses } from "fhir-data-utils-ts/claims";
 import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { projectResearchStudyR5SearchClaims } from 'fhir-data-utils-ts';
-import { buildVeterinaryResearchStudyActiveConsentBatch } from 'vet-sdk-core-ts/research-study';
+import { buildResearchStudyActiveConsentBatch } from 'sos-sdk-core-ts/research-study';
 import { OrganizationWorkflowCapabilities } from 'sos-data-utils-ts/organization-workflow-access';
 import {
   buildResearchStudyPartyProjectionId,
@@ -154,7 +154,7 @@ it('activates one study-scoped Consent through the real HTTP queue and worker bo
     } as any, vaultId);
     await vaultRepository.put(vaultId, [licenseDocument as any], getEnvSectionId('device-licenses'));
 
-    const sdkBatch = buildVeterinaryResearchStudyActiveConsentBatch([{
+    const sdkBatch = buildResearchStudyActiveConsentBatch([{
       consentId: fixture.consentId,
       researchStudyId: fixture.studyId,
       practitionerRoleId: fixture.practitionerRoleId,

@@ -1,3 +1,6 @@
+import {extractRepresentativeCredentialBinding} from 'sos-data-utils-ts/activation-policy';
+import {SERVICE_CONTROLLER_ACTIVATION_VC_TYPES} from 'sos-data-utils-ts/identity-credential-contracts';
+import {isLocalDemoSecurityModeForConfiguration} from '../security/runtime-security-policy';
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 // File: src/managers/HostingManager.ts
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
@@ -21,7 +24,7 @@ import { DidCommDecodedMetadata, IDecodedDidcommPayload } from 'sos-data-utils-t
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
-import type { PostalActivationCodeBinding } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
+import type { PostalActivationCodeBinding } from 'sos-data-utils-ts/postal-activation-binding';
 import { getBundleResponseTypeForAction } from '../utils/bundle';
 import { getClaimValue, normalizeContextualizedClaims } from '../utils/claims';
 import { validateNewOrganizationClaims } from '../utils/claims-validator';
@@ -193,7 +196,7 @@ import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprint
 import type { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import { verifyOrganizationTestNetworkCredential } from './hosting/organization-test-network-credential';
 import { registerOrganizationOnLedger } from '../utils/ledger-organization-registration';
-import { OrganizationDidBindingEntryTypes } from 'gdc-common-utils-ts/utils/organization-did-binding';
+import { OrganizationDidBindingEntryTypes } from 'sos-data-utils-ts/organization-did-binding';
 import { DIDCOMM_DEFAULT_ACCEPT_HEADER } from 'sos-data-utils-ts/bff-wire-contract';
 import { DIDCOMM_PLAINTEXT_JSON_MEDIA_TYPE } from 'antifraud-data-utils-ts/didcomm-contracts';
 
@@ -509,7 +512,7 @@ export class HostingManager {
   }
 
   private isDemoSecurityMode(): boolean {
-    return this.config.securityMode === 'demo' || String(this.config.nodeEnv || '').trim().toLowerCase() === 'demo';
+    return isLocalDemoSecurityModeForConfiguration(this.config);
   }
 
   private isDevelopmentOrDemoDiagnosticsEnabled(): boolean {
@@ -949,6 +952,8 @@ export class HostingManager {
     representativeCredential?: Record<string, unknown>;
     environment?: string;
     jobMeta?: DidCommDecodedMetadata;
+    /** Trusted activation-verifier output, never a request-body key. */
+    verifiedControllerSigningKey?:PublicJwk;
   }): Promise<ClaimsRecord | undefined> {
     const representativeCredential = input.representativeCredential || input.credentials?.find((credential) => {
       const types = Array.isArray(credential.type) ? credential.type : [credential.type];
@@ -965,6 +970,33 @@ export class HostingManager {
     const sector = String(normalizedClaims[SchemaOrgServiceClaim.Category] || '').trim() as GatewaySector;
     const vaultId = getTenantVaultId(sector, alternateName);
     if (!await this.vaultRepository.vaultExists(vaultId)) return undefined;
+
+    const storedDoc = await this.vaultRepository.get(
+      this.hostRuntime.hostCollectionName!, vaultId, getEnvSectionId('tenants'),
+    ) as ConfidentialStorageDoc | undefined;
+    if (!storedDoc) throw new ManagerError(`Tenant registry document not found for '${vaultId}'.`, IssueType.NotFound);
+    const storedTenant = await this.kmsService.unprotectConfidentialData(storedDoc, 'host') as OrganizationConfig;
+    // A pending tenant is still between its reviewed transaction and Order.
+    // Let the pending-registration continuation preserve its original Offer
+    // and backfill the verified pre-DCR communication binding; the active-
+    // tenant controller re-registration path requires a finalized tenant DID.
+    if (storedTenant.status === EntityLifecycleStatus.Pending) return undefined;
+
+    const registrationKeys=this.extractRegistrationKeys(input.jobMeta);
+    if(!this.isDemoSecurityMode()){
+      const controllerCredential=input.credentials?.find(credential=>{
+        const types=Array.isArray(credential.type)?credential.type:[credential.type];
+        return types.some(type=>SERVICE_CONTROLLER_ACTIVATION_VC_TYPES.includes(String(type)));
+      });
+      const authorizedBinding=input.verifiedControllerSigningKey
+        ?toJwkThumbprintSha256Urn(input.verifiedControllerSigningKey)
+        :extractRepresentativeCredentialBinding(controllerCredential
+          ?{credentialSubject:(controllerCredential.credentialSubject as Record<string,unknown>|undefined)?.owner}
+          :representativeCredential);
+      if(!registrationKeys.signerJwk||!authorizedBinding||toJwkThumbprintSha256Urn(registrationKeys.signerJwk)!==authorizedBinding){
+        throw new ManagerError('Legacy controller signing key does not match the ICA-authorized business key.',IssueType.Security);
+      }
+    }
 
     const { person } = this.extractResources(normalizedClaims, input.environment);
     if (!person) throw new ManagerError('Legacy representative re-registration requires representative claims.', IssueType.Required);
@@ -991,18 +1023,8 @@ export class HostingManager {
       tenantUrn,
       hostedTenantDid,
       vaultId,
-      this.extractRegistrationKeys(input.jobMeta),
+      registrationKeys,
     );
-    const storedDoc = await this.vaultRepository.get(
-      this.hostRuntime.hostCollectionName!, vaultId, getEnvSectionId('tenants'),
-    ) as ConfidentialStorageDoc | undefined;
-    if (!storedDoc) throw new ManagerError(`Tenant registry document not found for '${vaultId}'.`, IssueType.NotFound);
-    const storedTenant = await this.kmsService.unprotectConfidentialData(storedDoc, 'host') as OrganizationConfig;
-    // A pending tenant is still between its reviewed transaction and Order.
-    // Let the pending-registration continuation preserve its original Offer
-    // and backfill the verified pre-DCR communication binding; the active-
-    // tenant controller re-registration path requires a finalized tenant DID.
-    if (storedTenant.status === EntityLifecycleStatus.Pending) return undefined;
     const controllerDid = controllerConfig.didDocument?.id;
     if (!storedTenant.didDocument?.id || !controllerDid) {
       throw new ManagerError('Legacy representative re-registration requires tenant and controller DID documents.', IssueType.Required);

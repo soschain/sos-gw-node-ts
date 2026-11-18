@@ -1,6 +1,7 @@
 // src/auth/OidcFederationService.ts
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
+import { isLocalDemoSecurityMode } from '../security/runtime-security-policy';
 import { createRemoteJWKSet, jwtVerify, JWTPayload } from 'jose';
 
 export type FederationProvider = 'eidas';
@@ -47,13 +48,13 @@ async function verifyOidcIdToken(idToken: string, cfg: OidcFederationConfig): Pr
 /**
  * Verifies a federated OIDC id_token (e.g. eIDAS) and returns a Firebase custom token.
  *
- * In `NODE_ENV=test`, verification is bypassed and a deterministic token is returned.
+ * An explicitly selected local demo returns a deterministic demonstration identity.
  */
 export async function federateOidcIdTokenToFirebaseCustomToken(params: {
   provider: FederationProvider;
   idToken: string;
 }): Promise<FederationResult> {
-  if (process.env.NODE_ENV === 'test') {
+  if (isLocalDemoSecurityMode()) {
     const subject = 'eidas:test-subject';
     return {
       provider: params.provider,

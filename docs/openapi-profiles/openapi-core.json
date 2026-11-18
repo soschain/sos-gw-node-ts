@@ -4,7 +4,7 @@
     "title": "Gateway API - CORE",
     "version": "1.0.3",
     "description": "CORE API documentation for the secure gateway canonical flow.",
-    "x-profile-generated-at": "2026-11-07T12:13:09.267Z",
+    "x-profile-generated-at": "2026-11-18T02:00:03.059Z",
     "x-profile-name": "core"
   },
   "servers": [],
@@ -269,8 +269,8 @@
           "body": {
             "vp_token": "<ica-proof-token>",
             "controller": {
-              "did": "did:web:people.acme.org:controllers:primary",
-              "sameAs": "urn:multibase:zControllerHash",
+              "did": "did:web:example.invalid:example-tenant:controller",
+              "sameAs": "mailto:controller@example.invalid",
               "publicKeyJwk": {
                 "kid": "controller-es384-001",
                 "kty": "EC",
@@ -436,7 +436,7 @@
                       "org.schema.Person.hasOccupation.identifier.value": "RESPRSN",
                       "org.schema.Service.category": "health-care",
                       "org.schema.Service.identifier": "did:web:tenant.example.org",
-                      "org.schema.Service.url": "https://operator.example.net/acme/cds-es/v1/health-care",
+                      "org.schema.Service.url": "https://example.invalid/acme/cds-es/v1/health-care",
                       "org.schema.Service.serviceType": "organization/Composition.cruds,organization/ResearchSubject.rs"
                     }
                   },
@@ -547,7 +547,7 @@
                       "org.schema.Person.hasOccupation.identifier.value": "RESPRSN",
                       "org.schema.Service.category": "health-care",
                       "org.schema.Service.identifier": "did:web:tenant.example.org",
-                      "org.schema.Service.url": "https://operator.example.net/acme/cds-es/v1/health-care",
+                      "org.schema.Service.url": "https://example.invalid/acme/cds-es/v1/health-care",
                       "org.schema.Service.serviceType": "organization/Composition.cruds,organization/ResearchSubject.rs"
                     }
                   },
@@ -1138,8 +1138,8 @@
                   "meta": {
                     "claims": {
                       "org.schema.Person.identifier": "urn:uuid:11b2c3d4-e5f6-7890-1234-567890abcdef",
-                      "org.schema.Person.hasOccupation.identifier.value": "ISCO-08|4226",
-                      "org.schema.Person.email": "receptionist1@acme.org"
+                      "org.schema.Person.email": "receptionist1@example.invalid",
+                      "org.schema.Person.hasOccupation.identifier.value": "ISCO-08|4226"
                     }
                   }
                 }
@@ -1188,8 +1188,8 @@
                   "meta": {
                     "claims": {
                       "@context": "org.schema",
-                      "org.schema.Person.identifier": "did:web:api.acme.org:employee:zW1pyWCpGPgRpKMwSR8paD7RWtrQtT7tv84BvzDfHbnVWDC:ISCO-08|2211",
-                      "org.schema.Person.email": "shared.professional@example.org",
+                      "org.schema.Person.identifier": "did:web:example.invalid:example-tenant:api:employee:zW1nvCowffLLXWqsTwbtZcLKjURmmohQprbtXvyB2a3wdpn:ISCO-08|2211",
+                      "org.schema.Person.email": "shared.professional@example.invalid",
                       "org.schema.Person.hasOccupation.identifier.value": "ISCO-08|2211"
                     }
                   }
@@ -1219,8 +1219,8 @@
                   "meta": {
                     "claims": {
                       "@context": "org.schema",
-                      "org.schema.Person.identifier": "did:web:api.acme.org:employee:zW1pyWCpGPgRpKMwSR8paD7RWtrQtT7tv84BvzDfHbnVWDC:ISCO-08|2211",
-                      "org.schema.Person.email": "shared.professional@example.org",
+                      "org.schema.Person.identifier": "did:web:example.invalid:example-tenant:api:employee:zW1nvCowffLLXWqsTwbtZcLKjURmmohQprbtXvyB2a3wdpn:ISCO-08|2211",
+                      "org.schema.Person.email": "shared.professional@example.invalid",
                       "org.schema.Person.hasOccupation.identifier.value": "ISCO-08|2211"
                     }
                   }
@@ -1253,8 +1253,8 @@
                     "claims": {
                       "@context": "org.hl7.fhir.api",
                       "RelatedPerson.identifier": "rel-001",
-                      "RelatedPerson.patient": "did:web:host.example.com:health-care:organization:taxid:ES-B00112233:individual:multibase:zMomQqDS8U8M8MxEbzn7gjG",
-                      "RelatedPerson.telecom": "mailto:parent.guardian@example.org",
+                      "RelatedPerson.patient": "did:web:example.invalid:health-care:organization:taxid:ES-B00112233:individual:multibase:zMomQqDS8U8M8MxEbzn7gjG",
+                      "RelatedPerson.telecom": "mailto:parent.guardian@example.invalid",
                       "RelatedPerson.relationship": "v3-RoleCode|RESPRSN"
                     },
                     "status": "inactive"
@@ -1290,8 +1290,8 @@
                     "claims": {
                       "@context": "org.hl7.fhir.api",
                       "RelatedPerson.identifier": "rel-001",
-                      "RelatedPerson.patient": "did:web:host.example.com:health-care:organization:taxid:ES-B00112233:individual:multibase:zMomQqDS8U8M8MxEbzn7gjG",
-                      "RelatedPerson.telecom": "mailto:parent.guardian@example.org",
+                      "RelatedPerson.patient": "did:web:example.invalid:health-care:organization:taxid:ES-B00112233:individual:multibase:zMomQqDS8U8M8MxEbzn7gjG",
+                      "RelatedPerson.telecom": "mailto:parent.guardian@example.invalid",
                       "RelatedPerson.relationship": "v3-RoleCode|RESPRSN"
                     },
                     "status": "purged"
@@ -1404,7 +1404,7 @@
                       "@context": "org.schema",
                       "org.schema.Organization.identifier": "{{individualIdentifier}}",
                       "org.schema.Organization.alternateName": "{{individualAlternateName}}",
-                      "org.schema.Organization.owner.email": "ana.parent@example.org"
+                      "org.schema.Organization.owner.email": "jane.doe@example.invalid"
                     }
                   }
                 }
@@ -1430,7 +1430,7 @@
                       "@context": "org.schema",
                       "org.schema.Organization.identifier": "{{individualIdentifier}}",
                       "org.schema.Organization.alternateName": "{{individualAlternateName}}",
-                      "org.schema.Organization.owner.email": "ana.parent@example.org"
+                      "org.schema.Organization.owner.email": "jane.doe@example.invalid"
                     }
                   }
                 }
@@ -2477,8 +2477,8 @@
                   "meta": {
                     "claims": {
                       "org.schema.Person.identifier": "urn:uuid:11b2c3d4-e5f6-7890-1234-567890abcdef",
-                      "org.schema.Person.hasOccupation.identifier.value": "ISCO-08|4226",
-                      "org.schema.Person.email": "receptionist1@acme.org"
+                      "org.schema.Person.email": "receptionist1@example.invalid",
+                      "org.schema.Person.hasOccupation.identifier.value": "ISCO-08|4226"
                     }
                   }
                 }

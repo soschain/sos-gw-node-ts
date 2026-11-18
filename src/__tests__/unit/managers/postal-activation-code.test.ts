@@ -5,13 +5,13 @@
  */
 import { scryptSync } from 'node:crypto';
 import { SchemaOrgOrderClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { POSTAL_ACTIVATION_CODE_BINDING_ALGORITHM, type PostalActivationCodeBinding } from 'gdc-common-utils-ts/utils/organization-test-network-credential';
+import { POSTAL_ACTIVATION_CODE_BINDING_ALGORITHM, type PostalActivationCodeBinding } from 'sos-data-utils-ts/postal-activation-binding';
 import {
   EXAMPLE_POSTAL_ACTIVATION_CODE,
   EXAMPLE_POSTAL_ACTIVATION_CODE_INVALID,
   EXAMPLE_POSTAL_ACTIVATION_PEPPER,
   EXAMPLE_POSTAL_ACTIVATION_SALT,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import { verifyBoundPostalActivationCode } from '../../../managers/hosting/postal-activation-code';
 
 describe('postal activation code binding', () => {

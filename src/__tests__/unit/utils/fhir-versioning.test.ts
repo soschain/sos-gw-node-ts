@@ -4,14 +4,14 @@
 // allowlisted before the mapping reaches a blockchain adapter.
 // TDD contract: write this test red first; make it green only with the complete real behavior.
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
-import { CompositionClaim } from 'gdc-common-utils-ts/models/interoperable-claims/composition-claims';
+import { CompositionClaim } from "fhir-data-utils-ts/claims";
 import {
   EXAMPLE_CONTROLLER_DID,
   EXAMPLE_CONTROLLER_SIGN_KEY,
   EXAMPLE_KYC_CONTROLLER_USER_UUID,
   EXAMPLE_PROFESSIONAL_DID,
   EXAMPLE_PROVIDER_ORGANIZATION_DID,
-} from 'gdc-common-utils-ts/examples/shared';
+} from 'sos-data-utils-ts/gateway-flow-examples';
 import { describe, expect, it, jest } from '@jest/globals';
 import {
   applyFhirCidVersioningToEntry,
@@ -23,12 +23,12 @@ import {
 } from '../../../utils/fhir-versioning';
 import { uuidToBytes } from '../../../utils/uuid';
 import { sha3_384 } from '@noble/hashes/sha3.js';
-import { encodeMultibase58btc } from 'gdc-common-utils-ts/utils/multibase58';
+import { encodeBase58btc } from 'antifraud-data-utils-ts/encoding';
 
 describe('fhir-versioning utils', () => {
   it('anchors UUID-backed employees from their 16 UUID bytes, independent of reference syntax', () => {
     const employeeUuid = EXAMPLE_KYC_CONTROLLER_USER_UUID;
-    const expected = encodeMultibase58btc(Uint8Array.from([
+    const expected = encodeBase58btc(Uint8Array.from([
       0x15,
       0x30,
       ...sha3_384(uuidToBytes(employeeUuid)),
