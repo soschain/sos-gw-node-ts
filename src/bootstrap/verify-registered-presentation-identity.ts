@@ -8,13 +8,14 @@ import { findDeviceLicensesByActivationCode } from '../utils/device-license-stor
 import { getEnvSectionId } from '../utils/section-env';
 import { getPersonOccupationClaim } from '../utils/occupation';
 import { normalizeCodeSystemAndValue } from '../utils/normalize-codeAndSystem';
-import { resolveRoleBearingEmployeeUrn } from '../utils/urn';
+import { resolveRoleBearingEmployeeUrn, parseTenantUrn, getTenantIdentifierUrnPrefix } from '../utils/urn';
+import { buildIssuedRoleLicenseLedgerIdentityFromSeat, type IssuedRoleLicenseLedgerIdentity } from '../utils/ledger-role-license';
 
 /** Verifies the SDK's identity projection using current protected host records, independently of the VP signature. */
 export async function verifyRegisteredProfessionalIdentity(input: {
   credential: Record<string, any>; holder: string; vaultId: string; employeeCollection: string;
   kmsService: IKmsService; vaultRepository: IVaultRepository; now?: number;
-}): Promise<{ actorDid: string; acr: string; employeeUrn?: string; role: string; stableActorIdentifier?: string }> {
+}): Promise<{ actorDid: string; acr: string; employeeUrn?: string; role: string; stableActorIdentifier?: string; roleLicenseIdentity?: IssuedRoleLicenseLedgerIdentity }> {
   const identity = summarizeProfessionalIdentityCredential(input.credential);
   if (!identity || input.credential.issuer || input.credential.iss || input.credential.proof) throw new Error('Unsupported registered professional identity projection.');
   const profileDocument = await input.vaultRepository.get<any>(input.vaultId, input.holder, getEnvSectionId('device-profiles'));
@@ -45,5 +46,16 @@ export async function verifyRegisteredProfessionalIdentity(input: {
   const aliases = new Set(getProfessionalIdentitySameAs({ email: getClaimValue(employee.claims || {}, SchemaOrgPersonClaim.Email), sameAs: getClaimValue(employee.claims || {}, SchemaOrgPersonClaim.SameAs) }));
   if (profile.stableActorIdentifier) aliases.add(profile.stableActorIdentifier);
   if (identity.sameAs.some(alias => !aliases.has(alias))) throw new Error('Professional continuity alias is not present in its registered identity.');
-  return { actorDid: identity.actorDid, acr: 'urn:antifraud:acr:openid4vp:employee', employeeUrn: resolveRoleBearingEmployeeUrn(did), role: identity.role, stableActorIdentifier: profile.stableActorIdentifier };
+  const employeeUrn = resolveRoleBearingEmployeeUrn(did, identity.role);
+  const jurisdiction = employeeUrn ? parseTenantUrn(getTenantIdentifierUrnPrefix(employeeUrn))?.jurisdiction : undefined;
+  let roleLicenseIdentity: IssuedRoleLicenseLedgerIdentity | undefined;
+  if (jurisdiction && licence.ownerOrganizationId && profile.stableActorIdentifier) {
+    if (licence.activatedBy && licence.activatedBy !== profile.stableActorIdentifier) throw new Error('Professional licence holder does not match its registered device.');
+    roleLicenseIdentity = buildIssuedRoleLicenseLedgerIdentityFromSeat({
+      organizationId: licence.ownerOrganizationId, jurisdiction,
+      stableContactIdentifier: profile.stableActorIdentifier, licensedRole: licence.issuedToRole,
+    });
+  }
+  return { actorDid: identity.actorDid, acr: 'urn:antifraud:acr:openid4vp:employee', employeeUrn, role: identity.role, stableActorIdentifier: profile.stableActorIdentifier,
+    ...(roleLicenseIdentity ? { roleLicenseIdentity } : {}) };
 }
