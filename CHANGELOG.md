@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Pin the published independent Antifraud, FHIR and SOS runtime libraries and
+  native SDK to their verified registry releases for the cumulative gateway
+  image. Preserve existing host identity, custody and deployment profiles.
+
 - Reuse the original active licence credential and device bindings when an
   authorized actor enrolls another installation. Reconcile a missing legacy
   controller subject only from its current protected tenant designation and
