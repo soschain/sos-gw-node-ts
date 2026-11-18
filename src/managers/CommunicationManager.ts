@@ -442,7 +442,7 @@ export class CommunicationManager implements IJobProcessor {
     }
 
     // The audience of our response should be the issuer of the request
-    const aud = job.content.meta?.bearer?.jwt?.payload?.iss || '';
+    const aud = job.content.iss || '';
 
     const result: IDecodedDidcommPayload = {
       jti: uuidv4(),
@@ -494,7 +494,7 @@ export class CommunicationManager implements IJobProcessor {
     return {
       jti: uuidv4(),
       iss: serverDid,
-      aud: job.content?.meta?.bearer?.jwt?.payload?.iss || '',
+      aud: job.content?.iss || '',
       exp: now + 300,
       thid: this.normalizeOptionalString(job.content?.thid) || uuidv4(),
       type: 'api+json',
