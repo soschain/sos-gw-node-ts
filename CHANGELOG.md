@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Preserve typed policy-denial status and tenant signing authority in asynchronous
+  error responses, retaining request correlation and generic unexpected failures.
+
+- Read professional assignments through the canonical employee ledger transaction.
+
 - Resolve professional role and licence authority through the protected current
   licence and authoritative ledger assets, using the canonical key-binding schema.
 

@@ -4,6 +4,10 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { jest } from '@jest/globals';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import { testTenant1DidWebExternal } from '../data/organization.data';
+import { composeHostDidWebId } from '../../utils/did-backend';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { Worker } from '../../worker';
 import { IJobProcessor, ManagerRegistry } from '../../managers/registry';
@@ -39,6 +43,48 @@ describe('Worker', () => {
     
     worker = new Worker(mockManagerRegistry, API_BASE_URL, mockKmsService);
     jest.clearAllMocks();
+  });
+
+  describe('authenticated operational error responses', () => {
+    const executeError = async (failure: Error, host = false, operational = true) => {
+      const tenantManager = mock<ManagerRegistry['tenantManager']>();
+      tenantManager.isTenantOperational.mockResolvedValue(operational);
+      tenantManager.getDidDocument.mockResolvedValue({ id: testTenant1DidWebExternal } as any);
+      const localWorker = new Worker(mock<ManagerRegistry>({ individualManager: mockIndividualManager, tenantManager, subscriptionManager: undefined }), API_BASE_URL, mockKmsService);
+      mockIndividualManager.process.mockRejectedValue(failure);
+      mockKmsService.encodeResponse.mockResolvedValue('signed-encrypted-error');
+      const job: JobRequest = {
+        ...testCreateCustomerJobRequestProfessionalOnboarding,
+        tenantId: host ? 'host' : 'acme', sector: 'health-care', resourceType: 'Person',
+        contentType: 'application/x-www-form-urlencoded',
+        content: { ...testCreateCustomerJobRequestProfessionalOnboarding.content,
+          iss: 'untrusted-request-issuer', aud: 'untrusted-request-audience', thid: 'operation-thread', jti: 'operation-id',
+          meta: { jwe: { header: { jwk: { kid: 'public-reply-key' } } } },
+        } as any,
+      };
+      await localWorker.process(createJobName(host ? 'host' : 'health-care_acme', 'Person', '_batch'), job);
+      return mockKmsService.encodeResponse.mock.calls.at(-1)!;
+    };
+    it('returns a policy denial with the operational tenant issuer, status and request correlation', async () => {
+      const [response, , vault] = await executeError(new ManagerError('Current consent does not authorize this request.', IssueType.Forbidden));
+      expect(vault).toBe('health-care_acme');
+      expect(response).toMatchObject({ iss: testTenant1DidWebExternal, aud: 'untrusted-request-issuer', thid: 'operation-thread', jti: 'operation-id', body: { data: [{ response: { status: '403', outcome: { issue: [{ code: IssueType.Forbidden }] } } }] } });
+    });
+    it('keeps host policy errors signed by the host', async () => {
+      const [response, , vault] = await executeError(new ManagerError('Host policy denied.', IssueType.Forbidden), true);
+      expect(vault).toBe('host'); expect(response.iss).toBe(composeHostDidWebId(API_BASE_URL));
+      expect(response.body.data[0].response.status).toBe('403');
+    });
+    it('keeps unexpected failures generic and signed by the host', async () => {
+      const [response, , vault] = await executeError(Object.assign(new Error('private unexpected failure detail'), { status: '403', code: IssueType.Forbidden }));
+      expect(vault).toBe('host'); expect(response.iss).toBe(composeHostDidWebId(API_BASE_URL));
+      expect(response.body.data[0].response.status).toBe('500');
+      expect(JSON.stringify(response)).not.toContain('private unexpected failure detail');
+    });
+    it('does not use a tenant issuer when its current operational authority is unavailable', async () => {
+      const [response, , vault] = await executeError(new ManagerError('Policy denied.', IssueType.Forbidden), false, false);
+      expect(vault).toBe('host'); expect(response.iss).toBe(composeHostDidWebId(API_BASE_URL));
+    });
   });
 
   it('should route a "Person" resourceType job to the IndividualManager and encode the response', async () => {
@@ -312,7 +358,7 @@ describe('Worker', () => {
     // ASSERT
     expect(mockIndividualManager.process).not.toHaveBeenCalled();
     const errorIssue = response.body.data[0].response.outcome.issue![0];
-    expect(errorIssue.diagnostics).toContain(`No manager configured for resourceType '${resourceType}'`);
+    expect(errorIssue.diagnostics).toBe('Gateway operation failed.');
   });
 
   it('keeps canonical resource.meta.claims without creating legacy claims or warnings', async () => {
@@ -416,9 +462,7 @@ describe('Worker', () => {
     const response = JSON.parse(await localWorker.process(jobName, job));
 
     expect(mockPersonManager.process).not.toHaveBeenCalled();
-    expect(response.body.data[0].response.outcome.issue[0].diagnostics).toContain(
-      'Claims must be supplied only in entry.resource.meta.claims',
-    );
+    expect(response.body.data[0].response.outcome.issue[0].diagnostics).toBe('Gateway operation failed.');
     expect((job.content as any).body.data[0].resource.meta).toBeUndefined();
   });
 
