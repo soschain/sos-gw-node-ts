@@ -77,6 +77,7 @@ export function createDiscoveryRouter(
   vaultRepository: IVaultRepository,
   cryptography: Pick<ICryptography, 'jwsToCompact'>,
   offeringCatalog?: Pick<PublicOfferingCatalogManager, 'read' | 'hasPublications'>,
+  gatewayPublicUrl?: string,
 ): express.Router {
   const router = express.Router();
   const tenantStatusService = new TenantStatusService(tenantsCacheManager, vaultRepository, kmsService);
@@ -177,7 +178,10 @@ export function createDiscoveryRouter(
   /**
    * Builds the absolute public origin of the current request.
    */
-  const buildPublicOrigin = (req: express.Request): string => `${req.protocol}://${req.get('host')}`;
+  const configuredPublicUrl = URL.parse(gatewayPublicUrl ?? '');
+  const buildPublicOrigin = (req: express.Request): string => configuredPublicUrl?.protocol === 'https:'
+    ? configuredPublicUrl.origin
+    : `${req.protocol}://${req.get('host')}`;
 
   /**
    * Returns whether the resolved participant is currently allowed to publish
@@ -1128,7 +1132,7 @@ export function createDiscoveryRouter(
   router.get(`${tenantWellKnownPrefix}/service-offering-index.json`, resolveTenant, async (req, res) => {
     const tenantConfig = await tenantsCacheManager.getTenant(res.locals.vaultId);
     const dataset = tenantConfig ? toProviderDataset(tenantConfig) : null;
-    const artifact = dataset ? buildServiceOfferingArtifact(dataset, 'index', `${req.protocol}://${req.get('host')}`) : undefined;
+    const artifact = dataset ? buildServiceOfferingArtifact(dataset, 'index', buildPublicOrigin(req)) : undefined;
     if (!artifact) return res.status(404).type('text').send('Not Found');
     res.json(await signGaiaXEnvelopedCredential(artifact, res.locals.vaultId));
   });
@@ -1136,7 +1140,7 @@ export function createDiscoveryRouter(
   router.get(`${tenantWellKnownPrefix}/service-offering-research.json`, resolveTenant, async (req, res) => {
     const tenantConfig = await tenantsCacheManager.getTenant(res.locals.vaultId);
     const dataset = tenantConfig ? toProviderDataset(tenantConfig) : null;
-    const artifact = dataset ? buildServiceOfferingArtifact(dataset, 'research', `${req.protocol}://${req.get('host')}`) : undefined;
+    const artifact = dataset ? buildServiceOfferingArtifact(dataset, 'research', buildPublicOrigin(req)) : undefined;
     if (!artifact) return res.status(404).type('text').send('Not Found');
     res.json(await signGaiaXEnvelopedCredential(artifact, res.locals.vaultId));
   });
@@ -1144,7 +1148,7 @@ export function createDiscoveryRouter(
   router.get(`${tenantWellKnownPrefix}/service-offering-personal-backup.json`, resolveTenant, async (req, res) => {
     const tenantConfig = await tenantsCacheManager.getTenant(res.locals.vaultId);
     const dataset = tenantConfig ? toProviderDataset(tenantConfig) : null;
-    const artifact = dataset ? buildServiceOfferingArtifact(dataset, 'personal-backup', `${req.protocol}://${req.get('host')}`) : undefined;
+    const artifact = dataset ? buildServiceOfferingArtifact(dataset, 'personal-backup', buildPublicOrigin(req)) : undefined;
     if (!artifact) return res.status(404).type('text').send('Not Found');
     res.json(await signGaiaXEnvelopedCredential(artifact, res.locals.vaultId));
   });
@@ -1387,7 +1391,7 @@ export function createDiscoveryRouter(
     const hostDid = await tenantsCacheManager.getDidDocument('host');
     if (!hostDid?.id) return res.status(503).type('text').send('Service Unavailable');
 
-    const publicOrigin = `${req.protocol}://${req.get('host')}`;
+    const publicOrigin = buildPublicOrigin(req);
     const autodiscoverableTenants = await tenantsCacheManager.listAutodiscoverableTenants();
     const datasets = filterProviderDatasets(autodiscoverableTenants
       .map(toProviderDataset)

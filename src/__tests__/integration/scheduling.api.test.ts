@@ -36,6 +36,24 @@ const schedulingClaimsProjection = (resource: Readonly<{ resourceType: string; i
 
 afterEach(() => resetServerConfig());
 
+it('uses the configured HTTPS gateway identity for public catalogue links behind the ingress', async () => {
+  const publicOrigin = new URL(REPOSITORY_SAFE_EXAMPLES.httpsBaseUrl).origin;
+  const environment = jest.replaceProperty(process, 'env', { ...process.env, HOST_PUBLIC_URL: publicOrigin, HOST_EXTERNAL_DOMAIN: '' });
+  try {
+    configureEnvironment();
+    const authenticatedActor = await configureAuthenticatedTestActor();
+    resetServerConfig();
+    const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
+    try {
+      await provisionTenant({ authenticatedActor, tenantManager, vaultRepository, kmsService });
+      const scope = { tenantId, jurisdiction, version: 'v1', sector };
+      const reply = await invokeExpress(app, { method: 'GET', url: buildGatewayDataspaceCatalogArtifactPath(scope) });
+      expect(reply.status).toBe(200);
+      expect(new URL(JSON.parse(reply.text)['@id']).origin).toBe(publicOrigin);
+    } finally { queueAdapter.stop(); }
+  } finally { environment.restore(); }
+});
+
 it('publishes a territorial CRM catalogue and individual offerings through the authenticated queue', async () => {
   configureEnvironment();
   const authenticatedActor = await configureAuthenticatedTestActor();

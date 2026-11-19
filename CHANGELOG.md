@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Use the configured public HTTPS origin in discovery catalogues and Gaia-X
+  offer URLs when the ingress forwards requests over HTTP.
+
 - Include published HealthDCAT research dataset metadata and linked data
   services in the tenant DSP catalogue and dataset detail routes. Archiving a
   catalogue record removes it from discovery while retaining the protected
