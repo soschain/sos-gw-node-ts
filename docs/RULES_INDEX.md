@@ -20,6 +20,9 @@ one.
 - [Federated EHR continuity boundary](04-DEEP-DIVES/04.L-FEDERATED-EHR-CONTINUITY-STORAGE.md)
   records extension scope without claiming unimplemented behavior.
 
+- [Public security and operator deliverables](../deliverables/README.md)
+  connects the evidence and portable deployment instructions.
+
 ## Repository skills
 
 - [Configure trusted identity providers](../.codex/skills/configure-trusted-identity-providers/SKILL.md)

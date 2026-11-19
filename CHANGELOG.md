@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Add an operator-managed SOS Gateway Helm chart, a public security assessment
+  and a Google Cloud deployment guide.
+
 - Remove SMS bodies, contact numbers, subject identifiers and decrypted claims
   from webhook and voice lookup logs.
 

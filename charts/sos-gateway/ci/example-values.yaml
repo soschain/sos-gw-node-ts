@@ -1,0 +1,8 @@
+image:
+  repository: registry.example.invalid/sos-gateway
+  digest: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+publicUrl: https://gateway.example.invalid
+existingConfigMap: gateway-config
+existingSecret: gateway-runtime
+serviceAccountName: gateway-workload
+kmsProvider: gcp

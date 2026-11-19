@@ -77,6 +77,7 @@ Start with [the documentation index](docs/README.md):
 - [API and interoperability](docs/api-and-interoperability.md)
 - [Identifier-free public-health statistics](docs/PUBLIC_HEALTH_STATISTICS.md)
 - [Security and deployment](docs/security-and-deployment.md)
+- [Security report and operator deliverables](deliverables/README.md)
 - [Upstream projects and history](docs/upstream-and-history.md)
 
 The generated OpenAPI document is `swagger-spec.json`. A running gateway serves

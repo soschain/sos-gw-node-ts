@@ -41,6 +41,11 @@ They do not belong in this public repository.
 Follow [SECURITY.md](../SECURITY.md) to report vulnerabilities. Do not open a
 public issue containing a credential, exploit payload or tenant information.
 
+The [operator Helm guide](../charts/sos-gateway/README.md) describes the
+portable workload and Google Cloud profile. See the
+[public security assessment](../deliverables/SECURITY-ASSESSMENT.md) for the
+controls assessed and evidence required for release.
+
 ## Canonical public origin and historical URLs
 
 Set `HOST_PUBLIC_URL` to the canonical public origin and
