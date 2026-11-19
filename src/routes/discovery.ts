@@ -24,7 +24,7 @@ import {
   type ServiceOfferingRole,
 } from 'sos-data-utils-ts/continuity-service-capabilities';
 import { buildGatewayDataspaceVersionMetadata } from 'sos-data-utils-ts/gateway-dataspace-routing';
-import { buildGatewayDataspaceCatalogArtifactPath, buildGatewayDataspaceCatalogCollectionPath, buildGatewayDataspaceCatalogDatasetPath, buildGatewayDataspaceCatalogRequestPath, buildGatewayDataspaceBasePath, buildGatewayDataspaceVersionPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
+import { buildGatewayDataspaceCatalogArtifactPath, buildGatewayDataspaceCatalogCollectionPath, buildGatewayDataspaceCatalogDatasetPath, buildGatewayDataspaceCatalogRequestPath, buildGatewayDataspaceBasePath, buildGatewayDataspaceOfferingCatalogPath, buildGatewayDataspaceVersionPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import { getBaseUrlFromDidWeb } from '../utils/did-backend';
 import { isFhirSector, isResearchSector } from '../utils/sector';
 import { hasProviderServiceCapabilityClaim } from '../utils/services';
@@ -1558,10 +1558,10 @@ export function createDiscoveryRouter(
     res.json(buildCatalog(catalogBaseUrl, publicOrigin, [dataset]));
   });
 
-  const tenantCatalogPath = buildGatewayDataspaceCatalogCollectionPath({
+  const offeringsPath = buildGatewayDataspaceOfferingCatalogPath({
     tenantId: ':tenantId', jurisdiction: ':jurisdiction', version: ':version', sector: ':sector',
   });
-  router.get(`${tenantCatalogPath}/offerings.json`, resolveTenant, async (req, res) => {
+  router.get(offeringsPath, resolveTenant, async (req, res) => {
     const { vaultId } = res.locals;
     const jurisdiction = await tenantsCacheManager.getTenantJurisdiction(vaultId);
     if (!offeringCatalog || vaultId === 'host' || jurisdiction?.toUpperCase() !== req.params.jurisdiction.toUpperCase()
