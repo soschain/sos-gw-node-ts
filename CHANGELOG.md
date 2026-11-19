@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Document offering catalogue publication, individual edits, asynchronous
+  receipts and public discovery in the generated OpenAPI extension profile.
 - Register `organization/org.schema/Catalog/_publish` for a controller's
   JSON:API catalogue snapshot. Validate the whole document against the tenant
   before writing one protected record. Publish the current tenant projection

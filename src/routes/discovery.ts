@@ -1249,6 +1249,26 @@ export function createDiscoveryRouter(
    *       '200': { description: DCAT catalog artifact }
    *       '404': { description: Tenant not found }
    *
+   * /{tenantId}/cds-{jurisdiction}/{version}/{sector}/dsp/catalog/offerings.json:
+   *   get:
+   *     tags: [Data Catalog Discovery]
+   *     summary: Read an operational tenant's published offerings
+   *     security: []
+   *     parameters:
+   *       - $ref: '#/components/parameters/TenantId'
+   *       - $ref: '#/components/parameters/Jurisdiction'
+   *       - $ref: '#/components/parameters/Version'
+   *       - $ref: '#/components/parameters/Sector'
+   *     responses:
+   *       '200':
+   *         description: Public offering projection, which may be empty before the first publication.
+   *         headers:
+   *           Cache-Control: { schema: { type: string, enum: [no-store] } }
+   *         content:
+   *           application/json:
+   *             schema: { type: array, items: { type: object } }
+   *       '404': { description: Tenant unavailable or jurisdiction mismatch. }
+   *
    * /{tenantId}/cds-{jurisdiction}/{version}/{sector}/dsp/catalog/datasets/{id}:
    *   get:
    *     tags: [Data Catalog Discovery]

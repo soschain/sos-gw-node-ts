@@ -2767,6 +2767,83 @@ export function createApiRouter(
    *       '202': { description: Pending. Retry later. }
    *       '200': { description: Completed with zero or more claims-first Provenance resources. }
    *
+   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_publish:
+   *   parameters:
+   *     - $ref: '#/components/parameters/TenantId'
+   *     - $ref: '#/components/parameters/Jurisdiction'
+   *     - $ref: '#/components/parameters/Sector'
+   *   post:
+   *     tags: [Data Catalog Discovery]
+   *     summary: Replace the tenant's imported offering catalog
+   *     description: |
+   *       Submit a signed DIDComm message whose body is a JSON:API document with
+   *       the complete imported catalog. Only the active tenant's controller
+   *       can submit it. The gateway validates the entire document before
+   *       replacing the snapshot and preserves individually published entries.
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/x-www-form-urlencoded:
+   *           schema: { $ref: '#/components/schemas/SecureRequest' }
+   *         application/didcomm-plain+json:
+   *           schema: { type: object }
+   *           examples:
+   *             snapshot: { $ref: '#/components/examples/OfferingCatalogPublication' }
+   *     responses:
+   *       '202': { description: Snapshot publication queued. }
+   *       '401': { description: Authentication required. }
+   *
+   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_upsert:
+   *   parameters:
+   *     - $ref: '#/components/parameters/TenantId'
+   *     - $ref: '#/components/parameters/Jurisdiction'
+   *     - $ref: '#/components/parameters/Sector'
+   *   post:
+   *     tags: [Data Catalog Discovery]
+   *     summary: Publish an individual tenant offering
+   *     description: |
+   *       Submit a signed DIDComm message whose body is a JSON:API document
+   *       with exactly one offering. The individual entry takes precedence
+   *       over an imported entry with the same ID and survives snapshot replacement.
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/x-www-form-urlencoded:
+   *           schema: { $ref: '#/components/schemas/SecureRequest' }
+   *         application/didcomm-plain+json:
+   *           schema: { type: object }
+   *           examples:
+   *             offering: { $ref: '#/components/examples/OfferingCatalogUpsert' }
+   *     responses:
+   *       '202': { description: Individual publication queued. }
+   *       '401': { description: Authentication required. }
+   *
+   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_publish-response:
+   *   parameters:
+   *     - $ref: '#/components/parameters/TenantId'
+   *     - $ref: '#/components/parameters/Jurisdiction'
+   *     - $ref: '#/components/parameters/Sector'
+   *   post:
+   *     tags: [Async Polling]
+   *     summary: Poll an imported offering catalog publication
+   *     requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AsyncPollRequest' } } } }
+   *     responses:
+   *       '200': { description: Terminal result. A successful receipt reports the published offering count. }
+   *       '202': { description: Pending. }
+   *
+   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_upsert-response:
+   *   parameters:
+   *     - $ref: '#/components/parameters/TenantId'
+   *     - $ref: '#/components/parameters/Jurisdiction'
+   *     - $ref: '#/components/parameters/Sector'
+   *   post:
+   *     tags: [Async Polling]
+   *     summary: Poll an individual offering publication
+   *     requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AsyncPollRequest' } } } }
+   *     responses:
+   *       '200': { description: Terminal result. A successful receipt reports one published offering. }
+   *       '202': { description: Pending. }
+   *
    * /{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.hl7.fhir.r5/ResearchStudy/_batch:
    *   post:
    *     tags: [8.8 Research Study Administration]

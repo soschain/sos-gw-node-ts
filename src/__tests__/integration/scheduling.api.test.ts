@@ -23,6 +23,7 @@ import { getEnvSectionId } from '../../utils/section-env';
 import { initializeTenantServicesConfig } from '../../utils/services';
 import { generateTenantCollectionNameFromClaims, getTenantVaultId } from '../../utils/tenant';
 import { testPayloadCreateTenant1 } from '../data/end-to-end.data';
+import { PUBLIC_OFFERING_EXAMPLE } from '../data/example-payloads';
 import { configureAuthenticatedTestActor } from './helpers/authenticated-test-actor';
 import { invokeExpress } from './helpers/invokeExpress';
 
@@ -45,12 +46,7 @@ it('publishes a territorial CRM catalogue and individual offerings through the a
     const scope = { tenantId, jurisdiction, version: 'v1', sector };
     const feed = buildGatewayDataspaceOfferingCatalogPath(scope);
     const safe = REPOSITORY_SAFE_EXAMPLES;
-    const seller = { id: `${safe.didWeb}:retailer`, name: 'Example retailer' };
-    const product = { id: 'tracker', type: 'Product', attributes: {
-      category: 'devices', name: 'Example tracker', description: 'Animal monitoring device',
-      offers: [{ id: 'territorial-offer', seller, eligibleRegions: [{ country: safe.secondaryCountryIso2, regions: [] }],
-        deliveryCountries: [], supportCountries: [], operationCountries: [], url: safe.httpsBaseUrl }],
-    } };
+    const product = PUBLIC_OFFERING_EXAMPLE;
     const publicRead = () => invokeExpress(app, { method: 'GET', url: feed });
     const catalogRead = () => invokeExpress(app, { method: 'GET', url: buildGatewayDataspaceCatalogArtifactPath(scope) });
     const empty = await publicRead();

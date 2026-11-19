@@ -30,6 +30,8 @@ function classifyPath(p) {
   // Extension-oriented or non-core verticals.
   if (
     p.includes('/Observation/') ||
+    p.includes('/organization/org.schema/Catalog/') ||
+    p.endsWith('/dsp/catalog/offerings.json') ||
     p.includes('/Subject/_batch') ||
     p.includes('/ResearchStudy/') ||
     p.includes('/Group/') ||
@@ -168,6 +170,10 @@ function deriveSpec(spec, targetProfile) {
   }
 
   clone.paths = kept;
+  if (targetProfile !== 'extension' && clone.components?.examples) {
+    delete clone.components.examples.OfferingCatalogPublication;
+    delete clone.components.examples.OfferingCatalogUpsert;
+  }
   clone.info = clone.info || {};
   if (targetProfile === 'core') {
     clone.info.title = 'Gateway API - CORE';

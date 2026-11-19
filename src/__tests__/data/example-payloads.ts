@@ -37,6 +37,41 @@ import { buildLicensePurchaseEntry, buildLicenseSearchEntry } from 'sos-data-uti
 import { EXAMPLE_LICENSE_PURCHASE_INPUT, EXAMPLE_SERVICE_PUBLIC_DID, EXAMPLE_THREAD_IDENTIFIER_LICENSE_SEARCH } from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import { EXAMPLE_API_ORGANIZATION_DID } from 'sos-data-utils-ts/gateway-flow-examples';
 
+/** A territorial device used by the HTTP integration test and catalogue API examples. */
+export const PUBLIC_OFFERING_EXAMPLE = {
+  id: 'tracker',
+  type: 'Product',
+  attributes: {
+    category: 'devices',
+    name: 'Example tracker',
+    description: 'Animal monitoring device',
+    offers: [{
+      id: 'territorial-offer',
+      seller: { id: `${SAFE.didWeb}:retailer`, name: 'Example retailer' },
+      eligibleRegions: [{ country: SAFE.secondaryCountryIso2, regions: [] }],
+      deliveryCountries: [],
+      supportCountries: [],
+      operationCountries: [],
+      url: SAFE.httpsBaseUrl,
+    }],
+  },
+};
+
+export const OFFERING_CATALOG_PUBLICATION_EXAMPLE = {
+  jti: 'offering-catalog-publication',
+  thid: 'offering-catalog-publication',
+  iss: `${EXAMPLE_API_ORGANIZATION_DID}:controller`,
+  aud: EXAMPLE_API_ORGANIZATION_DID,
+  type: 'application/didcomm-plain+json',
+  body: { jsonapi: { version: '1.1' }, data: [PUBLIC_OFFERING_EXAMPLE] },
+};
+
+export const OFFERING_CATALOG_UPSERT_EXAMPLE = {
+  ...OFFERING_CATALOG_PUBLICATION_EXAMPLE,
+  jti: 'offering-catalog-upsert',
+  thid: 'offering-catalog-upsert',
+  body: { data: PUBLIC_OFFERING_EXAMPLE },
+};
 
 /**
  * @file This file serves as the Single Source of Truth for all complex test payloads
