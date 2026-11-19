@@ -6,7 +6,8 @@ import * as express from 'express';
 import type { IDiscoveryTenantRegistry } from '../managers/IDiscoveryTenantRegistry';
 import type { PublicOfferingCatalogManager } from '../managers/PublicOfferingCatalogManager';
 import { DiscoveryService } from '../services/DiscoveryService';
-import { getTenantVaultId } from '../utils/tenant';
+import { readPublishedHealthDcat } from '../services/PublishedHealthDcatDiscovery';
+import { getTenantVaultId, resolveOrganizationRouteJurisdiction } from '../utils/tenant';
 import { pingHandler } from './handlers/discovery/ping.handler';
 import { signVerifiableCredential } from '../utils/vc-signer';
 import { findSigningMethod, toPublicJwkSet } from '../utils/did-backend';
@@ -91,6 +92,7 @@ export function createDiscoveryRouter(
     alternateName?: string;
     sector?: string;
     jurisdiction?: string;
+    routeJurisdiction?: string;
     serviceTypeClaim?: string;
     termsOfService?: string;
     termsOfServiceHash?: string;
@@ -244,6 +246,7 @@ export function createDiscoveryRouter(
       alternateName,
       sector,
       jurisdiction,
+      routeJurisdiction: tenantConfig?.claims ? resolveOrganizationRouteJurisdiction(tenantConfig.claims) : undefined,
       serviceTypeClaim,
       termsOfService: getTenantServiceClaim(tenantConfig, SchemaOrgServiceClaim.TermsOfService),
       termsOfServiceHash: getTenantServiceClaim(tenantConfig, `${SchemaOrgServiceClaim.TermsOfService}#hash`),
@@ -328,7 +331,8 @@ export function createDiscoveryRouter(
   });
 
   const buildCatalog = (catalogBaseUrl: string, publicOrigin: string, datasets: ProviderDataset[],
-    additionalServices: readonly ReturnType<typeof toServiceOfferingNode>[] = []) => ({
+    additionalServices: readonly ReturnType<typeof toServiceOfferingNode>[] = [],
+    research?: Awaited<ReturnType<typeof readPublishedHealthDcat>>) => ({
     '@context': {
       dcat: 'https://www.w3.org/ns/dcat#',
       dcterms: 'http://purl.org/dc/terms/',
@@ -337,8 +341,8 @@ export function createDiscoveryRouter(
     },
     '@id': `${catalogBaseUrl}`,
     '@type': 'dcat:Catalog',
-    'dcat:service': [...datasets.flatMap((dataset) => buildServiceOfferings(dataset, publicOrigin).map(toServiceOfferingNode)), ...additionalServices],
-    'dcat:dataset': datasets.map((dataset) => ({
+    'dcat:service': [...datasets.flatMap((dataset) => buildServiceOfferings(dataset, publicOrigin).map(toServiceOfferingNode)), ...additionalServices, ...(research?.services ?? [])],
+    'dcat:dataset': [...datasets.map((dataset) => ({
       '@id': `${catalogBaseUrl}/datasets/${dataset.datasetId}`,
       '@type': 'dcat:Dataset',
       'dcterms:title': dataset.title,
@@ -356,7 +360,27 @@ export function createDiscoveryRouter(
       'odrl:hasPolicy': {
         '@type': 'odrl:Set',
       },
-    })),
+    })), ...(research?.datasets ?? [])],
+  });
+
+  const tenantPublishedResearch = async (req: express.Request, vaultId: string, catalogUrl: string, dataset: ProviderDataset) => {
+    if (vaultId === 'host' || (await tenantsCacheManager.getTenantJurisdiction(vaultId))?.toUpperCase() !== req.params.jurisdiction.toUpperCase()) return undefined;
+    const collection = await tenantsCacheManager.getCollectionName(vaultId);
+    if (!collection) return undefined;
+    return readPublishedHealthDcat(vaultRepository, kmsService, collection, vaultId, catalogUrl, dataset.publisherDid);
+  };
+
+  const buildHostCatalog = (catalogUrl: string, publicOrigin: string, providers: ProviderDataset[]) => ({
+    ...buildCatalog(catalogUrl, publicOrigin, providers),
+    'dcat:catalog': providers.flatMap(provider => {
+      if (!provider.alternateName || !provider.routeJurisdiction || !provider.sector) return [];
+      return [{ '@id': buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogArtifactPath({
+        tenantId: provider.alternateName,
+        jurisdiction: provider.routeJurisdiction.toLowerCase(),
+        version: 'v1',
+        sector: provider.sector,
+      })) }];
+    }),
   });
 
   const tenantCommercialCatalogueService = async (req: express.Request, vaultId: string, dataset: ProviderDataset) => {
@@ -1174,7 +1198,7 @@ export function createDiscoveryRouter(
    *   post:
    *     tags: [Data Catalog Discovery]
    *     summary: Operator DSP catalog request
-   *     description: Returns a `dcat:Catalog` with provider datasets discoverable by client apps.
+   *     description: Returns a DCAT catalog with provider datasets and links to the matching tenants' catalog artifacts.
    *     parameters:
    *       - $ref: '#/components/parameters/HostCoverageScope'
    *       - $ref: '#/components/parameters/Version'
@@ -1199,6 +1223,7 @@ export function createDiscoveryRouter(
    *   get:
    *     tags: [Data Catalog Discovery]
    *     summary: Operator DSP catalog artifact
+   *     description: Includes links to the catalog artifacts of discoverable provider tenants.
    *     parameters:
    *       - $ref: '#/components/parameters/HostCoverageScope'
    *       - $ref: '#/components/parameters/Version'
@@ -1227,6 +1252,7 @@ export function createDiscoveryRouter(
    *   post:
    *     tags: [Data Catalog Discovery]
    *     summary: Hosted provider catalog request (tenant scoped)
+   *     description: Includes published research dataset metadata and linked data services for the resolved tenant.
    *     parameters:
    *       - $ref: '#/components/parameters/TenantId'
    *       - $ref: '#/components/parameters/Jurisdiction'
@@ -1240,6 +1266,7 @@ export function createDiscoveryRouter(
    *   get:
    *     tags: [Data Catalog Discovery]
    *     summary: Hosted provider DSP catalog artifact
+   *     description: Includes published research dataset metadata and linked data services. Archived catalogue records are excluded.
    *     parameters:
    *       - $ref: '#/components/parameters/TenantId'
    *       - $ref: '#/components/parameters/Jurisdiction'
@@ -1273,6 +1300,7 @@ export function createDiscoveryRouter(
    *   get:
    *     tags: [Data Catalog Discovery]
    *     summary: Read one provider dataset from hosted tenant catalog
+   *     description: Reads a provider dataset or the public metadata of a currently published research dataset.
    *     parameters:
    *       - $ref: '#/components/parameters/TenantId'
    *       - $ref: '#/components/parameters/Jurisdiction'
@@ -1312,7 +1340,7 @@ export function createDiscoveryRouter(
       version: req.params.version,
       hostNetwork: req.params.hostNetwork,
     }));
-    res.json(buildCatalog(catalogBaseUrl, publicOrigin, filtered));
+    res.json(buildHostCatalog(catalogBaseUrl, publicOrigin, filtered));
   });
 
   router.get(buildGatewayDataspaceVersionPath({
@@ -1496,7 +1524,7 @@ export function createDiscoveryRouter(
       version: req.params.version,
       hostNetwork: req.params.hostNetwork,
     }));
-    res.json(buildCatalog(catalogBaseUrl, publicOrigin, datasets));
+    res.json(buildHostCatalog(catalogBaseUrl, publicOrigin, datasets));
   });
 
   router.get(buildGatewayDataspaceCatalogDatasetPath({
@@ -1569,7 +1597,8 @@ export function createDiscoveryRouter(
       sector: req.params.sector,
     }));
     const services = filtered.length ? await tenantCommercialCatalogueService(req, res.locals.vaultId, dataset) : [];
-    res.json(buildCatalog(catalogBaseUrl, publicOrigin, filtered, services));
+    const research = filtered.length ? await tenantPublishedResearch(req, res.locals.vaultId, catalogBaseUrl, dataset) : undefined;
+    res.set('Cache-Control', 'no-store').json(buildCatalog(catalogBaseUrl, publicOrigin, filtered, services, research));
   });
 
   router.get(buildGatewayDataspaceCatalogArtifactPath({
@@ -1592,7 +1621,11 @@ export function createDiscoveryRouter(
       version: req.params.version,
       sector: req.params.sector,
     }));
-    res.json(buildCatalog(catalogBaseUrl, publicOrigin, [dataset], await tenantCommercialCatalogueService(req, res.locals.vaultId, dataset)));
+    const [services, research] = await Promise.all([
+      tenantCommercialCatalogueService(req, res.locals.vaultId, dataset),
+      tenantPublishedResearch(req, res.locals.vaultId, catalogBaseUrl, dataset),
+    ]);
+    res.set('Cache-Control', 'no-store').json(buildCatalog(catalogBaseUrl, publicOrigin, [dataset], services, research));
   });
 
   const offeringsPath = buildGatewayDataspaceOfferingCatalogPath({
@@ -1619,7 +1652,7 @@ export function createDiscoveryRouter(
     }
     const tenantConfig = await tenantsCacheManager.getTenant(res.locals.vaultId);
     const dataset = toProviderDataset(tenantConfig);
-    if (!dataset || dataset.datasetId !== req.params.id) return res.status(404).type('text').send('Not Found');
+    if (!dataset) return res.status(404).type('text').send('Not Found');
 
     const publicOrigin = buildPublicOrigin(req);
     const catalogBaseUrl = buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogCollectionPath({
@@ -1628,6 +1661,14 @@ export function createDiscoveryRouter(
       version: req.params.version,
       sector: req.params.sector,
     }));
+    if (req.params.id.startsWith('research:')) {
+      res.set('Cache-Control', 'no-store');
+      const research = await tenantPublishedResearch(req, res.locals.vaultId, catalogBaseUrl, dataset);
+      const resource = research?.datasets.find(entry => `research:${entry['dcterms:identifier']}` === req.params.id);
+      if (!resource) return res.status(404).type('text').send('Not Found');
+      return res.json({ '@context': buildCatalog(catalogBaseUrl, publicOrigin, [])['@context'], ...resource });
+    }
+    if (dataset.datasetId !== req.params.id) return res.status(404).type('text').send('Not Found');
     const [single] = buildCatalog(catalogBaseUrl, publicOrigin, [dataset])['dcat:dataset'];
     res.json(single);
   });

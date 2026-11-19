@@ -737,6 +737,7 @@ describe('DSP Discovery API', () => {
           [SchemaOrgOrganizationClaim.AlternateName]: testTenant1AlternateName,
           [SchemaOrgOrganizationClaim.LegalName]: EXAMPLE_PROVIDER_LEGAL_NAME,
           [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+          [SchemaOrgOrganizationClaim.AddressRegion]: 'ES-MD',
           [SchemaOrgServiceClaim.Category]: DataspaceSectors.HealthResearch,
           [SchemaOrgServiceClaim.Url]: buildExampleHostedTenantBaseUrl({
             alternateName: testTenant1AlternateName,
@@ -788,6 +789,11 @@ describe('DSP Discovery API', () => {
 
     expect(response.status).toBe(200);
     expect(parsed['@type']).toBe('dcat:Catalog');
+    expect(parsed['dcat:catalog']).toEqual([{
+      '@id': `http://${EXAMPLE_HOST_PUBLIC_HOSTNAME}${buildGatewayDataspaceCatalogArtifactPath({
+        tenantId: testTenant1AlternateName, jurisdiction: 'es-md', version: 'v1', sector: DataspaceSectors.HealthResearch,
+      })}`,
+    }]);
     expect(Array.isArray(parsed['dcat:service'])).toBe(true);
     expect(parsed['dcat:service']).toEqual(
       expect.arrayContaining([

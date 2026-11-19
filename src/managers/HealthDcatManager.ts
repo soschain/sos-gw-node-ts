@@ -37,7 +37,7 @@ export type HealthDcatManagerDependencies = Readonly<{
   tenantManager: TenantRegistry;
 }>;
 
-const sectionByResource: Readonly<Record<HealthDcatResourceType, string>> = {
+export const healthDcatSectionByResource: Readonly<Record<HealthDcatResourceType, string>> = {
   Catalog: 'health-dcat-catalogs', Dataset: 'health-dcat-datasets', CatalogRecord: 'health-dcat-records',
   Distribution: 'health-dcat-distributions', DataService: 'health-dcat-services',
 };
@@ -97,7 +97,7 @@ export class HealthDcatManager implements IJobProcessor {
     const document: ConfidentialStorageDoc = { id: resource.id, status: EntityLifecycleStatus.Active, sequence: 1,
       content: { resource }, indexed: { attributes: indexed }, audit: { updated: new Date().toISOString() } as any };
     const encrypted = await this.deps.kms.protectConfidentialData(document, vaultId);
-    if (!(await this.deps.repository.put(collectionName, [encrypted], sectionByResource[this.deps.resourceType]))) throw new ManagerError(`${this.deps.resourceType} could not be persisted.`, IssueType.NoStore);
+    if (!(await this.deps.repository.put(collectionName, [encrypted], healthDcatSectionByResource[this.deps.resourceType]))) throw new ManagerError(`${this.deps.resourceType} could not be persisted.`, IssueType.NoStore);
     return { type: this.deps.resourceType, response: { status: String(method === 'POST' ? HttpStatusCodes.Created : HttpStatusCodes.Ok) }, resource };
   }
 
@@ -107,7 +107,7 @@ export class HealthDcatManager implements IJobProcessor {
     const { vaultId, collectionName } = await storage(this.deps, job);
     const requested = Object.entries(query.meta.claims).flatMap(([name, value]) => claimValues(value).map(item => ({ name, value: item })));
     const filters = await this.deps.kms.protectAttributesNameAndValue(requested as any, vaultId);
-    const records = await this.deps.repository.listContainersInSection<ConfidentialStorageDoc>(collectionName, sectionByResource[this.deps.resourceType]);
+    const records = await this.deps.repository.listContainersInSection<ConfidentialStorageDoc>(collectionName, healthDcatSectionByResource[this.deps.resourceType]);
     const data = [];
     for (const record of records.filter(item => filters.every(filter => item.indexed?.attributes?.some(attribute => attribute.name === filter.name && attribute.value === filter.value)))) {
       const content = await this.deps.kms.unprotectConfidentialData<any>(record, vaultId);

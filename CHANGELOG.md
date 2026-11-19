@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Include published HealthDCAT research dataset metadata and linked data
+  services in the tenant DSP catalogue and dataset detail routes. Archiving a
+  catalogue record removes it from discovery while retaining the protected
+  dataset. Host catalogues link to their discoverable providers' catalogues.
+
 - Document offering catalogue publication, individual edits, asynchronous
   receipts and public discovery in the generated OpenAPI extension profile.
 - Register `organization/org.schema/Catalog/_publish` for a controller's

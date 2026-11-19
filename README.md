@@ -49,7 +49,16 @@ It contains the public offering attributes, seller links and stated prices.
 Once an operational tenant publishes an offering, its DCAT catalogue exposes
 the feed as a `dcat:DataService`. Product and service entries remain in the
 linked Schema.org feed. [DCAT 3 DataService](https://www.w3.org/TR/vocab-dcat-3/#Class:Data_Service)
-The HealthDCAT endpoints continue to describe datasets and data services.
+
+### Research dataset discovery
+
+The tenant's `/dsp/catalog/dcat.json` and `/dsp/catalog/request` expose
+public metadata for HealthDCAT datasets with a published catalogue record.
+Linked data services identify the datasets they serve and report their
+access rights. The catalogue does not expose research records or grant
+data access. Archiving the catalogue record removes its dataset metadata
+from discovery while preserving the stored dataset and its provenance.
+Host catalogues link to the tenant catalogues of discoverable providers.
 
 SOSCHAIN is part of an integrated ecosystem that shares HL7 FHIR
 interoperability components, SDKs, terminology contracts, identity and trust

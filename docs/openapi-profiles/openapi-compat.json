@@ -4,7 +4,7 @@
     "title": "Gateway API - COMPAT",
     "version": "1.0.3",
     "description": "Compatibility profile including legacy and alias routes on top of the core flow.",
-    "x-profile-generated-at": "2026-11-18T02:00:03.071Z",
+    "x-profile-generated-at": "2026-11-19T23:15:20.302Z",
     "x-profile-name": "compat"
   },
   "servers": [],
@@ -3667,7 +3667,7 @@
           "Data Catalog Discovery"
         ],
         "summary": "Operator DSP catalog request",
-        "description": "Returns a `dcat:Catalog` with provider datasets discoverable by client apps.",
+        "description": "Returns a DCAT catalog with provider datasets and links to the matching tenants' catalog artifacts.",
         "parameters": [
           {
             "$ref": "#/components/parameters/HostCoverageScope"
@@ -3719,6 +3719,7 @@
           "Data Catalog Discovery"
         ],
         "summary": "Operator DSP catalog artifact",
+        "description": "Includes links to the catalog artifacts of discoverable provider tenants.",
         "parameters": [
           {
             "$ref": "#/components/parameters/HostCoverageScope"
@@ -3783,6 +3784,7 @@
           "Data Catalog Discovery"
         ],
         "summary": "Hosted provider catalog request (tenant scoped)",
+        "description": "Includes published research dataset metadata and linked data services for the resolved tenant.",
         "parameters": [
           {
             "$ref": "#/components/parameters/TenantId"
@@ -3814,6 +3816,7 @@
           "Data Catalog Discovery"
         ],
         "summary": "Hosted provider DSP catalog artifact",
+        "description": "Includes published research dataset metadata and linked data services. Archived catalogue records are excluded.",
         "parameters": [
           {
             "$ref": "#/components/parameters/TenantId"
@@ -3845,6 +3848,7 @@
           "Data Catalog Discovery"
         ],
         "summary": "Read one provider dataset from hosted tenant catalog",
+        "description": "Reads a provider dataset or the public metadata of a currently published research dataset.",
         "parameters": [
           {
             "$ref": "#/components/parameters/TenantId"
