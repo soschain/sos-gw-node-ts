@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Remove SMS bodies, contact numbers, subject identifiers and decrypted claims
+  from webhook and voice lookup logs.
+
 - Encrypt durable Pub/Sub job payloads before writing them to GCS. The worker
   verifies the authenticated storage namespace and object reference before using
   the job. GCS receives ciphertext through a provider-neutral storage contract.
