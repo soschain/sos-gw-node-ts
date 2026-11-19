@@ -12,6 +12,21 @@ sign-off are separate records.
 | Telemetry | Regression tests check that the HTTP and worker diagnostics, SMS webhook and voice lookup under test omit sensitive values. These tests cover the named paths. |
 | Deployment | The Helm render contract checks immutable image references, HTTPS origin, external KMS, strict mode and an internal Kubernetes Service. Runtime validation is required on the exact image. |
 
+## What the evidence covers
+
+| Verification | What it demonstrates |
+|---|---|
+| Local contract and regression tests | The tested code protects queue objects and omits sensitive values from the tested log paths. |
+| Helm render and Kubernetes admission in a restricted validation namespace | Kubernetes accepts the workload and service definitions. This check does not start the Gateway or exercise Firebase, KMS, delivery or recovery. |
+| Authenticated request and durable readback on the deployed image | Required to verify that the candidate connects to the intended projects, checks access and persists protected data. Repeating the check after pod replacement verifies recovery. |
+| Independent assessment of the deployed configuration | Required to establish which roles can access data, keys or the runtime and which findings remain. |
+
+A namespace is an environment for a controlled test. Evidence that an
+operator is excluded from the contents must come from the deployed access
+controls and the processing path.
+
+## Google Cloud release evidence
+
 For the Google profile, verify the GKE identity and deployment permissions,
 Cloud KMS custody, private GCS objects, Pub/Sub redelivery and Firestore
 persistence against the actual deployment. Validate authenticated delivery
