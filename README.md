@@ -27,6 +27,22 @@ independent Antifraud, FHIR and SOS packages:
 It implements the backend services and integrations required by SOSCHAIN,
 building on the [original SOSCHAIN project documentation](https://github.com/soschain/docs).
 
+### Commercial catalogue publication
+
+An admitted organization controller can submit a signed DIDComm request to
+`/{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_publish`.
+Its `body` is a JSON:API document containing the complete replacement catalogue
+for that tenant and sector. Omit the publisher, sector and Demo fields to use
+the admission record, or send matching values. The entire document must pass
+validation before one protected snapshot is written. The acknowledgement
+returns the number of offerings. An incomplete or invalid submission leaves
+the current snapshot available.
+
+An operational tenant's public projection is available at
+`/{tenantId}/cds-{jurisdiction}/v1/{sector}/dsp/catalog/offerings.json`.
+It contains the public offering attributes, seller links and stated prices.
+The HealthDCAT endpoints continue to describe datasets and data services.
+
 SOSCHAIN is part of an integrated ecosystem that shares HL7 FHIR
 interoperability components, SDKs, terminology contracts, identity and trust
 services, and emergency-response capabilities. This repository contains the

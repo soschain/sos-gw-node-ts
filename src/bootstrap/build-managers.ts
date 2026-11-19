@@ -42,6 +42,7 @@ import { SchedulingManager } from '../managers/SchedulingManager';
 import { CareCoordinationManager } from '../managers/CareCoordinationManager';
 import { DirectoryManager } from '../managers/DirectoryManager';
 import { HealthDcatManager } from '../managers/HealthDcatManager';
+import { PublicOfferingCatalogManager } from '../managers/PublicOfferingCatalogManager';
 import { ProvenanceManager } from '../managers/ProvenanceManager';
 import { RelatedPersonManager } from '../managers/RelatedPersonManager';
 import { ResearchStudyManager } from '../managers/ResearchStudyManager';
@@ -317,6 +318,7 @@ export function buildManagers(options: {
   const serviceManager = new DirectoryManager({ resourceType: 'Service', repository: vaultRepository, kms: kmsService, tenantManager });
   const productManager = new DirectoryManager({ resourceType: 'Product', repository: vaultRepository, kms: kmsService, tenantManager });
   const catalogManager = new HealthDcatManager({ resourceType: 'Catalog', repository: vaultRepository, kms: kmsService, tenantManager });
+  const publicOfferingCatalogManager = new PublicOfferingCatalogManager({ repository: vaultRepository, protection: kmsService, tenantManager });
   const datasetManager = new HealthDcatManager({ resourceType: 'Dataset', repository: vaultRepository, kms: kmsService, tenantManager });
   const catalogRecordManager = new HealthDcatManager({ resourceType: 'CatalogRecord', repository: vaultRepository, kms: kmsService, tenantManager });
   const distributionManager = new HealthDcatManager({ resourceType: 'Distribution', repository: vaultRepository, kms: kmsService, tenantManager });
@@ -373,6 +375,7 @@ export function buildManagers(options: {
     serviceManager,
     productManager,
     catalogManager,
+    publicOfferingCatalogManager,
     datasetManager,
     catalogRecordManager,
     distributionManager,

@@ -137,6 +137,12 @@ function generateDefaultBusinessServices(sector: GatewaySector): DidService[] {
   // (the "family" is modelled as an Organization representing a household).
   const individualResources = ['Person', 'Organization', 'Order', 'Composition', 'Communication', 'RelatedPerson', 'Bundle'];
 
+  services.push(createDidEndpointConfigFromSelector(
+    { sector, section: 'organization', format: 'org.schema' },
+    ['Catalog'],
+    ['_publish'],
+  ));
+
   if (isFhir) {
     entityResources.push('Practitioner', 'PractitionerRole', 'Location');
     individualResources.push('Patient');

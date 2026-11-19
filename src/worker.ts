@@ -201,7 +201,7 @@ export class Worker {
           manager = this.managers.productManager;
           break;
         case 'Catalog':
-          manager = this.managers.catalogManager;
+          manager = job.format === 'org.schema' ? this.managers.publicOfferingCatalogManager : this.managers.catalogManager;
           break;
         case 'Dataset':
           manager = this.managers.datasetManager;

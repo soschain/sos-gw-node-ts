@@ -4,6 +4,7 @@
 
 import * as express from 'express';
 import type { IDiscoveryTenantRegistry } from '../managers/IDiscoveryTenantRegistry';
+import type { PublicOfferingCatalogManager } from '../managers/PublicOfferingCatalogManager';
 import { DiscoveryService } from '../services/DiscoveryService';
 import { getTenantVaultId } from '../utils/tenant';
 import { pingHandler } from './handlers/discovery/ping.handler';
@@ -74,6 +75,7 @@ export function createDiscoveryRouter(
   logger: ILogger,
   vaultRepository: IVaultRepository,
   cryptography: Pick<ICryptography, 'jwsToCompact'>,
+  offeringCatalog?: Pick<PublicOfferingCatalogManager, 'read'>,
 ): express.Router {
   const router = express.Router();
   const tenantStatusService = new TenantStatusService(tenantsCacheManager, vaultRepository, kmsService);
@@ -1554,6 +1556,19 @@ export function createDiscoveryRouter(
       sector: req.params.sector,
     }));
     res.json(buildCatalog(catalogBaseUrl, publicOrigin, [dataset]));
+  });
+
+  const tenantCatalogPath = buildGatewayDataspaceCatalogCollectionPath({
+    tenantId: ':tenantId', jurisdiction: ':jurisdiction', version: ':version', sector: ':sector',
+  });
+  router.get(`${tenantCatalogPath}/offerings.json`, resolveTenant, async (req, res) => {
+    const { vaultId } = res.locals;
+    const jurisdiction = await tenantsCacheManager.getTenantJurisdiction(vaultId);
+    if (!offeringCatalog || vaultId === 'host' || jurisdiction?.toUpperCase() !== req.params.jurisdiction.toUpperCase()
+      || !(await isDiscoveryPublicationOperational(vaultId))) {
+      return res.status(404).type('text').send('Not Found');
+    }
+    res.set('Cache-Control', 'no-store').json(await offeringCatalog.read(vaultId));
   });
 
   router.get(buildGatewayDataspaceCatalogDatasetPath({

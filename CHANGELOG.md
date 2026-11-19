@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Register `organization/org.schema/Catalog/_publish` for a controller's
+  JSON:API catalogue snapshot. Validate the whole document against the tenant
+  before writing one protected record. Publish the current tenant projection
+  at `/dsp/catalog/offerings.json` only while that tenant is operational.
+
 ## 2.1.1 - 2026-11-18
 
 - Publish the configured canonical gateway origin while retaining explicitly
