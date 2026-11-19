@@ -96,10 +96,19 @@ it('publishes a territorial CRM catalogue and individual offerings through the a
       expect.objectContaining({ id: product.id }), expect.objectContaining({ id: manualProduct.id, name: 'Updated manual entry' }),
     ]));
     expect(JSON.parse((await publicRead()).text)).toHaveLength(2);
+    const plan = { name: 'Preventive care', currency: 'EUR', monthly: '9.95', annually: '99.00', features: ['Consultation'] };
+    const service = { id: 'consultation', type: 'Service', attributes: {
+      category: 'healthcare-services', name: 'Example consultation', description: 'Preventive care', images: [safe.httpsBaseUrl],
+      offers: [{ ...product.attributes.offers[0]!, plans: [plan] }],
+    } };
+    expect(await publishOne(service, 'publish-individual-service')).toEqual({ total: 1 });
     const replacement = { ...product, id: 'replacement-product' };
     await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid,
       'Catalog', '_publish', 'replace-crm-snapshot', { data: [replacement] }, 'org.schema');
-    expect(JSON.parse((await publicRead()).text).map((item: { id: string }) => item.id).sort()).toEqual([manualProduct.id, replacement.id].sort());
+    const combined = JSON.parse((await publicRead()).text);
+    expect(combined.map((item: { id: string }) => item.id).sort()).toEqual([manualProduct.id, replacement.id, service.id].sort());
+    expect(combined.find((item: { id: string }) => item.id === service.id)).toMatchObject({ type: 'Service',
+      images: [safe.httpsBaseUrl], offers: [expect.objectContaining({ plans: [plan] })] });
     const mismatched = await invokeExpress(app, { method: 'GET', url: buildGatewayDataspaceOfferingCatalogPath({ ...scope, jurisdiction: safe.secondaryCountryIso2 }) });
     expect(mismatched.status).toBe(404);
   } finally { queueAdapter.stop(); }
