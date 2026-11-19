@@ -1,4 +1,4 @@
-// Flow contract: the deployable SOS Helm profile requires an immutable image and a production custody provider.
+// Flow contract: the deployable SOS Helm profile requires an immutable image, external custody and admission configuration when enabled.
 import { spawnSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -53,4 +53,24 @@ test('renders a strict Test Network profile for validation on a shared cluster',
   assert.match(result.stdout, /name: SECURITY_MODE\s+value: "strict"/);
   const invalid = render('--set-string', 'networkMode=test');
   assert.notEqual(invalid.status, 0);
+});
+
+test('requires references to ICA and host decision configuration when Test Network admission is enabled', () => {
+  const result = render('--set-string', 'networkMode=test-network', '--set', 'testNetworkAdmissionEnabled=true');
+  assert.equal(result.status, 0, result.stderr);
+  for (const key of ['HOST_ADMISSION_ICA_URL', 'HOST_ADMISSION_DECISION_URL']) {
+    assert.match(result.stdout, new RegExp(
+      `name: ${key}\\s+valueFrom:\\s+configMapKeyRef:\\s+name: "gateway-config"\\s+key: ${key}\\s+optional: false`,
+    ));
+  }
+  for (const key of ['HOST_ADMISSION_ICA_TOKEN', 'HOST_ADMISSION_DECISION_TOKEN']) {
+    assert.match(result.stdout, new RegExp(
+      `name: ${key}\\s+valueFrom:\\s+secretKeyRef:\\s+name: "gateway-runtime"\\s+key: ${key}\\s+optional: false`,
+    ));
+  }
+  assert.doesNotMatch(render('--set-string', 'networkMode=test-network').stdout, /name: HOST_ADMISSION_/);
+
+  const production = render('--set', 'testNetworkAdmissionEnabled=true');
+  assert.notEqual(production.status, 0);
+  assert.match(production.stderr, /testNetworkAdmissionEnabled requires networkMode=test-network/);
 });

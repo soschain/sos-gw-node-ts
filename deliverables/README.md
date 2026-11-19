@@ -2,6 +2,9 @@
 
 - [Public security report](SECURITY-ASSESSMENT.md) covers adapter contracts,
   evidence and the checks for promotion.
+- [Host bootstrap and controller security](HOST-BOOTSTRAP-AND-CONTROLLER-SECURITY.md)
+  traces portal sign-in, wallet custody, ICA verification, admission and device
+  registration, with links to the implementation.
 - [Reproducible Kubernetes deployment](../charts/sos-gateway/README.md) covers
   the operator-managed Helm workload and the Google Cloud profile.
 - [Release contract](../docs/LOCAL_FIRST_RELEASE_CONTRACT.md) and

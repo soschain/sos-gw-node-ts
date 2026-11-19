@@ -48,6 +48,24 @@ to match the transaction before creating an Offer. Confirm the Offer through
 `Order/_batch` and complete activation using the resulting licence. Use
 production identity verification for the production route.
 
+### Verification evidence by jurisdiction
+
+Keep the downloadable terms separate from the evidence submitted for
+verification. Resolve the evidence policy by exact jurisdiction, then by
+its jurisdiction family when the authority publishes one.
+
+| Jurisdiction | Evidence |
+| --- | --- |
+| CA-BC | Use a verified controller presentation or governed host preauthorization without an applicant-signed PDF. For a marketplace claim, use the official registry entry and the contact verification required by the active admission policy. |
+| ES | The certificate-PDF workflow submits the applicable agreement signed with a supported representative certificate. Preserve the original attachment and verify the certificate trust and the represented organization. |
+
+Use the host's published terms URL for the downloadable agreement. When a
+workflow requires a signed template, bind the applicable document version to
+the jurisdiction and sector. The existing verification URL contains a
+`pdf` path segment even for a PDF-free request. Confirm the verification
+contract supported by the selected Antifraud ICA deployment before testing
+organization activation.
+
 ## Signed device enrollment
 
 Use `sos-sdk-node-ts` 0.6.0 or later for native device enrollment. Before a device

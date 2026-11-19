@@ -12,6 +12,10 @@ sign-off are separate records.
 | Telemetry | Regression tests check that the HTTP and worker diagnostics, SMS webhook and voice lookup under test omit sensitive values. These tests cover the named paths. |
 | Deployment | The Helm render contract checks immutable image references, HTTPS origin, external KMS, strict mode and an internal Kubernetes Service. Runtime validation is required on the exact image. |
 
+The [host bootstrap and controller security guide](HOST-BOOTSTRAP-AND-CONTROLLER-SECURITY.md)
+covers account verification, wallet custody, the controller portal, the ICA,
+tenant activation and client registration.
+
 ## What the evidence covers
 
 | Verification | What it demonstrates |

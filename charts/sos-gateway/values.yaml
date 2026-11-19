@@ -8,3 +8,4 @@ serviceAccountName: ""
 kmsProvider: ""
 replicas: 1
 networkMode: network
+testNetworkAdmissionEnabled: false

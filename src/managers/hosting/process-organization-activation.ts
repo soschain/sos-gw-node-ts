@@ -32,6 +32,7 @@ import { allowsLegacyRepresentativeBootstrap } from './legacy-representative-boo
 import { GatewayResponseEntryTypes } from 'sos-data-utils-ts/gateway-response-contract';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
 import { GatewayClaim } from '../../shared/gateway-claim-contract';
+import { GOVERNED_ORGANIZATION_ADMISSION_REQUIRED } from './new-offer-admission';
 
 type ActivationParticipantMaterial = {
   did?: string;
@@ -58,6 +59,7 @@ type ActivationMaterial = {
 type ActivationDeps = Readonly<{
   job: JobRequest;
   environment?: string;
+  requireAdmissionDecision?: boolean;
   issuerDid: string;
   config: any;
   hostRuntime: { hostCollectionName?: string };
@@ -275,6 +277,10 @@ async function processActivationEntry(
       };
     }
     throw new ManagerError(`Conflict: a vault for '${vaultId}' already exists`, IssueType.Conflict);
+  }
+
+  if (deps.requireAdmissionDecision) {
+    throw new ManagerError(GOVERNED_ORGANIZATION_ADMISSION_REQUIRED, IssueType.Forbidden);
   }
 
   const { organization, person, service } = deps.extractResources(normalizedClaims, deps.environment);

@@ -1,4 +1,4 @@
-// Flow contract: independent identity and commerce claim catalogs preserve exact stored keys and authorization boundaries.
+// Flow contract: verified evidence and any required host admission decision precede a new licence Offer; existing-tenant re-registration preserves its separate binding path.
 import { describe, expect, it, jest } from '@jest/globals';
 import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { processOrganizationVerificationTransaction } from '../../../managers/hosting/process-organization-verification';
@@ -53,5 +53,41 @@ describe('processOrganizationVerificationTransaction legacy re-registration', ()
     expect((response.body.data[0].resource as any).next).toBeUndefined();
     expect((response.body.data[0].resource as any).meta.claims[SchemaOrgOrganizationClaim.IdentifierReference])
       .toBe('urn:example:organization:existing');
+  });
+});
+
+describe('processOrganizationVerificationTransaction host admission', () => {
+  it('requires approval before creating an Offer and does not treat verification as approval', async () => {
+    const claims = {
+      [SchemaOrgOrganizationClaim.AlternateName]: 'VATES-G00000000',
+      [SchemaOrgServiceClaim.Category]: 'onehealth-research',
+    };
+    const evidence = { resourceType: 'Bundle' };
+    const authorizeNewOffer = jest.fn(async (_input: unknown) => {
+      throw new Error('review required');
+    });
+    const createPendingTenantRegistrationFromClaims = jest.fn(async () => claims);
+    const deps = {
+      job: {
+        tenantId: 'host',
+        jurisdiction: 'es',
+        sector: 'network',
+        action: '_transaction',
+        content: { body: { data: [{ resource: { meta: { claims } } }] } },
+      } as any,
+      issuerDid: 'did:web:gateway.example.test',
+      config: { sectorsAllowed: ['onehealth-research'], namespace: 'cds-ES', networkMode: 'network' } as any,
+      normalizeClaims: (value: typeof claims) => value,
+      createPendingTenantRegistrationFromClaims,
+      createOrganizationIssueClaimsFromClaims: jest.fn() as any,
+      forwardOrganizationVerificationTransactionToIca: jest.fn(async () => evidence),
+      extractCredentialResourcesFromIcaPayload: jest.fn(() => []),
+      authorizeNewOffer,
+    };
+    await expect(processOrganizationVerificationTransaction(deps as any)).rejects.toThrow('review required');
+    expect(authorizeNewOffer).toHaveBeenCalledWith(expect.objectContaining({
+      claims, evidence, network: 'network', sector: 'onehealth-research',
+    }));
+    expect(createPendingTenantRegistrationFromClaims).not.toHaveBeenCalled();
   });
 });

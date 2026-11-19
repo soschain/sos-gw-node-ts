@@ -67,6 +67,24 @@ synthetic data. Obtain the approved production MSP, channel participation,
 endpoints and credentials for the peer before installing the production
 profile. Production ledger operations use the production release evidence.
 
+## Governed organization admission in Test Network
+
+Set `testNetworkAdmissionEnabled: true` with `networkMode: test-network`.
+The chart requires `HOST_ADMISSION_ICA_URL` and
+`HOST_ADMISSION_DECISION_URL` from the existing ConfigMap and
+`HOST_ADMISSION_ICA_TOKEN` and `HOST_ADMISSION_DECISION_TOKEN` from the
+existing Secret. A missing key prevents Kubernetes from starting the
+container. The Gateway validates the HTTPS endpoints and credential
+configuration at startup. Use dedicated credentials for the selected host
+and network.
+
+Deploy the matching ICA and controller revisions before starting the
+Gateway. Check the controller assignment and selected sector and country
+in the controller portal, then confirm a verified application advances
+through Offer, Order, activation and device registration. Confirm an
+application with incomplete evidence stays in review. See the
+[admission sequence](../../deliverables/HOST-BOOTSTRAP-AND-CONTROLLER-SECURITY.md#3-verify-the-evidence-and-authorize-admission).
+
 ## Google Cloud profile
 
 Select `kmsProvider: gcp`. The company operating GKE and the organization

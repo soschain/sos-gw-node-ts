@@ -42,6 +42,7 @@ export type TestNetworkAdmissionVerificationResult = Readonly<{
   credentialId: string;
   issuer: string;
   signer: string;
+  applicationProof?: Readonly<{ applicationId: string; pdfSha256: string }>;
   checks: Readonly<{
     trustedIssuer: true;
     signerCurrentlyAuthorizedByIssuer: true;
@@ -162,6 +163,9 @@ export async function verifyOrganizationTestNetworkCredential(
     credentialId: String(credential.id || ''),
     issuer,
     signer: signerDid,
+    ...(typeof subject.applicationId === 'string' && typeof subject.applicationEvidence?.pdfSha256 === 'string'
+      ? { applicationProof: { applicationId: subject.applicationId, pdfSha256: subject.applicationEvidence.pdfSha256 } }
+      : {}),
     checks: {
       trustedIssuer: true,
       signerCurrentlyAuthorizedByIssuer: true,

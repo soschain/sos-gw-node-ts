@@ -1,5 +1,33 @@
 ## Unreleased
 
+- Let the local dev bootstrap render the canonical organization fixture so
+  the portal harness can attach signed admission credentials before submitting it.
+
+- Send the signed application reference to the host review queue even when
+  the ICA is temporarily unavailable.
+
+- Keep a signed admission request in the same review case across an ICA
+  outage. A previously approved request still needs matching ICA evidence.
+
+- Add required Helm ConfigMap and Secret key references for the ICA and
+  host decision service when governed Test Network admission is enabled.
+
+- Require the ICA response used in Organization admission to match the
+  controller DID and submitted proof before routing its checks to the host.
+
+- Resolve the signed Test Network application reference and PDF digest
+  through the configured ICA before evaluating the host's admission policy.
+
+- Check the configured host admission service after organization proof
+  verification and before creating a new licence Offer. Require an approved
+  decision for the same verified transaction binding. Governed hosts
+  require the verification transaction for new tenants.
+- Forward exact-scope ICA evidence references and checks to the admission
+  service. Governed verification and polling use the configured HTTPS origin.
+
+- Document jurisdiction-specific admission evidence and cover forwarding the
+  Spanish signed-PDF attachment separately from PDF-free host authorization.
+
 - Document organization sectors and admission in a shared catalogue for portal integrators.
 
 - Accept `onehealth-tech` in the gateway runtime and include the supported

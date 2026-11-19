@@ -223,7 +223,7 @@ describe('organization Test Network credential verifier', () => {
 });
 
 describe('Test Network transaction routing', () => {
-  it('uses the attached Test Network admission credential and never calls ICA', async () => {
+  it.each([false, true])('uses the verified Test Network proof through the configured path (governed=%s)', async governed => {
     const organizationTestNetworkCredential = credential();
     const issuedCredentials = domainCredentials();
     const forwardToIca = jest.fn();
@@ -237,12 +237,16 @@ describe('Test Network transaction routing', () => {
       issuer,
       signer,
       checks: {},
+      applicationProof: { applicationId: 'application-dsrc', pdfSha256: 'a'.repeat(64) },
       credentials: issuedCredentials,
     });
     const claims = {
       [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B00112233',
       [SchemaOrgServiceClaim.Category]: 'health-care',
     };
+    const icaEvidence = { reference: 'urn:example:verified-evidence' };
+    const verifyIcaAdmission = jest.fn(async () => icaEvidence);
+    const authorizeNewOffer = jest.fn(async () => undefined);
     const response = await processOrganizationVerificationTransaction({
       job: {
         action: 'Organization/_transaction',
@@ -272,6 +276,7 @@ describe('Test Network transaction routing', () => {
       forwardOrganizationVerificationTransactionToIca: forwardToIca,
       extractCredentialResourcesFromIcaPayload: jest.fn(),
       verifyTestNetworkAdmissionCredential,
+      ...(governed ? { authorizeNewOffer, verifyIcaAdmission } : {}),
     });
 
     expect(forwardToIca).not.toHaveBeenCalled();
@@ -284,6 +289,17 @@ describe('Test Network transaction routing', () => {
       next: { action: 'Order/_batch' },
     });
     expect(response.body.data[0]?.resource.verificationResponse).not.toHaveProperty('credentials');
+    expect(response.body.data[0]?.resource.verificationResponse).not.toHaveProperty('applicationProof');
+    if (governed) {
+      expect(verifyIcaAdmission).toHaveBeenCalledWith(expect.objectContaining({
+        controllerDid: 'did:web:controller.dsrc.example',
+        applicationProof: { applicationId: 'application-dsrc', pdfSha256: 'a'.repeat(64) },
+      }));
+      expect(authorizeNewOffer).toHaveBeenCalledWith(expect.objectContaining({
+        applicationProof: { applicationId: 'application-dsrc', pdfSha256: 'a'.repeat(64) },
+        evidence: icaEvidence, evidenceSource: 'ica',
+      }));
+    }
     expect(response.body.data[0]?.vc).toEqual(issuedCredentials);
   });
 

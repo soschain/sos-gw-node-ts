@@ -98,15 +98,6 @@ poll_async_until_complete() {
   return 1
 }
 
-echo "[bootstrap] ping: $BASE_URL/host/ping"
-HOST_PING_URL="${BASE_URL}/host/cds-${HOST_JURISDICTION_LOWER}/${VERSION}/${HOST_REGISTRY_NETWORK}/.well-known/ping"
-echo "[bootstrap] ping: $HOST_PING_URL"
-ping_body="$(curl -f -sS "$HOST_PING_URL" || true)"
-if [[ -z "$ping_body" ]]; then
-  echo "ERROR: gateway not reachable at $HOST_PING_URL"
-  exit 1
-fi
-
 thid_org="thid-org-${ORGANIZATION_ID_VALUE}-$(date +%s)"
 org_payload_overrides="$(jq -n \
   --arg thid "$thid_org" \
@@ -148,6 +139,24 @@ org_payload_overrides="$(jq -n \
   } + (if $serviceType != "" then {
     "/body/data/0/resource/meta/claims/org.schema.Service.serviceType": $serviceType
   } else {} end)')"
+if [[ "${1:-}" == '--render-local-organization' ]]; then
+  if [[ "${DEPLOYMENT_ENV:-}" != 'dev' || "$HOST_NETWORK" != 'test' ]]; then
+    echo "ERROR: local organization fixture rendering requires dev and networkKind=test." >&2
+    exit 2
+  fi
+  render_example_payload ORGANIZATION_REGISTRATION_REQUEST "$org_payload_overrides"
+  exit 0
+fi
+
+echo "[bootstrap] ping: $BASE_URL/host/ping"
+HOST_PING_URL="${BASE_URL}/host/cds-${HOST_JURISDICTION_LOWER}/${VERSION}/${HOST_REGISTRY_NETWORK}/.well-known/ping"
+echo "[bootstrap] ping: $HOST_PING_URL"
+ping_body="$(curl -f -sS "$HOST_PING_URL" || true)"
+if [[ -z "$ping_body" ]]; then
+  echo "ERROR: gateway not reachable at $HOST_PING_URL"
+  exit 1
+fi
+
 if [[ -n "${LEGAL_ORGANIZATION_TRANSACTION_JSON:-}" ]]; then
   org_payload="$(printf '%s' "$LEGAL_ORGANIZATION_TRANSACTION_JSON" | jq -c '.payload // error("missing canonical payload")')"
   thid_org="$(printf '%s' "$org_payload" | jq -er '.thid // error("missing canonical payload thid")')"
