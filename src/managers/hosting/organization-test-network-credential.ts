@@ -10,7 +10,7 @@ import {
 } from 'antifraud-data-utils-ts/organization-credentials';
 import { buildStableActorIdentifier, normalizeActorContact, type ActorContactInput } from 'antifraud-data-utils-ts/organization-identity';
 import { toJwkThumbprintSha256Urn } from 'antifraud-data-utils-ts/jwk-thumbprints';
-import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 
@@ -148,6 +148,7 @@ export async function verifyOrganizationTestNetworkCredential(
   const credentials = await verifyTestNetworkDomainCredentials({
     credentials: input.testNetworkCredentials,
     organizationTestNetworkCredential: credential,
+    claims: input.claims,
     signerJwk,
     verificationMethod,
     controllerContact,
@@ -193,6 +194,7 @@ function reviewedPartyContact(email: unknown, telephone: unknown, party: string)
 async function verifyTestNetworkDomainCredentials(input: Readonly<{
   credentials?: readonly VerifiableCredentialV2[];
   organizationTestNetworkCredential: VerifiableCredentialV2;
+  claims: VerificationInput['claims'];
   signerJwk: PublicJwk;
   verificationMethod: string;
   controllerContact: ActorContactInput;
@@ -215,9 +217,26 @@ async function verifyTestNetworkDomainCredentials(input: Readonly<{
   const representativeActor = buildStableActorIdentifier(reviewedPartyContact(
     input.legalRepresentativeEmail, input.legalRepresentativeTelephone, 'legal representative',
   ));
-  if (organization[0].credentialSubject.id !== admissionSubject.id
-    || String(organization[0].credentialSubject.legalName || '') !== String(admissionSubject.organization?.legalName || '')) {
+  const reviewedOrganization = organization[0].credentialSubject;
+  const identifier = reviewedOrganization.identifier as { value?: unknown; additionalType?: unknown } | undefined;
+  const address = reviewedOrganization.address as { addressCountry?: unknown } | undefined;
+  const offer = reviewedOrganization.makesOffer as { category?: unknown } | undefined;
+  if (reviewedOrganization.id !== admissionSubject.id
+    || reviewedOrganization.legalName !== admissionSubject.organization?.legalName
+    || identifier?.value !== admissionSubject.organization?.identifier) {
     fail('Test Network OrganizationCredential does not match the admission VC.');
+  }
+  const sector = String(input.claims[SchemaOrgServiceClaim.Category] || '').trim();
+  if (!sector || offer?.category !== sector) {
+    fail('Reviewed organization sector does not match transaction claims.');
+  }
+  const country = String(input.claims[SchemaOrgOrganizationClaim.AddressCountry] || '').trim().toUpperCase();
+  if (!country || address?.addressCountry !== country) {
+    fail('Reviewed organization country does not match transaction claims.');
+  }
+  const identifierType = String(input.claims[SchemaOrgOrganizationClaim.IdentifierType] || '').trim();
+  if (!identifierType || identifier?.additionalType !== identifierType) {
+    fail('Reviewed organization identifier type does not match transaction claims.');
   }
   if (representative[0].credentialSubject.sameAs !== representativeActor) {
     fail('Test Network LegalRepresentativeCredential does not match the reviewed representative.');

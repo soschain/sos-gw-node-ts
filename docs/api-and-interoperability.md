@@ -30,6 +30,24 @@ leak internal claims or storage metadata.
 Integrators should use published package versions and the generated gateway
 OpenAPI contract. A client method never widens server-side authorization.
 
+## Reviewed organization admission
+
+The gateway initializes its internal host identity in the reserved `system`
+sector. A deployment can also provision a designated organization tenant through
+its governed bootstrap workflow. That tenant uses its configured business sector
+and service DID. Admit additional sectors through the organization registration
+workflow. Each sector has its own tenant identity and onboarding record, even when
+the same legal entity applies. Enable each supported sector explicitly in
+`ALLOWED_SECTORS`. This list controls routing eligibility.
+
+For a reviewed Test Network application, submit the admission and domain
+credentials together through `Organization/_transaction`. The gateway checks
+the reviewer's signature and the signed reference to the reviewed PDF. It
+requires the signed organization identity, sector, country and identifier type
+to match the transaction before creating an Offer. Confirm the Offer through
+`Order/_batch` and complete activation using the resulting licence. Use
+production identity verification for the production route.
+
 ## Signed device enrollment
 
 Use `sos-sdk-node-ts` 0.6.0 or later for native device enrollment. Before a device

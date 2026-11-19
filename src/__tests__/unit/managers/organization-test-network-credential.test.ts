@@ -23,12 +23,20 @@ import { AdapterCryptoSdkNode } from '../../../gdc-backend-utils-node/adapters/n
 import type { JsonValue } from 'antifraud-data-utils-ts/identity-assurance';
 import { HealthcareActorRoles } from 'sos-data-utils-ts/healthcare-roles';
 import type { ReviewedOrganizationCredential } from 'antifraud-data-utils-ts/organization-credentials';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
+import { buildOrganizationDidWeb } from 'sos-data-utils-ts/hosted-did';
 
 const controllerJwk = { kty: 'AKP', alg: 'ML-DSA-65', pub: 'controller-public' } as const;
 const signerJwk = { kid: 'pqc', kty: 'AKP', alg: 'ML-DSA-65', pub: 'unid-signer-public' } as const;
 const issuer = 'did:web:unid.example:VATES-G02793479';
 const signer = 'did:web:unid.example:VATES-G02793479:member:cto';
 const organizationDid = 'did:web:host.example:VATES-B00112233';
+const reviewedClaims = {
+  [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B00112233',
+  [SchemaOrgOrganizationClaim.IdentifierType]: 'taxID',
+  [SchemaOrgOrganizationClaim.AddressCountry]: 'ES',
+  [SchemaOrgServiceClaim.Category]: DataspaceSectors.OneHealthResearch,
+};
 
 function credential() {
   const unsigned = buildOrganizationTestNetworkCredential({
@@ -63,10 +71,10 @@ function credential() {
   };
 }
 
-function domainCredentials() {
+function domainCredentials(did = organizationDid, sector: string = reviewedClaims[SchemaOrgServiceClaim.Category]) {
   return buildTestNetworkOrganizationCredentialSet({
     issuerDid: issuer,
-    organizationDid,
+    organizationDid: did,
     applicationId: 'application-dsrc',
     validFrom: '2026-08-10T00:00:00.000Z',
     validUntil: '2027-08-10T00:00:00.000Z',
@@ -76,7 +84,7 @@ function domainCredentials() {
     organizationIdentifier: 'VATES-B00112233',
     identifierType: 'taxID',
     addressCountry: 'ES',
-    serviceCategory: 'health-care',
+    serviceCategory: sector,
     legalRepresentativeEmail: 'developer@dsrc.example',
     legalRepresentativeFullName: 'Example Representative',
     legalRepresentativeOccupation: HealthcareActorRoles.Receptionist,
@@ -122,7 +130,7 @@ describe('organization Test Network credential verifier', () => {
 
     const result = await verifyOrganizationTestNetworkCredential({
       credential: credential(),
-      claims: { [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B00112233' },
+      claims: reviewedClaims,
       controller: { publicKeyJwk: controllerJwk },
       organization: { did: organizationDid },
       controllerEmail: 'developer@dsrc.example',
@@ -153,7 +161,7 @@ describe('organization Test Network credential verifier', () => {
     })) as unknown as typeof fetch;
     await expect(verifyOrganizationTestNetworkCredential({
       credential: credential(),
-      claims: { [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B00112233' },
+      claims: reviewedClaims,
       controller: { publicKeyJwk: controllerJwk },
       organization: { did: organizationDid },
       controllerEmail: 'developer@dsrc.example',
@@ -169,7 +177,7 @@ describe('organization Test Network credential verifier', () => {
     const verifyDetachedJws = jest.fn().mockResolvedValue(true);
     const result = await verifyOrganizationTestNetworkCredential({
       credential: credential(),
-      claims: { [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B00112233' },
+      claims: reviewedClaims,
       controller: { publicKeyJwk: controllerJwk },
       organization: { did: organizationDid },
       controllerEmail: 'developer@dsrc.example',
@@ -196,7 +204,7 @@ describe('organization Test Network credential verifier', () => {
   it('fails closed when the MVP signer registry revokes the employee', async () => {
     await expect(verifyOrganizationTestNetworkCredential({
       credential: credential(),
-      claims: { [SchemaOrgOrganizationClaim.IdentifierValue]: 'VATES-B00112233' },
+      claims: reviewedClaims,
       controller: { publicKeyJwk: controllerJwk },
       organization: { did: organizationDid },
       controllerEmail: 'developer@dsrc.example',
@@ -374,7 +382,7 @@ describe('reviewed Organization contact with real ML-DSA-65 proofs', () => {
       validFrom: value.validFrom, validUntil: value.validUntil, credentialSubject: subject,
       ...(value.evidence ? { evidence: value.evidence.map(json) } : {}) };
   }
-  async function signedFixture(contactKind: 'email' | 'phone') {
+  async function signedFixture(contactKind: 'email' | 'phone', sector: string = reviewedClaims[SchemaOrgServiceClaim.Category]) {
     const cryptography = new CryptographyService(new AdapterCryptoSdkNode());
     const key = await cryptography.generateKeyPairMlDsa(new Uint8Array(32).fill(37), 'ML-DSA-65');
     const curve = createECDH('secp384r1');
@@ -393,17 +401,24 @@ describe('reviewed Organization contact with real ML-DSA-65 proofs', () => {
       throw new TypeError('Fixture requires its original organization identifier');
     }
     const organizationIdentifier = subject.organization.identifier;
+    const reviewedDid = buildOrganizationDidWeb({
+      hostDidWeb: 'did:web:host.example',
+      tenantId: organizationIdentifier,
+      jurisdiction: reviewedClaims[SchemaOrgOrganizationClaim.AddressCountry],
+      sector,
+    });
     const admissionDraft = {
       ...base,
       credentialSubject: {
         ...base.credentialSubject,
+        id: reviewedDid,
         controller: {
           ...(contactKind === 'phone' ? { telephone: contact } : { email: contact }),
           hasCredential: { material: keyMaterial },
         },
       },
     };
-    const domainDrafts = domainCredentials().map(item => {
+    const domainDrafts = domainCredentials(reviewedDid, sector).map(item => {
       let controllerOwner: Readonly<Record<string, JsonValue>> | undefined;
       if (item.type.includes('ServiceControllerCredential')) {
         const owner = item.credentialSubject.owner;
@@ -439,9 +454,13 @@ describe('reviewed Organization contact with real ML-DSA-65 proofs', () => {
     key.secretKeyBytes.fill(0);
     return {
       credential: admission,
-      claims: { [SchemaOrgOrganizationClaim.IdentifierValue]: organizationIdentifier },
+      claims: {
+        ...reviewedClaims,
+        [SchemaOrgOrganizationClaim.IdentifierValue]: organizationIdentifier,
+        [SchemaOrgServiceClaim.Category]: sector,
+      },
       controller: { publicKeyJwk: controllerPublicJwk },
-      organization: { did: organizationDid },
+      organization: { did: reviewedDid },
       ...(contactKind === 'phone'
         ? { controllerTelephone: contact, legalRepresentativeTelephone: contact }
         : { controllerEmail: contact, legalRepresentativeEmail: contact }),
@@ -463,6 +482,27 @@ describe('reviewed Organization contact with real ML-DSA-65 proofs', () => {
 
   it('retains real-signature email admission compatibility', async () => {
     expect((await verifyOrganizationTestNetworkCredential(await signedFixture('email'))).credentials).toHaveLength(3);
+  });
+
+  it('accepts a separately signed Animal Research application for the same legal organization', async () => {
+    const human = await signedFixture('email', DataspaceSectors.OneHealthResearch);
+    const animal = await signedFixture('email', DataspaceSectors.AnimalResearch);
+    expect(animal.claims[SchemaOrgOrganizationClaim.IdentifierValue]).toBe(human.claims[SchemaOrgOrganizationClaim.IdentifierValue]);
+    expect(animal.organization.did).not.toBe(human.organization.did);
+    const result = await verifyOrganizationTestNetworkCredential(animal);
+    expect(result.credentials[0].credentialSubject.id).toBe(animal.organization.did);
+  });
+
+  it.each([
+    [SchemaOrgServiceClaim.Category, DataspaceSectors.AnimalResearch, 'sector'],
+    [SchemaOrgOrganizationClaim.AddressCountry, 'CA', 'country'],
+    [SchemaOrgOrganizationClaim.IdentifierType, 'businessNumber', 'identifier type'],
+  ])('requires the signed organization scope for %s', async (claim, value, field) => {
+    const input = await signedFixture('email');
+    await expect(verifyOrganizationTestNetworkCredential({
+      ...input,
+      claims: { ...input.claims, [claim]: value },
+    })).rejects.toThrow(`Reviewed organization ${field} does not match transaction claims.`);
   });
 
   it('rejects a different transaction telephone and ambiguous contact channels', async () => {

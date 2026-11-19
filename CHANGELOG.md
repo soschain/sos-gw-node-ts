@@ -1,5 +1,13 @@
 ## Unreleased
 
+- Document organization sectors and admission in a shared catalogue for portal integrators.
+
+- Accept `onehealth-tech` in the gateway runtime and include the supported
+  technical and research sectors in the SOS and UHC Test Network templates.
+
+- Bind reviewed Test Network organization admissions to the approved sector,
+  country and legal identifier before creating a pending Offer.
+
 - Limit individual DocumentReference ledger writes to content version evidence
   and a hashed document reference. Keep attachment contents and subject identifiers
   out of the artifact payload.

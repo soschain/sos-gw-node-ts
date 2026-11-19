@@ -30,6 +30,7 @@ one.
 - [Govern digital-twin consent](../.codex/skills/govern-digital-twin-consent/SKILL.md)
 - [Release the UNID deployment profile](../.codex/skills/gw-unid-local-image-release/SKILL.md)
 - [Release the veterinary deployment profile](../.codex/skills/gw-vetchain-local-image-release/SKILL.md)
+- [Preserve Demo and Test Network adapter parity](../.codex/skills/preserve-demo-test-network-adapter-parity/SKILL.md)
 - [Preserve human individual drafts](../.codex/skills/preserve-human-individual-drafts/SKILL.md)
 - [Preserve the legacy UNID controller](../.codex/skills/preserve-unid-legacy-controller/SKILL.md)
 - [Preserve veterinary health-card proofs](../.codex/skills/preserve-veterinary-health-card-proofs/SKILL.md)

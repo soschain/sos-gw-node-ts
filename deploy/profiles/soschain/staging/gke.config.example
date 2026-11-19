@@ -21,8 +21,9 @@ export GDC_SERVICE_TYPE=ClusterIP
 export GDC_TLS_SIDECAR_ENABLED=false
 export GDC_WORKLOAD_IDENTITY_ENABLED=true
 export GDC_FABRIC_PEER_ALIAS_ENABLED=false
-export GDC_REQUIRED_SECTORS=onehealth-research,animal-research
-export ALLOWED_SECTORS=onehealth-research,animal-research
+# Routing eligibility is distinct from the portal's automatic-admission policy.
+export GDC_REQUIRED_SECTORS=onehealth-research,animal-research,animal-tech,health-tech,onehealth-tech
+export ALLOWED_SECTORS=onehealth-research,animal-research,animal-tech,health-tech,onehealth-tech
 export HOST_ORGANIZATION_AUTHORIZATION_ISSUERS=replace-with-admission-issuer-did-list
 export HOST_ORGANIZATION_AUTHORIZATION_SIGNERS=replace-with-admission-signer-json
 export LEDGER_MSP_ID=replace-with-staging-msp-id
