@@ -7,6 +7,7 @@ import { DocumentReferenceManager } from '../../../managers/DocumentReferenceMan
 import { IVaultRepository } from '../../../database/repositories/vault/vault.repository';
 import { JobRequest, JobStatus } from 'sos-data-utils-ts/confidential-job';
 import { getIndividualSectionId } from '../../../utils/individual-sections';
+import { buildClinicalLedgerReferenceId } from '../../../utils/fhir-versioning';
 import { ClinicalEvidenceChaincode, resolveClinicalDataChannel } from '../../../utils/ledger';
 
 describe('DocumentReferenceManager', () => {
@@ -98,11 +99,7 @@ describe('DocumentReferenceManager', () => {
     expect(mockVaultRepository.put).not.toHaveBeenCalled();
   });
 
-  // This test proves the backend contract for attachment/document writes:
-  // the vault write remains local, while the CID-backed artifact is also
-  // published through the blockchain adapter with the business identifier kept
-  // separate from the content hash.
-  it('registers content-addressed CID mappings on the blockchain adapter', async () => {
+  it('registers CID mappings without forwarding a confidential artifact payload', async () => {
     const subject = 'did:web:api.acme.org:individual:321';
     const job = createJob({
       '@context': 'org.hl7.fhir.r4',
@@ -124,9 +121,20 @@ describe('DocumentReferenceManager', () => {
     expect(mappings[0].cid).toBe(mappings[0].versionId);
     expect(mappings[0].resourceId).toBeDefined();
 
-    const [artifactParams] = mockBlockchainAdapter.registerArtifactBundle.mock.calls[0];
-    expect(artifactParams.assetId).toBe(mappings[0].cid);
-    expect(artifactParams.payload.resourceType).toBe('DocumentReference');
-    expect(artifactParams.payload.subject).toBe(subject);
+    const [[artifact]] = mockBlockchainAdapter.registerArtifactBundle.mock.calls;
+    const [stored] = mockVaultRepository.put.mock.calls[0][1];
+    expect(mappings[0].resourceId).toBe(buildClinicalLedgerReferenceId(stored.id));
+    expect(artifact).toEqual({
+      assetId: mappings[0].cid,
+      channel,
+      payload: {
+        resourceType: 'DocumentReference',
+        resourceId: mappings[0].resourceId,
+        versionId: mappings[0].versionId,
+      },
+    });
+    const ledgerMapping = JSON.stringify([mappings, artifact]);
+    expect(ledgerMapping).not.toContain(subject);
+    expect(ledgerMapping).not.toContain(Buffer.from('%PDF-1.4', 'utf8').toString('base64'));
   });
 });

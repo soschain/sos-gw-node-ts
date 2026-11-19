@@ -112,6 +112,8 @@ import {
   extractCredentialResourcesFromIcaPayload as extractCredentialResourcesFromIcaPayloadExternal,
   forwardOrganizationVerificationTransactionToIca as forwardOrganizationVerificationTransactionToIcaExternal,
 } from './hosting/ica-verification';
+import { createNewOfferAdmissionAuthorizer, GOVERNED_ORGANIZATION_ADMISSION_REQUIRED } from './hosting/new-offer-admission';
+import { createIcaAdmissionClient } from './hosting/ica-admission-client';
 import {
   ActivationMaterial as ExternalActivationMaterial,
   ActivationParticipantMaterial as ExternalActivationParticipantMaterial,
@@ -289,6 +291,8 @@ export class HostingManager {
   private lifecycleService: HostingLifecycleService;
   private tenantDirectoryService: HostTenantDirectoryService;
   private cryptographyService?: ICryptography;
+  private readonly authorizeNewOffer = createNewOfferAdmissionAuthorizer(process.env);
+  private readonly verifyIcaAdmission = createIcaAdmissionClient(process.env);
 
   constructor(
     vaultRepository: IVaultRepository,
@@ -708,8 +712,8 @@ export class HostingManager {
     return resolveAbsoluteUrlExternal(location, baseUrl);
   }
 
-  private async pollIcaJsonResult(location: string, baseUrl?: string, attempts: number = 5): Promise<any | undefined> {
-    return pollIcaJsonResultExternal({ location, baseUrl, attempts });
+  private async pollIcaJsonResult(location: string, baseUrl?: string, trustedOrigin?: string): Promise<any | undefined> {
+    return pollIcaJsonResultExternal({ location, baseUrl, trustedOrigin });
   }
 
   private async registerDidDocumentWithIca(params: {
@@ -822,7 +826,7 @@ export class HostingManager {
             return await this.processOrganizationIssue(job);
           }
           if (job.action === '_activate') {
-            return await this.processOrganizationActivation(job, environment);
+            return await this.processOrganizationActivation(job, environment, isBootstrap);
           }
           if (
             job.action === ACTION_DISABLE
@@ -831,6 +835,9 @@ export class HostingManager {
             || job.action === ACTION_STATUS
           ) {
             return await this.processOrganizationLifecycle(job);
+          }
+          if (this.authorizeNewOffer && !isBootstrap) {
+            throw new ManagerError(GOVERNED_ORGANIZATION_ADMISSION_REQUIRED, IssueType.Forbidden);
           }
           return await this.processOrganizationRegistration(job, environment, isBootstrap);
         case 'Document':
@@ -916,6 +923,8 @@ export class HostingManager {
       forwardOrganizationVerificationTransactionToIca: this.forwardOrganizationVerificationTransactionToIca.bind(this),
       extractCredentialResourcesFromIcaPayload: this.extractCredentialResourcesFromIcaPayload.bind(this),
       reregisterExistingLegacyRepresentativeController: this.reregisterExistingLegacyRepresentativeController.bind(this),
+      authorizeNewOffer: this.authorizeNewOffer,
+      verifyIcaAdmission: this.verifyIcaAdmission,
       verifyTestNetworkAdmissionCredential: async ({ credential, claims, resource }) => {
         if (!this.cryptographyService) {
           throw new ManagerError('Host authorization cryptography is not configured.', IssueType.NotSupported);
@@ -1596,6 +1605,7 @@ export class HostingManager {
       hostJurisdiction: this.config.host.jurisdiction,
       buildIcaVerifyUrl: this.buildIcaVerifyUrl.bind(this),
       pollIcaJsonResult: this.pollIcaJsonResult.bind(this),
+      requireTrustedAdmissionEvidence: Boolean(this.authorizeNewOffer),
       hostDid,
       signHostAuthorizationPayload: async (payload) => {
         const signingKey = await this.kmsService.getPublicVerificationKey('host', 'ES384', 'comm_sig');
@@ -1700,10 +1710,11 @@ export class HostingManager {
    * must come from ICA/ledger `credentialStatus`, and the corresponding update must
    * not purge historical tenant/controller/license evidence.
    */
-  private async processOrganizationActivation(job: JobRequest, environment?: string): Promise<IDecodedDidcommPayload> {
+  private async processOrganizationActivation(job: JobRequest, environment?: string, isBootstrap = false): Promise<IDecodedDidcommPayload> {
     return processOrganizationActivationExternal({
       job,
       environment,
+      requireAdmissionDecision: Boolean(this.authorizeNewOffer) && !isBootstrap,
       issuerDid: composeHostDidWebId(this.config.apiBaseUrl, this.config.hostExternalDomain),
       config: this.config,
       hostRuntime: this.hostRuntime,

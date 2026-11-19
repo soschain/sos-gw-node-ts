@@ -41,6 +41,11 @@ They do not belong in this public repository.
 Follow [SECURITY.md](../SECURITY.md) to report vulnerabilities. Do not open a
 public issue containing a credential, exploit payload or tenant information.
 
+The [operator Helm guide](../charts/sos-gateway/README.md) describes the
+portable workload and Google Cloud profile. See the
+[public security assessment](../deliverables/SECURITY-ASSESSMENT.md) for the
+controls assessed and evidence required for release.
+
 ## Canonical public origin and historical URLs
 
 Set `HOST_PUBLIC_URL` to the canonical public origin and
@@ -70,6 +75,28 @@ sharing an ingress address can still have separate backends and data stores.
 Check their actual routes rather than treating a previous hostname as a DNS
 alias of the new service. Use a guarded image/configuration delta after local
 compatibility and exact-image gates; do not repeat host onboarding.
+
+## Durable Pub/Sub jobs
+
+The Gateway encrypts each durable job with its managed host storage key.
+The common payload store checks the authenticated storage namespace and object
+reference before it returns a job to the worker. GCS handles only the ciphertext
+bytes. A new durable object adapter, such as S3, must implement private byte
+storage and pass the same contract tests. SOS currently ships the GCS adapter
+for this queue. KMS custody is a separate choice from object storage.
+
+A local Demo can accept its configured development transport and process jobs
+with the in-memory queue. That queue does not write job objects. If an
+environment uses a durable queue, the stored jobs require encryption even
+when its incoming application transport permits plaintext.
+
+The reader rejects historical objects without the encrypted envelope. Before a
+production rollout or rollback between incompatible revisions, pause
+submissions and drain the outgoing revision. In a disposable Test Network,
+operators can start the candidate with a fresh, isolated queue, polling state
+and job prefix, or reset only the previous test job state. Tenant records and
+keys are outside that reset. After rollout, verify write, worker replacement,
+readback and deletion against the configured services.
 
 ## ICA issuer trust and credential status
 

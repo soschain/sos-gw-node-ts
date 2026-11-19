@@ -21,14 +21,15 @@ foundation's original design or version-specific reference.
 2. [BFF beginner contract](101-PORTAL_BFF_CONTRACT.md)
 3. [Complete portal API reference](PORTAL_API_TO_GW_CORE.md)
 4. [Host and tenant administration](HOST_AND_TENANT_ADMINISTRATION.md)
-5. [Portal and demo deployment scope](PORTAL_DEPLOYMENT_SCOPE.md)
-6. [BFF integration profile](bff-integration.md)
-7. [BFF Node runtime integration](BFF_NODE_RUNTIME.md)
-8. [Getting started](getting-started.md)
-9. [API and interoperability](api-and-interoperability.md)
-10. [Identifier-free public-health statistics](PUBLIC_HEALTH_STATISTICS.md)
-11. [Security and deployment](security-and-deployment.md)
-12. [Upstream projects and history](upstream-and-history.md)
+5. [Organization sectors and admission](https://github.com/soschain/sos-data-utils-ts/blob/main/docs/ORGANIZATION_SECTORS.md)
+6. [Portal and demo deployment scope](PORTAL_DEPLOYMENT_SCOPE.md)
+7. [BFF integration profile](bff-integration.md)
+8. [BFF Node runtime integration](BFF_NODE_RUNTIME.md)
+9. [Getting started](getting-started.md)
+10. [API and interoperability](api-and-interoperability.md)
+11. [Identifier-free public-health statistics](PUBLIC_HEALTH_STATISTICS.md)
+12. [Security and deployment](security-and-deployment.md)
+13. [Upstream projects and history](upstream-and-history.md)
 
 ## Sources of truth
 

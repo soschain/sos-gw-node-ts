@@ -1,4 +1,6 @@
-# GDC Gateway on GKE
+# SOS Gateway GKE templates
+
+For a strict production workload, use the [SOS Gateway Helm operator guide](../../charts/sos-gateway/README.md). This page describes the existing GKE demo templates and deployer.
 
 This directory contains a minimal GKE deployment skeleton for the GW host/connector.
 

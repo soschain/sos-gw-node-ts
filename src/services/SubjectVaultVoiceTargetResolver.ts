@@ -137,63 +137,33 @@ export function createSubjectVaultVoiceTargetResolver(options: {
           .filter(Boolean),
       ),
     );
-    console.debug('[SubjectVaultVoiceTargetResolver] Lookup start:', {
-      subjectId,
-      tenantVaultId,
-      tenantCollectionName,
-      storageIds,
-      sectionIds,
-      route,
-    });
     for (const storageId of storageIds) {
       for (const sectionId of sectionIds) {
         const docs = await options.vaultRepository.getContainersInSection<ConfidentialStorageDoc>(
           storageId,
           sectionId,
         );
-        console.debug(
-          `[SubjectVaultVoiceTargetResolver] Scanning section '${sectionId}' in storage '${storageId}', found ${docs.length} docs`,
-        );
         for (const secureDoc of docs) {
           try {
             const decrypted = await options.kmsService.unprotectConfidentialData<any>(secureDoc, tenantVaultId);
             const entity = decrypted?.content || decrypted;
-            if (!entity) {
-              console.debug('[SubjectVaultVoiceTargetResolver] Skipping doc with empty entity', { docId: secureDoc?.id });
-              continue;
-            }
-            const match = matchesSubject(entity, subjectTokens, secureDoc?.id);
-            console.debug('[SubjectVaultVoiceTargetResolver] Checking doc', {
-              docId: secureDoc?.id,
-              storageId,
-              match,
-              entityClaims: entity.claims,
-              subjectTokens: Array.from(subjectTokens),
-            });
-            if (!match) continue;
+            if (!entity || !matchesSubject(entity, subjectTokens, secureDoc?.id)) continue;
 
             const claims = (entity.claims || {}) as Record<string, unknown>;
             const phone = extractPhoneFromClaims(claims);
-            console.debug('[SubjectVaultVoiceTargetResolver] Matched subject. Claims:', claims, 'Extracted phone:', phone);
             if (phone) {
-              console.info('[SubjectVaultVoiceTargetResolver] SUCCESS: Found phone for subject', { subjectId, phone, storageId });
               return { to: phone, source: 'subject-vault' };
             }
-            console.warn('[SubjectVaultVoiceTargetResolver] Subject found but no valid E.164 phone in claims', { claims, storageId });
+            console.warn('[SubjectVaultVoiceTargetResolver] Matched subject has no valid phone.');
             return { source: 'none', reason: `subject found in ${sectionId} but no valid E.164 phone in claims` };
-          } catch (err) {
-            console.warn('[SubjectVaultVoiceTargetResolver] Error decrypting doc', { docId: secureDoc?.id, storageId, error: err });
+          } catch {
+            console.warn('[SubjectVaultVoiceTargetResolver] Could not decrypt a subject record.');
             // Skip unreadable entries and continue scanning.
           }
         }
       }
     }
 
-    console.warn('[SubjectVaultVoiceTargetResolver] Subject not found in any section', {
-      subjectId,
-      tenantVaultId,
-      sectionIds,
-    });
     return { source: 'none', reason: `subject not found in ${INDIVIDUAL_SECTION} section` };
   };
 }

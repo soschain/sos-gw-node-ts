@@ -75,8 +75,10 @@ Start with [the documentation index](docs/README.md):
 - [Architecture](docs/architecture.md)
 - [Getting started](docs/getting-started.md)
 - [API and interoperability](docs/api-and-interoperability.md)
+- [Organization sectors and admission](https://github.com/soschain/sos-data-utils-ts/blob/main/docs/ORGANIZATION_SECTORS.md)
 - [Identifier-free public-health statistics](docs/PUBLIC_HEALTH_STATISTICS.md)
 - [Security and deployment](docs/security-and-deployment.md)
+- [Security report and operator deliverables](deliverables/README.md)
 - [Upstream projects and history](docs/upstream-and-history.md)
 
 The generated OpenAPI document is `swagger-spec.json`. A running gateway serves

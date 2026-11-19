@@ -20,6 +20,9 @@ one.
 - [Federated EHR continuity boundary](04-DEEP-DIVES/04.L-FEDERATED-EHR-CONTINUITY-STORAGE.md)
   records extension scope without claiming unimplemented behavior.
 
+- [Public security and operator deliverables](../deliverables/README.md)
+  connects the evidence and portable deployment instructions.
+
 ## Repository skills
 
 - [Configure trusted identity providers](../.codex/skills/configure-trusted-identity-providers/SKILL.md)
@@ -27,6 +30,7 @@ one.
 - [Govern digital-twin consent](../.codex/skills/govern-digital-twin-consent/SKILL.md)
 - [Release the UNID deployment profile](../.codex/skills/gw-unid-local-image-release/SKILL.md)
 - [Release the veterinary deployment profile](../.codex/skills/gw-vetchain-local-image-release/SKILL.md)
+- [Preserve Demo and Test Network adapter parity](../.codex/skills/preserve-demo-test-network-adapter-parity/SKILL.md)
 - [Preserve human individual drafts](../.codex/skills/preserve-human-individual-drafts/SKILL.md)
 - [Preserve the legacy UNID controller](../.codex/skills/preserve-unid-legacy-controller/SKILL.md)
 - [Preserve veterinary health-card proofs](../.codex/skills/preserve-veterinary-health-card-proofs/SKILL.md)

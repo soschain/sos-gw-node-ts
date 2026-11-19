@@ -9,6 +9,8 @@
  *    require the exact original Offer, never a replacement Offer.
  * 4. Confirm that Offer through Order and require the activation licence that
  *    precedes exchange and DCR.
+ * 5. Submit separate applications for two sectors under one legal identifier
+ *    and read each protected pending Offer back from its own tenant record.
  * Authorization invariant: only keys from the reverified transaction may fill
  * the pending binding; an Order envelope cannot self-attest authority.
  * Persistence invariant: restart discards process state while the protected
@@ -16,6 +18,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { SchemaOrgIndividualProductClaim, SchemaOrgOfferClaim, SchemaOrgOrderClaim, SchemaOrgOrganizationClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import { VaultMemRepository } from '../../database/repositories/vault/vault.mem.repository';
 import { getEnvSectionId } from '../../utils/section-env';
 import { getTenantVaultId } from '../../utils/tenant';
@@ -124,5 +127,50 @@ describe('organization registration continuation across local GW restart', () =>
     expect(orderPoll.body.data[0].response.status).toBe('201');
     expect(orderPoll.body.data[0].resource.meta.claims[SchemaOrgOrderClaim.AcceptedOfferIdentifier]).toBe(offerId);
     expect(orderPoll.body.data[0].resource.meta.claims[SchemaOrgIndividualProductClaim.SerialNumber]).toBeTruthy();
+  });
+
+  it('stores independent onboarding Offers for two sectors of the same organization', async () => {
+    const repository = new VaultMemRepository();
+    const gateway = await buildRestartableGateway(repository);
+    const sectors = [DataspaceSectors.OneHealthResearch, DataspaceSectors.AnimalResearch];
+    const offers: string[] = [];
+    try {
+      for (const sector of sectors) {
+        const transaction = structuredClone(ORGANIZATION_VERIFICATION_TRANSACTION_REQUEST) as any;
+        transaction.jti = `${transaction.jti}-${sector}`;
+        transaction.thid = `${transaction.thid}-${sector}`;
+        transaction.body.data[0].resource.meta.claims = {
+          ...transaction.body.data[0].resource.meta.claims,
+          ...testAnimalResearchRegistrationClaims,
+          [SchemaOrgServiceClaim.Category]: sector,
+        };
+        const submit = await invokeExpress(gateway.app, {
+          method: 'POST',
+          url: '/host/cds-es/v1/test/registry/org.schema/Organization/_transaction',
+          headers: { 'content-type': 'application/json' },
+          body: transaction,
+        });
+        expect(submit.status).toBe(202);
+        await gateway.queueAdapter.waitForEmptyQueue();
+        const poll = await pollJsonBody(gateway.app, submit.headers.location, transaction.thid);
+        expect(poll.body.data[0].response.status).toBe('200');
+        const offer = poll.body.data[0].resource.meta.claims[SchemaOrgOfferClaim.Identifier];
+        expect(offer).toContain(':Offer:');
+        offers.push(offer);
+      }
+      expect(new Set(offers).size).toBe(sectors.length);
+      for (const [index, sector] of sectors.entries()) {
+        const tenantId = getTenantVaultId(sector, testAnimalResearchRegistrationClaims[SchemaOrgOrganizationClaim.AlternateName]);
+        const record = await repository.get<any>(gateway.hostCollectionName, tenantId, getEnvSectionId('tenants'));
+        const pending = await gateway.kmsService.unprotectConfidentialData<any>(record!, 'host');
+        expect(pending.claims).toMatchObject({
+          [SchemaOrgOrganizationClaim.IdentifierValue]: testAnimalResearchRegistrationClaims[SchemaOrgOrganizationClaim.IdentifierValue],
+          [SchemaOrgServiceClaim.Category]: sector,
+          [SchemaOrgOfferClaim.Identifier]: offers[index],
+        });
+      }
+    } finally {
+      gateway.queueAdapter.stop();
+    }
   });
 });

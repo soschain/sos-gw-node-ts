@@ -6,7 +6,8 @@ import { AsyncResponseStoreFirestore } from '../adapters/async-response-store.fi
 import type { QueueAdapter } from '../adapters/queue';
 import { QueueAdapterMem } from '../adapters/queue-mem';
 import { QueueAdapterGcpPubSub } from '../adapters/queue-gcp-pubsub';
-import { AsyncJobPayloadStoreGcs } from '../adapters/async-job-payload-store.gcs';
+import { AsyncJobPayloadObjectStorageGcs } from '../adapters/async-job-payload-store.gcs';
+import { AsyncJobPayloadStoreEncrypted, type AsyncJobPayloadProtection } from '../adapters/async-job-payload-store';
 
 type Environment = Record<string, string | undefined>;
 type QueueAdapterRuntime = QueueAdapter & { stop(): void };
@@ -15,6 +16,7 @@ export async function buildAsyncJobInfrastructure(params: {
   queueProvider: string;
   responseStoreProvider?: string;
   worker: Worker;
+  payloadProtection?: AsyncJobPayloadProtection;
   env?: Environment;
   firestoreFactory?: () => any;
   pubSubFactory?: (projectId?: string) => Promise<any> | any;
@@ -49,6 +51,9 @@ export async function buildAsyncJobInfrastructure(params: {
     };
   }
 
+  const { payloadProtection } = params;
+  if (!payloadProtection) throw new Error('QUEUE_PROVIDER=gcp-pubsub requires encrypted payload storage.');
+
   const topicName = String(env.GCP_PUBSUB_TOPIC || '').trim();
   const subscriptionName = String(env.GCP_PUBSUB_SUBSCRIPTION || '').trim();
   if (!topicName || !subscriptionName) {
@@ -72,8 +77,10 @@ export async function buildAsyncJobInfrastructure(params: {
       client,
       topicName,
       subscriptionName,
-      payloadStore: new AsyncJobPayloadStoreGcs(
+      payloadStore: new AsyncJobPayloadStoreEncrypted(
         jobBucket,
+        payloadProtection,
+        new AsyncJobPayloadObjectStorageGcs(jobBucket),
         env.GCP_PUBSUB_JOB_PREFIX || 'async-jobs',
       ),
       maxOutstandingMessages: Number(env.GCP_PUBSUB_MAX_OUTSTANDING_MESSAGES || 10),

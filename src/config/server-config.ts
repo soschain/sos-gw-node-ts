@@ -1,4 +1,5 @@
 import { IServerConfig } from '../config';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { getPublicApiBaseUrls } from '../utils/host-public-origin';
 
@@ -8,7 +9,7 @@ export const DEFAULT_HOST_JURISDICTION = 'es';
 
 const MAIN_SECTORS = ['animal', 'health'] as const;
 const SUBSECTORS = ['research', 'care', 'index', 'tech', 'insurance'] as const;
-const COMPATIBILITY_SECTORS = ['onehealth-research'] as const;
+const COMPATIBILITY_SECTORS = [DataspaceSectors.OneHealthResearch, DataspaceSectors.OneHealthTech] as const;
 
 export type NetworkMode = 'test' | 'local-network' | 'test-network' | 'network';
 export type ResearchStoreProvider = 'postgres' | 'supabase' | 'firestore';

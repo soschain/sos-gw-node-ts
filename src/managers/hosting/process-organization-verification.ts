@@ -26,6 +26,8 @@ import {
 } from './hosting-claim-contracts';
 import type { VerifiableCredentialV2 } from 'antifraud-data-utils-ts/credential-contracts';
 import type { TestNetworkAdmissionVerificationResult } from './organization-test-network-credential';
+import type { NewOfferAdmission } from './new-offer-admission';
+import type { IcaAdmissionRequest } from './ica-admission-client';
 import type { PostalActivationCodeBinding } from 'sos-data-utils-ts/postal-activation-binding';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { resolveLedgerOrganizationId } from '../../utils/ledger-organization-registration-helpers';
@@ -113,6 +115,8 @@ type VerificationDeps = Readonly<{
     claims: ClaimsRecord;
     resource: LegalOrganizationVerificationTransactionResource;
   }) => Promise<TestNetworkAdmissionVerificationResult>;
+  authorizeNewOffer?: (input: NewOfferAdmission) => Promise<void>;
+  verifyIcaAdmission?: (input: IcaAdmissionRequest) => Promise<unknown | undefined>;
   reregisterExistingLegacyRepresentativeController?: (input: {
     claims: ClaimsRecord;
     credentials: Array<Record<string, unknown>>;
@@ -196,19 +200,45 @@ export async function processOrganizationVerificationTransaction(
     throw new ManagerError('Organization verification organization.did must be a valid DID.', IssueType.Value);
   }
   const environment = hostNetwork || runtimeNetwork || undefined;
+  const registrationControllerDid = String(deps.job.content?.iss || '').trim() || undefined;
   const reRegisteredClaims = await deps.reregisterExistingLegacyRepresentativeController?.({
     claims,
     credentials: vc,
     environment,
     jobMeta: deps.job.content?.meta,
   });
+  if (!reRegisteredClaims && deps.authorizeNewOffer) {
+    const applicationProof = testNetworkAdmissionCredential
+      ? (verificationResponse as TestNetworkAdmissionVerificationResult).applicationProof
+      : undefined;
+    const icaEvidence = testNetworkAdmissionCredential && await deps.verifyIcaAdmission?.({
+      hostDid: deps.issuerDid,
+      network: environment,
+      sector: requestedSector,
+      controllerDid: registrationControllerDid,
+      claims,
+      applicationProof,
+    });
+    await deps.authorizeNewOffer({
+      hostDid: deps.issuerDid,
+      network: environment,
+      sector: requestedSector,
+      organizationDid: requestedPrimaryDid || undefined,
+      controllerDid: registrationControllerDid,
+      claims,
+      applicationProof,
+      evidence: icaEvidence || verificationResponse,
+      evidenceSource: icaEvidence || !testNetworkAdmissionCredential ? 'ica' : 'host',
+      credentials: vc,
+    });
+  }
   const processedClaims = reRegisteredClaims || await deps.createPendingTenantRegistrationFromClaims({
     claims,
     environment,
     jobMeta: deps.job.content?.meta,
     fallbackAlternateName: deps.job.tenantId,
     primaryDid: requestedPrimaryDid || undefined,
-    registrationControllerDid: String(deps.job.content?.iss || '').trim() || undefined,
+    registrationControllerDid,
   });
 
   return {
@@ -315,7 +345,7 @@ export function buildOrganizationVerificationTransactionResponseResource(
   const offerId = String(processedClaims[HOST_TRANSACTION_REQUIRED_OUTPUT_CLAIMS[0]] || '').trim() || undefined;
   const hostVerification = source === 'host' && verificationResponse && typeof verificationResponse === 'object'
     ? Object.fromEntries(Object.entries(verificationResponse as Record<string, unknown>)
-      .filter(([key]) => key !== 'credentials'))
+      .filter(([key]) => key !== 'credentials' && key !== 'applicationProof'))
     : verificationResponse;
   return {
     meta: { claims: processedClaims },

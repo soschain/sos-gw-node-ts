@@ -1,5 +1,15 @@
 # GDC Core to SOSChain GW synchronization
 
+## Historical local PostgreSQL and IPFS profile
+
+Read-only comparison at GW CORE `be2541f`. The IPFS example selects
+PostgreSQL for the vault and IPFS for blobs. The server constructs
+`QueueAdapterMem` and `AsyncResponseStoreMem`. Durable-job storage encryption
+is therefore not applicable to that profile. Any later logging fix should be
+ported selectively and verified in GW CORE. Validate the bytes that reach
+PostgreSQL and IPFS separately, including operations that externalize blobs.
+This comparison does not establish the settings of a deployed host.
+
 ## Individual Customer discriminator and unused healthcare facade
 
 Individual creation uses `GatewayResponseEntryTypes.IndividualCustomer` from

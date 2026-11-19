@@ -1,4 +1,6 @@
+// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import request from 'supertest';
+import { IssueType, IssueLevel } from 'fhir-data-utils-ts/operation-outcome';
 import { createApp } from '../../../app';
 import { createGlobalErrorHandler } from '../../../middlewares/global-error-handler';
 import type { ILogger } from '../../../loggers/ILogger';
@@ -28,7 +30,6 @@ describe('OperationOutcome error observability', () => {
     expect(issues).toEqual([{
       severity: 'error',
       code: 'invalid',
-      diagnostics: 'Invalid condition',
       responseStatus: 400,
       entryIndex: 0,
     }]);
@@ -74,17 +75,22 @@ describe('OperationOutcome error observability', () => {
     });
   });
 
-  it('redacts bearer tokens and JWTs from diagnostics', () => {
-    const issues = collectOperationOutcomeErrors({
+  it('keeps free-text diagnostics and request identifiers out of worker logs', () => {
+    const entries: StructuredErrorLog[] = [];
+    const privateText = 'synthetic private value';
+    logOperationOutcomeErrors({
       resourceType: 'OperationOutcome',
-      issue: [{
-        severity: 'error',
-        code: 'security',
-        diagnostics: 'Bearer secret-token eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.signature',
-      }],
-    }, 401);
+      issue: [
+        { severity: IssueLevel.Error, code: IssueType.Security, diagnostics: privateText },
+        { severity: IssueLevel.Error, code: privateText },
+      ],
+    }, {
+      source: 'worker_response',
+      thid: privateText,
+    }, entry => entries.push(entry));
 
-    expect(issues[0].diagnostics).toBe('Bearer [REDACTED] [REDACTED_JWT]');
+    expect(JSON.stringify(entries)).not.toContain(privateText);
+    expect(entries[0]).toMatchObject({ issues: [{ code: IssueType.Security }, { severity: IssueLevel.Error }] });
   });
 
   it('writes a structured log for a failed batch entry returned with HTTP 200', async () => {
@@ -145,10 +151,15 @@ describe('OperationOutcome error observability', () => {
     app.use(createGlobalErrorHandler(logger));
 
     await request(app)
-      .post('/malformed')
+      .post('/malformed/synthetic-private-path')
+      .set('x-request-id', 'synthetic-private-header')
       .set('Content-Type', 'application/json')
-      .send('{"broken":}')
-      .expect(400);
+      .send('synthetic-private-body')
+      .expect(400)
+      .expect(response => expect(response.text).not.toContain('synthetic-private-body'));
+
+    expect(JSON.stringify(consoleSpy.mock.calls)).not.toContain('synthetic-private');
+    expect(JSON.stringify((logger.error as jest.Mock).mock.calls)).not.toContain('synthetic-private');
 
     expect(consoleSpy).toHaveBeenCalledTimes(1);
     expect(JSON.parse(String(consoleSpy.mock.calls[0][0]))).toMatchObject({
@@ -156,7 +167,6 @@ describe('OperationOutcome error observability', () => {
       source: 'http_response',
       httpStatus: 400,
       method: 'POST',
-      path: '/malformed',
       issues: [{ severity: 'error', code: 'invalid', responseStatus: 400 }],
     });
   });

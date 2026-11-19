@@ -1,3 +1,4 @@
+// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 /**
  * Flow contract: deployment configuration accepts canonical sectors plus
  * explicitly named signed-identity compatibility sectors and fails closed for
@@ -19,6 +20,8 @@ import {
   resetServerConfig,
   resolveAllowedSectorsFromEnv,
 } from '../../../config/server-config';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
+import { readFileSync } from 'node:fs';
 
 describe('server-config sector resolution', () => {
   it('centralizes the host jurisdiction default', () => {
@@ -82,6 +85,25 @@ describe('server-config sector resolution', () => {
       'health-insurance',
       'onehealth-research',
     ]);
+  });
+
+  it('loads all SOS Test Network sectors through the runtime configuration', () => {
+    const sectors = [
+      DataspaceSectors.OneHealthResearch, DataspaceSectors.AnimalResearch,
+      DataspaceSectors.AnimalTech, DataspaceSectors.HealthTech, DataspaceSectors.OneHealthTech,
+    ];
+    expect(resolveAllowedSectorsFromEnv({ ALLOWED_SECTORS: sectors.join(',') })).toEqual(sectors);
+  });
+
+  it('loads the UHC Test Network ConfigMap sector list with the SOS runtime', () => {
+    const template = readFileSync(new URL('../../../../deploy/profiles/human/staging/configmap.yaml', import.meta.url), 'utf8');
+    const allowedSectors = template.match(/^  ALLOWED_SECTORS: (.+)$/m)?.[1];
+    expect(allowedSectors).toBeDefined();
+    const sectors = resolveAllowedSectorsFromEnv({ ALLOWED_SECTORS: allowedSectors });
+    expect(sectors).toEqual(expect.arrayContaining([
+      DataspaceSectors.OneHealthResearch, DataspaceSectors.AnimalResearch,
+      DataspaceSectors.AnimalTech, DataspaceSectors.HealthTech, DataspaceSectors.OneHealthTech,
+    ]));
   });
 
   it('should validate MAINSECTOR values', () => {

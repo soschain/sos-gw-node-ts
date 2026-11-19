@@ -25,6 +25,20 @@ A host can expose several products in one data space. Product/application
 identity selects branding and enabled modules; it is not a clinical sector and
 does not grant authority.
 
+## Admission decisions
+
+The infrastructure operator can receive applications and coordinate reviews.
+The admission decision belongs to the designated authority for that host. A
+reviewer acting for a different organization needs an explicit delegation
+covering the requested host, network and sector. Delivering a notification to
+the operator's email address only assigns follow-up. The decision must come from
+an authenticated reviewer with the corresponding signing authority.
+
+Record a separate decision for each new sector, even when a reviewer relies
+on evidence already supplied by the same legal entity. The reviewer confirms
+that the evidence covers the requested sector. Configure production admission
+to require a reviewed decision for each application.
+
 ## Reusable administration template
 
 The React template belongs in `uhc-portal-components-react`. It composes slots

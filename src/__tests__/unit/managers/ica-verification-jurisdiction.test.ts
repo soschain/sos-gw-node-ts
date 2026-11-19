@@ -1,6 +1,7 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { describe, expect, it, jest } from '@jest/globals';
 import { forwardOrganizationVerificationTransactionToIca } from '../../../managers/hosting/ica-verification';
+import { ORGANIZATION_VERIFICATION_TRANSACTION_REQUEST } from '../../data/example-payloads';
 
 const buildJob = (jurisdiction?: string) => ({
   jurisdiction,
@@ -30,6 +31,20 @@ const buildDependencies = (jurisdiction?: string, hostJurisdiction?: string) => 
 });
 
 describe('ICA verification jurisdiction resolution', () => {
+  it('requires the configured HTTPS origin to supply governed admission evidence', async () => {
+    const dependencies = { ...buildDependencies('CA-BC'), requireTrustedAdmissionEvidence: true };
+    dependencies.buildIcaVerifyUrl.mockReturnValueOnce('http://ica.example.test/verify');
+    await expect(forwardOrganizationVerificationTransactionToIca(dependencies)).rejects.toThrow('Governed admission requires HTTPS ICA');
+    expect(dependencies.fetchImpl).not.toHaveBeenCalled();
+
+    dependencies.fetchImpl.mockResolvedValueOnce(new Response(null, {
+      status: 202, headers: { location: 'https://other.example.test/result' },
+    }));
+    await expect(forwardOrganizationVerificationTransactionToIca(dependencies)).rejects.toThrow('ICA polling must use the configured origin');
+    expect(dependencies.fetchImpl).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ redirect: 'error' }));
+    expect(dependencies.pollIcaJsonResult).not.toHaveBeenCalled();
+  });
+
   it('fails closed when neither the request nor host configuration declares a jurisdiction', async () => {
     const dependencies = buildDependencies();
 
@@ -61,6 +76,22 @@ describe('ICA verification jurisdiction resolution', () => {
     const sent = JSON.parse(String(dependencies.fetchImpl.mock.calls[0]?.[1]?.body || '{}'));
     expect(sent.iss).toBe(dependencies.hostDid);
     expect(sent.body.hostAuthorizationProof).toEqual({ jws: 'generated.proof.signature' });
+    expect(sent).not.toHaveProperty('attachments');
+  });
+
+  it('forwards the Spanish applicant and signed-document attachment unchanged', async () => {
+    const dependencies = buildDependencies('ES');
+    const request = structuredClone(ORGANIZATION_VERIFICATION_TRANSACTION_REQUEST);
+    dependencies.job.content = request;
+
+    await forwardOrganizationVerificationTransactionToIca(dependencies);
+
+    expect(dependencies.buildIcaVerifyUrl).toHaveBeenCalledWith('ES', 'animal-care', 'contract');
+    const sent = JSON.parse(String(dependencies.fetchImpl.mock.calls[0]?.[1]?.body || '{}'));
+    expect(sent.iss).toBe(request.iss);
+    expect(sent.attachments).toEqual(request.attachments);
+    expect(sent.body).not.toHaveProperty('hostAuthorizationProof');
+    expect(dependencies.signHostAuthorizationPayload).not.toHaveBeenCalled();
   });
 
   it('preserves a preauthorized proof and the exact resource covered by that proof', async () => {
