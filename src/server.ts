@@ -390,6 +390,7 @@ async function startServer(options?: StartServerOptions) {
     queueProvider: config.queueProvider,
     responseStoreProvider: process.env.ASYNC_RESPONSE_STORE_PROVIDER,
     worker,
+    payloadProtection: kmsService,
   });
   const federatedSmartVerificationManager = new FederatedSmartVerificationManager({
     kmsService,

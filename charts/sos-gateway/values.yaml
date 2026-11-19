@@ -1,0 +1,11 @@
+image:
+  repository: ""
+  digest: ""
+publicUrl: ""
+existingConfigMap: ""
+existingSecret: ""
+serviceAccountName: ""
+kmsProvider: ""
+replicas: 1
+networkMode: network
+testNetworkAdmissionEnabled: false

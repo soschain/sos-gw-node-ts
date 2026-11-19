@@ -33,12 +33,7 @@ export function createGlobalErrorHandler(logger: ILogger): express.ErrorRequestH
     const sizedError = err as RequestBodySizeError;
 
     if (isRequestBodyTooLargeError(sizedError)) {
-      logger.error('Request body exceeded configured size limit', err, {
-        path: req.path,
-        method: req.method,
-        limit: sizedError.limit,
-        length: sizedError.length,
-      });
+      logger.error('Request body exceeded configured size limit');
       return sendDidcommEarlyError(
         req,
         res,
@@ -50,18 +45,18 @@ export function createGlobalErrorHandler(logger: ILogger): express.ErrorRequestH
 
     // Check if the error is a SyntaxError from body-parser
     if (err instanceof SyntaxError && 'body' in err) {
-      logger.error('Malformed JSON received', err, { path: req.path, method: req.method });
+      logger.error('Malformed JSON received');
       return sendDidcommEarlyError(
         req,
         res,
         400,
         IssueType.Invalid,
-        `Malformed JSON in request body: ${err.message}`,
+        'Malformed JSON in request body.',
       );
     }
 
     // Handle other unexpected errors
-    logger.error('An unexpected error occurred in the global error handler', err, { path: req.path, method: req.method });
+    logger.error('An unexpected error occurred in the global error handler');
     return sendDidcommEarlyError(
       req,
       res,

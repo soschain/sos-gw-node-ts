@@ -191,8 +191,13 @@ export async function pollIcaJsonResult(params: {
   baseUrl?: string;
   attempts?: number;
   fetchImpl?: typeof fetch;
+  trustedOrigin?: string;
 }): Promise<any | undefined> {
   const pollingUrl = resolveAbsoluteUrl(params.location, params.baseUrl);
+  const target = new URL(pollingUrl);
+  if (params.trustedOrigin && (target.origin !== params.trustedOrigin || target.username || target.password)) {
+    throw new ManagerError('ICA polling must use the configured origin', IssueType.Security);
+  }
   const attempts = params.attempts ?? 5;
   const fetchImpl = params.fetchImpl || fetch;
   let waitMs = 2000;
@@ -205,6 +210,7 @@ export async function pollIcaJsonResult(params: {
       headers: {
         'content-type': 'application/json',
       },
+      ...(params.trustedOrigin ? { redirect: 'error' } : {}),
     });
     const retryAfterRaw = res.headers.get('retry-after') || res.headers.get('Retry-After');
     const retryAfterSeconds = Number(retryAfterRaw);

@@ -261,9 +261,6 @@ export class Worker {
       logOperationOutcomeErrors(payloadResponse, {
         source: 'worker_response',
         thid: job.content?.thid,
-        jobName,
-        resourceType,
-        action: jobInfo.action,
       });
 
       // --- ARCHITECTURE KEEPER: UNIFIED RESPONSE ENCODING ---
@@ -339,9 +336,6 @@ export class Worker {
       logOperationOutcomeErrors(errorBundle, {
         source: 'worker_exception',
         thid: job.content?.thid,
-        jobName,
-        resourceType: jobInfo?.resourceType,
-        action: jobInfo?.action,
       });
       const errorResponse = {
         thid: job.content?.thid || 'unknown-thid',

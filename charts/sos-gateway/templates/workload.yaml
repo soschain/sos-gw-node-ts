@@ -1,0 +1,133 @@
+{{- $repository := required "image.repository is required" .Values.image.repository -}}
+{{- if or (contains "@" $repository) (regexMatch ":[^/]+$" $repository) -}}
+{{- fail "image.repository must omit tags and digests" -}}
+{{- end -}}
+{{- if not (regexMatch "^sha256:[a-f0-9]{64}$" .Values.image.digest) -}}
+{{- fail "image.digest must be a SHA-256 digest" -}}
+{{- end -}}
+{{- if not (regexMatch "^https://[A-Za-z0-9.-]+(:[0-9]+)?$" .Values.publicUrl) -}}
+{{- fail "publicUrl must be an HTTPS origin" -}}
+{{- end -}}
+{{- if not (has .Values.kmsProvider (list "gcp" "aws" "hashicorp-transit")) -}}
+{{- fail "kmsProvider must select an external KMS" -}}
+{{- end -}}
+{{- if not (has .Values.networkMode (list "test-network" "network")) -}}
+{{- fail "networkMode must be test-network or network" -}}
+{{- end -}}
+{{- if and .Values.testNetworkAdmissionEnabled (ne .Values.networkMode "test-network") -}}
+{{- fail "testNetworkAdmissionEnabled requires networkMode=test-network" -}}
+{{- end -}}
+{{- $config := required "existingConfigMap is required" .Values.existingConfigMap -}}
+{{- $secret := required "existingSecret is required" .Values.existingSecret -}}
+{{- $identity := required "serviceAccountName is required" .Values.serviceAccountName -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name | quote }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ .Release.Name | quote }}
+    spec:
+      serviceAccountName: {{ $identity | quote }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: gateway
+          image: {{ printf "%s@%s" $repository .Values.image.digest | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: {{ $config | quote }}
+            - secretRef:
+                name: {{ $secret | quote }}
+          env:
+            - name: HOST_PUBLIC_URL
+              value: {{ .Values.publicUrl | quote }}
+            - name: HOST_EXTERNAL_DOMAIN
+              value: {{ trimPrefix "https://" .Values.publicUrl | quote }}
+            - name: HOST_INTERNAL_IP
+              value: "0.0.0.0"
+            - name: PORT
+              value: "3000"
+            - name: NODE_ENV
+              value: "production"
+            - name: DEPLOYMENT_ENV
+              value: {{ ternary "production" "staging" (eq .Values.networkMode "network") | quote }}
+            - name: NETWORK_MODE
+              value: {{ .Values.networkMode | quote }}
+            - name: SECURITY_MODE
+              value: "strict"
+            - name: DEMO_ALLOW_INSECURE_BEARER
+              value: "false"
+            - name: DIDCOMM_PLAIN
+              value: "false"
+            - name: DIDCOMM_LEGACY_PLAINTEXT_MEDIA_TYPE
+              value: "false"
+            - name: JSON_LEGACY
+              value: "false"
+            - name: FHIR_LEGACY
+              value: "false"
+            - name: DEV_SEED
+              value: "false"
+            - name: KMS_PROVIDER
+              value: {{ .Values.kmsProvider | quote }}
+            {{- if .Values.testNetworkAdmissionEnabled }}
+            {{- range $key := list "HOST_ADMISSION_ICA_URL" "HOST_ADMISSION_DECISION_URL" }}
+            - name: {{ $key }}
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ $config | quote }}
+                  key: {{ $key }}
+                  optional: false
+            {{- end }}
+            {{- range $key := list "HOST_ADMISSION_ICA_TOKEN" "HOST_ADMISSION_DECISION_TOKEN" }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $secret | quote }}
+                  key: {{ $key }}
+                  optional: false
+            {{- end }}
+            {{- end }}
+          startupProbe:
+            httpGet:
+              path: /host/ping
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /host/ping
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /host/ping
+              port: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

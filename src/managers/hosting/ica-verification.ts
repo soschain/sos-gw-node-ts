@@ -39,7 +39,8 @@ type ForwardOrganizationVerificationTransactionToIcaDeps = Readonly<{
   hostDid: string;
   signHostAuthorizationPayload: (payload: Record<string, unknown>) => Promise<string>;
   buildIcaVerifyUrl: (jurisdiction: string, sector: string, resourceType: string) => string;
-  pollIcaJsonResult: (url: string, fallbackUrl?: string) => Promise<any>;
+  pollIcaJsonResult: (url: string, fallbackUrl?: string, trustedOrigin?: string) => Promise<any>;
+  requireTrustedAdmissionEvidence?: boolean;
   fetchImpl?: typeof fetch;
 }>;
 
@@ -130,6 +131,14 @@ export async function forwardOrganizationVerificationTransactionToIca(
     deps.requestedSector,
     deps.resourceType,
   );
+  let trustedOrigin: string | undefined;
+  if (deps.requireTrustedAdmissionEvidence) {
+    const origin = URL.parse(verifyUrl);
+    if (origin?.protocol !== 'https:' || origin.username || origin.password) {
+      throw new ManagerError('Governed admission requires HTTPS ICA', IssueType.Security);
+    }
+    trustedOrigin = origin.origin;
+  }
   const response = await fetchImpl(verifyUrl, {
     method: HttpRequestMethods.Post,
     headers: {
@@ -137,6 +146,7 @@ export async function forwardOrganizationVerificationTransactionToIca(
       'content-type': deps.icaDidcommPlainJsonMediaType,
     },
     body: JSON.stringify(requestPayload),
+    ...(trustedOrigin ? { redirect: 'error' } : {}),
   });
 
   if (response.status === 202) {
@@ -144,7 +154,13 @@ export async function forwardOrganizationVerificationTransactionToIca(
     if (!location) {
       throw new ManagerError('ICA verify returned 202 Accepted without Location header.', IssueType.NotSupported);
     }
-    const polled = await deps.pollIcaJsonResult(location, verifyUrl);
+    if (trustedOrigin) {
+      const target = URL.parse(location, verifyUrl);
+      if (target?.origin !== trustedOrigin || target.username || target.password) {
+        throw new ManagerError('ICA polling must use the configured origin', IssueType.Security);
+      }
+    }
+    const polled = await deps.pollIcaJsonResult(location, verifyUrl, trustedOrigin);
     return assertIcaVerificationSucceeded(polled || {});
   }
   if (!response.ok) {

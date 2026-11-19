@@ -320,10 +320,10 @@ describe('Organization Registration API', () => {
     await tenantsCacheManager.loadHost();
   });
 
-  async function activateTenantDirectly(
+  function buildActivationJob(
     representativeCredentialId = 'did:web:controller.example.com',
     activationClaims: Record<string, unknown> = { ...testClaimsTenant1Registration },
-  ): Promise<{ tenantId: string; sector: string }> {
+  ): JobRequest {
     const vpTokenCompact = [
       Buffer.from(JSON.stringify({ alg: 'ML-DSA-44', typ: 'JWT' })).toString('base64url'),
       Buffer.from(JSON.stringify({
@@ -358,7 +358,7 @@ describe('Organization Registration API', () => {
       'mock-signature',
     ].join('.');
 
-    const job: JobRequest = {
+    return {
       id: uuidv4(),
       status: JobStatus.DRAFT,
       sequence: 0,
@@ -417,7 +417,13 @@ describe('Organization Registration API', () => {
       requestUrl: '/host/cds-es/v1/test/registry/org.schema/Organization/_activate',
     };
 
-    const response = await hostingManager.process(job);
+  }
+
+  async function activateTenantDirectly(
+    representativeCredentialId?: string,
+    activationClaims?: Record<string, unknown>,
+  ): Promise<{ tenantId: string; sector: string }> {
+    const response = await hostingManager.process(buildActivationJob(representativeCredentialId, activationClaims));
     expect(response.body.data[0].response.status).toBe('201');
     const responseClaims = response.body.data[0].resource?.meta?.claims as Record<string, unknown>;
     return {
@@ -976,6 +982,29 @@ describe('Organization Registration API', () => {
   });
 
   describe('Organization Registration v2 (Offer/Order Flow)', () => {
+    it('does not let a governed host create a tenant through the legacy batch or activation paths', async () => {
+      const override = jest.replaceProperty(process, 'env', {
+        ...process.env,
+        HOST_ADMISSION_DECISION_URL: 'https://decision.example.test/check',
+        HOST_ADMISSION_DECISION_TOKEN: 'test-authorizer-bearer',
+      });
+      const governedHost = new HostingManager(
+        vaultRepository, mockKmsService, tenantsCacheManager, mockStorageAdapter, mockLogger, mockConfig, hostRuntime,
+      );
+      override.restore();
+
+      const batch = await governedHost.process({
+        ...ORGANIZATION_REGISTRATION_JOB,
+        action: '_batch',
+        content: withCompleteFixtureJwsProof(ORGANIZATION_REGISTRATION_REQUEST) as any,
+      });
+      expect(batch.body.data[0].response.status).toBe('403');
+      expect(batch.body.data[0].response.outcome?.issue?.[0].diagnostics).toContain('Organization/_transaction');
+      const activation = await governedHost.process(buildActivationJob());
+      expect(activation.body.data[0].response.status).toBe('403');
+      expect(activation.body.data[0].response.outcome?.issue?.[0].diagnostics).toContain('Organization/_transaction');
+    });
+
     it('should accept a registration request and return a verifiable Offer', async () => {
       const verify = jest.spyOn(CryptographyService.prototype, 'verifyDetachedJws').mockResolvedValue(true);
       const orgCreationPayload = withCompleteFixtureJwsProof(ORGANIZATION_REGISTRATION_REQUEST) as any;

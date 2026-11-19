@@ -17,6 +17,7 @@ import { InMemoryEnvelopeAdapter } from '../../../services/kms-envelope-adapter'
 import { VaultWrappedKeyRepository } from '../../../services/wrapped-key-repository';
 import { Worker } from '../../../worker';
 import { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
+import { DataspaceSectors } from 'sos-data-utils-ts/dataspace-sectors';
 import type { IHostRuntime } from '../../../managers/IHostRuntime';
 import { testClaimsHostInitialization } from '../../data/end-to-end.data';
 import { generateTenantCollectionNameFromClaims } from '../../../utils/tenant';
@@ -66,7 +67,7 @@ export async function buildRestartableGateway(
     hostExternalDomain: 'testhost.com',
     apiBaseUrl: 'http://testhost:3000',
     namespace: 'test-namespace',
-    sectorsAllowed: [testAnimalResearchSector, GatewaySector.TEST],
+    sectorsAllowed: [testAnimalResearchSector, DataspaceSectors.OneHealthResearch as GatewaySector, GatewaySector.TEST],
     allowedPaymentMethods: ['Stripe'],
     dbProvider: 'mem',
     queueProvider: 'mem',

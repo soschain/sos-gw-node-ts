@@ -114,14 +114,12 @@ export function createUhcTwilioWebhooksRouter(options: UhcTwilioWebhookOptions):
         rawParams: params,
       };
 
-      console.log(`[UHC Twilio Webhook] Inbound SMS from=${event.from} response=${event.response} body="${event.body}"`);
-
       try {
         if (options.onInboundResponse) {
           await options.onInboundResponse(event);
         }
-      } catch (err: any) {
-        console.error('[UHC Twilio Webhook] onInboundResponse handler error:', err.message);
+      } catch {
+        console.error('[UHC Twilio Webhook] Inbound response handler failed.');
       }
 
       // Reply with empty TwiML — no auto-response to subject.
@@ -154,14 +152,12 @@ export function createUhcTwilioWebhooksRouter(options: UhcTwilioWebhookOptions):
         rawParams: params,
       };
 
-      console.log(`[UHC Twilio Webhook] SMS status sid=${event.messageSid} status=${event.status}`);
-
       try {
         if (options.onSmsStatus) {
           await options.onSmsStatus(event);
         }
-      } catch (err: any) {
-        console.error('[UHC Twilio Webhook] onSmsStatus handler error:', err.message);
+      } catch {
+        console.error('[UHC Twilio Webhook] Status handler failed.');
       }
 
       return res.status(204).end();
