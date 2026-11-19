@@ -11,6 +11,9 @@
 {{- if not (has .Values.kmsProvider (list "gcp" "aws" "hashicorp-transit")) -}}
 {{- fail "kmsProvider must select an external KMS" -}}
 {{- end -}}
+{{- if not (has .Values.networkMode (list "test-network" "network")) -}}
+{{- fail "networkMode must be test-network or network" -}}
+{{- end -}}
 {{- $config := required "existingConfigMap is required" .Values.existingConfigMap -}}
 {{- $secret := required "existingSecret is required" .Values.existingSecret -}}
 {{- $identity := required "serviceAccountName is required" .Values.serviceAccountName -}}
@@ -61,9 +64,9 @@ spec:
             - name: NODE_ENV
               value: "production"
             - name: DEPLOYMENT_ENV
-              value: "production"
+              value: {{ ternary "production" "staging" (eq .Values.networkMode "network") | quote }}
             - name: NETWORK_MODE
-              value: "network"
+              value: {{ .Values.networkMode | quote }}
             - name: SECURITY_MODE
               value: "strict"
             - name: DEMO_ALLOW_INSECURE_BEARER

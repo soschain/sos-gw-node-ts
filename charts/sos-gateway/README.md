@@ -47,6 +47,26 @@ release revision and previous known-good digest. An image rollback does not
 undo a data or queue format change. Apply the reviewed queue cutover or data
 recovery procedure before changing revisions when the formats differ.
 
+## Validation on a shared cluster
+
+Use `networkMode: test-network` in the validation values. Create an isolated
+namespace and provide its own workload identity, quotas, network policy,
+config and secret references. Allocate its own host identity and endpoints,
+test data and service resources. The chart keeps the same secure container
+and KMS requirements as production.
+
+A namespace shares the control plane and may share worker nodes. Review who
+can administer the whole cluster, access nodes or act as another workload.
+Before co-locating production, verify hard isolation of identities, network
+and data, and size the workload against cluster capacity. A dedicated cluster
+is warranted when the required administrative boundary cannot be enforced.
+
+Admission of a host and its peer to a production Fabric network is a separate
+operation. First validate with the authorized Test Network configuration and
+synthetic data. Obtain the approved production MSP, channel participation,
+endpoints and credentials for the peer before installing the production
+profile. Production ledger operations use the production release evidence.
+
 ## Google Cloud profile
 
 Select `kmsProvider: gcp`. The company operating GKE and the organization

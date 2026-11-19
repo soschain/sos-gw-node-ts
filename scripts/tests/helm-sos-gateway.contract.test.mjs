@@ -44,3 +44,13 @@ test('rejects tag-only images, HTTP origins and local custody', () => {
     assert.match(result.stderr, diagnostic);
   }
 });
+
+test('renders a strict Test Network profile for validation on a shared cluster', () => {
+  const result = render('--set-string', 'networkMode=test-network');
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /name: DEPLOYMENT_ENV\s+value: "staging"/);
+  assert.match(result.stdout, /name: NETWORK_MODE\s+value: "test-network"/);
+  assert.match(result.stdout, /name: SECURITY_MODE\s+value: "strict"/);
+  const invalid = render('--set-string', 'networkMode=test');
+  assert.notEqual(invalid.status, 0);
+});

@@ -7,3 +7,4 @@ existingSecret: ""
 serviceAccountName: ""
 kmsProvider: ""
 replicas: 1
+networkMode: network
