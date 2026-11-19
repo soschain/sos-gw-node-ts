@@ -33,10 +33,9 @@ import {
 import { EmployeeBatchEntryTypes, EmployeeBundleMethods, EmployeeResourceTypes } from 'sos-data-utils-ts/employee-batch-contract';
 import { Format } from 'sos-data-utils-ts/bff-wire-contract';
 import { DeviceAppTypes, DeviceUserClasses } from 'sos-data-utils-ts/device-license-contract';
-import { buildLicensePurchaseEntry } from 'sos-data-utils-ts/license-commercial-contract';
+import { buildLicensePurchaseEntry, buildLicenseSearchEntry } from 'sos-data-utils-ts/license-commercial-contract';
 import { EXAMPLE_LICENSE_PURCHASE_INPUT, EXAMPLE_SERVICE_PUBLIC_DID, EXAMPLE_THREAD_IDENTIFIER_LICENSE_SEARCH } from 'sos-data-utils-ts/gateway-resource-flow-examples';
 import { EXAMPLE_API_ORGANIZATION_DID } from 'sos-data-utils-ts/gateway-flow-examples';
-import { LicenseListSearchEditor } from 'sos-sdk-core-ts/license-list-search';
 
 
 /**
@@ -353,7 +352,7 @@ export const ORGANIZATION_LICENSE_SEARCH_REQUEST = {
   "body": {
     "resourceType": ORGANIZATION_LICENSE_OFFER_REQUEST.body.resourceType,
     "type": ORGANIZATION_LICENSE_OFFER_REQUEST.body.type,
-    "entry": [new LicenseListSearchEditor().buildSearchEntry()],
+    "entry": [buildLicenseSearchEntry({})],
   },
 };
 
