@@ -6,6 +6,8 @@
   at `/dsp/catalog/offerings.json` only while that tenant is operational.
 - Check the tenant authorization again when a queued catalogue publication
   runs, so a suspension between submission and processing prevents a write.
+- Publish individual offerings independently of CRM snapshot replacements.
+  Publish both through the tenant's public offering feed.
 
 ## 2.1.1 - 2026-11-18
 

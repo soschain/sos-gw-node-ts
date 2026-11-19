@@ -31,6 +31,7 @@ describe('PublicOfferingCatalogManager', () => {
     const request = { sector, section: 'organization', resourceType: 'Catalog', action: '_publish' };
     expect(isRequestValid(services, { ...request, format: 'org.schema' })).toBe(true);
     expect(isRequestValid(services, { ...request, format: 'org.w3.dcat' })).toBe(false);
+    expect(isRequestValid(services, { ...request, action: '_upsert', format: 'org.schema' })).toBe(true);
   });
 
   it('replaces only the admitted tenant snapshot and preserves it when a later update fails validation', async () => {
@@ -75,5 +76,13 @@ describe('PublicOfferingCatalogManager', () => {
     await manager.process(job([replacement]));
     expect(protectConfidentialData).toHaveBeenCalledTimes(3);
     expect(await manager.read('animal-care_clinic')).toEqual([expect.objectContaining({id: 'updated'})]);
+
+    await expect(manager.process({ ...job([offering, replacement]), action: '_upsert' })).rejects.toThrow(/exactly one/i);
+    await Promise.all([manager.process({ ...job([offering]), action: '_upsert' }), manager.process({
+      ...job([{ ...replacement, attributes: { ...replacement.attributes, name: 'Edited manually' } }]), action: '_upsert',
+    })]);
+    expect(await manager.read('animal-care_clinic')).toEqual([
+      expect.objectContaining({ id: 'updated', name: 'Edited manually' }), expect.objectContaining({ id: 'tracker' }),
+    ]);
   });
 });

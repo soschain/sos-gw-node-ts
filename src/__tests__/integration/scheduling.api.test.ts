@@ -35,7 +35,7 @@ const schedulingClaimsProjection = (resource: Readonly<{ resourceType: string; i
 
 afterEach(() => resetServerConfig());
 
-it('publishes a territorial CRM catalogue through the authenticated queue and reads it publicly', async () => {
+it('publishes a territorial CRM catalogue and individual offerings through the authenticated queue', async () => {
   configureEnvironment();
   const authenticatedActor = await configureAuthenticatedTestActor();
   resetServerConfig();
@@ -67,6 +67,19 @@ it('publishes a territorial CRM catalogue through the authenticated queue and re
     const record = await vaultRepository.get<any>(collection!, 'current', 'public-offering-catalog');
     expect(record?.jwe).toBeDefined();
     expect(record?.content).toBeUndefined();
+    const manualProduct = { ...product, id: 'individual-tracker', attributes: { ...product.attributes, name: 'First manual entry' } };
+    const publishOne = async (entry: typeof product, thid: string) => submitAndPoll(app, authenticatedActor.authorizationHeader,
+      authenticatedActor.actorDid, 'Catalog', '_upsert', thid, { data: entry }, 'org.schema');
+    expect(await publishOne(manualProduct, 'publish-individual-tracker')).toEqual({ total: 1 });
+    expect(await publishOne({ ...manualProduct, attributes: { ...manualProduct.attributes, name: 'Updated manual entry' } }, 'update-individual-tracker')).toEqual({ total: 1 });
+    expect(JSON.parse((await publicRead()).text)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: product.id }), expect.objectContaining({ id: manualProduct.id, name: 'Updated manual entry' }),
+    ]));
+    expect(JSON.parse((await publicRead()).text)).toHaveLength(2);
+    const replacement = { ...product, id: 'replacement-product' };
+    await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid,
+      'Catalog', '_publish', 'replace-crm-snapshot', { data: [replacement] }, 'org.schema');
+    expect(JSON.parse((await publicRead()).text).map((item: { id: string }) => item.id).sort()).toEqual([manualProduct.id, replacement.id].sort());
     const mismatched = await invokeExpress(app, { method: 'GET', url: buildGatewayDataspaceOfferingCatalogPath({ ...scope, jurisdiction: safe.secondaryCountryIso2 }) });
     expect(mismatched.status).toBe(404);
   } finally { queueAdapter.stop(); }
@@ -391,7 +404,7 @@ async function provisionTenant({ authenticatedActor, tenantManager, vaultReposit
   await vaultRepository.put(hostCollection, [secureTenant as any], getEnvSectionId('tenants')); await tenantManager.getTenant(tenantVaultId);
 }
 
-async function submitAndPoll(app: any, authorization: string, issuer: string, resourceType: string, action: '_batch' | '_search' | '_publish', thid: string, body: Record<string, unknown>, format = 'org.hl7.fhir.api') {
+async function submitAndPoll(app: any, authorization: string, issuer: string, resourceType: string, action: '_batch' | '_search' | '_publish' | '_upsert', thid: string, body: Record<string, unknown>, format = 'org.hl7.fhir.api') {
   const base = `/${tenantId}/cds-${jurisdiction}/v1/${sector}/organization/${format}/${resourceType}`;
   const submitted = await invokeExpress(app, { method: 'POST', url: `${base}/${action}`, headers: { 'content-type': 'application/json', authorization }, body: { thid, iss: issuer, body } });
   expect(submitted.status).toBe(202);

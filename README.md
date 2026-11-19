@@ -38,6 +38,11 @@ validation before one protected snapshot is written. The acknowledgement
 returns the number of offerings. An incomplete or invalid submission leaves
 the current snapshot available.
 
+Use the sibling `Catalog/_upsert` operation with one JSON:API offering when
+editing an individual entry. The entry keeps its own protected record and
+overrides a matching imported ID in the public feed. Replacing the imported
+snapshot preserves individually published entries.
+
 An operational tenant's public projection is available at
 `/{tenantId}/cds-{jurisdiction}/v1/{sector}/dsp/catalog/offerings.json`.
 It contains the public offering attributes, seller links and stated prices.
