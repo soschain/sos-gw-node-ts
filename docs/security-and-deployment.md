@@ -71,6 +71,23 @@ Check their actual routes rather than treating a previous hostname as a DNS
 alias of the new service. Use a guarded image/configuration delta after local
 compatibility and exact-image gates; do not repeat host onboarding.
 
+## Durable Pub/Sub jobs
+
+The Gateway encrypts each job with its managed host storage key before writing
+it to GCS. Pub/Sub carries an object reference. The worker authenticates the
+ciphertext and checks that its bucket and object reference match before it
+processes the job. It rejects old objects that lack the encrypted envelope.
+This protects the job from readers of the bucket who lack the storage key.
+The worker still processes decrypted content.
+
+Before introducing this format, pause submissions and drain queued work with
+the previous revision. Verify that no previous workers and no pending jobs
+remain before resuming submissions on the new revision. Apply the same drain
+in reverse before rolling back. Inventory any residual objects, including
+retained versions, and handle them under the deployment's approved retention
+and recovery procedure. Prove write, worker replacement, readback and deletion
+on the candidate and its actual Pub/Sub and GCS configuration.
+
 ## ICA issuer trust and credential status
 
 `CREDENTIAL_TRUSTED_ISSUERS_JSON` is trusted server configuration indexed by the

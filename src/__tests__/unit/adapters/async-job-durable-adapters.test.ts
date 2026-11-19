@@ -1,6 +1,11 @@
 // Flow contract: a durable async request is published once, processed by a pull subscriber,
 // persisted before acknowledgement, and remains pollable through a different process instance.
 
+import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
+import { AdapterCryptoSdkNode } from '../../../gdc-backend-utils-node/adapters/node/crypto';
+import { KmsService } from '../../../services/KmsService';
+import { InMemoryEnvelopeAdapter } from '../../../services/kms-envelope-adapter';
+import { InMemoryWrappedKeyRepository } from '../../../services/wrapped-key-repository';
 import { EventEmitter } from 'node:events';
 import { AsyncResponseStoreFirestore } from '../../../adapters/async-response-store.firestore';
 import { QueueAdapterGcpPubSub } from '../../../adapters/queue-gcp-pubsub';
@@ -46,24 +51,48 @@ class SubscriptionFake extends EventEmitter {
 }
 
 describe('durable async job adapters', () => {
-  it('keeps complete job payloads in a private GCS object instead of the Pub/Sub message', async () => {
-    const save = jest.fn().mockResolvedValue(undefined);
-    const download = jest.fn().mockResolvedValue([Buffer.from('{"job":"value"}')]);
-    const remove = jest.fn().mockResolvedValue(undefined);
-    const file = jest.fn(() => ({ save, download, delete: remove }));
-    const storage = { bucket: jest.fn(() => ({ file })) };
-    const store = new AsyncJobPayloadStoreGcs('private-job-bucket', 'async-jobs/vet', storage as any);
+  it('stores only authenticated ciphertext and rejects legacy objects and substituted references', async () => {
+    const objects = new Map<string, Buffer>();
+    const remove = jest.fn();
+    const storage = { bucket: () => ({ file: (name: string) => ({
+      save: async (value: Buffer) => { objects.set(name, value); },
+      download: async () => [objects.get(name)],
+      delete: remove,
+    }) }) };
+    const wrappedKeyRepository = new InMemoryWrappedKeyRepository();
+    const makeKms = async () => {
+      const kms = new KmsService(
+        new CryptographyService(new AdapterCryptoSdkNode()),
+        {} as any,
+        { wrappedKeyRepository, envelopeAdapter: new InMemoryEnvelopeAdapter() },
+      );
+      await kms.init();
+      return kms;
+    };
+    const writer = await makeKms();
+    const reader = await makeKms();
+    try {
+      const store = new AsyncJobPayloadStoreGcs('private-job-bucket', writer, 'async-jobs/vet', storage as any);
+      const restartedStore = new AsyncJobPayloadStoreGcs('private-job-bucket', reader, 'async-jobs/vet', storage as any);
+      const payload = { job: 'synthetic confidential content' };
+      const reference = await store.put(payload);
+      expect(objects.get(reference)?.toString()).not.toContain(payload.job);
+      await expect(restartedStore.get(reference)).resolves.toEqual(payload);
 
-    const reference = await store.put({ job: 'value' });
-    expect(reference).toMatch(/^async-jobs\/vet\/[0-9a-f-]+\.json$/);
-    expect(save).toHaveBeenCalledWith(Buffer.from('{"job":"value"}'), expect.objectContaining({
-      contentType: 'application/json',
-      resumable: false,
-    }));
-    await expect(store.get(reference)).resolves.toEqual({ job: 'value' });
-    await store.delete(reference);
-    expect(remove).toHaveBeenCalledWith({ ignoreNotFound: true });
-    await expect(store.get('../foreign-object')).rejects.toThrow('Invalid async job payload reference');
+      const anotherReference = await store.put(payload);
+      const ciphertext = objects.get(reference)!;
+      objects.set(anotherReference, ciphertext);
+      await expect(restartedStore.get(anotherReference)).rejects.toThrow();
+      objects.set(reference, Buffer.from(JSON.stringify(payload)));
+      await expect(restartedStore.get(reference)).rejects.toThrow();
+
+      await store.delete(reference);
+      expect(remove).toHaveBeenCalledWith({ ignoreNotFound: true });
+      await expect(store.get('../foreign-object')).rejects.toThrow('Invalid async job payload reference');
+    } finally {
+      writer.destroy();
+      reader.destroy();
+    }
   });
 
   it('persists PENDING before publish and removes it when publishing fails', async () => {

@@ -1,5 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import { Storage } from '@google-cloud/storage';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
+
+export type AsyncJobPayloadProtection = Pick<IKmsService, 'protectConfidentialData' | 'unprotectConfidentialData'>;
+const PAYLOAD_FORMAT = 'async-job-payload/v1';
+
+type ProtectedJobContent = {
+  format: typeof PAYLOAD_FORMAT;
+  bucket: string;
+  reference: string;
+  value: unknown;
+};
 
 export interface IAsyncJobPayloadStore {
   put(value: unknown): Promise<string>;
@@ -14,6 +26,7 @@ export class AsyncJobPayloadStoreGcs implements IAsyncJobPayloadStore {
 
   constructor(
     private readonly bucketName: string,
+    private readonly protection: AsyncJobPayloadProtection,
     prefix = 'async-jobs',
     storage?: Storage,
   ) {
@@ -24,8 +37,23 @@ export class AsyncJobPayloadStoreGcs implements IAsyncJobPayloadStore {
 
   async put(value: unknown): Promise<string> {
     const reference = `${this.prefix}/${randomUUID()}.json`;
+    const content: ProtectedJobContent = {
+      format: PAYLOAD_FORMAT,
+      bucket: this.bucketName,
+      reference,
+      value,
+    };
+    const document = await this.protection.protectConfidentialData({
+      id: reference,
+      status: 'active',
+      sequence: 1,
+      content,
+    }, 'host');
+    if (!document.jwe || typeof document.jwe !== 'object') {
+      throw new Error('Async job payload encryption returned no ciphertext.');
+    }
     await this.storage.bucket(this.bucketName).file(reference).save(
-      Buffer.from(JSON.stringify(value), 'utf8'),
+      Buffer.from(JSON.stringify({ format: PAYLOAD_FORMAT, jwe: document.jwe }), 'utf8'),
       {
         contentType: 'application/json',
         resumable: false,
@@ -38,7 +66,26 @@ export class AsyncJobPayloadStoreGcs implements IAsyncJobPayloadStore {
   async get(reference: string): Promise<unknown> {
     this.assertOwnedReference(reference);
     const [bytes] = await this.storage.bucket(this.bucketName).file(reference).download();
-    return JSON.parse(bytes.toString('utf8'));
+    let record: Pick<ConfidentialStorageDoc, 'jwe'> & { format?: string };
+    try {
+      record = JSON.parse(bytes.toString('utf8'));
+    } catch {
+      throw new Error('Invalid encrypted async job payload.');
+    }
+    if (record?.format !== PAYLOAD_FORMAT || !record.jwe || typeof record.jwe !== 'object') {
+      throw new Error('Async job payload is missing its encrypted envelope.');
+    }
+    const content = await this.protection.unprotectConfidentialData<ProtectedJobContent>({
+      id: reference,
+      status: 'active',
+      sequence: 1,
+      jwe: record.jwe,
+    }, 'host');
+    if (content?.format !== PAYLOAD_FORMAT || content.bucket !== this.bucketName
+      || content.reference !== reference || !Object.hasOwn(content, 'value')) {
+      throw new Error('Async job payload does not match its storage reference.');
+    }
+    return content.value;
   }
 
   async delete(reference: string): Promise<void> {
