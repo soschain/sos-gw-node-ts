@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Keep free-text diagnostics and raw request paths out of HTTP and worker failure logs.
+  Malformed JSON responses no longer echo parser error details.
+- Install Firebase rules testing utilities only in development and test environments.
+
 ## 2.1.1 - 2026-11-18
 
 - Publish the configured canonical gateway origin while retaining explicitly
