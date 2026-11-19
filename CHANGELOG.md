@@ -1,7 +1,8 @@
 ## Unreleased
 
 - Encrypt durable Pub/Sub job payloads before writing them to GCS. The worker
-  verifies the authenticated bucket and object reference before using the job.
+  verifies the authenticated storage namespace and object reference before using
+  the job. GCS receives ciphertext through a provider-neutral storage contract.
 
 - Keep free-text diagnostics and raw request paths out of HTTP and worker failure logs.
   Malformed JSON responses no longer echo parser error details.

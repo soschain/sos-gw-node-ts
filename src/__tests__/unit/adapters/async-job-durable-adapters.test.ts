@@ -11,7 +11,8 @@ import { AsyncResponseStoreFirestore } from '../../../adapters/async-response-st
 import { QueueAdapterGcpPubSub } from '../../../adapters/queue-gcp-pubsub';
 import { enqueueAsyncJob } from '../../../services/async-job-submission';
 import { buildAsyncJobInfrastructure } from '../../../bootstrap/build-async-job-infrastructure';
-import { AsyncJobPayloadStoreGcs } from '../../../adapters/async-job-payload-store.gcs';
+import { AsyncJobPayloadObjectStorageGcs } from '../../../adapters/async-job-payload-store.gcs';
+import { AsyncJobPayloadStoreEncrypted } from '../../../adapters/async-job-payload-store';
 
 class FirestoreDocumentFake {
   public value: Record<string, unknown> | undefined;
@@ -51,14 +52,21 @@ class SubscriptionFake extends EventEmitter {
 }
 
 describe('durable async job adapters', () => {
-  it('stores only authenticated ciphertext and rejects legacy objects and substituted references', async () => {
+  it.each(['GCS', 'independent object storage'])('protects jobs written to %s', async (provider) => {
     const objects = new Map<string, Buffer>();
-    const remove = jest.fn();
+    const remove = (reference: string) => objects.delete(reference);
     const storage = { bucket: () => ({ file: (name: string) => ({
       save: async (value: Buffer) => { objects.set(name, value); },
       download: async () => [objects.get(name)],
-      delete: remove,
+      delete: async () => { remove(name); },
     }) }) };
+    const objectStore = provider === 'GCS'
+      ? new AsyncJobPayloadObjectStorageGcs('private-job-bucket', storage as any)
+      : {
+          write: async (reference: string, bytes: Buffer) => { objects.set(reference, bytes); },
+          read: async (reference: string) => objects.get(reference)!,
+          delete: async (reference: string) => { remove(reference); },
+        };
     const wrappedKeyRepository = new InMemoryWrappedKeyRepository();
     const makeKms = async () => {
       const kms = new KmsService(
@@ -72,8 +80,8 @@ describe('durable async job adapters', () => {
     const writer = await makeKms();
     const reader = await makeKms();
     try {
-      const store = new AsyncJobPayloadStoreGcs('private-job-bucket', writer, 'async-jobs/vet', storage as any);
-      const restartedStore = new AsyncJobPayloadStoreGcs('private-job-bucket', reader, 'async-jobs/vet', storage as any);
+      const store = new AsyncJobPayloadStoreEncrypted('private-job-bucket', writer, objectStore, 'async-jobs/vet');
+      const restartedStore = new AsyncJobPayloadStoreEncrypted('private-job-bucket', reader, objectStore, 'async-jobs/vet');
       const payload = { job: 'synthetic confidential content' };
       const reference = await store.put(payload);
       expect(objects.get(reference)?.toString()).not.toContain(payload.job);
@@ -87,7 +95,7 @@ describe('durable async job adapters', () => {
       await expect(restartedStore.get(reference)).rejects.toThrow();
 
       await store.delete(reference);
-      expect(remove).toHaveBeenCalledWith({ ignoreNotFound: true });
+      expect(objects.has(reference)).toBe(false);
       await expect(store.get('../foreign-object')).rejects.toThrow('Invalid async job payload reference');
     } finally {
       writer.destroy();

@@ -3,7 +3,7 @@ import { getTenantVaultId } from '../utils/tenant';
 import type { Worker } from '../worker';
 import type { IAsyncResponseStore, StoredJob } from './async-response-store.mem';
 import type { QueueAdapter } from './queue';
-import type { IAsyncJobPayloadStore } from './async-job-payload-store.gcs';
+import type { IAsyncJobPayloadStore } from './async-job-payload-store';
 
 interface PubSubMessageLike {
   data: Buffer;

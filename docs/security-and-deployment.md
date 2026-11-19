@@ -73,20 +73,25 @@ compatibility and exact-image gates; do not repeat host onboarding.
 
 ## Durable Pub/Sub jobs
 
-The Gateway encrypts each job with its managed host storage key before writing
-it to GCS. Pub/Sub carries an object reference. The worker authenticates the
-ciphertext and checks that its bucket and object reference match before it
-processes the job. It rejects old objects that lack the encrypted envelope.
-This protects the job from readers of the bucket who lack the storage key.
-The worker still processes decrypted content.
+The Gateway encrypts each durable job with its managed host storage key.
+The common payload store checks the authenticated storage namespace and object
+reference before it returns a job to the worker. GCS handles only the ciphertext
+bytes. A new durable object adapter, such as S3, must implement private byte
+storage and pass the same contract tests. SOS currently ships the GCS adapter
+for this queue. KMS custody is a separate choice from object storage.
 
-Before introducing this format, pause submissions and drain queued work with
-the previous revision. Verify that no previous workers and no pending jobs
-remain before resuming submissions on the new revision. Apply the same drain
-in reverse before rolling back. Inventory any residual objects, including
-retained versions, and handle them under the deployment's approved retention
-and recovery procedure. Prove write, worker replacement, readback and deletion
-on the candidate and its actual Pub/Sub and GCS configuration.
+A local Demo can accept its configured development transport and process jobs
+with the in-memory queue. That queue does not write job objects. If an
+environment uses a durable queue, the stored jobs require encryption even
+when its incoming application transport permits plaintext.
+
+The reader rejects historical objects without the encrypted envelope. Before a
+production rollout or rollback between incompatible revisions, pause
+submissions and drain the outgoing revision. In a disposable Test Network,
+operators can start the candidate with a fresh, isolated queue, polling state
+and job prefix, or reset only the previous test job state. Tenant records and
+keys are outside that reset. After rollout, verify write, worker replacement,
+readback and deletion against the configured services.
 
 ## ICA issuer trust and credential status
 
