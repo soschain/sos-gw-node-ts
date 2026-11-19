@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Limit individual DocumentReference ledger writes to content version evidence
+  and a hashed document reference. Keep attachment contents and subject identifiers
+  out of the artifact payload.
+
 - Add an operator-managed SOS Gateway Helm chart, a public security assessment
   and a Google Cloud deployment guide.
 

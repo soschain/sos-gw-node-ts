@@ -20,7 +20,8 @@ import {
   normalizeFhirIngestionFormat,
   validateFhirPayloadByVersion,
 } from '../utils/fhir-ingestion';
-import { applyFhirCidVersioningToEntry, FhirCidVersionMapping, registerFhirCidMappings } from '../utils/fhir-versioning';
+import { applyFhirCidVersioningToEntry, buildClinicalLedgerReferenceId, FhirCidVersionMapping, registerFhirCidMappings } from '../utils/fhir-versioning';
+import { resolveClinicalDataChannel } from '../utils/ledger';
 import type { IBlockchainAdapter } from '../adapters/IBlockchainAdapter';
 import { SUBJECT_SECTION_DIGITAL_TWIN, SUBJECT_SECTION_INDIVIDUAL } from '../constants/domain';
 import type { ITenantsManager } from './ITenantsManager';
@@ -127,20 +128,20 @@ export class DocumentReferenceManager implements IJobProcessor {
           record.tag = researchTags;
         }
         await this.vaultRepository.put(tenantVaultId, [record as any], sectionId);
-        if (versioning.mapping) cidMappings.push(versioning.mapping);
-
-        if (this.blockchainAdapter?.registerArtifactBundle && versioning.mapping) {
-          await this.blockchainAdapter.registerArtifactBundle({
-            assetId: versioning.mapping.cid,
+        if (versioning.mapping) {
+          const mapping = {
+            ...versioning.mapping,
+            resourceId: buildClinicalLedgerReferenceId(id),
+          };
+          cidMappings.push(mapping);
+          await this.blockchainAdapter?.registerArtifactBundle?.({
+            assetId: mapping.cid,
             payload: {
               resourceType: ResourceTypesFhirR4.DocumentReference,
-              resourceId: id,
-              fullUrl: entry?.fullUrl,
-              subject,
-              claims,
-              resource: entry?.resource,
+              resourceId: mapping.resourceId,
+              versionId: mapping.versionId,
             },
-            channel: `${job.sector}-${jurisdiction.toLowerCase()}`,
+            channel: resolveClinicalDataChannel(job.sector, jurisdiction),
           });
         }
 
