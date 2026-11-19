@@ -17,7 +17,7 @@ type CatalogTenant = Readonly<{
 }>;
 
 type Dependencies = Readonly<{
-  repository: Pick<IVaultRepository, 'get' | 'getContainersInSection' | 'put'>;
+  repository: Pick<IVaultRepository, 'get' | 'getContainersInSection' | 'listContainersInSection' | 'put'>;
   protection: Readonly<{
     protectConfidentialData(doc: ConfidentialStorageDoc, vaultId: string): Promise<ConfidentialStorageDoc>;
     unprotectConfidentialData<T>(doc: ConfidentialStorageDoc, vaultId: string): Promise<T>;
@@ -89,6 +89,18 @@ export class PublicOfferingCatalogManager implements IJobProcessor {
     }
     return { jti: randomUUID(), thid: job.content.thid, type: 'org.schema.catalog-publication',
       iss: job.content.aud as string, aud: job.content.iss as string, body: { total: offerings.length } };
+  }
+
+  /** Checks publication metadata without decrypting or hydrating the offerings. */
+  async hasPublications(vaultId: string): Promise<boolean> {
+    const collection = await this.deps.tenantManager.getCollectionName(vaultId);
+    if (!collection) return false;
+    const [snapshots, individualEntries] = await Promise.all([
+      this.deps.repository.listContainersInSection<ConfidentialStorageDoc>(collection, section),
+      this.deps.repository.listContainersInSection<ConfidentialStorageDoc>(collection, individualSection),
+    ]);
+    return snapshots.some(doc => doc.id === snapshotId && doc.status === 'active')
+      || individualEntries.some(doc => doc.status === 'active');
   }
 
   /** Reads the latest projection after the caller has resolved tenant discovery eligibility. */

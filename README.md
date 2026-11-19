@@ -46,6 +46,9 @@ snapshot preserves individually published entries.
 An operational tenant's public projection is available at
 `/{tenantId}/cds-{jurisdiction}/v1/{sector}/dsp/catalog/offerings.json`.
 It contains the public offering attributes, seller links and stated prices.
+Once an operational tenant publishes an offering, its DCAT catalogue exposes
+the feed as a `dcat:DataService`. Product and service entries remain in the
+linked Schema.org feed. [DCAT 3 DataService](https://www.w3.org/TR/vocab-dcat-3/#Class:Data_Service)
 The HealthDCAT endpoints continue to describe datasets and data services.
 
 SOSCHAIN is part of an integrated ecosystem that shares HL7 FHIR

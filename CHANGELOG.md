@@ -8,6 +8,8 @@
   runs, so a suspension between submission and processing prevents a write.
 - Publish individual offerings independently of CRM snapshot replacements.
   Publish both through the tenant's public offering feed.
+- Advertise the published offering feed as a data service in the tenant's
+  DCAT catalogue, using the admitted publisher and exact gateway jurisdiction.
 
 ## 2.1.1 - 2026-11-18
 

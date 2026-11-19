@@ -14,7 +14,7 @@ import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { AppointmentResponseStatuses, buildAppointmentResource, buildAppointmentResponseResource, buildLocationResource, expandAvailability, normalizeSchedulingFlatClaimsResource } from 'sos-data-utils-ts/scheduling';
 import { buildOrganizationScopedResourceUrn } from 'sos-data-utils-ts/organization-scoped-resource-identity';
 import { REPOSITORY_SAFE_EXAMPLES } from 'sos-data-utils-ts/repository-privacy';
-import { buildGatewayDataspaceOfferingCatalogPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
+import { buildGatewayDataspaceCatalogArtifactPath, buildGatewayDataspaceCatalogRequestPath, buildGatewayDataspaceOfferingCatalogPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import { buildDepartmentDirectoryResource, buildPlaceDirectoryResource, buildProductDirectoryResource, buildServiceDirectoryResource, normalizeDirectoryFlatClaimsResource } from 'sos-data-utils-ts/place-service-directory';
 import { buildHealthDcatDataset, buildHealthDcatDistribution, buildResearchStudyDatasetPublication, updateHealthDcatCatalogRecordStatus } from 'sos-data-utils-ts/health-dcat';
 import { buildPractitionerRoleReferenceFromAssignmentIdentifier, buildResearchStudyProvenanceResource } from 'sos-data-utils-ts/provenance';
@@ -52,9 +52,13 @@ it('publishes a territorial CRM catalogue and individual offerings through the a
         deliveryCountries: [], supportCountries: [], operationCountries: [], url: safe.httpsBaseUrl }],
     } };
     const publicRead = () => invokeExpress(app, { method: 'GET', url: feed });
+    const catalogRead = () => invokeExpress(app, { method: 'GET', url: buildGatewayDataspaceCatalogArtifactPath(scope) });
     const empty = await publicRead();
     expect(empty.status).toBe(200);
     expect(JSON.parse(empty.text)).toEqual([]);
+    const unpublishedCatalog = await catalogRead();
+    expect(unpublishedCatalog.status).toBe(200);
+    expect(unpublishedCatalog.text).not.toContain(feed);
     const published = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid,
       'Catalog', '_publish', 'publish-territorial-catalogue', { jsonapi: { version: '1.1' }, data: [product] }, 'org.schema');
     expect(published).toEqual({ total: 1 });
@@ -63,6 +67,22 @@ it('publishes a territorial CRM catalogue and individual offerings through the a
     expect(JSON.parse(result.text)).toEqual([expect.objectContaining({ id: product.id, type: product.type,
       publisher: expect.objectContaining({ id: (await tenantManager.getDidDocument(getTenantVaultId(sector, tenantId)))?.id }),
       offers: product.attributes.offers, demo: false })]);
+    const publishedCatalog = await catalogRead();
+    expect(publishedCatalog.status).toBe(200);
+    const dcat = JSON.parse(publishedCatalog.text);
+    expect(dcat['@context']['dcat:endpointURL']).toEqual({ '@type': '@id' });
+    const offeringService = dcat['dcat:service'].find((node: Record<string, string>) => node['dcat:endpointURL']?.endsWith(feed));
+    expect(offeringService).toMatchObject({ '@type': 'dcat:DataService',
+      'dcterms:publisher': { '@id': (await tenantManager.getDidDocument(getTenantVaultId(sector, tenantId)))?.id },
+    });
+    expect(new URL(offeringService['dcat:endpointURL']).pathname).toBe(feed);
+    expect(publishedCatalog.text).not.toContain(product.attributes.name);
+    const dcatRequest = (filters: object) => invokeExpress(app, { method: 'POST', url: buildGatewayDataspaceCatalogRequestPath(scope),
+      headers: { 'content-type': 'application/json' }, body: { filters } });
+    expect(JSON.parse((await dcatRequest({})).text)['dcat:service']).toContainEqual(offeringService);
+    const filteredCatalog = await dcatRequest({ sector: 'health-care' });
+    expect(filteredCatalog.status).toBe(200);
+    expect(filteredCatalog.text).not.toContain(feed);
     const collection = await tenantManager.getCollectionName(getTenantVaultId(sector, tenantId));
     const record = await vaultRepository.get<any>(collection!, 'current', 'public-offering-catalog');
     expect(record?.jwe).toBeDefined();
