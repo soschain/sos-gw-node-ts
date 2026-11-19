@@ -4,6 +4,8 @@
   JSON:API catalogue snapshot. Validate the whole document against the tenant
   before writing one protected record. Publish the current tenant projection
   at `/dsp/catalog/offerings.json` only while that tenant is operational.
+- Check the tenant authorization again when a queued catalogue publication
+  runs, so a suspension between submission and processing prevents a write.
 
 ## 2.1.1 - 2026-11-18
 

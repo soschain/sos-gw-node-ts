@@ -37,6 +37,7 @@ describe('PublicOfferingCatalogManager', () => {
     const repository = new VaultMemRepository();
     const put = jest.spyOn(repository, 'put');
     const protectConfidentialData = jest.fn(async (doc: ConfidentialStorageDoc) => doc);
+    let status = 'active';
     const manager = new PublicOfferingCatalogManager({
       repository, protection: { protectConfidentialData, async unprotectConfidentialData<T>(doc: ConfidentialStorageDoc) { return doc.content as T; } },
       tenantManager: {
@@ -44,7 +45,7 @@ describe('PublicOfferingCatalogManager', () => {
         getTenantJurisdiction: async () => 'CA-BC',
         getCollectionName: async vaultId => `physical-${vaultId}`,
         getTenant: async vaultId => ({ didDocument: { id: `did:web:${vaultId}.example`, controller: [controller] },
-          claims: { [SchemaOrgOrganizationClaim.LegalName]: 'Admitted organisation' } }),
+          claims: { [SchemaOrgOrganizationClaim.LegalName]: 'Admitted organisation' }, meta: { tenantAuthorization: { status } } }),
       },
     });
     const first = await manager.process(job([offering]));
@@ -64,6 +65,10 @@ describe('PublicOfferingCatalogManager', () => {
     expect(await manager.read('animal-care_another')).toEqual([]);
 
     const replacement = { ...offering, id: 'updated', attributes: { ...offering.attributes, name: 'Updated tracker' } };
+    status = 'suspended';
+    await expect(manager.process(job([replacement]))).rejects.toThrow(/authorization is suspended/i);
+    expect(await manager.read('animal-care_clinic')).toEqual(original);
+    status = 'active';
     put.mockResolvedValueOnce(false);
     await expect(manager.process(job([replacement]))).rejects.toThrow(/could not be persisted/i);
     expect(await manager.read('animal-care_clinic')).toEqual(original);

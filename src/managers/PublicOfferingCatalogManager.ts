@@ -8,6 +8,7 @@ import { ManagerError } from 'sos-sdk-core-ts/manager-error';
 import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
 import { getAuthenticatedJobActorDid } from '../utils/authenticated-job-actor';
 import { getTenantVaultId } from '../utils/tenant';
+import { getTenantAuthorizationStatus } from '../utils/tenant-lifecycle';
 import type { IJobProcessor } from './registry';
 
 type CatalogTenant = Readonly<{
@@ -54,6 +55,10 @@ export class PublicOfferingCatalogManager implements IJobProcessor {
       throw new ManagerError('Catalogue tenant jurisdiction mismatch.', IssueType.Forbidden);
     }
     const tenant = await this.deps.tenantManager.getTenant(vaultId);
+    const authorizationStatus = getTenantAuthorizationStatus(tenant);
+    if (authorizationStatus !== 'active') {
+      throw new ManagerError(`Tenant authorization is ${authorizationStatus}.`, IssueType.Forbidden);
+    }
     const controller = tenant?.didDocument?.controller;
     const controllers = typeof controller === 'string' ? [controller] : controller ?? [];
     const actor = getAuthenticatedJobActorDid(job);

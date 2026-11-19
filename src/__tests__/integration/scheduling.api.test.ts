@@ -14,6 +14,7 @@ import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { AppointmentResponseStatuses, buildAppointmentResource, buildAppointmentResponseResource, buildLocationResource, expandAvailability, normalizeSchedulingFlatClaimsResource } from 'sos-data-utils-ts/scheduling';
 import { buildOrganizationScopedResourceUrn } from 'sos-data-utils-ts/organization-scoped-resource-identity';
 import { REPOSITORY_SAFE_EXAMPLES } from 'sos-data-utils-ts/repository-privacy';
+import { buildGatewayDataspaceOfferingCatalogPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import { buildDepartmentDirectoryResource, buildPlaceDirectoryResource, buildProductDirectoryResource, buildServiceDirectoryResource, normalizeDirectoryFlatClaimsResource } from 'sos-data-utils-ts/place-service-directory';
 import { buildHealthDcatDataset, buildHealthDcatDistribution, buildResearchStudyDatasetPublication, updateHealthDcatCatalogRecordStatus } from 'sos-data-utils-ts/health-dcat';
 import { buildPractitionerRoleReferenceFromAssignmentIdentifier, buildResearchStudyProvenanceResource } from 'sos-data-utils-ts/provenance';
@@ -33,6 +34,43 @@ const schedulingClaimsProjection = (resource: Readonly<{ resourceType: string; i
   normalizeSchedulingFlatClaimsResource({ resourceType: resource.resourceType, id: resource.id, meta: resource.meta });
 
 afterEach(() => resetServerConfig());
+
+it('publishes a territorial CRM catalogue through the authenticated queue and reads it publicly', async () => {
+  configureEnvironment();
+  const authenticatedActor = await configureAuthenticatedTestActor();
+  resetServerConfig();
+  const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
+  try {
+    await provisionTenant({ authenticatedActor, tenantManager, vaultRepository, kmsService });
+    const scope = { tenantId, jurisdiction, version: 'v1', sector };
+    const feed = buildGatewayDataspaceOfferingCatalogPath(scope);
+    const safe = REPOSITORY_SAFE_EXAMPLES;
+    const seller = { id: `${safe.didWeb}:retailer`, name: 'Example retailer' };
+    const product = { id: 'tracker', type: 'Product', attributes: {
+      category: 'devices', name: 'Example tracker', description: 'Animal monitoring device',
+      offers: [{ id: 'territorial-offer', seller, eligibleRegions: [{ country: safe.secondaryCountryIso2, regions: [] }],
+        deliveryCountries: [], supportCountries: [], operationCountries: [], url: safe.httpsBaseUrl }],
+    } };
+    const publicRead = () => invokeExpress(app, { method: 'GET', url: feed });
+    const empty = await publicRead();
+    expect(empty.status).toBe(200);
+    expect(JSON.parse(empty.text)).toEqual([]);
+    const published = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid,
+      'Catalog', '_publish', 'publish-territorial-catalogue', { jsonapi: { version: '1.1' }, data: [product] }, 'org.schema');
+    expect(published).toEqual({ total: 1 });
+    const result = await publicRead();
+    expect(result.status).toBe(200);
+    expect(JSON.parse(result.text)).toEqual([expect.objectContaining({ id: product.id, type: product.type,
+      publisher: expect.objectContaining({ id: (await tenantManager.getDidDocument(getTenantVaultId(sector, tenantId)))?.id }),
+      offers: product.attributes.offers, demo: false })]);
+    const collection = await tenantManager.getCollectionName(getTenantVaultId(sector, tenantId));
+    const record = await vaultRepository.get<any>(collection!, 'current', 'public-offering-catalog');
+    expect(record?.jwe).toBeDefined();
+    expect(record?.content).toBeUndefined();
+    const mismatched = await invokeExpress(app, { method: 'GET', url: buildGatewayDataspaceOfferingCatalogPath({ ...scope, jurisdiction: safe.secondaryCountryIso2 }) });
+    expect(mismatched.status).toBe(404);
+  } finally { queueAdapter.stop(); }
+});
 
 it('persists Location and Slot as encrypted flat claims and returns indexed search matches', async () => {
   configureEnvironment();
@@ -353,7 +391,7 @@ async function provisionTenant({ authenticatedActor, tenantManager, vaultReposit
   await vaultRepository.put(hostCollection, [secureTenant as any], getEnvSectionId('tenants')); await tenantManager.getTenant(tenantVaultId);
 }
 
-async function submitAndPoll(app: any, authorization: string, issuer: string, resourceType: string, action: '_batch' | '_search', thid: string, body: Record<string, unknown>, format = 'org.hl7.fhir.api') {
+async function submitAndPoll(app: any, authorization: string, issuer: string, resourceType: string, action: '_batch' | '_search' | '_publish', thid: string, body: Record<string, unknown>, format = 'org.hl7.fhir.api') {
   const base = `/${tenantId}/cds-${jurisdiction}/v1/${sector}/organization/${format}/${resourceType}`;
   const submitted = await invokeExpress(app, { method: 'POST', url: `${base}/${action}`, headers: { 'content-type': 'application/json', authorization }, body: { thid, iss: issuer, body } });
   expect(submitted.status).toBe(202);
