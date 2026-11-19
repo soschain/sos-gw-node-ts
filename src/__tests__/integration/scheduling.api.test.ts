@@ -14,6 +14,7 @@ import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { AppointmentResponseStatuses, buildAppointmentResource, buildAppointmentResponseResource, buildLocationResource, expandAvailability, normalizeSchedulingFlatClaimsResource } from 'sos-data-utils-ts/scheduling';
 import { buildOrganizationScopedResourceUrn } from 'sos-data-utils-ts/organization-scoped-resource-identity';
 import { REPOSITORY_SAFE_EXAMPLES } from 'sos-data-utils-ts/repository-privacy';
+import { buildGatewayDataspaceCatalogArtifactPath, buildGatewayDataspaceCatalogRequestPath, buildGatewayDataspaceOfferingCatalogPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import { buildDepartmentDirectoryResource, buildPlaceDirectoryResource, buildProductDirectoryResource, buildServiceDirectoryResource, normalizeDirectoryFlatClaimsResource } from 'sos-data-utils-ts/place-service-directory';
 import { buildHealthDcatDataset, buildHealthDcatDistribution, buildResearchStudyDatasetPublication, updateHealthDcatCatalogRecordStatus } from 'sos-data-utils-ts/health-dcat';
 import { buildPractitionerRoleReferenceFromAssignmentIdentifier, buildResearchStudyProvenanceResource } from 'sos-data-utils-ts/provenance';
@@ -22,6 +23,7 @@ import { getEnvSectionId } from '../../utils/section-env';
 import { initializeTenantServicesConfig } from '../../utils/services';
 import { generateTenantCollectionNameFromClaims, getTenantVaultId } from '../../utils/tenant';
 import { testPayloadCreateTenant1 } from '../data/end-to-end.data';
+import { PUBLIC_OFFERING_EXAMPLE } from '../data/example-payloads';
 import { configureAuthenticatedTestActor } from './helpers/authenticated-test-actor';
 import { invokeExpress } from './helpers/invokeExpress';
 
@@ -33,6 +35,80 @@ const schedulingClaimsProjection = (resource: Readonly<{ resourceType: string; i
   normalizeSchedulingFlatClaimsResource({ resourceType: resource.resourceType, id: resource.id, meta: resource.meta });
 
 afterEach(() => resetServerConfig());
+
+it('publishes a territorial CRM catalogue and individual offerings through the authenticated queue', async () => {
+  configureEnvironment();
+  const authenticatedActor = await configureAuthenticatedTestActor();
+  resetServerConfig();
+  const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
+  try {
+    await provisionTenant({ authenticatedActor, tenantManager, vaultRepository, kmsService });
+    const scope = { tenantId, jurisdiction, version: 'v1', sector };
+    const feed = buildGatewayDataspaceOfferingCatalogPath(scope);
+    const safe = REPOSITORY_SAFE_EXAMPLES;
+    const product = PUBLIC_OFFERING_EXAMPLE;
+    const publicRead = () => invokeExpress(app, { method: 'GET', url: feed });
+    const catalogRead = () => invokeExpress(app, { method: 'GET', url: buildGatewayDataspaceCatalogArtifactPath(scope) });
+    const empty = await publicRead();
+    expect(empty.status).toBe(200);
+    expect(JSON.parse(empty.text)).toEqual([]);
+    const unpublishedCatalog = await catalogRead();
+    expect(unpublishedCatalog.status).toBe(200);
+    expect(unpublishedCatalog.text).not.toContain(feed);
+    const published = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid,
+      'Catalog', '_publish', 'publish-territorial-catalogue', { jsonapi: { version: '1.1' }, data: [product] }, 'org.schema');
+    expect(published).toEqual({ total: 1 });
+    const result = await publicRead();
+    expect(result.status).toBe(200);
+    expect(JSON.parse(result.text)).toEqual([expect.objectContaining({ id: product.id, type: product.type,
+      publisher: expect.objectContaining({ id: (await tenantManager.getDidDocument(getTenantVaultId(sector, tenantId)))?.id }),
+      offers: product.attributes.offers, demo: false })]);
+    const publishedCatalog = await catalogRead();
+    expect(publishedCatalog.status).toBe(200);
+    const dcat = JSON.parse(publishedCatalog.text);
+    expect(dcat['@context']['dcat:endpointURL']).toEqual({ '@type': '@id' });
+    const offeringService = dcat['dcat:service'].find((node: Record<string, string>) => node['dcat:endpointURL']?.endsWith(feed));
+    expect(offeringService).toMatchObject({ '@type': 'dcat:DataService',
+      'dcterms:publisher': { '@id': (await tenantManager.getDidDocument(getTenantVaultId(sector, tenantId)))?.id },
+    });
+    expect(new URL(offeringService['dcat:endpointURL']).pathname).toBe(feed);
+    expect(publishedCatalog.text).not.toContain(product.attributes.name);
+    const dcatRequest = (filters: object) => invokeExpress(app, { method: 'POST', url: buildGatewayDataspaceCatalogRequestPath(scope),
+      headers: { 'content-type': 'application/json' }, body: { filters } });
+    expect(JSON.parse((await dcatRequest({})).text)['dcat:service']).toContainEqual(offeringService);
+    const filteredCatalog = await dcatRequest({ sector: 'health-care' });
+    expect(filteredCatalog.status).toBe(200);
+    expect(filteredCatalog.text).not.toContain(feed);
+    const collection = await tenantManager.getCollectionName(getTenantVaultId(sector, tenantId));
+    const record = await vaultRepository.get<any>(collection!, 'current', 'public-offering-catalog');
+    expect(record?.jwe).toBeDefined();
+    expect(record?.content).toBeUndefined();
+    const manualProduct = { ...product, id: 'individual-tracker', attributes: { ...product.attributes, name: 'First manual entry' } };
+    const publishOne = async (entry: typeof product, thid: string) => submitAndPoll(app, authenticatedActor.authorizationHeader,
+      authenticatedActor.actorDid, 'Catalog', '_upsert', thid, { data: entry }, 'org.schema');
+    expect(await publishOne(manualProduct, 'publish-individual-tracker')).toEqual({ total: 1 });
+    expect(await publishOne({ ...manualProduct, attributes: { ...manualProduct.attributes, name: 'Updated manual entry' } }, 'update-individual-tracker')).toEqual({ total: 1 });
+    expect(JSON.parse((await publicRead()).text)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: product.id }), expect.objectContaining({ id: manualProduct.id, name: 'Updated manual entry' }),
+    ]));
+    expect(JSON.parse((await publicRead()).text)).toHaveLength(2);
+    const plan = { name: 'Preventive care', currency: 'EUR', monthly: '9.95', annually: '99.00', features: ['Consultation'] };
+    const service = { id: 'consultation', type: 'Service', attributes: {
+      category: 'healthcare-services', name: 'Example consultation', description: 'Preventive care', images: [safe.httpsBaseUrl],
+      offers: [{ ...product.attributes.offers[0]!, plans: [plan] }],
+    } };
+    expect(await publishOne(service, 'publish-individual-service')).toEqual({ total: 1 });
+    const replacement = { ...product, id: 'replacement-product' };
+    await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid,
+      'Catalog', '_publish', 'replace-crm-snapshot', { data: [replacement] }, 'org.schema');
+    const combined = JSON.parse((await publicRead()).text);
+    expect(combined.map((item: { id: string }) => item.id).sort()).toEqual([manualProduct.id, replacement.id, service.id].sort());
+    expect(combined.find((item: { id: string }) => item.id === service.id)).toMatchObject({ type: 'Service',
+      images: [safe.httpsBaseUrl], offers: [expect.objectContaining({ plans: [plan] })] });
+    const mismatched = await invokeExpress(app, { method: 'GET', url: buildGatewayDataspaceOfferingCatalogPath({ ...scope, jurisdiction: safe.secondaryCountryIso2 }) });
+    expect(mismatched.status).toBe(404);
+  } finally { queueAdapter.stop(); }
+});
 
 it('persists Location and Slot as encrypted flat claims and returns indexed search matches', async () => {
   configureEnvironment();
@@ -353,7 +429,7 @@ async function provisionTenant({ authenticatedActor, tenantManager, vaultReposit
   await vaultRepository.put(hostCollection, [secureTenant as any], getEnvSectionId('tenants')); await tenantManager.getTenant(tenantVaultId);
 }
 
-async function submitAndPoll(app: any, authorization: string, issuer: string, resourceType: string, action: '_batch' | '_search', thid: string, body: Record<string, unknown>, format = 'org.hl7.fhir.api') {
+async function submitAndPoll(app: any, authorization: string, issuer: string, resourceType: string, action: '_batch' | '_search' | '_publish' | '_upsert', thid: string, body: Record<string, unknown>, format = 'org.hl7.fhir.api') {
   const base = `/${tenantId}/cds-${jurisdiction}/v1/${sector}/organization/${format}/${resourceType}`;
   const submitted = await invokeExpress(app, { method: 'POST', url: `${base}/${action}`, headers: { 'content-type': 'application/json', authorization }, body: { thid, iss: issuer, body } });
   expect(submitted.status).toBe(202);

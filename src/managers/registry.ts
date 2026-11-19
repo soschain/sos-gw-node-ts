@@ -48,6 +48,7 @@ export interface ManagerRegistry {
   serviceManager?: IJobProcessor;
   productManager?: IJobProcessor;
   catalogManager?: IJobProcessor;
+  publicOfferingCatalogManager?: IJobProcessor;
   datasetManager?: IJobProcessor;
   catalogRecordManager?: IJobProcessor;
   distributionManager?: IJobProcessor;

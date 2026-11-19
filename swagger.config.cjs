@@ -233,6 +233,14 @@ const swaggerDefinition = {
       },
     },
     examples: {
+      OfferingCatalogPublication: {
+        summary: 'DIDComm message containing the complete JSON:API catalog',
+        value: {},
+      },
+      OfferingCatalogUpsert: {
+        summary: 'DIDComm message containing one territorial offering',
+        value: {},
+      },
       OrganizationRegistrationPlaintextMessage: {
         summary: 'Plaintext Message for Organization Registration',
         description:

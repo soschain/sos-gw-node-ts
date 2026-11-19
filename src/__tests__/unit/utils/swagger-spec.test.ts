@@ -3,6 +3,25 @@ import { generateSwaggerSpec } from '../../../utils/swagger-spec';
 import { testClaimsRegisterTenantExpanded } from '../../data/organization.data';
 
 describe('Swagger Spec Generation', () => {
+  it('documents catalogue writes, their polling routes, and the public feed', async () => {
+    const spec = await generateSwaggerSpec();
+    const prefix = '/{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog';
+    for (const action of ['_publish', '_upsert']) {
+      const submit = spec.paths[`${prefix}/${action}`]?.post;
+      expect(submit?.requestBody.content['application/x-www-form-urlencoded'].schema.$ref)
+        .toBe('#/components/schemas/SecureRequest');
+      const examples = submit.requestBody.content['application/didcomm-plain+json'].examples;
+      const { $ref } = Object.values(examples)[0] as { $ref: string };
+      expect(spec.components.examples[$ref.split('/').at(-1)!].value.body.data).toBeDefined();
+      expect(submit.responses['202']).toBeDefined();
+      expect(spec.paths[`${prefix}/${action}-response`]?.post?.responses['200']).toBeDefined();
+    }
+    const feed = spec.paths['/{tenantId}/cds-{jurisdiction}/{version}/{sector}/dsp/catalog/offerings.json']?.get;
+    expect(feed?.security).toEqual([]);
+    expect(feed?.responses['200'].content['application/json'].schema.type).toBe('array');
+    expect(feed?.responses['404']).toBeDefined();
+  });
+
   it('publishes explicit-id employee/member lifecycle and omits descendant-wide actions', async () => {
     const spec = await generateSwaggerSpec();
     const employeePurgePath = '/{tenantId}/cds-{jurisdiction}/v1/{sector}/entity/org.schema/Employee/_purge';

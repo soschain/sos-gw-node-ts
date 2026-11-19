@@ -1,0 +1,120 @@
+import { createHash, randomUUID } from 'node:crypto';
+import { readPublicOfferingCatalog, readPublicOfferingSubmission } from 'antifraud-data-utils-ts/public-offering-catalog';
+import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
+import type { IDecodedDidcommPayload, JobRequest } from 'sos-data-utils-ts/confidential-job';
+import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
+import { ManagerError } from 'sos-sdk-core-ts/manager-error';
+import type { IVaultRepository } from '../database/repositories/vault/vault.repository';
+import { getAuthenticatedJobActorDid } from '../utils/authenticated-job-actor';
+import { getTenantVaultId } from '../utils/tenant';
+import { getTenantAuthorizationStatus } from '../utils/tenant-lifecycle';
+import type { IJobProcessor } from './registry';
+
+type CatalogTenant = Readonly<{
+  didDocument?: { id?: string; controller?: string | readonly string[] };
+  claims?: Readonly<Record<string, unknown>>;
+}>;
+
+type Dependencies = Readonly<{
+  repository: Pick<IVaultRepository, 'get' | 'getContainersInSection' | 'listContainersInSection' | 'put'>;
+  protection: Readonly<{
+    protectConfidentialData(doc: ConfidentialStorageDoc, vaultId: string): Promise<ConfidentialStorageDoc>;
+    unprotectConfidentialData<T>(doc: ConfidentialStorageDoc, vaultId: string): Promise<T>;
+  }>;
+  tenantManager: Readonly<{
+    tenantExists(vaultId: string): Promise<boolean>;
+    getTenantJurisdiction(vaultId: string): Promise<string | undefined>;
+    getCollectionName(vaultId: string): Promise<string | undefined>;
+    getTenant(vaultId: string): Promise<CatalogTenant | undefined>;
+  }>;
+}>;
+
+const section = 'public-offering-catalog';
+const snapshotId = 'current';
+const individualSection = 'public-offering-entries';
+
+/** The imported snapshot and each individual edit have independent protected write targets. */
+export class PublicOfferingCatalogManager implements IJobProcessor {
+  constructor(private readonly deps: Dependencies) {}
+
+  async process(job: JobRequest): Promise<IDecodedDidcommPayload> {
+    const individual = job.action === '_upsert';
+    if (job.section !== 'organization' || job.format !== 'org.schema' || job.resourceType !== 'Catalog' || (!individual && job.action !== '_publish')) {
+      throw new ManagerError('Use the organization Schema.org catalogue publication route.', IssueType.NotSupported);
+    }
+    if (!job.content?.thid || !job.tenantId || job.tenantId === 'host' || !job.sector || !job.jurisdiction) {
+      throw new ManagerError('Catalogue publication requires an organization tenant route.', IssueType.Required);
+    }
+    const sector = String(job.sector);
+    const vaultId = getTenantVaultId(sector, String(job.tenantId));
+    const collection = await this.deps.tenantManager.getCollectionName(vaultId);
+    if (!collection || !await this.deps.tenantManager.tenantExists(vaultId)) {
+      throw new ManagerError('Catalogue tenant was not found.', IssueType.NotFound);
+    }
+    const jurisdiction = await this.deps.tenantManager.getTenantJurisdiction(vaultId);
+    if (!jurisdiction || jurisdiction.toUpperCase() !== String(job.jurisdiction).toUpperCase()) {
+      throw new ManagerError('Catalogue tenant jurisdiction mismatch.', IssueType.Forbidden);
+    }
+    const tenant = await this.deps.tenantManager.getTenant(vaultId);
+    const authorizationStatus = getTenantAuthorizationStatus(tenant);
+    if (authorizationStatus !== 'active') {
+      throw new ManagerError(`Tenant authorization is ${authorizationStatus}.`, IssueType.Forbidden);
+    }
+    const controller = tenant?.didDocument?.controller;
+    const controllers = typeof controller === 'string' ? [controller] : controller ?? [];
+    const actor = getAuthenticatedJobActorDid(job);
+    if (!actor || !controllers.includes(actor)) throw new ManagerError('Only the organization controller may publish its catalogue.', IssueType.Forbidden);
+    const publisherId = tenant?.didDocument?.id;
+    const publisherName = tenant?.claims?.[SchemaOrgOrganizationClaim.LegalName] ?? tenant?.claims?.[SchemaOrgOrganizationClaim.Name];
+    if (!publisherId || typeof publisherName !== 'string' || !publisherName.trim()) {
+      throw new ManagerError('The admitted organization has no catalogue publisher identity.', IssueType.Invalid);
+    }
+
+    let offerings: ReturnType<typeof readPublicOfferingSubmission>;
+    try {
+      offerings = readPublicOfferingSubmission(job.content.body, { publisher: { id: publisherId, name: publisherName }, sector, demo: false });
+    } catch {
+      throw new ManagerError('Invalid catalogue submission for this publisher.', IssueType.Invalid);
+    }
+    if (individual && offerings.length !== 1) throw new ManagerError('An individual publication requires exactly one offering.', IssueType.Invalid);
+    const doc: ConfidentialStorageDoc = {
+      id: individual ? createHash('sha256').update(offerings[0]!.id).digest('hex') : snapshotId,
+      status: 'active', sequence: 1,
+      content: { offerings }, audit: { updated: new Date().toISOString() } as ConfidentialStorageDoc['audit'],
+    };
+    const protectedDoc = await this.deps.protection.protectConfidentialData(doc, vaultId);
+    if (!await this.deps.repository.put(collection, [protectedDoc], individual ? individualSection : section)) {
+      throw new ManagerError('The catalogue could not be persisted.', IssueType.NoStore);
+    }
+    return { jti: randomUUID(), thid: job.content.thid, type: 'org.schema.catalog-publication',
+      iss: job.content.aud as string, aud: job.content.iss as string, body: { total: offerings.length } };
+  }
+
+  /** Checks publication metadata without decrypting or hydrating the offerings. */
+  async hasPublications(vaultId: string): Promise<boolean> {
+    const collection = await this.deps.tenantManager.getCollectionName(vaultId);
+    if (!collection) return false;
+    const [snapshots, individualEntries] = await Promise.all([
+      this.deps.repository.listContainersInSection<ConfidentialStorageDoc>(collection, section),
+      this.deps.repository.listContainersInSection<ConfidentialStorageDoc>(collection, individualSection),
+    ]);
+    return snapshots.some(doc => doc.id === snapshotId && doc.status === 'active')
+      || individualEntries.some(doc => doc.status === 'active');
+  }
+
+  /** Reads the latest projection after the caller has resolved tenant discovery eligibility. */
+  async read(vaultId: string) {
+    const collection = await this.deps.tenantManager.getCollectionName(vaultId);
+    if (!collection) return [];
+    const [snapshot, records] = await Promise.all([
+      this.deps.repository.get<ConfidentialStorageDoc>(collection, snapshotId, section),
+      this.deps.repository.getContainersInSection<ConfidentialStorageDoc>(collection, individualSection),
+    ]);
+    const published = await Promise.all([snapshot, ...records].flatMap(doc => doc?.status === 'active' ? [doc] : []).map(async doc => {
+      const { offerings } = await this.deps.protection.unprotectConfidentialData<{ offerings: unknown }>(doc, vaultId);
+      return readPublicOfferingCatalog(offerings);
+    }));
+    return [...new Map(published.flat().map(offering => [offering.id, offering])).values()];
+  }
+}

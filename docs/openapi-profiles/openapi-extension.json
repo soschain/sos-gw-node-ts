@@ -4,7 +4,7 @@
     "title": "Gateway API - EXTENSIONS",
     "version": "1.0.3",
     "description": "Extension profile including non-core and vertical-specific capabilities on top of core and compat.",
-    "x-profile-generated-at": "2026-11-18T02:00:03.082Z",
+    "x-profile-generated-at": "2026-11-19T22:28:13.017Z",
     "x-profile-name": "extension"
   },
   "servers": [],
@@ -269,6 +269,91 @@
       }
     },
     "examples": {
+      "OfferingCatalogPublication": {
+        "summary": "DIDComm message containing the complete JSON:API catalog",
+        "value": {
+          "jti": "offering-catalog-publication",
+          "thid": "offering-catalog-publication",
+          "iss": "did:web:example.invalid:example-tenant:api:controller",
+          "aud": "did:web:example.invalid:example-tenant:api",
+          "type": "application/didcomm-plain+json",
+          "body": {
+            "jsonapi": {
+              "version": "1.1"
+            },
+            "data": [
+              {
+                "id": "tracker",
+                "type": "Product",
+                "attributes": {
+                  "category": "devices",
+                  "name": "Example tracker",
+                  "description": "Animal monitoring device",
+                  "offers": [
+                    {
+                      "id": "territorial-offer",
+                      "seller": {
+                        "id": "did:web:example.invalid:example-tenant:retailer",
+                        "name": "Example retailer"
+                      },
+                      "eligibleRegions": [
+                        {
+                          "country": "ES",
+                          "regions": []
+                        }
+                      ],
+                      "deliveryCountries": [],
+                      "supportCountries": [],
+                      "operationCountries": [],
+                      "url": "https://example.invalid"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "OfferingCatalogUpsert": {
+        "summary": "DIDComm message containing one territorial offering",
+        "value": {
+          "jti": "offering-catalog-upsert",
+          "thid": "offering-catalog-upsert",
+          "iss": "did:web:example.invalid:example-tenant:api:controller",
+          "aud": "did:web:example.invalid:example-tenant:api",
+          "type": "application/didcomm-plain+json",
+          "body": {
+            "data": {
+              "id": "tracker",
+              "type": "Product",
+              "attributes": {
+                "category": "devices",
+                "name": "Example tracker",
+                "description": "Animal monitoring device",
+                "offers": [
+                  {
+                    "id": "territorial-offer",
+                    "seller": {
+                      "id": "did:web:example.invalid:example-tenant:retailer",
+                      "name": "Example retailer"
+                    },
+                    "eligibleRegions": [
+                      {
+                        "country": "ES",
+                        "regions": []
+                      }
+                    ],
+                    "deliveryCountries": [],
+                    "supportCountries": [],
+                    "operationCountries": [],
+                    "url": "https://example.invalid"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
       "OrganizationRegistrationPlaintextMessage": {
         "summary": "Plaintext Message for Organization Registration",
         "description": "Transport-wrapper example for `application/didcomm-plain+json`. It shows the outer compatibility envelope accepted by GW CORE on the wire; app-facing onboarding docs should teach actor SDK flows first, not this wrapper.",
@@ -3839,6 +3924,58 @@
         "x-profile": "core"
       }
     },
+    "/{tenantId}/cds-{jurisdiction}/{version}/{sector}/dsp/catalog/offerings.json": {
+      "get": {
+        "tags": [
+          "Data Catalog Discovery"
+        ],
+        "summary": "Read an operational tenant's published offerings",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/Jurisdiction"
+          },
+          {
+            "$ref": "#/components/parameters/Version"
+          },
+          {
+            "$ref": "#/components/parameters/Sector"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public offering projection, which may be empty before the first publication.",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "enum": [
+                    "no-store"
+                  ]
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tenant unavailable or jurisdiction mismatch."
+          }
+        },
+        "x-profile": "extension"
+      }
+    },
     "/{tenantId}/cds-{jurisdiction}/{version}/{sector}/dsp/catalog/datasets/{id}": {
       "get": {
         "tags": [
@@ -7017,6 +7154,180 @@
           }
         },
         "x-profile": "core"
+      }
+    },
+    "/{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_publish": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/TenantId"
+        },
+        {
+          "$ref": "#/components/parameters/Jurisdiction"
+        },
+        {
+          "$ref": "#/components/parameters/Sector"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Data Catalog Discovery"
+        ],
+        "summary": "Replace the tenant's imported offering catalog",
+        "description": "Submit a signed DIDComm message whose body is a JSON:API document with\nthe complete imported catalog. Only the active tenant's controller\ncan submit it. The gateway validates the entire document before\nreplacing the snapshot and preserves individually published entries.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/SecureRequest"
+              }
+            },
+            "application/didcomm-plain+json": {
+              "schema": {
+                "type": "object"
+              },
+              "examples": {
+                "snapshot": {
+                  "$ref": "#/components/examples/OfferingCatalogPublication"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Snapshot publication queued."
+          },
+          "401": {
+            "description": "Authentication required."
+          }
+        },
+        "x-profile": "extension"
+      }
+    },
+    "/{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_upsert": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/TenantId"
+        },
+        {
+          "$ref": "#/components/parameters/Jurisdiction"
+        },
+        {
+          "$ref": "#/components/parameters/Sector"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Data Catalog Discovery"
+        ],
+        "summary": "Publish an individual tenant offering",
+        "description": "Submit a signed DIDComm message whose body is a JSON:API document\nwith exactly one offering. The individual entry takes precedence\nover an imported entry with the same ID and survives snapshot replacement.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/SecureRequest"
+              }
+            },
+            "application/didcomm-plain+json": {
+              "schema": {
+                "type": "object"
+              },
+              "examples": {
+                "offering": {
+                  "$ref": "#/components/examples/OfferingCatalogUpsert"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Individual publication queued."
+          },
+          "401": {
+            "description": "Authentication required."
+          }
+        },
+        "x-profile": "extension"
+      }
+    },
+    "/{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_publish-response": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/TenantId"
+        },
+        {
+          "$ref": "#/components/parameters/Jurisdiction"
+        },
+        {
+          "$ref": "#/components/parameters/Sector"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Async Polling"
+        ],
+        "summary": "Poll an imported offering catalog publication",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsyncPollRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Terminal result. A successful receipt reports the published offering count."
+          },
+          "202": {
+            "description": "Pending."
+          }
+        },
+        "x-profile": "extension"
+      }
+    },
+    "/{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_upsert-response": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/TenantId"
+        },
+        {
+          "$ref": "#/components/parameters/Jurisdiction"
+        },
+        {
+          "$ref": "#/components/parameters/Sector"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Async Polling"
+        ],
+        "summary": "Poll an individual offering publication",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AsyncPollRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Terminal result. A successful receipt reports one published offering."
+          },
+          "202": {
+            "description": "Pending."
+          }
+        },
+        "x-profile": "extension"
       }
     },
     "/{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.hl7.fhir.r5/ResearchStudy/_batch": {
