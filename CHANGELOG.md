@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Pin the published catalogue identity contracts used for tenant offering
+  publication and readback.
+
 - Key offering updates by resource type and ID while continuing to read existing records.
 - Upsert a reviewed product batch or service batch through the existing signed
   catalogue route and one protected vault write.
