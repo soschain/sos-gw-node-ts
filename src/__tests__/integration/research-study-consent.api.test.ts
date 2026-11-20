@@ -1,11 +1,10 @@
-// Flow contract: independent identity, routing and vocabulary contracts preserve runtime authorization and persisted values.
-// Copyright 2026 Connecting Solution & Applications Ltd under the Apache License, Version 2.0.
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+// Copyright 2026 Connecting Solution & Applications Ltd under the Apache License, Version 2.0.
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 /**
  * 1. A current controller adds an existing employee's PractitionerRole to the study review team before DCR or a licence.
- * 2. The gateway stores a draft invitation before DCR and denies active Consent before DCR and again while the role has no licence.
- * 3. The researcher retrieves the draft from the inbox after DCR and licence activation. The controller then submits the separate active Consent.
+ * 2. The gateway denies active Consent before DCR and again while the role has no licence.
+ * 3. After DCR and licence activation, membership alone still creates no Consent. The gateway rejects a draft before the controller submits the active Consent.
  * 4. The same controller grants exact Encounter workflow, public
  *    CommunicationRequest creation and no-read Subject Composition contribution
  *    capabilities only after the employee PractitionerRole is in each
@@ -15,21 +14,19 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
  * 7. Consent search returns the inactive claims-only record through the same
  *    asynchronous HTTP queue and worker boundary.
  *
- * Authorization invariant: Communication drafts, Group membership and associatedParty alone never grant access.
+ * Authorization invariant: Draft Consent, Group membership and associatedParty alone never grant access.
  * Persistence invariant: only the explicit active Consent is stored in the isolated tenant collection.
  */
 import { afterEach, expect, it } from '@jest/globals';
 import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { CommunicationClaim, HealthcareConsentPurposes } from 'fhir-data-utils-ts';
+import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from "fhir-data-utils-ts/claims";
 import { ResearchStudyR5PartyRoleSystem } from 'fhir-data-utils-ts/research-study-r5';
-import { buildFhirParametersResourceFromSearchParams } from 'fhir-data-utils-ts/fhir-parameters';
 import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { projectGroupPractitionerRoleMemberFlatClaimResources, projectGroupR5FlatClaimsResource, projectResearchStudyR5SearchClaims } from 'fhir-data-utils-ts';
-import { buildResearchStudyActiveConsentBatch, buildResearchStudyPartyInvitation, decodeResearchStudyInvitationDocument } from 'sos-sdk-core-ts/research-study';
+import { buildResearchStudyActiveConsentBatch } from 'sos-sdk-core-ts/research-study';
 import { OrganizationWorkflowCapabilities } from 'sos-data-utils-ts/organization-workflow-access';
-import { DataCollectionIds } from 'sos-data-utils-ts/gateway-data-collections';
 import { buildResearchStudyReviewTeamIdentifier } from 'sos-data-utils-ts/research-review-team-identity';
 import { REPOSITORY_SAFE_EXAMPLES } from 'sos-data-utils-ts/repository-privacy';
 import {
@@ -40,7 +37,6 @@ import { buildGroupMemberProjectionId, buildGroupMemberSectionId } from '../../m
 import { SUBJECT_COMPOSITION_CONTRIBUTION_ACTION } from '../../managers/ResearchStudyConsentManager';
 import { resetServerConfig, startServer } from '../../server';
 import { getClinicalCreatorBindingsSectionId } from '../../utils/clinical-creator-binding';
-import { getSubjectScopedSectionId } from '../../utils/individual-sections';
 import { getEnvSectionId } from '../../utils/section-env';
 import { generateTenantCollectionNameFromClaims, getTenantVaultId } from '../../utils/tenant';
 import { initializeTenantServicesConfig } from '../../utils/services';
@@ -173,32 +169,6 @@ it('activates one study-scoped Consent through the real HTTP queue and worker bo
     expect(storedReviewer?.jwe).toBeDefined();
     expect(await kmsService.unprotectConfidentialData(storedReviewer, vaultId)).toEqual({ claims: reviewer.meta.claims });
 
-    const invitation = buildResearchStudyPartyInvitation({
-      researchStudyId: fixture.studyId,
-      associatedParty: {
-        role: { coding: [{ system: ResearchStudyR5PartyRoleSystem, code: 'sub-investigator' }] },
-        party: { reference: practitionerRoleReference },
-      },
-      controllerReference: `Organization/${fixture.tenantId}`,
-      communicationId: 'research-study-review-invitation',
-      consentId: 'research-study-draft-consent',
-    });
-    const delivered = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid, '_batch', [
-      { type: 'Communication-v5.0.0', request: { method: 'POST', url: 'Communication' }, resource: invitation },
-    ], 'unlicensed-review-invitation', 'Communication');
-    expect(delivered.data[0].response.status).toBe('200');
-    const invitationSection = getSubjectScopedSectionId(practitionerRoleReference, 'individual', DataCollectionIds.communications);
-    const storedInvitation = await vaultRepository.get<any>(vaultId, invitation.id, invitationSection);
-    expect(storedInvitation?.jwe).toBeDefined();
-    expect(storedInvitation.content).toBeUndefined();
-    const decryptedInvitation = await kmsService.unprotectConfidentialData<{claims: Record<string, unknown>}>(storedInvitation, vaultId);
-    const draftConsent = decodeResearchStudyInvitationDocument({ resourceType: 'Communication', id: invitation.id, meta: decryptedInvitation }).data[0];
-    expect(draftConsent.attributes).toMatchObject({
-      [ClaimConsent.status]: ConsentStatuses.Draft,
-      [ClaimConsent.sourceReference]: `ResearchStudy/${fixture.studyId}`,
-      [ClaimConsent.grantee]: practitionerRoleReference,
-    });
-
     const sdkBatch = buildResearchStudyActiveConsentBatch([{
       consentId: fixture.consentId,
       researchStudyId: fixture.studyId,
@@ -229,20 +199,19 @@ it('activates one study-scoped Consent through the real HTTP queue and worker bo
     } as any, vaultId);
     await vaultRepository.put(vaultId, [licenseDocument as any], getEnvSectionId('device-licenses'));
 
-    const researcher = await configureAuthenticatedTestActor({
-      actorDid: fixture.professionalDid, email: RESEARCH_STUDY_REVIEWER_EMAIL,
-    });
-    const parameters = buildFhirParametersResourceFromSearchParams({
-      recipient: practitionerRoleReference,
-      [CommunicationClaim.Category]: invitation.meta.claims[CommunicationClaim.Category],
-      [CommunicationClaim.Topic]: invitation.meta.claims[CommunicationClaim.Topic],
-    });
-    const inbox = await submitAndPoll(app, researcher.authorizationHeader, researcher.actorDid, '_search', [
-      { request: { method: 'POST', url: 'Communication/_search' }, resource: parameters },
-    ], 'researcher-inbox', 'Communication', fixture.clientId);
-    expect(inbox.total).toBe(1);
-    expect(inbox.data[0].resource.id).toBe(invitation.id);
-    expect(decodeResearchStudyInvitationDocument(inbox.data[0].resource).data).toEqual([draftConsent]);
+    expect(await vaultRepository.listContainersInSection(physicalCollection, 'research-study-consents')).toEqual([]);
+    const consent = sdkBatch.data[0];
+    const draft = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid, '_batch', [
+      {
+        ...consent,
+        resource: {
+          ...consent.resource,
+          meta: { claims: { ...consent.resource.meta.claims, [ClaimConsent.status]: ConsentStatuses.Draft } },
+        },
+      },
+    ], 'draft-consent');
+    expect(draft.data[0].response.status).toBe("400");
+    expect(draft.data[0].response.outcome.issue[0].diagnostics).toMatch(/active/i);
     expect(await vaultRepository.listContainersInSection(physicalCollection, 'research-study-consents')).toEqual([]);
 
     const sdkClaims = sdkBatch.data[0].resource.meta.claims;
@@ -543,23 +512,16 @@ async function submitAndPoll(
   action: '_batch' | '_search',
   data: readonly unknown[],
   suffix: string,
-  resourceType: 'Consent' | 'Group' | 'Communication' = 'Consent',
-  clientId?: string,
+  resourceType: 'Consent' | 'Group' = 'Consent',
 ): Promise<any> {
-  const resourcePath = resourceType === 'Communication'
-    ? `individual/org.hl7.fhir.${action === '_search' ? 'r4' : 'api'}/Communication`
-    : `organization/org.hl7.fhir.r5/${resourceType}`;
+  const resourcePath = `organization/org.hl7.fhir.r5/${resourceType}`;
   const base = `/${fixture.tenantId}/cds-${fixture.jurisdiction}/v1/${fixture.sector}/${resourcePath}`;
   const thid = `research-study-consent-integration-${suffix}`;
-  const body = resourceType !== 'Communication' ? { data } : action === '_search'
-    ? { resourceType: 'Bundle', type: 'search', entry: data }
-    : { resourceType: 'Bundle', type: 'batch', data };
   const submitted = await invokeExpress(app, {
     method: 'POST', url: `${base}/${action}`,
     headers: { 'content-type': 'application/json', authorization },
     body: {
-      thid, iss: issuer, ...(clientId ? { client_id: clientId } : {}),
-      body,
+      thid, iss: issuer, body: { data },
     },
   });
   expect(submitted.status).toBe(202);

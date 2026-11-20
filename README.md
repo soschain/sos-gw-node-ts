@@ -38,10 +38,10 @@ validation before one protected snapshot is written. The acknowledgement
 returns the number of offerings. An incomplete or invalid submission leaves
 the current snapshot available.
 
-Use the sibling `Catalog/_upsert` operation with one JSON:API offering when
-editing an individual entry. The entry keeps its own protected record and
-overrides a matching imported ID in the public feed. Replacing the imported
-snapshot preserves individually published entries.
+Use the sibling `Catalog/_upsert` operation with one JSON:API offering or a
+batch containing only products or only services. Each entry keeps its own
+protected record and overrides a matching imported type and ID in the public
+feed. Replacing the imported snapshot preserves these entries.
 
 An operational tenant's public projection is available at
 `/{tenantId}/cds-{jurisdiction}/v1/{sector}/dsp/catalog/offerings.json`.
@@ -49,7 +49,16 @@ It contains the public offering attributes, seller links and stated prices.
 Once an operational tenant publishes an offering, its DCAT catalogue exposes
 the feed as a `dcat:DataService`. Product and service entries remain in the
 linked Schema.org feed. [DCAT 3 DataService](https://www.w3.org/TR/vocab-dcat-3/#Class:Data_Service)
-The HealthDCAT endpoints continue to describe datasets and data services.
+
+### Research dataset discovery
+
+The tenant's `/dsp/catalog/dcat.json` and `/dsp/catalog/request` expose
+public metadata for HealthDCAT datasets with a published catalogue record.
+Linked data services identify the datasets they serve and report their
+access rights. The catalogue does not expose research records or grant
+data access. Archiving the catalogue record removes its dataset metadata
+from discovery while preserving the stored dataset and its provenance.
+Host catalogues link to the tenant catalogues of discoverable providers.
 
 ### External catalogue data
 

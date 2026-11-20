@@ -17,7 +17,7 @@ import { buildOrganizationScopedResourceUrn } from 'sos-data-utils-ts/organizati
 import { REPOSITORY_SAFE_EXAMPLES } from 'sos-data-utils-ts/repository-privacy';
 import { buildGatewayDataspaceCatalogArtifactPath, buildGatewayDataspaceCatalogRequestPath, buildGatewayDataspaceOfferingCatalogPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import { buildDepartmentDirectoryResource, buildPlaceDirectoryResource, buildProductDirectoryResource, buildServiceDirectoryResource, normalizeDirectoryFlatClaimsResource } from 'sos-data-utils-ts/place-service-directory';
-import { buildHealthDcatDataset, buildHealthDcatDistribution, buildResearchStudyDatasetPublication, updateHealthDcatCatalogRecordStatus } from 'sos-data-utils-ts/health-dcat';
+import { buildHealthDcatDataService, buildHealthDcatDataset, buildHealthDcatDistribution, buildResearchStudyDatasetPublication, updateHealthDcatCatalogRecordStatus } from 'sos-data-utils-ts/health-dcat';
 import { buildPractitionerRoleReferenceFromAssignmentIdentifier, buildResearchStudyProvenanceResource } from 'sos-data-utils-ts/provenance';
 import { startServer, resetServerConfig } from '../../server';
 import { getEnvSectionId } from '../../utils/section-env';
@@ -36,6 +36,24 @@ const schedulingClaimsProjection = (resource: Readonly<{ resourceType: string; i
   normalizeSchedulingFlatClaimsResource({ resourceType: resource.resourceType, id: resource.id, meta: resource.meta });
 
 afterEach(() => resetServerConfig());
+
+it('uses the configured HTTPS gateway identity for public catalogue links behind the ingress', async () => {
+  const publicOrigin = new URL(REPOSITORY_SAFE_EXAMPLES.httpsBaseUrl).origin;
+  const environment = jest.replaceProperty(process, 'env', { ...process.env, HOST_PUBLIC_URL: publicOrigin, HOST_EXTERNAL_DOMAIN: '' });
+  try {
+    configureEnvironment();
+    const authenticatedActor = await configureAuthenticatedTestActor();
+    resetServerConfig();
+    const { app, queueAdapter, tenantManager, vaultRepository, kmsService } = await startServer({ listen: false });
+    try {
+      await provisionTenant({ authenticatedActor, tenantManager, vaultRepository, kmsService });
+      const scope = { tenantId, jurisdiction, version: 'v1', sector };
+      const reply = await invokeExpress(app, { method: 'GET', url: buildGatewayDataspaceCatalogArtifactPath(scope) });
+      expect(reply.status).toBe(200);
+      expect(new URL(JSON.parse(reply.text)['@id']).origin).toBe(publicOrigin);
+    } finally { queueAdapter.stop(); }
+  } finally { environment.restore(); }
+});
 
 it('publishes a territorial CRM catalogue and individual offerings through the authenticated queue', async () => {
   configureEnvironment();
@@ -423,15 +441,38 @@ it('publishes and archives a ResearchStudy Dataset without deleting the study or
     const distribution = buildHealthDcatDistribution({ ...authority, id: 'distribution-study-1', title: 'Controlled study access', accessUrl: 'https://hdab.example/apply/study-1', format: 'http://publications.europa.eu/resource/authority/file-type/JSON', accessRights: 'NON_PUBLIC', healthDataAccessBodyIdentifier: 'Organization/hdab-1' });
     const dataset = buildHealthDcatDataset({ ...authority, sector: 'animal-research', id: 'dataset-study-1', title: 'Study cohort', description: 'Aggregated veterinary cohort', publisherRole: 'data-holder', dataHolderIdentifier: 'did:web:veterinary-clinic.example', sourceKind: 'spreadsheet-import', sourceReference: 'ResearchStudy/study-1', accessRights: 'NON_PUBLIC', anonymizationStatus: 'pseudonymized', healthCategory: ['animal-health'], healthDataAccessBodyIdentifier: 'Organization/hdab-1', structuredData: true, variableTableGroupIdentifiers: ['Group/study-1-variables'], distributionIdentifiers: [distribution.id], applicableLegislation: ['http://data.europa.eu/eli/reg/2025/327/oj'] });
     const publication = buildResearchStudyDatasetPublication({ ...authority, dataset, researchStudyIdentifier: 'ResearchStudy/study-1', provenanceReference: 'Provenance/study-1-created', catalogRecordIdentifier: 'record-study-1', status: 'published', modifiedAt: '2026-09-10T12:00:00.000Z' });
-    for (const resource of [distribution, publication.dataset, publication.record]) {
+    const accessUrl = 'https://hdab.example/apply/study-1';
+    const service = buildHealthDcatDataService({ ...authority, id: `${dataset.id}-access`, title: 'Controlled study access', endpointUrl: accessUrl, servesDatasetIdentifiers: [dataset.id], accessRights: 'NON_PUBLIC' });
+    const scope = { tenantId, jurisdiction, version: 'v1', sector };
+    const publicCatalog = async () => {
+      const reply = await invokeExpress(app, { method: 'GET', url: buildGatewayDataspaceCatalogArtifactPath(scope) });
+      expect(reply.status).toBe(200);
+      return JSON.parse(reply.text);
+    };
+    for (const resource of [distribution, publication.dataset, service, publication.record]) {
       const written = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid, resource.resourceType, '_batch', `publish-${resource.resourceType}`, { data: [{ request: { method: 'POST' }, resource }] }, 'org.w3.dcat');
       expect(written.data[0].response.status).toBe('201');
     }
     const published = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid, 'CatalogRecord', '_search', 'search-published-record', { data: [{ resource: { resourceType: 'CatalogRecord', id: 'search', meta: { claims: { 'adms.status': 'published' } } } }] }, 'org.w3.dcat');
     expect(published.data.map((entry: any) => entry.resource.id)).toEqual(['record-study-1']);
+    const catalog = await publicCatalog();
+    const publicDataset = catalog['dcat:dataset'].find((item: Record<string, unknown>) => item['dcterms:identifier'] === dataset.id);
+    expect(publicDataset).toMatchObject({ '@type': 'dcat:Dataset', 'dcterms:accessRights': 'NON_PUBLIC' });
+    expect(catalog['dcat:service']).toContainEqual(expect.objectContaining({
+      '@type': 'dcat:DataService', 'dcat:endpointURL': accessUrl,
+      'dcat:servesDataset': [{ '@id': publicDataset['@id'] }],
+    }));
+    expect(JSON.stringify(catalog)).not.toContain(provenance.id);
+    const publicDatasetPath = new URL(publicDataset['@id']).pathname;
+    expect((await invokeExpress(app, { method: 'GET', url: publicDatasetPath })).status).toBe(200);
+    const requestedCatalog = await invokeExpress(app, { method: 'POST', url: buildGatewayDataspaceCatalogRequestPath(scope) });
+    expect(requestedCatalog.status).toBe(200);
+    expect(JSON.parse(requestedCatalog.text)['dcat:dataset']).toContainEqual(publicDataset);
     const archivedRecord = updateHealthDcatCatalogRecordStatus({ ...authority, record: publication.record, status: 'archived', modifiedAt: '2026-09-10T13:00:00.000Z' });
     const archived = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid, 'CatalogRecord', '_batch', 'archive-record', { data: [{ request: { method: 'PUT' }, resource: archivedRecord }] }, 'org.w3.dcat');
     expect(archived.data[0].response.status).toBe('200');
+    expect(JSON.stringify(await publicCatalog())).not.toContain(dataset.id);
+    expect((await invokeExpress(app, { method: 'GET', url: publicDatasetPath })).status).toBe(404);
     const noLongerPublished = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid, 'CatalogRecord', '_search', 'search-after-archive', { data: [{ resource: { resourceType: 'CatalogRecord', id: 'search', meta: { claims: { 'adms.status': 'published' } } } }] }, 'org.w3.dcat');
     expect(noLongerPublished.data).toHaveLength(0);
     const storedDataset = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid, 'Dataset', '_search', 'search-dataset-after-archive', { data: [{ resource: { resourceType: 'Dataset', id: 'search', meta: { claims: { 'dct.identifier': 'dataset-study-1' } } } }] }, 'org.w3.dcat');
