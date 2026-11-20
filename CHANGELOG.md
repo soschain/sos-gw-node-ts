@@ -8,6 +8,13 @@
   catalogue record removes it from discovery while retaining the protected
   dataset. Host catalogues link to their discoverable providers' catalogues.
 
+- Pin the published catalogue identity contracts used for tenant offering
+  publication and readback.
+
+- Key offering updates by resource type and ID while continuing to read existing records.
+- Upsert a reviewed product batch or service batch through the existing signed
+  catalogue route and one protected vault write.
+
 - Document offering catalogue publication, individual edits, asynchronous
   receipts and public discovery in the generated OpenAPI extension profile.
 - Register `organization/org.schema/Catalog/_publish` for a controller's

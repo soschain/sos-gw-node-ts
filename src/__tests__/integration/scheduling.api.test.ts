@@ -10,6 +10,7 @@ import {
   buildServiceRequestTriageTaskFlatEntry,
 } from 'fhir-data-utils-ts';
 import { HealthcareServiceClaim } from 'fhir-data-utils-ts/claims';
+import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
 import { AppointmentResponseStatuses, buildAppointmentResource, buildAppointmentResponseResource, buildLocationResource, expandAvailability, normalizeSchedulingFlatClaimsResource } from 'sos-data-utils-ts/scheduling';
 import { buildOrganizationScopedResourceUrn } from 'sos-data-utils-ts/organization-scoped-resource-identity';
@@ -123,6 +124,33 @@ it('publishes a territorial CRM catalogue and individual offerings through the a
     expect(combined.map((item: { id: string }) => item.id).sort()).toEqual([manualProduct.id, replacement.id, service.id].sort());
     expect(combined.find((item: { id: string }) => item.id === service.id)).toMatchObject({ type: 'Service',
       images: [safe.httpsBaseUrl], offers: [expect.objectContaining({ plans: [plan] })] });
+    const editedProduct = { ...manualProduct, attributes: { ...manualProduct.attributes, name: 'Reviewed product' } };
+    const addedProduct = { ...product, id: 'reviewed-new-product' };
+    expect(await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid,
+      'Catalog', '_upsert', 'publish-reviewed-products', { data: [editedProduct, addedProduct] }, 'org.schema')).toEqual({ total: 2 });
+    expect(JSON.parse((await publicRead()).text)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: editedProduct.id, name: 'Reviewed product' }),
+      expect.objectContaining({ id: addedProduct.id }), expect.objectContaining({ id: replacement.id }),
+      expect.objectContaining({ id: service.id, type: 'Service' }),
+    ]));
+    const support = { ...service, id: editedProduct.id, attributes: { ...service.attributes, name: 'Support for reviewed product' } };
+    expect(await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid,
+      'Catalog', '_upsert', 'publish-service-with-shared-id', { data: [support] }, 'org.schema')).toEqual({ total: 1 });
+    expect(JSON.parse((await publicRead()).text).filter((item: { id: string }) => item.id === editedProduct.id)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'Product', name: 'Reviewed product' }),
+      expect.objectContaining({ type: 'Service', name: 'Support for reviewed product' }),
+    ]));
+    const beforeMixed = JSON.parse((await publicRead()).text);
+    const mixed = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid,
+      'Catalog', '_upsert', 'reject-mixed-reviewed-batch', { data: [
+        { ...editedProduct, attributes: { ...editedProduct.attributes, name: 'Rejected product revision' } },
+        { ...support, attributes: { ...support.attributes, name: 'Rejected service revision' } },
+      ] }, 'org.schema', 500);
+    expect(mixed.body.data[0].response).toMatchObject({
+      status: '400',
+      outcome: { issue: [expect.objectContaining({ code: IssueType.Invalid, diagnostics: expect.stringMatching(/one offering type/i) })] },
+    });
+    expect(JSON.parse((await publicRead()).text)).toEqual(beforeMixed);
     const mismatched = await invokeExpress(app, { method: 'GET', url: buildGatewayDataspaceOfferingCatalogPath({ ...scope, jurisdiction: safe.secondaryCountryIso2 }) });
     expect(mismatched.status).toBe(404);
   } finally { queueAdapter.stop(); }
@@ -470,13 +498,13 @@ async function provisionTenant({ authenticatedActor, tenantManager, vaultReposit
   await vaultRepository.put(hostCollection, [secureTenant as any], getEnvSectionId('tenants')); await tenantManager.getTenant(tenantVaultId);
 }
 
-async function submitAndPoll(app: any, authorization: string, issuer: string, resourceType: string, action: '_batch' | '_search' | '_publish' | '_upsert', thid: string, body: Record<string, unknown>, format = 'org.hl7.fhir.api') {
+async function submitAndPoll(app: any, authorization: string, issuer: string, resourceType: string, action: '_batch' | '_search' | '_publish' | '_upsert', thid: string, body: Record<string, unknown>, format = 'org.hl7.fhir.api', terminalStatus = 200) {
   const base = `/${tenantId}/cds-${jurisdiction}/v1/${sector}/organization/${format}/${resourceType}`;
   const submitted = await invokeExpress(app, { method: 'POST', url: `${base}/${action}`, headers: { 'content-type': 'application/json', authorization }, body: { thid, iss: issuer, body } });
   expect(submitted.status).toBe(202);
   for (let attempt = 0; attempt < 50; attempt += 1) {
     const polled = await invokeExpress(app, { method: 'POST', url: `${base}/${action}-response`, headers: { 'content-type': 'application/json' }, body: { thid } });
-    if (polled.status === 200) return JSON.parse(polled.text);
+    if (polled.status === terminalStatus) return JSON.parse(polled.text);
     await new Promise(resolve => setTimeout(resolve, 50));
   }
   throw new Error(`${resourceType} async response timed out.`);

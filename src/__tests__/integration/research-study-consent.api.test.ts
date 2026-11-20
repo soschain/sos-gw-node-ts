@@ -3,9 +3,9 @@
 // Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
 import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
 /**
- * 1. A current controller creates a ResearchStudy and associates one PractitionerRole.
- * 2. The role's existing protected creator assignment records completed DCR.
- * 3. The controller explicitly submits an active R5 Consent with ResearchSubject crus scope.
+ * 1. A current controller adds an existing employee's PractitionerRole to the study review team before DCR or a licence.
+ * 2. The gateway stores a draft invitation before DCR and denies active Consent before DCR and again while the role has no licence.
+ * 3. The researcher retrieves the draft from the inbox after DCR and licence activation. The controller then submits the separate active Consent.
  * 4. The same controller grants exact Encounter workflow, public
  *    CommunicationRequest creation and no-read Subject Composition contribution
  *    capabilities only after the employee PractitionerRole is in each
@@ -20,13 +20,18 @@ import { resolveHostPhysicalCollectionName } from '../../config/storage-layout';
  */
 import { afterEach, expect, it } from '@jest/globals';
 import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
-import { HealthcareConsentPurposes } from 'fhir-data-utils-ts';
+import { CommunicationClaim, HealthcareConsentPurposes } from 'fhir-data-utils-ts';
 import { buildStableActorIdentifier } from 'antifraud-data-utils-ts/organization-identity';
 import { ClaimConsent, ConsentDecisions, ConsentStatuses } from "fhir-data-utils-ts/claims";
+import { ResearchStudyR5PartyRoleSystem } from 'fhir-data-utils-ts/research-study-r5';
+import { buildFhirParametersResourceFromSearchParams } from 'fhir-data-utils-ts/fhir-parameters';
 import type { GatewaySector } from 'sos-data-utils-ts/gateway-sector-contract';
-import { projectResearchStudyR5SearchClaims } from 'fhir-data-utils-ts';
-import { buildResearchStudyActiveConsentBatch } from 'sos-sdk-core-ts/research-study';
+import { projectGroupPractitionerRoleMemberFlatClaimResources, projectGroupR5FlatClaimsResource, projectResearchStudyR5SearchClaims } from 'fhir-data-utils-ts';
+import { buildResearchStudyActiveConsentBatch, buildResearchStudyPartyInvitation, decodeResearchStudyInvitationDocument } from 'sos-sdk-core-ts/research-study';
 import { OrganizationWorkflowCapabilities } from 'sos-data-utils-ts/organization-workflow-access';
+import { DataCollectionIds } from 'sos-data-utils-ts/gateway-data-collections';
+import { buildResearchStudyReviewTeamIdentifier } from 'sos-data-utils-ts/research-review-team-identity';
+import { REPOSITORY_SAFE_EXAMPLES } from 'sos-data-utils-ts/repository-privacy';
 import {
   buildResearchStudyPartyProjectionId,
   buildResearchStudyPartySectionId,
@@ -35,17 +40,20 @@ import { buildGroupMemberProjectionId, buildGroupMemberSectionId } from '../../m
 import { SUBJECT_COMPOSITION_CONTRIBUTION_ACTION } from '../../managers/ResearchStudyConsentManager';
 import { resetServerConfig, startServer } from '../../server';
 import { getClinicalCreatorBindingsSectionId } from '../../utils/clinical-creator-binding';
+import { getSubjectScopedSectionId } from '../../utils/individual-sections';
 import { getEnvSectionId } from '../../utils/section-env';
 import { generateTenantCollectionNameFromClaims, getTenantVaultId } from '../../utils/tenant';
 import { initializeTenantServicesConfig } from '../../utils/services';
 import { testPayloadCreateTenant1 } from '../data/end-to-end.data';
 import {
-  RESEARCH_STUDY_ACCESS_FIXTURE as fixture,
+  RESEARCH_STUDY_ACCESS_FIXTURE,
   RESEARCH_STUDY_REVIEWER_EMAIL,
   buildOrganizationSubjectRegistrationScope,
 } from '../data/research-study-access.data';
 import { configureAuthenticatedTestActor } from './helpers/authenticated-test-actor';
 import { invokeExpress } from './helpers/invokeExpress';
+
+const fixture = { ...RESEARCH_STUDY_ACCESS_FIXTURE, studyId: REPOSITORY_SAFE_EXAMPLES.resourceUuid };
 
 afterEach(() => resetServerConfig());
 
@@ -120,18 +128,9 @@ it('activates one study-scoped Consent through the real HTTP queue and worker bo
       [partyDocument as any],
       buildResearchStudyPartySectionId(fixture.studyId),
     );
-    await vaultRepository.put(vaultId, [{
-      id: `urn:uuid:${fixture.practitionerRoleId}`,
-      kind: 'professional',
-      actorIdentifier: 'urn:uuid:bdb8c91f-5597-46a9-813e-a9242f938c31',
-      authorIdentifier: `urn:uuid:${fixture.practitionerRoleId}`,
-      ownerIdentifier: fixture.tenantId,
-      role: 'ISCO-08|2250',
-      actorDids: [fixture.professionalDid],
-      dcrClientIds: [fixture.clientId],
-    } as any], getClinicalCreatorBindingsSectionId());
+    const employeeId = 'research-reviewer-employee';
     const employeeDocument = await kmsService.protectConfidentialData({
-      id: 'research-reviewer-employee', status: 'active', sequence: 0,
+      id: employeeId, status: 'active', sequence: 0,
       content: {
         status: 'active',
         claims: {
@@ -140,7 +139,83 @@ it('activates one study-scoped Consent through the real HTTP queue and worker bo
         },
       },
     } as any, vaultId);
-    await vaultRepository.put(physicalCollection, [employeeDocument as any], getEnvSectionId('employees'));
+    const occupation = {
+      id: fixture.practitionerRoleId, type: 'Occupation', employeeId,
+      meta: { claims: { [SchemaOrgPersonClaim.HasOccupation]: 'ISCO-08|2250' } },
+    };
+    await vaultRepository.put(physicalCollection, [employeeDocument as any, occupation as any], getEnvSectionId('employees'));
+    const roleBinding = {
+      id: `urn:uuid:${fixture.practitionerRoleId}`,
+      kind: 'professional',
+      actorIdentifier: 'urn:uuid:bdb8c91f-5597-46a9-813e-a9242f938c31',
+      authorIdentifier: `urn:uuid:${fixture.practitionerRoleId}`,
+      ownerIdentifier: fixture.tenantId,
+      role: 'ISCO-08|2250',
+      actorDids: [fixture.professionalDid],
+    };
+    await vaultRepository.put(vaultId, [{ ...roleBinding, dcrClientIds: [] } as any], getClinicalCreatorBindingsSectionId());
+
+    const reviewTeamId = 'research-review-team';
+    const reviewTeam = projectGroupR5FlatClaimsResource({
+      resourceType: 'Group', id: reviewTeamId, type: 'practitioner', membership: 'enumerated',
+      name: 'Study review team', identifier: [buildResearchStudyReviewTeamIdentifier(fixture.studyId)], member: [],
+    });
+    const [reviewer] = projectGroupPractitionerRoleMemberFlatClaimResources({
+      groupId: reviewTeamId, members: [{ entity: { type: 'PractitionerRole', reference: practitionerRoleReference } }],
+    });
+    const assigned = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid, '_batch', [
+      { type: 'Group-v5.0.0', request: { method: 'POST', url: 'Group' }, resource: reviewTeam },
+      { type: 'Group-v5.0.0', request: { method: 'PATCH', url: `Group/${reviewTeamId}` }, resource: reviewer },
+    ], 'unlicensed-review-team-assignment', 'Group');
+    expect(assigned.data.map((entry: { response: { status: string } }) => entry.response.status)).toEqual(['201', '200']);
+    const storedReviewer = await vaultRepository.get<any>(physicalCollection,
+      buildGroupMemberProjectionId(reviewTeamId, practitionerRoleReference), buildGroupMemberSectionId(reviewTeamId));
+    expect(storedReviewer?.jwe).toBeDefined();
+    expect(await kmsService.unprotectConfidentialData(storedReviewer, vaultId)).toEqual({ claims: reviewer.meta.claims });
+
+    const invitation = buildResearchStudyPartyInvitation({
+      researchStudyId: fixture.studyId,
+      associatedParty: {
+        role: { coding: [{ system: ResearchStudyR5PartyRoleSystem, code: 'sub-investigator' }] },
+        party: { reference: practitionerRoleReference },
+      },
+      controllerReference: `Organization/${fixture.tenantId}`,
+      communicationId: 'research-study-review-invitation',
+      consentId: 'research-study-draft-consent',
+    });
+    const delivered = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid, '_batch', [
+      { type: 'Communication-v5.0.0', request: { method: 'POST', url: 'Communication' }, resource: invitation },
+    ], 'unlicensed-review-invitation', 'Communication');
+    expect(delivered.data[0].response.status).toBe('200');
+    const invitationSection = getSubjectScopedSectionId(practitionerRoleReference, 'individual', DataCollectionIds.communications);
+    const storedInvitation = await vaultRepository.get<any>(vaultId, invitation.id, invitationSection);
+    expect(storedInvitation?.jwe).toBeDefined();
+    expect(storedInvitation.content).toBeUndefined();
+    const decryptedInvitation = await kmsService.unprotectConfidentialData<{claims: Record<string, unknown>}>(storedInvitation, vaultId);
+    const draftConsent = decodeResearchStudyInvitationDocument({ resourceType: 'Communication', id: invitation.id, meta: decryptedInvitation }).data[0];
+    expect(draftConsent.attributes).toMatchObject({
+      [ClaimConsent.status]: ConsentStatuses.Draft,
+      [ClaimConsent.sourceReference]: `ResearchStudy/${fixture.studyId}`,
+      [ClaimConsent.grantee]: practitionerRoleReference,
+    });
+
+    const sdkBatch = buildResearchStudyActiveConsentBatch([{
+      consentId: fixture.consentId,
+      researchStudyId: fixture.studyId,
+      practitionerRoleId: fixture.practitionerRoleId,
+      actorRole: 'ISCO-08|2250',
+      date: '2026-09-06',
+    }]);
+    const beforeDcr = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid,
+      '_batch', sdkBatch.data, 'before-dcr');
+    expect(beforeDcr.data[0].response.status).toBe('403');
+    expect(beforeDcr.data[0].response.outcome.issue[0].diagnostics).toMatch(/complete DCR/i);
+    await vaultRepository.put(vaultId, [{ ...roleBinding, dcrClientIds: [fixture.clientId] } as any], getClinicalCreatorBindingsSectionId());
+    const beforeLicense = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid,
+      '_batch', sdkBatch.data, 'before-license');
+    expect(beforeLicense.data[0].response.status).toBe('403');
+    expect(beforeLicense.data[0].response.outcome.issue[0].diagnostics).toMatch(/applicable licence/i);
+    expect(await vaultRepository.listContainersInSection(physicalCollection, 'research-study-consents')).toEqual([]);
     const licenseDocument = await kmsService.protectConfidentialData({
       id: 'research-reviewer-license',
       status: 'active',
@@ -154,13 +229,22 @@ it('activates one study-scoped Consent through the real HTTP queue and worker bo
     } as any, vaultId);
     await vaultRepository.put(vaultId, [licenseDocument as any], getEnvSectionId('device-licenses'));
 
-    const sdkBatch = buildResearchStudyActiveConsentBatch([{
-      consentId: fixture.consentId,
-      researchStudyId: fixture.studyId,
-      practitionerRoleId: fixture.practitionerRoleId,
-      actorRole: 'ISCO-08|2250',
-      date: '2026-09-06',
-    }]);
+    const researcher = await configureAuthenticatedTestActor({
+      actorDid: fixture.professionalDid, email: RESEARCH_STUDY_REVIEWER_EMAIL,
+    });
+    const parameters = buildFhirParametersResourceFromSearchParams({
+      recipient: practitionerRoleReference,
+      [CommunicationClaim.Category]: invitation.meta.claims[CommunicationClaim.Category],
+      [CommunicationClaim.Topic]: invitation.meta.claims[CommunicationClaim.Topic],
+    });
+    const inbox = await submitAndPoll(app, researcher.authorizationHeader, researcher.actorDid, '_search', [
+      { request: { method: 'POST', url: 'Communication/_search' }, resource: parameters },
+    ], 'researcher-inbox', 'Communication', fixture.clientId);
+    expect(inbox.total).toBe(1);
+    expect(inbox.data[0].resource.id).toBe(invitation.id);
+    expect(decodeResearchStudyInvitationDocument(inbox.data[0].resource).data).toEqual([draftConsent]);
+    expect(await vaultRepository.listContainersInSection(physicalCollection, 'research-study-consents')).toEqual([]);
+
     const sdkClaims = sdkBatch.data[0].resource.meta.claims;
     expect(Object.values(sdkClaims).every((value) => typeof value === 'string')).toBe(true);
     const canonicalClaims = Object.fromEntries(Object.entries(sdkClaims)
@@ -459,15 +543,23 @@ async function submitAndPoll(
   action: '_batch' | '_search',
   data: readonly unknown[],
   suffix: string,
+  resourceType: 'Consent' | 'Group' | 'Communication' = 'Consent',
+  clientId?: string,
 ): Promise<any> {
-  const base = `/${fixture.tenantId}/cds-${fixture.jurisdiction}/v1/${fixture.sector}/organization/org.hl7.fhir.r5/Consent`;
+  const resourcePath = resourceType === 'Communication'
+    ? `individual/org.hl7.fhir.${action === '_search' ? 'r4' : 'api'}/Communication`
+    : `organization/org.hl7.fhir.r5/${resourceType}`;
+  const base = `/${fixture.tenantId}/cds-${fixture.jurisdiction}/v1/${fixture.sector}/${resourcePath}`;
   const thid = `research-study-consent-integration-${suffix}`;
+  const body = resourceType !== 'Communication' ? { data } : action === '_search'
+    ? { resourceType: 'Bundle', type: 'search', entry: data }
+    : { resourceType: 'Bundle', type: 'batch', data };
   const submitted = await invokeExpress(app, {
     method: 'POST', url: `${base}/${action}`,
     headers: { 'content-type': 'application/json', authorization },
     body: {
-      thid, iss: issuer,
-      body: { data },
+      thid, iss: issuer, ...(clientId ? { client_id: clientId } : {}),
+      body,
     },
   });
   expect(submitted.status).toBe(202);
