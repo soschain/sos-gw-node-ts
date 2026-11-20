@@ -4,7 +4,7 @@
     "title": "Gateway API - EXTENSIONS",
     "version": "1.0.3",
     "description": "Extension profile including non-core and vertical-specific capabilities on top of core and compat.",
-    "x-profile-generated-at": "2026-11-19T23:15:20.315Z",
+    "x-profile-generated-at": "2026-11-20T13:21:21.842Z",
     "x-profile-name": "extension"
   },
   "servers": [],
@@ -7225,8 +7225,8 @@
         "tags": [
           "Data Catalog Discovery"
         ],
-        "summary": "Publish an individual tenant offering",
-        "description": "Submit a signed DIDComm message whose body is a JSON:API document\nwith exactly one offering. The individual entry takes precedence\nover an imported entry with the same ID and survives snapshot replacement.\n",
+        "summary": "Publish reviewed tenant offerings",
+        "description": "Submit a signed DIDComm message whose body is a JSON:API document\nwith one offering or a batch containing only products or only services.\nEach updated entry keeps its type and ID and survives imported snapshot replacement.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -7249,7 +7249,7 @@
         },
         "responses": {
           "202": {
-            "description": "Individual publication queued."
+            "description": "Offering publication queued."
           },
           "401": {
             "description": "Authentication required."
@@ -7312,7 +7312,7 @@
         "tags": [
           "Async Polling"
         ],
-        "summary": "Poll an individual offering publication",
+        "summary": "Poll a reviewed offering publication",
         "requestBody": {
           "required": true,
           "content": {
@@ -7325,7 +7325,7 @@
         },
         "responses": {
           "200": {
-            "description": "Terminal result. A successful receipt reports one published offering."
+            "description": "Terminal result. A successful receipt reports the published offering count."
           },
           "202": {
             "description": "Pending."
