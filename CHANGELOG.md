@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Document the catalogue exchange boundary for externally published datasets.
+
 - Pin the published catalogue identity contracts used for tenant offering
   publication and readback.
 

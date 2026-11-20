@@ -51,6 +51,19 @@ the feed as a `dcat:DataService`. Product and service entries remain in the
 linked Schema.org feed. [DCAT 3 DataService](https://www.w3.org/TR/vocab-dcat-3/#Class:Data_Service)
 The HealthDCAT endpoints continue to describe datasets and data services.
 
+### External catalogue data
+
+The publisher's BFF owns publication to the external catalogue. Use the
+[catalogue conversion guide](https://github.com/antifraudservices/antifraud-data-utils-ts#ocean-catalogue-exchange)
+to project a resolved Ocean DDO into public `Dataset` and `DataService`
+entries and prepare the JSON:API body of a DIDComm message.
+
+The commercial `Catalog/_publish` and `Catalog/_upsert` operations above
+accept commercial offerings. For a research dataset, use the HealthDCAT
+lifecycle and its catalogue record. A generic external `Dataset` or
+`DataService` notification requires an explicit receiver mapping. The DSP
+`catalog/request` operation reads the public catalogue.
+
 SOSCHAIN is part of an integrated ecosystem that shares HL7 FHIR
 interoperability components, SDKs, terminology contracts, identity and trust
 services, and emergency-response capabilities. This repository contains the
