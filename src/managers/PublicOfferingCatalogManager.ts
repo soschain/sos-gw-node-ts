@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { readPublicOfferingCatalog, readPublicOfferingSubmission } from 'antifraud-data-utils-ts/public-offering-catalog';
+import { publicOfferingResourceKey, readPublicOfferingCatalog, readPublicOfferingSubmission } from 'antifraud-data-utils-ts/public-offering-catalog';
 import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { IssueType } from 'fhir-data-utils-ts/operation-outcome';
 import type { IDecodedDidcommPayload, JobRequest } from 'sos-data-utils-ts/confidential-job';
@@ -32,15 +32,16 @@ type Dependencies = Readonly<{
 
 const section = 'public-offering-catalog';
 const snapshotId = 'current';
-const individualSection = 'public-offering-entries';
+const legacyIndividualSection = 'public-offering-entries';
+const individualSection = 'public-offering-listings';
 
 /** The imported snapshot and each individual edit have independent protected write targets. */
 export class PublicOfferingCatalogManager implements IJobProcessor {
   constructor(private readonly deps: Dependencies) {}
 
   async process(job: JobRequest): Promise<IDecodedDidcommPayload> {
-    const individual = job.action === '_upsert';
-    if (job.section !== 'organization' || job.format !== 'org.schema' || job.resourceType !== 'Catalog' || (!individual && job.action !== '_publish')) {
+    const upsert = job.action === '_upsert';
+    if (job.section !== 'organization' || job.format !== 'org.schema' || job.resourceType !== 'Catalog' || (!upsert && job.action !== '_publish')) {
       throw new ManagerError('Use the organization Schema.org catalogue publication route.', IssueType.NotSupported);
     }
     if (!job.content?.thid || !job.tenantId || job.tenantId === 'host' || !job.sector || !job.jurisdiction) {
@@ -77,14 +78,24 @@ export class PublicOfferingCatalogManager implements IJobProcessor {
     } catch {
       throw new ManagerError('Invalid catalogue submission for this publisher.', IssueType.Invalid);
     }
-    if (individual && offerings.length !== 1) throw new ManagerError('An individual publication requires exactly one offering.', IssueType.Invalid);
-    const doc: ConfidentialStorageDoc = {
-      id: individual ? createHash('sha256').update(offerings[0]!.id).digest('hex') : snapshotId,
-      status: 'active', sequence: 1,
-      content: { offerings }, audit: { updated: new Date().toISOString() } as ConfidentialStorageDoc['audit'],
-    };
-    const protectedDoc = await this.deps.protection.protectConfidentialData(doc, vaultId);
-    if (!await this.deps.repository.put(collection, [protectedDoc], individual ? individualSection : section)) {
+    if (upsert && offerings.length > 1) {
+      const type = offerings[0]!.type;
+      if (type === 'SoftwareApplication' || offerings.some(offering => offering.type !== type)) {
+        throw new ManagerError('A reviewed batch must contain one offering type, Product or Service.', IssueType.Invalid);
+      }
+    }
+    const batches = upsert
+      ? offerings.map(offering => ({ id: createHash('sha256').update(publicOfferingResourceKey(offering)).digest('hex'), offerings: [offering] }))
+      : [{ id: snapshotId, offerings }];
+    const updated = new Date().toISOString();
+    const protectedDocs: ConfidentialStorageDoc[] = [];
+    for (const batch of batches) {
+      protectedDocs.push(await this.deps.protection.protectConfidentialData({
+        id: batch.id, status: 'active', sequence: 1, content: { offerings: batch.offerings },
+        audit: { updated } as ConfidentialStorageDoc['audit'],
+      }, vaultId));
+    }
+    if (!await this.deps.repository.put(collection, protectedDocs, upsert ? individualSection : section)) {
       throw new ManagerError('The catalogue could not be persisted.', IssueType.NoStore);
     }
     return { jti: randomUUID(), thid: job.content.thid, type: 'org.schema.catalog-publication',
@@ -95,11 +106,13 @@ export class PublicOfferingCatalogManager implements IJobProcessor {
   async hasPublications(vaultId: string): Promise<boolean> {
     const collection = await this.deps.tenantManager.getCollectionName(vaultId);
     if (!collection) return false;
-    const [snapshots, individualEntries] = await Promise.all([
+    const [snapshots, legacyEntries, individualEntries] = await Promise.all([
       this.deps.repository.listContainersInSection<ConfidentialStorageDoc>(collection, section),
+      this.deps.repository.listContainersInSection<ConfidentialStorageDoc>(collection, legacyIndividualSection),
       this.deps.repository.listContainersInSection<ConfidentialStorageDoc>(collection, individualSection),
     ]);
     return snapshots.some(doc => doc.id === snapshotId && doc.status === 'active')
+      || legacyEntries.some(doc => doc.status === 'active')
       || individualEntries.some(doc => doc.status === 'active');
   }
 
@@ -107,14 +120,15 @@ export class PublicOfferingCatalogManager implements IJobProcessor {
   async read(vaultId: string) {
     const collection = await this.deps.tenantManager.getCollectionName(vaultId);
     if (!collection) return [];
-    const [snapshot, records] = await Promise.all([
+    const [snapshot, legacyRecords, records] = await Promise.all([
       this.deps.repository.get<ConfidentialStorageDoc>(collection, snapshotId, section),
+      this.deps.repository.getContainersInSection<ConfidentialStorageDoc>(collection, legacyIndividualSection),
       this.deps.repository.getContainersInSection<ConfidentialStorageDoc>(collection, individualSection),
     ]);
-    const published = await Promise.all([snapshot, ...records].flatMap(doc => doc?.status === 'active' ? [doc] : []).map(async doc => {
+    const published = await Promise.all([snapshot, ...legacyRecords, ...records].flatMap(doc => doc?.status === 'active' ? [doc] : []).map(async doc => {
       const { offerings } = await this.deps.protection.unprotectConfidentialData<{ offerings: unknown }>(doc, vaultId);
       return readPublicOfferingCatalog(offerings);
     }));
-    return [...new Map(published.flat().map(offering => [offering.id, offering])).values()];
+    return [...new Map(published.flat().map(offering => [publicOfferingResourceKey(offering), offering])).values()];
   }
 }

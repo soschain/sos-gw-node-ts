@@ -2800,11 +2800,11 @@ export function createApiRouter(
    *     - $ref: '#/components/parameters/Sector'
    *   post:
    *     tags: [Data Catalog Discovery]
-   *     summary: Publish an individual tenant offering
+   *     summary: Publish reviewed tenant offerings
    *     description: |
    *       Submit a signed DIDComm message whose body is a JSON:API document
-   *       with exactly one offering. The individual entry takes precedence
-   *       over an imported entry with the same ID and survives snapshot replacement.
+   *       with one offering or a batch containing only products or only services.
+   *       Each updated entry keeps its type and ID and survives imported snapshot replacement.
    *     requestBody:
    *       required: true
    *       content:
@@ -2815,7 +2815,7 @@ export function createApiRouter(
    *           examples:
    *             offering: { $ref: '#/components/examples/OfferingCatalogUpsert' }
    *     responses:
-   *       '202': { description: Individual publication queued. }
+   *       '202': { description: Offering publication queued. }
    *       '401': { description: Authentication required. }
    *
    * /{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_publish-response:
@@ -2838,10 +2838,10 @@ export function createApiRouter(
    *     - $ref: '#/components/parameters/Sector'
    *   post:
    *     tags: [Async Polling]
-   *     summary: Poll an individual offering publication
+   *     summary: Poll a reviewed offering publication
    *     requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AsyncPollRequest' } } } }
    *     responses:
-   *       '200': { description: Terminal result. A successful receipt reports one published offering. }
+   *       '200': { description: Terminal result. A successful receipt reports the published offering count. }
    *       '202': { description: Pending. }
    *
    * /{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.hl7.fhir.r5/ResearchStudy/_batch:
