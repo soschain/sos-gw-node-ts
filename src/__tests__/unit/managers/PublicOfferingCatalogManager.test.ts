@@ -1,5 +1,7 @@
-// Flow contract: a controller's JSON:API snapshot is visible only after the entire tenant catalogue is validated and written.
+// Flow contract: a controller's JSON:API snapshot and homogeneous update batches are validated before a single vault write changes the public feed.
 import { describe, expect, it, jest } from '@jest/globals';
+import { createHash } from 'node:crypto';
+import { readPublicOfferingSubmission } from 'antifraud-data-utils-ts/public-offering-catalog';
 import { SchemaOrgOrganizationClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import type { JobRequest } from 'sos-data-utils-ts/confidential-job';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
@@ -26,7 +28,7 @@ function job(data: unknown[], tenantId = 'clinic', actor = controller, jurisdict
 }
 
 describe('PublicOfferingCatalogManager', () => {
-  it.each([DataspaceSectors.AnimalCare, GatewaySector.ANTIFRAUD])('advertises the Schema.org publication route for %s, and keeps DCAT operations separate', sector => {
+  it.each([DataspaceSectors.AnimalCare, DataspaceSectors.HealthTech, GatewaySector.ANTIFRAUD])('advertises the Schema.org publication route for %s, and keeps DCAT operations separate', sector => {
     const services = initializeTenantServicesConfig(String(sector) as GatewaySector);
     const request = { sector, section: 'organization', resourceType: 'Catalog', action: '_publish' };
     expect(isRequestValid(services, { ...request, format: 'org.schema' })).toBe(true);
@@ -77,12 +79,38 @@ describe('PublicOfferingCatalogManager', () => {
     expect(protectConfidentialData).toHaveBeenCalledTimes(3);
     expect(await manager.read('animal-care_clinic')).toEqual([expect.objectContaining({id: 'updated'})]);
 
-    await expect(manager.process({ ...job([offering, replacement]), action: '_upsert' })).rejects.toThrow(/exactly one/i);
-    await Promise.all([manager.process({ ...job([offering]), action: '_upsert' }), manager.process({
-      ...job([{ ...replacement, attributes: { ...replacement.attributes, name: 'Edited manually' } }]), action: '_upsert',
-    })]);
+    const service = {id:'support', type:'Service', attributes:{category:'animal-support', name:'Device support', description:'Device support', offers:offering.attributes.offers}};
+    const edited = { ...replacement, attributes: { ...replacement.attributes, name: 'Edited in the review batch' } };
+    const update: JobRequest = { ...job([offering, edited]), action: '_upsert' };
+    await expect(manager.process({ ...job([offering, service]), action: '_upsert' })).rejects.toThrow(/one offering type/i);
+    const writeCount = put.mock.calls.length;
+    protectConfidentialData.mockRejectedValueOnce(new Error('Protection failed'));
+    await expect(manager.process(update)).rejects.toThrow(/protection failed/i);
+    expect(put).toHaveBeenCalledTimes(writeCount);
+    expect(await manager.read('animal-care_clinic')).toEqual([expect.objectContaining({id:'updated', name:'Updated tracker'})]);
+
+    expect((await manager.process(update)).body).toMatchObject({total:2});
+    expect(put).toHaveBeenCalledTimes(writeCount+1);
+    expect(put.mock.lastCall?.[1]).toHaveLength(2);
     expect(await manager.read('animal-care_clinic')).toEqual([
-      expect.objectContaining({ id: 'updated', name: 'Edited manually' }), expect.objectContaining({ id: 'tracker' }),
+      expect.objectContaining({ id: 'updated', name: 'Edited in the review batch' }), expect.objectContaining({ id: 'tracker' }),
     ]);
+
+    const legacy = readPublicOfferingSubmission({data:[offering,{ ...offering, id:'legacy-only' }]},
+      {publisher:{id:'did:web:animal-care_clinic.example', name:'Admitted organisation'},sector:'animal-care',demo:false});
+    await repository.put('physical-animal-care_clinic', legacy.map(item => ({
+      id: createHash('sha256').update(item.id).digest('hex'), status:'active', sequence:1, content:{offerings:[item]},
+    } as ConfidentialStorageDoc)), 'public-offering-entries');
+    const overlappingService={...service,id:offering.id};
+    const revisedTracker={...offering,attributes:{...offering.attributes,name:'Tracker revision'}};
+    await manager.process({...job([overlappingService]),action:'_upsert'});
+    await manager.process({...job([revisedTracker]),action:'_upsert'});
+    const feed=await manager.read('animal-care_clinic');
+    expect(feed.filter(item=>item.id===offering.id)).toEqual(expect.arrayContaining([
+      expect.objectContaining({type:'Product',name:'Tracker revision'}),
+      expect.objectContaining({type:'Service',name:'Device support'}),
+    ]));
+    expect(feed).toContainEqual(expect.objectContaining({id:'legacy-only',type:'Product'}));
+    expect(feed).toHaveLength(4);
   });
 });
