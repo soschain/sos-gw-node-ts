@@ -406,7 +406,7 @@ async function startServer(options?: StartServerOptions) {
 
   const discoveryRouter = createDiscoveryRouter(
     tenantManager, discoveryService, kmsService, logger, vaultRepository, cryptographyService,
-    publicOfferingCatalogManager, config.apiBaseUrl,
+    publicOfferingCatalogManager, config.apiBaseUrl, config.host,
   );
 
   const authorityArtifacts: Record<string, ReturnType<typeof loadAuthorityArtifacts>> = {};

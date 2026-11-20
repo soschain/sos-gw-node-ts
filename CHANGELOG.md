@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Publish the host operator’s signed hosting service offering and link it
+  from its DCAT catalog when the operator’s legal credential and terms are configured.
+
 - Exercise the current ResearchStudy review-team and explicit Consent contract
   in the HTTP integration suite, including rejection of draft authorization.
 

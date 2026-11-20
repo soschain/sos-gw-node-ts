@@ -4,7 +4,7 @@
     "title": "Gateway API - EXTENSIONS",
     "version": "1.0.3",
     "description": "Extension profile including non-core and vertical-specific capabilities on top of core and compat.",
-    "x-profile-generated-at": "2026-11-20T13:21:21.842Z",
+    "x-profile-generated-at": "2026-11-20T16:43:48.782Z",
     "x-profile-name": "extension"
   },
   "servers": [],
@@ -3682,6 +3682,37 @@
           },
           "404": {
             "description": "Employee DID is not registered for this tenant"
+          }
+        },
+        "x-profile": "core"
+      }
+    },
+    "/host/cds-{hostCoverageScope}/{version}/{hostNetwork}/.well-known/service-offering-hosting.json": {
+      "get": {
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Read the signed hosting service offering of the host operator",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/HostCoverageScope"
+          },
+          {
+            "$ref": "#/components/parameters/Version"
+          },
+          {
+            "$ref": "#/components/parameters/HostRegistrySector"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed Gaia-X hosting service offering"
+          },
+          "404": {
+            "description": "Hosting offering is not configured"
+          },
+          "503": {
+            "description": "Host publication is unavailable"
           }
         },
         "x-profile": "core"

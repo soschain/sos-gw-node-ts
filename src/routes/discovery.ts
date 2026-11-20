@@ -44,6 +44,7 @@ import { readClaimsOnlyContent, type FlatClaims } from '../utils/fhir-flat-claim
 const STATUS_LIST_BITS = 16384;
 const STATUS_LIST_PURPOSE = 'revocation' as const;
 const STATUS_LIST_INDEX = 0;
+const HOSTING_OFFERING_FILENAME = 'service-offering-hosting.json';
 
 /**
  * Restores the canonical casing of a VAT-based tenant route identifier.
@@ -78,6 +79,7 @@ export function createDiscoveryRouter(
   cryptography: Pick<ICryptography, 'jwsToCompact'>,
   offeringCatalog?: Pick<PublicOfferingCatalogManager, 'read' | 'hasPublications'>,
   gatewayPublicUrl?: string,
+  hostTerms?: Readonly<{ termsUrl?: string; termsSha256?: string }>,
 ): express.Router {
   const router = express.Router();
   const tenantStatusService = new TenantStatusService(tenantsCacheManager, vaultRepository, kmsService);
@@ -374,8 +376,9 @@ export function createDiscoveryRouter(
     return readPublishedHealthDcat(vaultRepository, kmsService, collection, vaultId, catalogUrl, dataset.publisherDid);
   };
 
-  const buildHostCatalog = (catalogUrl: string, publicOrigin: string, providers: ProviderDataset[]) => ({
-    ...buildCatalog(catalogUrl, publicOrigin, providers),
+  const buildHostCatalog = (catalogUrl: string, publicOrigin: string, providers: ProviderDataset[],
+    hostingService?: ReturnType<typeof toServiceOfferingNode>) => ({
+    ...buildCatalog(catalogUrl, publicOrigin, providers, hostingService ? [hostingService] : []),
     'dcat:catalog': providers.flatMap(provider => {
       if (!provider.alternateName || !provider.routeJurisdiction || !provider.sector) return [];
       return [{ '@id': buildAbsoluteUrl(publicOrigin, buildGatewayDataspaceCatalogArtifactPath({
@@ -558,6 +561,55 @@ export function createDiscoveryRouter(
       termsAndConditionsHash: dataset.termsOfServiceHash,
       validFrom: new Date().toISOString(),
     });
+  };
+
+  /** Projects the host's own service from its configured legal identity and terms. */
+  const readHostHostingOffering = async (req: express.Request, hostDid: string) => {
+    const host = await tenantsCacheManager.getTenant('host');
+    // Runtime configuration supplies both values together so a document
+    // change cannot accidentally reuse the hash of the previous version.
+    const { termsUrl, termsSha256: termsHash } = hostTerms?.termsSha256 ? hostTerms : {
+      termsUrl: getTenantServiceClaim(host, SchemaOrgServiceClaim.TermsOfService),
+      termsSha256: getTenantServiceClaim(host, `${SchemaOrgServiceClaim.TermsOfService}#hash`),
+    };
+    if (!host?.governanceVc || !termsUrl || !termsHash || !/^[a-f0-9]{64}$/iu.test(termsHash)) {
+      return undefined;
+    }
+
+    const { hostCoverageScope, version, hostNetwork } = req.params;
+    const scope = { participantId: 'host' as const, jurisdiction: hostCoverageScope, version, hostNetwork };
+    const origin = configuredPublicUrl?.protocol === 'https:'
+      ? configuredPublicUrl.origin
+      : hostDid.startsWith('did:web:') ? getBaseUrlFromDidWeb(hostDid) : undefined;
+    if (!origin) return undefined;
+    const baseUrl = buildAbsoluteUrl(origin, buildGatewayDataspaceBasePath(scope).replace(/\/dsp$/, ''));
+    const id = `${baseUrl}/.well-known/${HOSTING_OFFERING_FILENAME}`;
+    const configuredTitle = host.claims?.[SchemaOrgOrganizationClaim.LegalName]
+      || host.claims?.[SchemaOrgOrganizationClaim.Name] || hostDid;
+    const title = `${configuredTitle} Hosting Service`;
+    const endpointUrl = getTenantServiceClaim(host, SchemaOrgServiceClaim.Url)
+      || buildAbsoluteUrl(origin, buildGatewayDataspaceVersionPath(scope));
+    const service = {
+      '@id': id,
+      '@type': 'dcat:DataService',
+      'dcterms:title': title,
+      'dcterms:publisher': { '@id': hostDid },
+      'dcat:endpointURL': endpointUrl,
+      'dcat:theme': undefined,
+      'dcterms:spatial': hostCoverageScope,
+      'dcat:keyword': undefined,
+    };
+    const credential = buildGaiaXServiceOfferingCredentialDraft({
+      claims: { [SchemaOrgServiceClaim.Name]: title, [SchemaOrgServiceClaim.Url]: endpointUrl },
+      credentialId: id,
+      subjectId: `${id}#service`,
+      issuerId: hostDid,
+      providedByCredentialId: `${baseUrl}/.well-known/legal-participant.vc.json`,
+      termsAndConditionsUrl: termsUrl,
+      termsAndConditionsHash: termsHash,
+      validFrom: new Date().toISOString(),
+    });
+    return { service, credential };
   };
 
   /** Signs a Gaia-X VC draft as the VC-JWT enveloped credential required by ICAM 25.11. */
@@ -1129,6 +1181,32 @@ export function createDiscoveryRouter(
     res.json(await signGaiaXEnvelopedCredential(vc, res.locals.vaultId));
   });
 
+  /**
+   * @openapi
+   * /host/cds-{hostCoverageScope}/{version}/{hostNetwork}/.well-known/service-offering-hosting.json:
+   *   get:
+   *     tags: [Discovery]
+   *     summary: Read the signed hosting service offering of the host operator
+   *     parameters:
+   *       - $ref: '#/components/parameters/HostCoverageScope'
+   *       - $ref: '#/components/parameters/Version'
+   *       - $ref: '#/components/parameters/HostRegistrySector'
+   *     responses:
+   *       '200': { description: Signed Gaia-X hosting service offering }
+   *       '404': { description: Hosting offering is not configured }
+   *       '503': { description: Host publication is unavailable }
+   */
+  router.get(`${hostScopedWellKnownPrefix}/${HOSTING_OFFERING_FILENAME}`, async (req, res) => {
+    if (!(await isDiscoveryPublicationOperational('host'))) {
+      return res.status(503).type('text').send('Service Unavailable');
+    }
+    const hostDid = await tenantsCacheManager.getDidDocument('host');
+    if (!hostDid?.id) return res.status(503).type('text').send('Service Unavailable');
+    const offering = await readHostHostingOffering(req, hostDid.id);
+    if (!offering) return res.status(404).type('text').send('Not Found');
+    return res.json(await signGaiaXEnvelopedCredential(offering.credential, 'host'));
+  });
+
   router.get(`${tenantWellKnownPrefix}/service-offering-index.json`, resolveTenant, async (req, res) => {
     const tenantConfig = await tenantsCacheManager.getTenant(res.locals.vaultId);
     const dataset = tenantConfig ? toProviderDataset(tenantConfig) : null;
@@ -1344,7 +1422,8 @@ export function createDiscoveryRouter(
       version: req.params.version,
       hostNetwork: req.params.hostNetwork,
     }));
-    res.json(buildHostCatalog(catalogBaseUrl, publicOrigin, filtered));
+    const hosting = await readHostHostingOffering(req, hostDid.id);
+    res.json(buildHostCatalog(catalogBaseUrl, publicOrigin, filtered, hosting?.service));
   });
 
   router.get(buildGatewayDataspaceVersionPath({
@@ -1528,7 +1607,8 @@ export function createDiscoveryRouter(
       version: req.params.version,
       hostNetwork: req.params.hostNetwork,
     }));
-    res.json(buildHostCatalog(catalogBaseUrl, publicOrigin, datasets));
+    const hosting = await readHostHostingOffering(req, hostDid.id);
+    res.json(buildHostCatalog(catalogBaseUrl, publicOrigin, datasets, hosting?.service));
   });
 
   router.get(buildGatewayDataspaceCatalogDatasetPath({

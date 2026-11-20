@@ -29,6 +29,9 @@ building on the [original SOSCHAIN project documentation](https://github.com/sos
 
 ### Commercial catalogue publication
 
+See [Publish and verify your tenant catalogue](docs/CATALOGUE_PUBLICATION.md)
+for the portal SDK calls and public readback checks.
+
 An admitted organization controller can submit a signed DIDComm request to
 `/{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_publish`.
 Its `body` is a JSON:API document containing the complete replacement catalogue

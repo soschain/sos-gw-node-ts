@@ -2,6 +2,12 @@
 // The local host publishes one canonical did:web document whose percent-encoded port exactly matches every trusted BFF recipient DID.
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
+import { createHash } from 'node:crypto';
+import { Content, CryptographyService } from 'antifraud-data-utils-ts/cryptography';
+import { SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
+import { EXAMPLE_SIGNED_TERMS_PDF_URL } from 'sos-data-utils-ts/gateway-flow-examples';
+import { AdapterCryptoSdkNode } from '../../gdc-backend-utils-node/adapters/node/crypto';
+import { ORGANIZATION_REGISTRATION_REQUEST } from '../data/example-payloads';
 import { invokeExpress } from './helpers/invokeExpress';
 import { startServer, resetServerConfig } from '../../server';
 
@@ -10,6 +16,12 @@ const HOST_WELL_KNOWN_PREFIX = '/host/cds-EU/v1/test/.well-known';
 
 describe('Host well-known endpoints (demo, mem)', () => {
   it('should expose host VC artifacts and legacy key when running in demo mode', async () => {
+    const previousHostTermsUrl = process.env.HOST_TERMS_URL;
+    const previousHostTermsHash = process.env.HOST_TERMS_SHA256;
+    const termsDataUrl = ORGANIZATION_REGISTRATION_REQUEST.body.data[0]!.resource.meta.claims[SchemaOrgServiceClaim.TermsOfService];
+    const termsHash = createHash('sha256').update(Buffer.from(termsDataUrl.split(',')[1]!, 'base64')).digest('hex');
+    process.env.HOST_TERMS_URL = EXAMPLE_SIGNED_TERMS_PDF_URL;
+    process.env.HOST_TERMS_SHA256 = termsHash;
     const previousHostPublicUrl = process.env.HOST_PUBLIC_URL;
     const previousHostDeployUrl = process.env.HOST_DEPLOY_URL;
     process.env.NODE_ENV = 'demo';
@@ -68,6 +80,23 @@ describe('Host well-known endpoints (demo, mem)', () => {
       const jwksJson = JSON.parse(jwks.text);
       expect(jwksJson.keys.find((key: any) => key.alg === 'ES384')).toBeDefined();
 
+      const hostingOfferPath = `${HOST_WELL_KNOWN_PREFIX}/service-offering-hosting.json`;
+      const hostingOffer = await invokeExpress(app, { method: 'GET', url: hostingOfferPath });
+      expect(hostingOffer.status).toBe(200);
+      const hostingOfferJson = JSON.parse(hostingOffer.text);
+      const compact = hostingOfferJson.proof.id.split(',')[1];
+      const header = Content.base64UrlSafeToJSON(compact.split('.')[0]);
+      const verificationKey = jwksJson.keys.find((key: { kid: string }) => key.kid === header.kid);
+      const cryptography = new CryptographyService(new AdapterCryptoSdkNode());
+      expect(await cryptography.verifyJws(compact, verificationKey)).toBe(true);
+      expect(Content.base64UrlSafeToJSON(compact.split('.')[1])).toMatchObject({
+        issuer: HOST_DID,
+        credentialSubject: {
+          type: 'gx:ServiceOffering',
+          'gx:serviceOfferingTermsAndConditions': [{ 'gx:url': EXAMPLE_SIGNED_TERMS_PDF_URL, 'gx:hash': termsHash }],
+        },
+      });
+
       const openidIssuer = await invokeExpress(app, { method: 'GET', url: `${HOST_WELL_KNOWN_PREFIX}/openid-credential-issuer` });
       expect(openidIssuer.status).toBe(200);
       const openidIssuerJson = JSON.parse(openidIssuer.text);
@@ -84,6 +113,10 @@ describe('Host well-known endpoints (demo, mem)', () => {
       expect(issuedVcJson.issuer).toBe(HOST_DID);
     } finally {
       queueAdapter.stop();
+      if (previousHostTermsUrl === undefined) delete process.env.HOST_TERMS_URL;
+      else process.env.HOST_TERMS_URL = previousHostTermsUrl;
+      if (previousHostTermsHash === undefined) delete process.env.HOST_TERMS_SHA256;
+      else process.env.HOST_TERMS_SHA256 = previousHostTermsHash;
       if (previousHostPublicUrl === undefined) delete process.env.HOST_PUBLIC_URL;
       else process.env.HOST_PUBLIC_URL = previousHostPublicUrl;
       if (previousHostDeployUrl === undefined) delete process.env.HOST_DEPLOY_URL;

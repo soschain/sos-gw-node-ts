@@ -4,12 +4,6 @@ import { SchemaOrgOrganizationClaim, SchemaOrgPersonClaim, SchemaOrgServiceClaim
 import { ServiceCapability } from 'sos-data-utils-ts/service-capabilities';
 import { ClaimsRecord } from 'sos-data-utils-ts/confidential-storage';
 
-function getHostEnv(key: string): string | undefined {
-  const newKey = `HOST_${key}`;
-  const legacyKey = `ORG_HOST_${key}`;
-  return process.env[newKey] ?? process.env[legacyKey];
-}
-
 export async function bootstrapHost(hostingManager: HostingManager, bootConfig: IServerConfig): Promise<void> {
   const hostClaims: ClaimsRecord = {
     [SchemaOrgOrganizationClaim.IdentifierType]: bootConfig.host.idType,
@@ -24,7 +18,7 @@ export async function bootstrapHost(hostingManager: HostingManager, bootConfig: 
     [SchemaOrgServiceClaim.IdentifierReference]: `urn:uuid:${bootConfig.host.idValue}-service`,
     [SchemaOrgServiceClaim.ServiceType]: ServiceCapability.OrganizationRegistryProvider,
   };
-  const termsUrl = getHostEnv('TERMS_URL');
+  const termsUrl = bootConfig.host.termsUrl;
   if (termsUrl) {
     hostClaims[SchemaOrgServiceClaim.TermsOfService] = termsUrl;
   }

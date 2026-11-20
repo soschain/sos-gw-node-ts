@@ -36,7 +36,7 @@ import {
   EXAMPLE_SECONDARY_TENANT_SERVICE_DID,
   EXAMPLE_SIGNED_TERMS_PDF_URL,
 } from 'sos-data-utils-ts/gateway-flow-examples';
-import { buildGatewayDataspaceCatalogArtifactPath, buildGatewayDataspaceVersionPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
+import { buildGatewayDataspaceBasePath, buildGatewayDataspaceCatalogArtifactPath, buildGatewayDataspaceVersionPath } from 'sos-data-utils-ts/gateway-dataspace-routing';
 import { NativeFhirFormats } from '../../constants/fhir-discovery';
 import { SUBJECT_SECTION_DIGITAL_TWIN } from '../../constants/domain';
 import { ResourceTypesFhirR4 } from 'fhir-data-utils-ts';
@@ -505,6 +505,65 @@ describe('Well-Known Tenant Artifacts API', () => {
     expect(response.status).toBe(200);
     expect(JSON.parse(response.text)).toEqual(expectedSelfDesc);
     expect(mockTenantsCacheManager.getTenant).toHaveBeenCalledWith(testTenant1VaultId);
+  });
+
+  it('publishes a host-signed hosting offer in the host catalogue without tenant capabilities', async () => {
+    const scope = {
+      participantId: 'host',
+      jurisdiction: EXAMPLE_COVERAGE_SCOPE_EU,
+      version: 'v1',
+      hostNetwork: HostNetworkTypes.Test,
+    } as const;
+    const base = buildGatewayDataspaceBasePath(scope).replace(/\/dsp$/, '');
+    // Check the exact public artifact filenames a catalogue reader can follow.
+    const offerPath = `${base}/.well-known/service-offering-hosting.json`;
+    const providerPath = `${base}/.well-known/legal-participant.vc.json`;
+    const origin = EXAMPLE_GATEWAY_PUBLIC_ORIGIN;
+    const headers = { host: EXAMPLE_HOST_PUBLIC_HOSTNAME };
+    const hostDid = { id: EXAMPLE_HOSTING_OPERATOR_DID };
+    const hostClaims = {
+      [SchemaOrgServiceClaim.TermsOfService]: EXAMPLE_SIGNED_TERMS_PDF_URL,
+      [`${SchemaOrgServiceClaim.TermsOfService}#hash`]: EXAMPLE_SIGNED_TERMS_PDF_HASH,
+    };
+    mockTenantsCacheManager.getDidDocument.mockResolvedValue(hostDid as any);
+    mockTenantsCacheManager.listAutodiscoverableTenants.mockResolvedValue([]);
+    mockTenantsCacheManager.getTenant.mockResolvedValue({
+      didDocument: hostDid,
+      claims: hostClaims,
+      governanceVc: { type: ['VerifiableCredential', 'LegalPerson'] },
+    } as any);
+    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'host-vc-sign', use: 'sig', purpose: 'vc_sign' }] } as any);
+    mockKmsService.createCompactJws.mockResolvedValue('header.payload.signature');
+
+    const offer = await invokeExpress(app, { method: 'GET', url: offerPath, headers });
+    expect(offer.status).toBe(200);
+    expect(JSON.parse(offer.text)).toMatchObject({
+      issuer: hostDid.id,
+      credentialSubject: {
+        type: 'gx:ServiceOffering',
+        'gx:providedBy': { id: origin + providerPath },
+      },
+    });
+    expect(mockKmsService.createCompactJws).toHaveBeenCalledWith(
+      expect.objectContaining({ issuer: hostDid.id }), 'host-vc-sign', 'host', 'vc_sign', expect.any(Object),
+    );
+
+    const cataloguePath = buildGatewayDataspaceCatalogArtifactPath(scope);
+    const catalogue = await invokeExpress(app, { method: 'GET', url: cataloguePath, headers });
+    expect(catalogue.status).toBe(200);
+    expect(JSON.parse(catalogue.text)['dcat:service']).toEqual([
+      expect.objectContaining({ '@id': origin + offerPath, 'dcterms:publisher': { '@id': hostDid.id } }),
+    ]);
+
+    mockTenantsCacheManager.getTenant.mockResolvedValue({
+      didDocument: hostDid,
+      claims: { [SchemaOrgServiceClaim.TermsOfService]: EXAMPLE_SIGNED_TERMS_PDF_URL },
+      governanceVc: { type: ['VerifiableCredential', 'LegalPerson'] },
+    } as any);
+    const unavailable = await invokeExpress(app, { method: 'GET', url: offerPath, headers });
+    expect(unavailable.status).toBe(404);
+    const catalogueWithoutOffer = await invokeExpress(app, { method: 'GET', url: cataloguePath, headers });
+    expect(JSON.parse(catalogueWithoutOffer.text)['dcat:service']).toEqual([]);
   });
 
   it('should return the index service offering artifact for a hosted tenant when indexing is enabled', async () => {
