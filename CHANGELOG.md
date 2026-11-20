@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Exercise the current ResearchStudy review-team and explicit Consent contract
+  in the HTTP integration suite, including rejection of draft authorization.
+
 - Use the configured public HTTPS origin in discovery catalogues and Gaia-X
   offer URLs when the ingress forwards requests over HTTP.
 
