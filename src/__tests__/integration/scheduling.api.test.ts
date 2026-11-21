@@ -151,6 +151,22 @@ it('publishes a territorial CRM catalogue and individual offerings through the a
       outcome: { issue: [expect.objectContaining({ code: IssueType.Invalid, diagnostics: expect.stringMatching(/one offering type/i) })] },
     });
     expect(JSON.parse((await publicRead()).text)).toEqual(beforeMixed);
+    const reference = { data: { type: editedProduct.type, id: editedProduct.id } };
+    const history = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid,
+      'Catalog', '_history', 'read-reviewed-offering-history', reference, 'org.schema');
+    expect(history.versions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ versionId: expect.any(String), offering: expect.objectContaining({ id: editedProduct.id, name: manualProduct.attributes.name }) }),
+      expect.objectContaining({ versionId: expect.any(String), offering: expect.objectContaining({ id: editedProduct.id, name: editedProduct.attributes.name }) }),
+    ]));
+    expect(new Set(history.versions.map((version: { versionId: string }) => version.versionId)).size).toBeGreaterThan(1);
+    expect(await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid,
+      'Catalog', '_unpublish', 'withdraw-reviewed-offering', reference, 'org.schema')).toEqual({ total: 1 });
+    expect(JSON.parse((await publicRead()).text)).toEqual(beforeMixed.filter((item: { id: string; type: string }) =>
+      item.id !== editedProduct.id || item.type !== editedProduct.type));
+    const withdrawn = await submitAndPoll(app, authenticatedActor.authorizationHeader, authenticatedActor.actorDid,
+      'Catalog', '_history', 'read-withdrawn-offering-history', reference, 'org.schema');
+    const latestPublished = history.versions.find((version: { offering: { name: string } }) => version.offering.name === editedProduct.attributes.name);
+    expect(withdrawn.versions).toContainEqual(expect.objectContaining({ status: 'withdrawn', versionId: latestPublished.versionId }));
     const mismatched = await invokeExpress(app, { method: 'GET', url: buildGatewayDataspaceOfferingCatalogPath({ ...scope, jurisdiction: safe.secondaryCountryIso2 }) });
     expect(mismatched.status).toBe(404);
   } finally { queueAdapter.stop(); }
@@ -498,7 +514,7 @@ async function provisionTenant({ authenticatedActor, tenantManager, vaultReposit
   await vaultRepository.put(hostCollection, [secureTenant as any], getEnvSectionId('tenants')); await tenantManager.getTenant(tenantVaultId);
 }
 
-async function submitAndPoll(app: any, authorization: string, issuer: string, resourceType: string, action: '_batch' | '_search' | '_publish' | '_upsert', thid: string, body: Record<string, unknown>, format = 'org.hl7.fhir.api', terminalStatus = 200) {
+async function submitAndPoll(app: any, authorization: string, issuer: string, resourceType: string, action: '_batch' | '_search' | '_publish' | '_upsert' | '_unpublish' | '_history', thid: string, body: Record<string, unknown>, format = 'org.hl7.fhir.api', terminalStatus = 200) {
   const base = `/${tenantId}/cds-${jurisdiction}/v1/${sector}/organization/${format}/${resourceType}`;
   const submitted = await invokeExpress(app, { method: 'POST', url: `${base}/${action}`, headers: { 'content-type': 'application/json', authorization }, body: { thid, iss: issuer, body } });
   expect(submitted.status).toBe(202);

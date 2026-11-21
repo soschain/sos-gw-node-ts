@@ -73,6 +73,13 @@ export const OFFERING_CATALOG_UPSERT_EXAMPLE = {
   body: { data: PUBLIC_OFFERING_EXAMPLE },
 };
 
+export const OFFERING_CATALOG_REFERENCE_EXAMPLE = {
+  ...OFFERING_CATALOG_PUBLICATION_EXAMPLE,
+  jti: 'offering-catalog-reference',
+  thid: 'offering-catalog-reference',
+  body: { data: { type: PUBLIC_OFFERING_EXAMPLE.type, id: PUBLIC_OFFERING_EXAMPLE.id } },
+};
+
 /**
  * @file This file serves as the Single Source of Truth for all complex test payloads
  * and examples used across integration tests, cURL documentation, and Swagger specs.

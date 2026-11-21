@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Preserve offering versions when a controller edits a published product or
+  service. Add authenticated withdrawal and version history by JSON:API type
+  and ID, and keep withdrawn offerings out of public discovery.
+
 - Publish the host operator’s signed hosting service offering and link it
   from its DCAT catalog when the operator’s legal credential and terms are configured.
 

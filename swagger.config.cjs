@@ -241,6 +241,10 @@ const swaggerDefinition = {
         summary: 'DIDComm message containing one territorial offering',
         value: {},
       },
+      OfferingCatalogReference: {
+        summary: 'DIDComm message identifying an offering by type and ID',
+        value: {},
+      },
       OrganizationRegistrationPlaintextMessage: {
         summary: 'Plaintext Message for Organization Registration',
         description:

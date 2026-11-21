@@ -35,6 +35,32 @@ export async function publishTenantOfferings(
    feed. Repeat with a second tenant and verify each listing appears under
    its own publisher.
 
+## Edit or withdraw an offering
+
+Keep the same JSON:API `type` and `id` when sending an edit. A change to the
+validated listing creates a new version. Its history has a `versionId` and a
+SHA-256 `contentHash` for the recorded listing. Two versions can have the
+same hash if an edit restores older terms.
+
+With the updated controller SDK, use the same open controller session that
+published the listing. Pass the type and ID from the published entry and a
+separate operation ID for each request.
+
+```ts
+await client.unpublishOffering({ type: 'Product', id: listingId, operationId: withdrawalId })
+const { versions } = await client.getOfferingHistory({
+  type: 'Product', id: listingId, operationId: historyRequestId,
+})
+```
+
+The SDK sends the JSON:API reference to `Catalog/_unpublish` or
+`Catalog/_history` and confirms the result before returning.
+Withdrawal records the version that was public and removes just that entry
+from discovery. Re-importing a snapshot preserves its withdrawal. Publishing
+that exact entry again explicitly through `Catalog/_upsert` makes it visible.
+The history includes versions recorded from this update onwards and any
+older listing still available when version tracking began.
+
 The public Schema.org listing and a signed Gaia-X service offering have
 separate publication paths. The currently supported signed tenant offerings
 come from enabled provider capabilities and their configured terms. Updating

@@ -29,6 +29,7 @@ swaggerDefinition.components.examples.OrganizationRegistrationPlaintextMessage.v
   examples.ORGANIZATION_REGISTRATION_REQUEST;
 swaggerDefinition.components.examples.OfferingCatalogPublication.value = examples.OFFERING_CATALOG_PUBLICATION_EXAMPLE;
 swaggerDefinition.components.examples.OfferingCatalogUpsert.value = examples.OFFERING_CATALOG_UPSERT_EXAMPLE;
+swaggerDefinition.components.examples.OfferingCatalogReference.value = examples.OFFERING_CATALOG_REFERENCE_EXAMPLE;
 swaggerDefinition.components.examples.OrganizationActivationPlaintextMessage.value =
   examples.ORGANIZATION_ACTIVATION_REQUEST;
 swaggerDefinition.components.examples.OrganizationActivationResponseBundle.value =

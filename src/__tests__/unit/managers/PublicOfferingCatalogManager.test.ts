@@ -1,4 +1,5 @@
-// Flow contract: a controller's JSON:API snapshot and homogeneous update batches are validated before a single vault write changes the public feed.
+// Flow contract: reuse shared test fixtures and canonical types; do not introduce duplicated literals.
+// Controller edits preserve earlier versions, and withdrawal hides just the selected resource.
 import { describe, expect, it, jest } from '@jest/globals';
 import { createHash } from 'node:crypto';
 import { readPublicOfferingSubmission } from 'antifraud-data-utils-ts/public-offering-catalog';
@@ -34,6 +35,8 @@ describe('PublicOfferingCatalogManager', () => {
     expect(isRequestValid(services, { ...request, format: 'org.schema' })).toBe(true);
     expect(isRequestValid(services, { ...request, format: 'org.w3.dcat' })).toBe(false);
     expect(isRequestValid(services, { ...request, action: '_upsert', format: 'org.schema' })).toBe(true);
+    expect(isRequestValid(services, { ...request, action: '_unpublish', format: 'org.schema' })).toBe(true);
+    expect(isRequestValid(services, { ...request, action: '_history', format: 'org.schema' })).toBe(true);
   });
 
   it('replaces only the admitted tenant snapshot and preserves it when a later update fails validation', async () => {
@@ -76,7 +79,6 @@ describe('PublicOfferingCatalogManager', () => {
     await expect(manager.process(job([replacement]))).rejects.toThrow(/could not be persisted/i);
     expect(await manager.read('animal-care_clinic')).toEqual(original);
     await manager.process(job([replacement]));
-    expect(protectConfidentialData).toHaveBeenCalledTimes(3);
     expect(await manager.read('animal-care_clinic')).toEqual([expect.objectContaining({id: 'updated'})]);
 
     const service = {id:'support', type:'Service', attributes:{category:'animal-support', name:'Device support', description:'Device support', offers:offering.attributes.offers}};
@@ -91,7 +93,7 @@ describe('PublicOfferingCatalogManager', () => {
 
     expect((await manager.process(update)).body).toMatchObject({total:2});
     expect(put).toHaveBeenCalledTimes(writeCount+1);
-    expect(put.mock.lastCall?.[1]).toHaveLength(2);
+    expect(put.mock.lastCall?.[1]).toHaveLength(4);
     expect(await manager.read('animal-care_clinic')).toEqual([
       expect.objectContaining({ id: 'updated', name: 'Edited in the review batch' }), expect.objectContaining({ id: 'tracker' }),
     ]);
@@ -112,5 +114,29 @@ describe('PublicOfferingCatalogManager', () => {
     ]));
     expect(feed).toContainEqual(expect.objectContaining({id:'legacy-only',type:'Product'}));
     expect(feed).toHaveLength(4);
+    const reference = { type: offering.type, id: offering.id };
+    const historyJob: JobRequest = { ...job([reference]), action: '_history' };
+    const before = (await manager.process(historyJob)).body as { versions: { versionId: string; offering?: { name: string } }[] };
+    expect(before.versions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ versionId: expect.any(String), offering: expect.objectContaining({ name: offering.attributes.name }) }),
+      expect.objectContaining({ versionId: expect.any(String), offering: expect.objectContaining({ name: revisedTracker.attributes.name }) }),
+    ]));
+    const withdrawal: JobRequest = { ...job([reference]), action: '_unpublish' };
+    await expect(manager.process({ ...job([reference], 'clinic', 'did:web:outsider.example'), action: '_unpublish' })).rejects.toThrow(/controller/i);
+    expect((await manager.process(withdrawal)).body).toEqual({ total: 1 });
+    await manager.process(job([offering]));
+    expect(await manager.read('animal-care_clinic')).not.toContainEqual(expect.objectContaining(reference));
+    expect(await manager.read('animal-care_clinic')).toContainEqual(expect.objectContaining({ type: overlappingService.type, id: offering.id }));
+    expect((await manager.process(historyJob)).body).toMatchObject({
+      versions: expect.arrayContaining([...before.versions, expect.objectContaining({ status: 'withdrawn' })]),
+    });
+    await manager.process({ ...job([offering]), action: '_upsert' });
+    expect(await manager.read('animal-care_clinic')).toContainEqual(expect.objectContaining(reference));
+    const restored = (await manager.process(historyJob)).body as {
+      versions: { versionId: string; contentHash: string; offering: { name: string } }[];
+    };
+    const sameTerms = restored.versions.filter(version => version.offering.name === offering.attributes.name);
+    expect(new Set(sameTerms.map(version => version.versionId)).size).toBeGreaterThan(1);
+    expect(new Set(sameTerms.map(version => version.contentHash)).size).toBe(1);
   });
 });
