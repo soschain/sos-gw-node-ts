@@ -4,6 +4,13 @@
   service. Add authenticated withdrawal and version history by JSON:API type
   and ID, and keep withdrawn offerings out of public discovery.
 
+- Add a persistent local Fabric storage profile with PostgreSQL, offline
+  IPFS and reusable local encryption material. Add a real storage probe
+  that compares decrypted document bytes in a separate process.
+
+- Add a read-only reuse check for a running local Fabric gateway. It leaves
+  Fabric, the configured vault and existing test tenants untouched.
+
 - Publish the host operator’s signed hosting service offering and link it
   from its DCAT catalog when the operator’s legal credential and terms are configured.
 
