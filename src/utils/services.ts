@@ -140,7 +140,7 @@ function generateDefaultBusinessServices(sector: GatewaySector): DidService[] {
   services.push(createDidEndpointConfigFromSelector(
     { sector, section: 'organization', format: 'org.schema' },
     ['Catalog'],
-    ['_publish', '_upsert'],
+    ['_publish', '_upsert', '_unpublish', '_history'],
   ));
 
   if (isFhir) {

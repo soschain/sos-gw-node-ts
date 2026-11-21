@@ -2818,6 +2818,75 @@ export function createApiRouter(
    *       '202': { description: Offering publication queued. }
    *       '401': { description: Authentication required. }
    *
+   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_unpublish:
+   *   parameters:
+   *     - $ref: '#/components/parameters/TenantId'
+   *     - $ref: '#/components/parameters/Jurisdiction'
+   *     - $ref: '#/components/parameters/Sector'
+   *   post:
+   *     tags: [Data Catalog Discovery]
+   *     summary: Withdraw a reviewed tenant offering
+   *     description: Withdraws the specified Product or Service by type and ID. Prior versions remain in the controller history.
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/x-www-form-urlencoded:
+   *           schema: { $ref: '#/components/schemas/SecureRequest' }
+   *         application/didcomm-plain+json:
+   *           schema: { type: object }
+   *           examples:
+   *             offering: { $ref: '#/components/examples/OfferingCatalogReference' }
+   *     responses:
+   *       '202': { description: Withdrawal queued. }
+   *       '401': { description: Authentication required. }
+   *
+   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_history:
+   *   parameters:
+   *     - $ref: '#/components/parameters/TenantId'
+   *     - $ref: '#/components/parameters/Jurisdiction'
+   *     - $ref: '#/components/parameters/Sector'
+   *   post:
+   *     tags: [Data Catalog Discovery]
+   *     summary: Read one offering's version history as its controller
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/x-www-form-urlencoded:
+   *           schema: { $ref: '#/components/schemas/SecureRequest' }
+   *         application/didcomm-plain+json:
+   *           schema: { type: object }
+   *           examples:
+   *             offering: { $ref: '#/components/examples/OfferingCatalogReference' }
+   *     responses:
+   *       '202': { description: History request queued. }
+   *       '401': { description: Authentication required. }
+   *
+   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_unpublish-response:
+   *   parameters:
+   *     - $ref: '#/components/parameters/TenantId'
+   *     - $ref: '#/components/parameters/Jurisdiction'
+   *     - $ref: '#/components/parameters/Sector'
+   *   post:
+   *     tags: [Async Polling]
+   *     summary: Poll an offering withdrawal
+   *     requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AsyncPollRequest' } } } }
+   *     responses:
+   *       '200': { description: Terminal result. A successful receipt confirms one withdrawal. }
+   *       '202': { description: Pending. }
+   *
+   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_history-response:
+   *   parameters:
+   *     - $ref: '#/components/parameters/TenantId'
+   *     - $ref: '#/components/parameters/Jurisdiction'
+   *     - $ref: '#/components/parameters/Sector'
+   *   post:
+   *     tags: [Async Polling]
+   *     summary: Poll an offering history request
+   *     requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AsyncPollRequest' } } } }
+   *     responses:
+   *       '200': { description: Terminal result with recorded versions and withdrawal events. }
+   *       '202': { description: Pending. }
+   *
    * /{tenantId}/cds-{jurisdiction}/v1/{sector}/organization/org.schema/Catalog/_publish-response:
    *   parameters:
    *     - $ref: '#/components/parameters/TenantId'

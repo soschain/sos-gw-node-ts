@@ -173,6 +173,7 @@ function deriveSpec(spec, targetProfile) {
   if (targetProfile !== 'extension' && clone.components?.examples) {
     delete clone.components.examples.OfferingCatalogPublication;
     delete clone.components.examples.OfferingCatalogUpsert;
+    delete clone.components.examples.OfferingCatalogReference;
   }
   clone.info = clone.info || {};
   if (targetProfile === 'core') {
