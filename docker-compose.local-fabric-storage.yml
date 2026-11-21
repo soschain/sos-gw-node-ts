@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Use the private storage overlay}
+      POSTGRES_USER: ${POSTGRES_USER:?Use the private storage overlay}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Use the private storage overlay}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:?Use the private storage overlay}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  ipfs:
+    image: ipfs/kubo:v0.32.1
+    command: ["daemon", "--offline", "--migrate=true"]
+    ports:
+      - "127.0.0.1:${LOCAL_FABRIC_IPFS_API_PORT:?Use the private storage overlay}:5001"
+      - "127.0.0.1:${LOCAL_FABRIC_IPFS_GATEWAY_PORT:?Use the private storage overlay}:8080"
+    volumes:
+      - ipfs-data:/data/ipfs
+    healthcheck:
+      test: ["CMD", "ipfs", "id"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  postgres-data:
+  ipfs-data:

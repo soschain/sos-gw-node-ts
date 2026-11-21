@@ -58,6 +58,26 @@ if (!args.hostJurisdiction && envFileValues.HOST_JURISDICTION) {
 }
 
 async function main() {
+  if (args.reuseFabric) {
+    if (args.resetFabric || args.restartGw || args.prepareOnly || args.bootstrapIndividual) {
+      throw new Error('--reuse-fabric cannot be combined with reset, restart, prepare or individual bootstrap.');
+    }
+    if (envFileValues.NETWORK_MODE !== 'local-network') {
+      throw new Error('--reuse-fabric requires an existing profile with NETWORK_MODE=local-network.');
+    }
+    const url = new URL(config.baseUrl);
+    if (!['http:', 'https:'].includes(url.protocol) || !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
+      || url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
+      throw new Error('--reuse-fabric requires a loopback gateway origin.');
+    }
+    const ping = buildHostPingUrl(url.origin, config.hostJurisdiction);
+    const response = await fetch(ping, { redirect: 'error', signal: AbortSignal.timeout(3000) });
+    if (!response.ok) throw new Error(`Existing local Fabric gateway readiness returned HTTP ${response.status}.`);
+    await response.body?.cancel();
+    console.log(`[local-fabric-stack] Existing local Fabric gateway reachable at ${ping}`);
+    return;
+  }
+
   requirePath(fabricDevnetRoot, 'Missing sibling Fabric devnet repo');
   requirePath(gwCoreRoot, 'Missing sibling canonical GW CORE repo');
   requirePath(config.baseEnvFile, 'Missing local-network base environment');
@@ -269,6 +289,8 @@ function parseArgs(argv) {
     else if (arg === '--bootstrap-individual') result.bootstrapIndividual = true;
     else if (arg === '--no-deploy-chaincode') result.deployChaincode = false;
     else if (arg === '--no-start-gw') result.startGw = false;
+    else if (arg === '--reuse-fabric') result.reuseFabric = true;
+    else if (arg === '--reset-fabric') result.resetFabric = true;
     else if (arg === '--restart-gw') result.restartGw = true;
     else if (arg === '--prepare-only') result.prepareOnly = true;
     else throw new Error(`Unknown argument: ${arg}`);
@@ -295,11 +317,14 @@ Options:
   --bootstrap-individual     Also create the canonical individual baseline
   --no-deploy-chaincode      Skip consentaccess-sc deploy
   --no-start-gw              Do not start GW if it is not already reachable
+  --reuse-fabric             Check an already running loopback GW using its existing profile
+  --reset-fabric             Select the historical provisioning path that resets Fabric volumes
   --prepare-only             Prepare Fabric, chaincodes and env, then exit
   --restart-gw               Stop the current GW process before starting a new one
   --help, -h                 Show this help
 
 Notes:
+  - Provisioning, including --prepare-only, resets Fabric volumes unless --reuse-fabric is selected.
   - FABRIC_DEVNET_ROOT may select a clean Fabric worktree for release validation
   - the GW process is started detached and its PID is written to .local-fabric-gw.pid
   - logs are written under logs/local-fabric-stack-<timestamp>/
