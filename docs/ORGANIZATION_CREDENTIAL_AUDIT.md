@@ -37,7 +37,9 @@ gateway replicas use the same base64url `PROFESSIONAL_WALLET_OFFER_SECRET`
 with at least 32 random bytes and the same Firestore database. Enable TTL on
 `deleteAfter` in the `wallet-offers-<sha256(hostCollectionName)>` collection
 group. The tenant uses an ES256 credential signing key published in its DID
-document. The signed profile assertion targets the exact configured gateway
+document. Configure the wallet profile before enrolling a new pilot tenant
+to provision its ES256 key. Existing tenants require an already published
+ES256 assertion key. The signed profile assertion targets the exact configured gateway
 `_authorize` URL.
 
 See the [request examples](./openapi-examples/core-flow-examples.json) under

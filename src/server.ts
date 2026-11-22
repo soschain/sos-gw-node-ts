@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { getFirestore } from 'firebase-admin/firestore';
+import { getTenantVaultId } from './utils/tenant';
 import { createFirestoreWalletOfferStore } from './adapters/professional-wallet-offer-store-firestore';
 import { createMemoryWalletOfferStore } from './adapters/professional-wallet-offer-store-mem';
 import { createProfessionalWalletRouter, readProfessionalWalletProfile } from './routes/professional-wallet';
@@ -207,6 +208,11 @@ async function startServer(options?: StartServerOptions) {
     }
   }
 
+  const walletProfile = readProfessionalWalletProfile(process.env);
+  const localWalletStore = config.networkMode === 'test' || config.networkMode === 'local-network';
+  if (walletProfile && !localWalletStore && config.dbProvider !== 'firestore') {
+    throw new Error('Professional wallet issuance on a hosted network requires shared Firestore offer storage.');
+  }
   const {
     vaultRepository,
     storageAdapter,
@@ -215,7 +221,10 @@ async function startServer(options?: StartServerOptions) {
     tenantManager,
     kmsService,
     infrastructureReplayProtectionStore,
-  } = await buildInfrastructure({ config, hostCollectionName, initializeKms: false });
+  } = await buildInfrastructure({
+    config, hostCollectionName, initializeKms: false,
+    es256CredentialTenantVaultId: walletProfile ? getTenantVaultId(walletProfile.profile.sector, walletProfile.profile.tenantId) : undefined,
+  });
 
   if (observedLedgerBindings) {
     await initializeRuntimeAfterLedgerProtection({
@@ -492,11 +501,6 @@ async function startServer(options?: StartServerOptions) {
   const ledgerRouter = createCredentialLedgerRouter(credentialLedgerAdapter, asyncResponseStore, tenantManager, config.networkMode);
   const webhooksRouter = createWebhooksRouter(queueAdapter);
   const authRouter = createAuthRouter(appAuthManager, tokenManager);
-  const walletProfile = readProfessionalWalletProfile(process.env);
-  const localWalletStore = config.networkMode === 'test' || config.networkMode === 'local-network';
-  if (walletProfile && !localWalletStore && config.dbProvider !== 'firestore') {
-    throw new Error('Professional wallet issuance on a hosted network requires shared Firestore offer storage.');
-  }
   const walletNamespace = createHash('sha256').update(hostCollectionName).digest('hex');
   const professionalWalletRouter = walletProfile ? createProfessionalWalletRouter({
     ...walletProfile, apiBase: config.apiBaseUrl, tenants: tenantManager,

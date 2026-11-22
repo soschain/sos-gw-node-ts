@@ -3,7 +3,8 @@
 - Serve professional OpenID4VCI offers, discovery, token exchange, nonce and
   credential issuance at the tenant URL. Recheck eligibility before issuing a
   holder-bound SD-JWT with the tenant credential signing key. Require the
-  signing key before preparing an offer. Keep enrollment
+  signing key before preparing an offer and provision ES256 for the selected
+  wallet tenant during new enrollment. Keep enrollment
   and organization accreditation in the ICA.
 
 - Reuse the current device, employment and role checks for a tenant-bound

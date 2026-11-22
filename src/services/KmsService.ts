@@ -105,6 +105,7 @@ export class KmsService implements IKmsService {
   private wrappedKeyRepository?: WrappedKeyRepository;
   private envelopeAdapter: KmsEnvelopeAdapter;
   private isHostInitialized: boolean = false;
+  private readonly es256CredentialTenantVaultId?: string;
 
   constructor(
     cryptographyService: ICryptography,
@@ -113,6 +114,7 @@ export class KmsService implements IKmsService {
       keyMaterialProvider?: KeyMaterialProvider<EntityKeysSet>;
       wrappedKeyRepository?: WrappedKeyRepository;
       envelopeAdapter?: KmsEnvelopeAdapter;
+      es256CredentialTenantVaultId?: string;
     },
     ) {
     this.crypto = cryptographyService;
@@ -121,6 +123,7 @@ export class KmsService implements IKmsService {
     this.encryptionKeyOwners = new Map();
     this.keyVersions = new Map();
     this.wrappedKeyRepository = options?.wrappedKeyRepository;
+    this.es256CredentialTenantVaultId = options?.es256CredentialTenantVaultId;
     this.envelopeAdapter = options?.envelopeAdapter || new InMemoryEnvelopeAdapter();
     this.keyMaterialProvider = options?.keyMaterialProvider || this.buildDefaultKeyMaterialProvider();
   }
@@ -205,7 +208,8 @@ export class KmsService implements IKmsService {
     (vcSigningKeyPair.publicJWKey as any).purpose = 'vc_sign';
     (encryptionKeyPair.publicJWKey as any).use = 'enc';
 
-    const legacySigningKeyPair = await this.provisionLegacySigningKey(entityVaultId, process.env.LEGACY_SIGN_ALG);
+    const legacyAlgorithm = entityVaultId === this.es256CredentialTenantVaultId ? 'ES256' : process.env.LEGACY_SIGN_ALG;
+    const legacySigningKeyPair = await this.provisionLegacySigningKey(entityVaultId, legacyAlgorithm);
 
     // In a production vault, the `dataEncryptionKey` would be encrypted with the Host KEK here before storage.
     const keyVersion = String((this.keyVersions.get(entityVaultId) || 0) + 1);
