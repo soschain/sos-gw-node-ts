@@ -3,7 +3,7 @@
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
 
 import * as express from 'express';
-import { bindOrganizationRegistrationEvidence, getIssuedOrganizationCredential, getParticipantGaiaXCredential } from '../utils/organization-discovery-credential';
+import { bindOrganizationRegistrationEvidence, buildHostOrganizationStatement, getIssuedOrganizationCredential, getParticipantGaiaXCredential } from '../utils/organization-discovery-credential';
 import type { IDiscoveryTenantRegistry } from '../managers/IDiscoveryTenantRegistry';
 import type { PublicOfferingCatalogManager } from '../managers/PublicOfferingCatalogManager';
 import { DiscoveryService } from '../services/DiscoveryService';
@@ -621,6 +621,20 @@ export function createDiscoveryRouter(
     return signer.kid;
   };
 
+  const signDetachedOrganizationPublication = async (statement: Record<string, unknown>, issuer: string, vaultId: string) => {
+    const kid = await getCredentialSignerKid(vaultId);
+    return {
+      ...statement,
+      proof: [{
+        type: 'JsonWebSignature2020',
+        created: new Date().toISOString(),
+        proofPurpose: 'assertionMethod',
+        verificationMethod: `${issuer}#${kid}`,
+        jws: await kmsService.createDetachedJws(statement, kid, vaultId, 'vc_sign'),
+      }],
+    };
+  };
+
   /** Signs a Gaia-X VC draft as the VC-JWT enveloped credential required by ICAM 25.11. */
   const signGaiaXEnvelopedCredential = async (credential: Record<string, unknown>, vaultId: string) => {
     const kid = await getCredentialSignerKid(vaultId);
@@ -1102,13 +1116,13 @@ export function createDiscoveryRouter(
    * /host/cds-{hostCoverageScope}/{version}/{hostNetwork}/.well-known/organization.json:
    *   get:
    *     tags: [Discovery]
-   *     summary: Original ICA-issued organization credential for the host operator
+   *     summary: Signed organization identity for the host operator
    *     parameters:
    *       - $ref: '#/components/parameters/HostCoverageScope'
    *       - $ref: '#/components/parameters/Version'
    *       - $ref: '#/components/parameters/HostRegistrySector'
    *     responses:
-   *       '200': { description: Original signed OrganizationCredential with a schema.org Organization subject }
+   *       '200': { description: ICA-issued credential or host-signed OrganizationCredential with a schema.org Organization subject }
    *       '404': { description: Organization credential unavailable }
    * /{tenantId}/cds-{jurisdiction}/{version}/{sector}/.well-known/organization.json:
    *   get:
@@ -1124,10 +1138,13 @@ export function createDiscoveryRouter(
    *       '404': { description: Organization credential unavailable }
    */
   router.get([`${hostScopedWellKnownPrefix}/organization.json`, `${tenantWellKnownPrefix}/organization.json`], resolveTenant, async (_req, res) => {
-    const entity = await tenantsCacheManager.getTenant(res.locals.vaultId);
+    const vaultId = res.locals.vaultId;
+    const entity = await tenantsCacheManager.getTenant(vaultId);
     const credential = getIssuedOrganizationCredential(entity);
-    if (!credential) return res.status(404).type('text').send('Not Found');
-    return res.type('application/json').send(JSON.stringify(credential));
+    if (credential) return res.type('application/json').send(JSON.stringify(credential));
+    const statement = vaultId === 'host' ? buildHostOrganizationStatement(entity) : undefined;
+    if (!statement) return res.status(404).type('text').send('Not Found');
+    return res.json(await signDetachedOrganizationPublication({ ...statement }, statement.issuer, vaultId));
   });
 
   const bindPublicOrganizationEvidence = (
@@ -1174,17 +1191,7 @@ export function createDiscoveryRouter(
     if (!vc) return res.status(404).type('text').send('Not Found');
     const statement = bindPublicOrganizationEvidence(req, vc, entityConfig);
     if (!statement) return res.json(vc);
-    const kid = await getCredentialSignerKid(vaultId);
-    return res.json({
-      ...statement,
-      proof: [{
-        type: 'JsonWebSignature2020',
-        created: new Date().toISOString(),
-        proofPurpose: 'assertionMethod',
-        verificationMethod: `${statement.issuer}#${kid}`,
-        jws: await kmsService.createDetachedJws(statement, kid, vaultId, 'vc_sign'),
-      }],
-    });
+    return res.json(await signDetachedOrganizationPublication(statement, statement.issuer, vaultId));
   });
 
   router.get(

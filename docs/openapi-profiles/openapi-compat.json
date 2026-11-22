@@ -4,7 +4,7 @@
     "title": "Gateway API - COMPAT",
     "version": "1.0.3",
     "description": "Compatibility profile including legacy and alias routes on top of the core flow.",
-    "x-profile-generated-at": "2026-11-22T09:59:49.691Z",
+    "x-profile-generated-at": "2026-11-22T10:27:47.004Z",
     "x-profile-name": "compat"
   },
   "servers": [],
@@ -3609,7 +3609,7 @@
         "tags": [
           "Discovery"
         ],
-        "summary": "Original ICA-issued organization credential for the host operator",
+        "summary": "Signed organization identity for the host operator",
         "parameters": [
           {
             "$ref": "#/components/parameters/HostCoverageScope"
@@ -3623,7 +3623,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Original signed OrganizationCredential with a schema.org Organization subject"
+            "description": "ICA-issued credential or host-signed OrganizationCredential with a schema.org Organization subject"
           },
           "404": {
             "description": "Organization credential unavailable"
