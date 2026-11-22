@@ -1,7 +1,9 @@
 // Flow contract: verify public JWT and organization proofs for host and tenant without a shell.
 import assert from 'node:assert/strict';
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomBytes, randomUUID, sign } from 'node:crypto';
 import test from 'node:test';
+import { calculateJwkThumbprint } from 'jose';
+import canonicalize from 'canonicalize';
 import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { EXAMPLE_GATEWAY_PUBLIC_ORIGIN, EXAMPLE_PROVIDER_LEGAL_NAME } from 'sos-data-utils-ts/gateway-flow-examples';
 import { verifyOrganizationPublication } from '../verify-organization-publications.mjs';
@@ -72,4 +74,31 @@ test('checks exact JWT envelopes and all organization proofs for host and tenant
     documents.set(organizationPath, { ...organization, credentialSubject: { ...organization.credentialSubject, taxID: `${taxID}0` } });
     await assert.rejects(verifyOrganizationPublication(base, kind, fetchDocument), /signature verification failed/);
   }
+});
+
+
+test('checks an archived ICA organization credential against its published did:jwt signing key', async () => {
+  const origin = new URL(EXAMPLE_GATEWAY_PUBLIC_ORIGIN);
+  const { publicKey, privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-384' });
+  const publicKeyJwk = publicKey.export({ format: 'jwk' });
+  const kid = await calculateJwkThumbprint(publicKeyJwk);
+  const issuer = `did:jwt:${kid}`;
+  const did = `did:web:${origin.hostname}:ica`;
+  const methodId = `${did}#${kid}`;
+  const verificationMethod = `${issuer}#${kid}`;
+  const unsigned = { '@context': ['https://www.w3.org/ns/credentials/v2', 'https://schema.org'],
+    credentialSubject: { '@type': 'Organization', id: `did:web:${origin.hostname}:tenant`, taxID: 'A12345678' },
+    evidence: [{ type: 'document' }], issuer, type: ['VerifiableCredential', 'OrganizationCredential'] };
+  const encodedHeader = Buffer.from(JSON.stringify({ alg: 'ES384', kid: verificationMethod })).toString('base64url');
+  const payload = Buffer.from(canonicalize(unsigned)).toString('base64url');
+  const signature = sign('sha384', Buffer.from(`${encodedHeader}.${payload}`), { key: privateKey, dsaEncoding: 'ieee-p1363' }).toString('base64url');
+  const credential = { ...unsigned, proof: { verificationMethod, jws: `${encodedHeader}..${signature}` } };
+  const discovery = { id: did, alsoKnownAs: [issuer], assertionMethod: [methodId], verificationMethod: [{ id: methodId, publicKeyJwk }] };
+  const artifact = new URL('/tenant/.well-known/legal-participant.vc.json', origin);
+  const fetchDocument = async url => new Response(JSON.stringify(url.pathname.endsWith('/did.json') ? discovery : credential));
+  const { verifyOrganizationArtifact } = await import('../verify-organization-publications.mjs');
+  assert.equal((await verifyOrganizationArtifact(artifact, { icaOrigins: [origin.href], fetchDocument })).issuer, issuer);
+  await assert.rejects(verifyOrganizationArtifact(artifact, { icaOrigins: [], fetchDocument }), /trusted ICA/);
+  discovery.assertionMethod = [];
+  await assert.rejects(verifyOrganizationArtifact(artifact, { icaOrigins: [origin.href], fetchDocument }), /trusted ICA/);
 });

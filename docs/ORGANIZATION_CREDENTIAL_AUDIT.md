@@ -29,6 +29,12 @@ node scripts/verify-organization-publications.mjs --host <host-scoped-base-url> 
 
 The command verifies the JWT envelope, signatures and any signed evidence link. Issuer authorization, credential status and the validity of an underlying document are separate audit checks.
 
+For an archived `OrganizationCredential`, pass its exact URL and the trusted ICA origin. This mode verifies the organization's proofs and reports evidence presence. It checks a historical `did:jwt` against the ICA's public assertion key and its JWK thumbprint.
+
+```text
+node scripts/verify-organization-publications.mjs --organization <credential-url> --ica <trusted-ica-origin>
+```
+
 ## Standards and scope
 
 - The ICA evidence for PDF enrollment uses the **OpenID Identity Assurance** evidence model to describe the checks behind the verified claims. The ICA proof authenticates those claims and their evidence. [OpenID Identity Assurance Schema Definition](https://openid.net/specs/openid-ida-verified-claims-1_0.html)

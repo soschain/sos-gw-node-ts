@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Verify archived organization credentials against trusted ICA `did:jwt`
+  assertion keys using the portable Node verifier.
+
 - Preserve the original signed organization statement of the host and its
   complete proof set when that statement has been recorded.
 
