@@ -71,34 +71,39 @@ async function assertionKey(read, did, kid, icaOrigins) {
   return key;
 }
 
-async function verifyOrganizationDocument(credential, read, icaOrigins) {
+async function verifyCredentialProofs(credential, read, icaOrigins) {
   const { proof, ...unsigned } = credential;
-  assert.ok(credential.type?.includes('OrganizationCredential'), 'Missing OrganizationCredential type');
-  assert.equal(credential.credentialSubject?.['@type'], 'Organization');
-  const identifier = credential.credentialSubject.taxID ?? credential.credentialSubject.identifier?.value;
-  assert.ok(typeof identifier === 'string' && identifier.trim(), 'Missing organization identifier');
   const proofs = Array.isArray(proof) ? proof : [proof];
   assert.ok(proofs.length && proofs.some(entry => entry?.verificationMethod?.startsWith(`${credential.issuer}#`)),
-    'Organization credential issuer proof is missing');
+    'Credential issuer proof is missing');
   for (const entry of proofs) {
     const [did, kid] = entry?.verificationMethod?.split('#') ?? [];
     assert.ok(did && kid, 'Proof is missing its DID verification method');
     const key = await assertionKey(read, did, kid, icaOrigins);
     const detached = entry.jws ?? entry.proofValue;
-    assert.ok(typeof detached === 'string' && detached.split('.').length === 3, 'Unsupported organization proof');
+    assert.ok(typeof detached === 'string' && detached.split('.').length === 3, 'Unsupported credential proof');
     const [header, payload, signature] = detached.split('.');
-    assert.equal(payload, '', 'Expected a detached organization proof');
+    assert.equal(payload, '', 'Expected a detached credential proof');
     const headerKey = decode(header).kid;
     assert.ok(headerKey === undefined || headerKey === kid || headerKey === entry.verificationMethod, 'Proof key ID differs from its verification method');
     if (decode(header).b64 === false || did.startsWith('did:jwt:')) {
       await verifyPinnedDetachedJws(Buffer.from(canonicalize(unsigned)), detached, { ...key, kid: headerKey }, crypto);
     } else {
       const encoded = Buffer.from(JSON.stringify(unsigned)).toString('base64url');
-      assert.ok(await crypto.verifyJws(`${header}.${encoded}.${signature}`, key), 'Organization signature verification failed');
+      assert.ok(await crypto.verifyJws(`${header}.${encoded}.${signature}`, key), 'Credential signature verification failed');
     }
   }
+  return proofs.length;
+}
+
+async function verifyOrganizationDocument(credential, read, icaOrigins) {
+  assert.ok(credential.type?.includes('OrganizationCredential'), 'Missing OrganizationCredential type');
+  assert.equal(credential.credentialSubject?.['@type'], 'Organization');
+  const identifier = credential.credentialSubject.taxID ?? credential.credentialSubject.identifier?.value;
+  assert.ok(typeof identifier === 'string' && identifier.trim(), 'Missing organization identifier');
+  const proofCount = await verifyCredentialProofs(credential, read, icaOrigins);
   return { issuer: credential.issuer, identifier, evidence: Boolean(credential.evidence?.length),
-    selfSigned: credential.issuer === credential.credentialSubject.id, proofs: proofs.length };
+    selfSigned: credential.issuer === credential.credentialSubject.id, proofs: proofCount };
 }
 
 export async function verifyOrganizationArtifact(address, { icaOrigins = [], fetchDocument = fetch } = {}) {
@@ -126,6 +131,15 @@ export async function verifyOrganizationPublication(base, kind, fetchDocument = 
   assert.ok(await crypto.verifyJws(token, await assertionKey(read, claims.issuer, decode(protectedHeader).kid, icaOrigins)),
     'Participant JWT signature verification failed');
 
+  const verifiedJson = ['vc.json', 'self-description.json'];
+  for (const filename of verifiedJson) {
+    const { json } = await read(new URL(filename, url));
+    assert.equal(json.credentialSubject?.type ?? json.credentialSubject?.['@type'], 'gx:LegalPerson', `${filename} must describe a Gaia-X LegalPerson`);
+    assert.equal(json.issuer, claims.issuer, `${filename} issuer differs from the JWT participant`);
+    assert.equal(json.credentialSubject.id, claims.credentialSubject.id, `${filename} describes a different participant`);
+    await verifyCredentialProofs(json, read, icaOrigins);
+  }
+
   const organizationUrl = new URL('organization.json', url);
   const { body, json: credential } = await read(organizationUrl);
   const { selfSigned, proofs } = await verifyOrganizationDocument(credential, read, icaOrigins);
@@ -141,7 +155,7 @@ export async function verifyOrganizationPublication(base, kind, fetchDocument = 
     assert.equal(claims.credentialSubject['https://schema.org/taxID'], credential.credentialSubject.taxID, 'Fiscal identifiers differ');
     assert.ok(!selfSigned && credential.evidence?.length, 'The signed evidence link must refer to an ICA credential with evidence');
   }
-  return { kind, url: base, issuer: credential.issuer, selfSigned, proofs, linkedEvidence: Boolean(related) };
+  return { kind, url: base, issuer: credential.issuer, selfSigned, proofs, verifiedJson, linkedEvidence: Boolean(related) };
 }
 
 if (import.meta.url === pathToFileURL(resolve(process.argv[1] ?? '.')).href) {

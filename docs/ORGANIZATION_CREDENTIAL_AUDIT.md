@@ -5,6 +5,7 @@ Use the scoped host or tenant base URL and append `/.well-known/` followed by th
 | Filename | What the verifier receives |
 | --- | --- |
 | `vc.json` | The organization's Legal Person declaration, signed by the organization with a detached proof. |
+| `self-description.json` | The original participant-signed Gaia-X self-description as credential JSON. Verify its detached proof with the participant's assertion key. |
 | `legal-participant.vc.json` | The same Legal Person declaration in a signed JWT. The W3C envelope's top-level `id` contains the JWT after `data:application/vc+jwt,`. |
 | `organization.json` | The `OrganizationCredential` identifies the Schema.org `Organization`, gives its legal identifier and carries any evidence included by the issuer. The host may publish a self-signed statement. An ICA-issued credential is published with its original issuer, evidence and proofs. For enrollment by digitally signed PDF, the ICA's evidence records the document digest and the signature and certificate checks. |
 
@@ -27,7 +28,7 @@ With the repository dependencies installed, this Node command runs on Windows, m
 node scripts/verify-organization-publications.mjs --host <host-scoped-base-url> --tenant <tenant-scoped-base-url>
 ```
 
-The command verifies the JWT envelope, signatures and any signed evidence link. Issuer authorization, credential status and the validity of an underlying document are separate audit checks.
+The command verifies the JWT envelope, both signed Gaia-X JSON publications, the organization credential and any signed evidence link. Issuer authorization, credential status and the validity of an underlying document are separate audit checks.
 
 For an archived `OrganizationCredential`, pass its exact URL and the trusted ICA origin. This mode verifies the organization's proofs and reports evidence presence. It checks a historical `did:jwt` against the ICA's public assertion key and its JWK thumbprint.
 
