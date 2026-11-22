@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Reject professional credential requests at the historical Gaia-X issuance
+  route and document organization publications and private wallet delivery.
+
 - Verify both signed Gaia-X JSON publications alongside the participant JWT
   and organization credential in the portable Node verifier.
 

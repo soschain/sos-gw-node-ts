@@ -4,7 +4,7 @@
     "title": "Gateway API - EXTENSIONS",
     "version": "1.0.3",
     "description": "Extension profile including non-core and vertical-specific capabilities on top of core and compat.",
-    "x-profile-generated-at": "2026-11-22T10:27:47.016Z",
+    "x-profile-generated-at": "2026-11-22T11:12:33.343Z",
     "x-profile-name": "extension"
   },
   "servers": [],
@@ -4434,6 +4434,9 @@
         "responses": {
           "200": {
             "description": "Issued VC"
+          },
+          "400": {
+            "description": "Credential type or issuance configuration unsupported by this Gaia-X route"
           },
           "401": {
             "description": "Missing or invalid Bearer token"

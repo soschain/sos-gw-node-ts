@@ -38,6 +38,8 @@ base path `/{tenantId}/cds-{jurisdiction}/{version}/{sector}`.
   The host can sign its own identity statement. When an ICA credential is
   available, the gateway publishes the original with its issuer and proofs.
   For tenants, the route publishes the admitted ICA credential.
+- `GET {basePath}/.well-known/self-description.json` returns the stored,
+  participant-signed Gaia-X declaration with its original detached proof.
 - `GET {basePath}/.well-known/vc.json` returns the participant-signed Gaia-X
   `gx:LegalPerson` as credential JSON with a detached proof.
 - `GET {basePath}/.well-known/legal-participant.vc.json` returns the
@@ -50,7 +52,8 @@ base path `/{tenantId}/cds-{jurisdiction}/{version}/{sector}`.
 When the participant's fiscal identifier matches the admitted ICA credential,
 both signed formats link to that credential and include its SHA-256 digest.
 See [Verify legal identity and fiscal registration](docs/ORGANIZATION_CREDENTIAL_AUDIT.md)
-for the audit checks, evidence format, and Gaia-X Loire reference.
+for the four route contracts, professional credential and SMART Health Card
+profiles, audit checks, and Gaia-X Loire reference.
 
 The organization credential describes the legal entity. A hosting service
 credential describes the service provided by that entity.
