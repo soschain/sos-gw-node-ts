@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Publish the original ICA organization credential at host and tenant `organization.json` routes and keep the participant-signed Gaia-X statement distinct in its JSON and JWT publications.
+
 - Preserve offering versions when a controller edits a published product or
   service. Add authenticated withdrawal and version history by JSON:API type
   and ID, and keep withdrawn offerings out of public discovery.

@@ -27,6 +27,28 @@ independent Antifraud, FHIR and SOS packages:
 It implements the backend services and integrations required by SOSCHAIN,
 building on the [original SOSCHAIN project documentation](https://github.com/soschain/docs).
 
+### Public organization credentials
+
+Use the host base path `/host/cds-{coverage}/{version}/{network}` or the tenant
+base path `/{tenantId}/cds-{jurisdiction}/{version}/{sector}`.
+
+- `GET {basePath}/.well-known/organization.json` returns the original
+  ICA-issued JSON, with `OrganizationCredential` in the credential type and
+  `Organization` in `credentialSubject.@type`. The gateway preserves the
+  issuer and signature. The route returns HTTP 404 when no issued credential
+  is available.
+- `GET {basePath}/.well-known/vc.json` returns the participant-signed Gaia-X
+  `gx:LegalPerson` as credential JSON with its original detached proof.
+- `GET {basePath}/.well-known/legal-participant.vc.json` returns the
+  participant-signed Gaia-X declaration as a JWT in a W3C
+  `EnvelopedVerifiableCredential`. Read the token after
+  `data:application/vc+jwt,` in the top-level `id`.
+  Older gateway revisions provided the JWT under `proof.id`. Update
+  discovery readers to understand both locations before rollout.
+
+The organization credential describes the legal entity. A hosting service
+credential describes the service provided by that entity.
+
 ### Commercial catalogue publication
 
 See [Publish and verify your tenant catalogue](docs/CATALOGUE_PUBLICATION.md)

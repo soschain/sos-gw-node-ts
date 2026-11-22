@@ -4,7 +4,7 @@
     "title": "Gateway API - EXTENSIONS",
     "version": "1.0.3",
     "description": "Extension profile including non-core and vertical-specific capabilities on top of core and compat.",
-    "x-profile-generated-at": "2026-11-21T16:03:33.092Z",
+    "x-profile-generated-at": "2026-11-22T09:35:15.683Z",
     "x-profile-name": "extension"
   },
   "servers": [],
@@ -3698,6 +3698,65 @@
           },
           "404": {
             "description": "Employee DID is not registered for this tenant"
+          }
+        },
+        "x-profile": "core"
+      }
+    },
+    "/host/cds-{hostCoverageScope}/{version}/{hostNetwork}/.well-known/organization.json": {
+      "get": {
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Original ICA-issued organization credential for the host operator",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/HostCoverageScope"
+          },
+          {
+            "$ref": "#/components/parameters/Version"
+          },
+          {
+            "$ref": "#/components/parameters/HostRegistrySector"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Original signed OrganizationCredential with a schema.org Organization subject"
+          },
+          "404": {
+            "description": "Organization credential unavailable"
+          }
+        },
+        "x-profile": "core"
+      }
+    },
+    "/{tenantId}/cds-{jurisdiction}/{version}/{sector}/.well-known/organization.json": {
+      "get": {
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "Original ICA-issued organization credential for the tenant",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TenantId"
+          },
+          {
+            "$ref": "#/components/parameters/Jurisdiction"
+          },
+          {
+            "$ref": "#/components/parameters/Version"
+          },
+          {
+            "$ref": "#/components/parameters/Sector"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Original signed OrganizationCredential with a schema.org Organization subject"
+          },
+          "404": {
+            "description": "Organization credential unavailable"
           }
         },
         "x-profile": "core"

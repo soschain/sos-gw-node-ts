@@ -73,7 +73,12 @@ describe('Host well-known endpoints (demo, mem)', () => {
       const legalParticipant = await invokeExpress(app, { method: 'GET', url: `${HOST_WELL_KNOWN_PREFIX}/legal-participant.vc.json` });
       expect(legalParticipant.status).toBe(200);
       const legalParticipantJson = JSON.parse(legalParticipant.text);
-      expect(legalParticipantJson.issuer).toBe(HOST_DID);
+      expect(legalParticipantJson.type).toBe('EnvelopedVerifiableCredential');
+      const legalJwt = legalParticipantJson.id.split(',')[1];
+      expect(Content.base64UrlSafeToJSON(legalJwt.split('.')[1])).toMatchObject({
+        issuer: HOST_DID,
+        credentialSubject: { id: HOST_DID, type: 'gx:LegalPerson' },
+      });
 
       const jwks = await invokeExpress(app, { method: 'GET', url: `${HOST_WELL_KNOWN_PREFIX}/jwks.json` });
       expect(jwks.status).toBe(200);
@@ -88,6 +93,9 @@ describe('Host well-known endpoints (demo, mem)', () => {
       const header = Content.base64UrlSafeToJSON(compact.split('.')[0]);
       const verificationKey = jwksJson.keys.find((key: { kid: string }) => key.kid === header.kid);
       const cryptography = new CryptographyService(new AdapterCryptoSdkNode());
+      const participantHeader = Content.base64UrlSafeToJSON(legalJwt.split('.')[0]);
+      const participantKey = jwksJson.keys.find((key: { kid: string }) => key.kid === participantHeader.kid);
+      expect(await cryptography.verifyJws(legalJwt, participantKey)).toBe(true);
       expect(await cryptography.verifyJws(compact, verificationKey)).toBe(true);
       expect(Content.base64UrlSafeToJSON(compact.split('.')[1])).toMatchObject({
         issuer: HOST_DID,
