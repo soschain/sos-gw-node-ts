@@ -5,6 +5,7 @@ import { createFirestoreWalletOfferStore } from './adapters/professional-wallet-
 import { createMemoryWalletOfferStore } from './adapters/professional-wallet-offer-store-mem';
 import { createProfessionalWalletRouter, readProfessionalWalletProfile } from './routes/professional-wallet';
 import { ProfessionalWalletIssuanceManager } from './managers/ProfessionalWalletIssuanceManager';
+import { ProofOfAgeWalletIssuanceManager } from './managers/ProofOfAgeWalletIssuanceManager';
 import { GaiaXComplianceManager } from './managers/GaiaXComplianceManager';
 import { GaiaXComplianceService } from './services/GaiaXComplianceService';
 import { TenantPresentationVerificationManager } from './managers/TenantPresentationVerificationManager';
@@ -128,6 +129,11 @@ const OPENAPI_PROFILE_DOCS = [
 interface StartServerOptions {
   testMiddlewares?: express.RequestHandler[];
   authManager?: IAuthorizationManager;
+  /** Trusted composition supplies approved evidence and the managed document signer. */
+  proofOfAge?: Readonly<{
+    configurationId: string;
+    doctype: string;
+  } & Pick<ConstructorParameters<typeof ProofOfAgeWalletIssuanceManager>[0], 'readApprovedEvidence' | 'sign'>>;
   /** When false, builds the app without binding a TCP port (sandbox-safe for tests). */
   listen?: boolean;
 }
@@ -209,6 +215,7 @@ async function startServer(options?: StartServerOptions) {
   }
 
   const walletProfile = readProfessionalWalletProfile(process.env);
+  if (options?.proofOfAge && !walletProfile) throw new Error('Proof of Age requires a configured tenant wallet issuer.');
   const localWalletStore = config.networkMode === 'test' || config.networkMode === 'local-network';
   if (walletProfile && !localWalletStore && config.dbProvider !== 'firestore') {
     throw new Error('Professional wallet issuance on a hosted network requires shared Firestore offer storage.');
@@ -503,6 +510,12 @@ async function startServer(options?: StartServerOptions) {
   const webhooksRouter = createWebhooksRouter(queueAdapter);
   const authRouter = createAuthRouter(appAuthManager, tokenManager);
   const walletNamespace = createHash('sha256').update(hostCollectionName).digest('hex');
+  const proofOfAge = options?.proofOfAge;
+  const ageWalletManager = proofOfAge && new ProofOfAgeWalletIssuanceManager({
+    repository: vaultRepository, kms: kmsService, replay: replayProtectionStore,
+    verify: input => localClearingHouseVerifier.verifyIndividualWalletEligibility(input),
+    readApprovedEvidence: proofOfAge.readApprovedEvidence, sign: proofOfAge.sign,
+  });
   const professionalWalletRouter = walletProfile ? createProfessionalWalletRouter({
     ...walletProfile, apiBase: config.apiBaseUrl, tenants: tenantManager,
     store: localWalletStore ? createMemoryWalletOfferStore() : createFirestoreWalletOfferStore(getFirestore(), walletNamespace),
@@ -510,6 +523,12 @@ async function startServer(options?: StartServerOptions) {
       repository: vaultRepository, kms: kmsService, replay: replayProtectionStore,
       verify: input => localClearingHouseVerifier.verifyProfessionalWalletEligibility(input),
     }),
+    proofOfAge: proofOfAge && ageWalletManager && {
+      configurationId: proofOfAge.configurationId,
+      doctype: proofOfAge.doctype,
+      authorize: ageWalletManager.authorize.bind(ageWalletManager),
+      issue: ageWalletManager.issue.bind(ageWalletManager),
+    },
   }) : undefined;
   registerCoreRouters({
     app,

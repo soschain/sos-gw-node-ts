@@ -4,6 +4,9 @@
   and membership, with the exact authorization audience and no clinical scopes.
 - Support an explicitly configured Proof of Age mdoc issuer alongside the
   professional SD-JWT issuer. Reject evidence supplied in the wallet request.
+- Bind Proof of Age authorizations to an encrypted one-use grant, the
+  registered member and the approved evidence revision. Recheck evidence and
+  membership before releasing the signed credential.
 
 - Provision new credential assertion keys with ML-DSA-65. Use ES256 for the
   SMART Health Card JWS and require a credential-purpose ML-DSA-65 companion
