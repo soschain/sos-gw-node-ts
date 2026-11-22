@@ -4,7 +4,7 @@
     "title": "Gateway API - COMPAT",
     "version": "1.0.3",
     "description": "Compatibility profile including legacy and alias routes on top of the core flow.",
-    "x-profile-generated-at": "2026-11-22T11:58:41.815Z",
+    "x-profile-generated-at": "2026-11-22T12:49:35.411Z",
     "x-profile-name": "compat"
   },
   "servers": [],
@@ -2953,7 +2953,7 @@
         "tags": [
           "2. Device and Identity Registration"
         ],
-        "summary": "Prepare private professional wallet authorization for a registered profile",
+        "summary": "Prepare a tenant wallet offer for a registered professional profile",
         "description": "Accepts a short-lived signed registered-profile presentation for the configured tenant and exact authorization audience.",
         "requestBody": {
           "required": true,
@@ -2980,7 +2980,7 @@
         },
         "responses": {
           "201": {
-            "description": "One-use opaque authorization reference"
+            "description": "Tenant credential offer URL and one-use transaction code"
           },
           "400": {
             "description": "Invalid request format"
@@ -2995,97 +2995,102 @@
         "x-profile": "compat"
       }
     },
-    "/{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/_reserve": {
-      "post": {
+    "/.well-known/openid-credential-issuer/{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet": {
+      "get": {
         "tags": [
           "2. Device and Identity Registration"
         ],
-        "summary": "Reserve a professional wallet authorization for the credential authority",
-        "description": "Backend boundary. Only the configured credential authority may reserve the one-use reference.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": [
-                  "authorization_reference"
-                ],
-                "properties": {
-                  "authorization_reference": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
+        "summary": "Read OpenID4VCI Credential Issuer metadata for the tenant",
         "responses": {
           "200": {
-            "description": "Opaque issuance command and credential configuration"
-          },
-          "400": {
-            "description": "Invalid request format"
-          },
-          "401": {
-            "description": "Credential authority authentication required"
-          },
-          "403": {
-            "description": "Professional authorization unavailable"
-          },
-          "415": {
-            "description": "Expected JSON"
+            "description": "Tenant issuer",
+            "supported credentials and endpoints": null
           }
         },
         "x-profile": "compat"
       }
     },
-    "/{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/_sign": {
+    "/.well-known/oauth-authorization-server/{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet": {
+      "get": {
+        "tags": [
+          "2. Device and Identity Registration"
+        ],
+        "summary": "Read the tenant authorization server metadata",
+        "responses": {
+          "200": {
+            "description": "Token endpoint and supported pre-authorized grant"
+          }
+        },
+        "x-profile": "compat"
+      }
+    },
+    "/{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/credential-offers/{reference}": {
+      "get": {
+        "tags": [
+          "2. Device and Identity Registration"
+        ],
+        "summary": "Read an unexpired one-use tenant credential offer",
+        "responses": {
+          "200": {
+            "description": "Issuer",
+            "credential configuration and pre-authorized grant": null
+          },
+          "404": {
+            "description": "Unknown",
+            "expired or redeemed offer": null
+          }
+        },
+        "x-profile": "compat"
+      }
+    },
+    "/{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/token": {
       "post": {
         "tags": [
           "2. Device and Identity Registration"
         ],
-        "summary": "Sign a reserved professional credential for a verified wallet key",
-        "description": "Backend boundary. The configured credential authority submits the redeemed command and verified public holder key. The tenant rechecks eligibility before signing.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": [
-                  "command",
-                  "holderKey"
-                ],
-                "properties": {
-                  "command": {
-                    "type": "object"
-                  },
-                  "holderKey": {
-                    "type": "object"
-                  }
-                }
-              }
-            }
-          }
-        },
+        "summary": "Exchange a one-use pre-authorized code and transaction code for an access token",
         "responses": {
           "200": {
-            "description": "Issuance identifier and tenant-signed SD-JWT VC"
+            "description": "Short-lived access token"
           },
           "400": {
-            "description": "Invalid request format"
+            "description": "Invalid request",
+            "code or grant": null
+          }
+        },
+        "x-profile": "compat"
+      }
+    },
+    "/{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/nonce": {
+      "post": {
+        "tags": [
+          "2. Device and Identity Registration"
+        ],
+        "summary": "Obtain a fresh holder-key challenge",
+        "responses": {
+          "200": {
+            "description": "Single-use credential nonce"
+          }
+        },
+        "x-profile": "compat"
+      }
+    },
+    "/{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/credential": {
+      "post": {
+        "tags": [
+          "2. Device and Identity Registration"
+        ],
+        "summary": "Issue a tenant-signed credential after verifying a wallet holder proof",
+        "responses": {
+          "200": {
+            "description": "Tenant-signed SD-JWT VC"
+          },
+          "400": {
+            "description": "Invalid request",
+            "proof or nonce": null
           },
           "401": {
-            "description": "Credential authority authentication required"
-          },
-          "403": {
-            "description": "Professional authorization unavailable"
-          },
-          "415": {
-            "description": "Expected JSON"
+            "description": "Invalid or redeemed access token"
           }
         },
         "x-profile": "compat"

@@ -1,3 +1,7 @@
+import { createHash } from 'node:crypto';
+import { getFirestore } from 'firebase-admin/firestore';
+import { createFirestoreWalletOfferStore } from './adapters/professional-wallet-offer-store-firestore';
+import { createMemoryWalletOfferStore } from './adapters/professional-wallet-offer-store-mem';
 import { createProfessionalWalletRouter, readProfessionalWalletProfile } from './routes/professional-wallet';
 import { ProfessionalWalletIssuanceManager } from './managers/ProfessionalWalletIssuanceManager';
 import { GaiaXComplianceManager } from './managers/GaiaXComplianceManager';
@@ -489,8 +493,14 @@ async function startServer(options?: StartServerOptions) {
   const webhooksRouter = createWebhooksRouter(queueAdapter);
   const authRouter = createAuthRouter(appAuthManager, tokenManager);
   const walletProfile = readProfessionalWalletProfile(process.env);
+  const localWalletStore = config.networkMode === 'test' || config.networkMode === 'local-network';
+  if (walletProfile && !localWalletStore && config.dbProvider !== 'firestore') {
+    throw new Error('Professional wallet issuance on a hosted network requires shared Firestore offer storage.');
+  }
+  const walletNamespace = createHash('sha256').update(hostCollectionName).digest('hex');
   const professionalWalletRouter = walletProfile ? createProfessionalWalletRouter({
     ...walletProfile, apiBase: config.apiBaseUrl, tenants: tenantManager,
+    store: localWalletStore ? createMemoryWalletOfferStore() : createFirestoreWalletOfferStore(getFirestore(), walletNamespace),
     manager: new ProfessionalWalletIssuanceManager({
       repository: vaultRepository, kms: kmsService, replay: replayProtectionStore,
       verify: input => localClearingHouseVerifier.verifyProfessionalWalletEligibility(input),

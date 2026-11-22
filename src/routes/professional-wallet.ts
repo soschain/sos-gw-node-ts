@@ -1,6 +1,6 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
-import { Router, type Request } from 'express';
-import type { ProfessionalWalletIssuanceManager, ProfessionalWalletTenant } from '../managers/ProfessionalWalletIssuanceManager';
+import { createOpenId4VciIssuer, type WalletOfferStore } from 'antifraud-sdk-node-ts';
+import { Router, type RequestHandler } from 'express';
+import { type ProfessionalWalletIssuanceManager, type ProfessionalWalletTenant, WalletAuthorizationError } from '../managers/ProfessionalWalletIssuanceManager';
 import type { ITenantsManager } from '../managers/ITenantsManager';
 import { getTenantVaultId } from '../utils/tenant';
 
@@ -11,9 +11,6 @@ type WalletProfile = Readonly<{
   configurationId: string;
   vct: string;
 }>;
-
-const opaque = /^[A-Za-z0-9_-]{43,128}$/u;
-const digest = (value: string) => createHash('sha256').update(value).digest();
 
 function isProfile(value: unknown): value is WalletProfile {
   const profile = value as WalletProfile | undefined;
@@ -26,11 +23,15 @@ function isProfile(value: unknown): value is WalletProfile {
 
 export function readProfessionalWalletProfile(environment: NodeJS.ProcessEnv) {
   const profileJson = environment.PROFESSIONAL_WALLET_PROFILE_JSON;
-  const icaBearer = environment.PROFESSIONAL_WALLET_ICA_BEARER;
-  if (!profileJson && !icaBearer) return undefined;
+  const encodedSecret = environment.PROFESSIONAL_WALLET_OFFER_SECRET;
+  const publicOrigin = environment.PROFESSIONAL_WALLET_PUBLIC_ORIGIN;
+  if (!profileJson && !encodedSecret && !publicOrigin) return undefined;
   const profile: unknown = JSON.parse(profileJson || 'null');
-  if (!isProfile(profile) || !icaBearer || !opaque.test(icaBearer)) throw new Error('Invalid professional wallet issuer configuration.');
-  return { profile, icaBearer };
+  const secret = Buffer.from(encodedSecret ?? '', 'base64url');
+  if (!isProfile(profile) || secret.length < 32 || secret.toString('base64url') !== encodedSecret) {
+    throw new Error('Invalid professional wallet issuer configuration.');
+  }
+  return { profile, secret, publicOrigin };
 }
 
 function hasOnly(body: unknown, names: string[]): body is Record<string, unknown> {
@@ -41,7 +42,9 @@ function hasOnly(body: unknown, names: string[]): body is Record<string, unknown
 export function createProfessionalWalletRouter(options: {
   profile: WalletProfile;
   apiBase: string;
-  icaBearer: string;
+  publicOrigin?: string;
+  secret: Uint8Array;
+  store: WalletOfferStore;
   manager: Pick<ProfessionalWalletIssuanceManager, 'begin' | 'reserve' | 'issue'>;
   tenants: Pick<ITenantsManager, 'isTenantOperational' | 'getTenantDid'>;
 }) {
@@ -49,25 +52,42 @@ export function createProfessionalWalletRouter(options: {
   const { profile, manager, tenants } = options;
   const tenantVaultId = getTenantVaultId(profile.sector, profile.tenantId);
   const root = `/${profile.tenantId}/cds-${profile.jurisdiction}/v1/${profile.sector}/identity/openid/wallet`;
-  const authorizationAudience = new URL(root + '/_authorize', options.apiBase).href;
-  const bearerHash = digest(options.icaBearer);
+  const apiOrigin = new URL(options.apiBase);
+  const publicOrigin = new URL(options.publicOrigin ?? apiOrigin.origin);
+  const loopback = ['127.0.0.1', 'localhost'].includes(apiOrigin.hostname) && publicOrigin.hostname === apiOrigin.hostname;
+  if (publicOrigin.protocol !== 'https:' || publicOrigin.href !== publicOrigin.origin + '/'
+    || (publicOrigin.origin !== apiOrigin.origin && !loopback)) {
+    throw new Error('Professional wallet issuer requires the public HTTPS gateway origin.');
+  }
+  const authorizationAudience = new URL(root + '/_authorize', apiOrigin).href;
+  const credentialIssuer = new URL(root, publicOrigin).href;
   async function tenant(): Promise<ProfessionalWalletTenant | undefined> {
     const tenantDid = await tenants.getTenantDid(tenantVaultId);
     if (!tenantDid || !await tenants.isTenantOperational(tenantVaultId)) return undefined;
     return { tenantVaultId, tenantDid, authorizationAudience, configurationId: profile.configurationId, vct: profile.vct };
   }
 
-  function authenticateIca(request: Request): boolean {
-    const bearer = /^Bearer ([A-Za-z0-9_-]{43,128})$/iu.exec(request.headers.authorization || '')?.[1];
-    return Boolean(bearer && timingSafeEqual(digest(bearer), bearerHash));
-  }
+  const issuer = createOpenId4VciIssuer({
+    credentialIssuer, store: options.store, secret: options.secret,
+    credentialConfigurations: { [profile.configurationId]: { format: 'dc+sd-jwt', vct: profile.vct } },
+    async issue(command, holderKey) {
+      const context = await tenant();
+      if (!context) return undefined;
+      try {
+        return (await manager.issue(context, command, holderKey)).credential;
+      } catch (error) {
+        if (error instanceof WalletAuthorizationError) return undefined;
+        throw error;
+      }
+    },
+  });
 
   /**
    * @openapi
    * /{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/_authorize:
    *   post:
    *     tags: [2. Device and Identity Registration]
-   *     summary: Prepare private professional wallet authorization for a registered profile
+   *     summary: Prepare a tenant wallet offer for a registered professional profile
    *     description: Accepts a short-lived signed registered-profile presentation for the configured tenant and exact authorization audience.
    *     requestBody:
    *       required: true
@@ -81,7 +101,7 @@ export function createProfessionalWalletRouter(options: {
    *               client_id: { type: string }
    *               vp_token: { type: string }
    *     responses:
-   *       '201': { description: One-use opaque authorization reference }
+   *       '201': { description: Tenant credential offer URL and one-use transaction code }
    *       '400': { description: Invalid request format }
    *       '403': { description: Professional authorization unavailable }
    *       '415': { description: Expected JSON }
@@ -98,78 +118,89 @@ export function createProfessionalWalletRouter(options: {
       const context = await tenant();
       if (context) {
         const reference = await manager.begin(context, { clientId: body.client_id, presentation: body.vp_token });
-        return response.status(201).json({ authorization_reference: reference });
+        const { command, configurationId } = await manager.reserve(context, reference);
+        return response.status(201).json(await issuer.prepare(command, configurationId));
       }
     } catch { /* Never disclose professional, device or ledger details. */ }
     return response.status(403).json({ error: 'access_denied' });
   });
 
+  const walletProtocol: RequestHandler = async (request, response) => {
+    try {
+      const headers = new Headers();
+      const contentType = request.get('content-type');
+      const authorization = request.get('authorization');
+      if (contentType) headers.set('content-type', contentType);
+      if (authorization) headers.set('authorization', authorization);
+      let body: string | undefined;
+      if (request.method === 'POST' && request.is('application/x-www-form-urlencoded')) {
+        const form = new URLSearchParams();
+        for (const [key, value] of Object.entries(request.body ?? {})) {
+          if (typeof value !== 'string') {
+            return response.set('Cache-Control', 'no-store').status(400).json({ error: 'invalid_request' });
+          }
+          form.append(key, value);
+        }
+        body = form.toString();
+      } else if (request.method === 'POST' && request.is('application/json')) {
+        body = JSON.stringify(request.body);
+      }
+      const url = new URL(publicOrigin.origin + request.path);
+      const result = await issuer.handle(new globalThis.Request(url, { method: request.method, headers, body }));
+      if (!result) return response.status(404).end();
+      for (const [header, value] of result.headers) response.set(header, value);
+      return response.status(result.status).send(await result.text());
+    } catch {
+      return response.set('Cache-Control', 'no-store').status(503).json({ error: 'temporarily_unavailable' });
+    }
+  };
+
   /**
    * @openapi
-   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/_reserve:
+   * /.well-known/openid-credential-issuer/{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet:
+   *   get:
+   *     tags: [2. Device and Identity Registration]
+   *     summary: Read OpenID4VCI Credential Issuer metadata for the tenant
+   *     responses:
+   *       '200': { description: Tenant issuer, supported credentials and endpoints }
+   * /.well-known/oauth-authorization-server/{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet:
+   *   get:
+   *     tags: [2. Device and Identity Registration]
+   *     summary: Read the tenant authorization server metadata
+   *     responses:
+   *       '200': { description: Token endpoint and supported pre-authorized grant }
+   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/credential-offers/{reference}:
+   *   get:
+   *     tags: [2. Device and Identity Registration]
+   *     summary: Read an unexpired one-use tenant credential offer
+   *     responses:
+   *       '200': { description: Issuer, credential configuration and pre-authorized grant }
+   *       '404': { description: Unknown, expired or redeemed offer }
+   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/token:
    *   post:
    *     tags: [2. Device and Identity Registration]
-   *     summary: Reserve a professional wallet authorization for the credential authority
-   *     description: Backend boundary. Only the configured credential authority may reserve the one-use reference.
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             type: object
-   *             additionalProperties: false
-   *             required: [authorization_reference]
-   *             properties:
-   *               authorization_reference: { type: string }
+   *     summary: Exchange a one-use pre-authorized code and transaction code for an access token
    *     responses:
-   *       '200': { description: Opaque issuance command and credential configuration }
-   *       '400': { description: Invalid request format }
-   *       '401': { description: Credential authority authentication required }
-   *       '403': { description: Professional authorization unavailable }
-   *       '415': { description: Expected JSON }
-   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/_sign:
+   *       '200': { description: Short-lived access token }
+   *       '400': { description: Invalid request, code or grant }
+   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/nonce:
    *   post:
    *     tags: [2. Device and Identity Registration]
-   *     summary: Sign a reserved professional credential for a verified wallet key
-   *     description: Backend boundary. The configured credential authority submits the redeemed command and verified public holder key. The tenant rechecks eligibility before signing.
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             type: object
-   *             additionalProperties: false
-   *             required: [command, holderKey]
-   *             properties:
-   *               command: { type: object }
-   *               holderKey: { type: object }
+   *     summary: Obtain a fresh holder-key challenge
    *     responses:
-   *       '200': { description: Issuance identifier and tenant-signed SD-JWT VC }
-   *       '400': { description: Invalid request format }
-   *       '401': { description: Credential authority authentication required }
-   *       '403': { description: Professional authorization unavailable }
-   *       '415': { description: Expected JSON }
+   *       '200': { description: Single-use credential nonce }
+   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/credential:
+   *   post:
+   *     tags: [2. Device and Identity Registration]
+   *     summary: Issue a tenant-signed credential after verifying a wallet holder proof
+   *     responses:
+   *       '200': { description: Tenant-signed SD-JWT VC }
+   *       '400': { description: Invalid request, proof or nonce }
+   *       '401': { description: Invalid or redeemed access token }
    */
-  for (const operation of ['_reserve', '_sign'] as const) {
-    router.post(root + '/' + operation, async (request, response) => {
-      response.set('Cache-Control', 'no-store');
-      if (!authenticateIca(request)) return response.status(401).json({ error: 'invalid_client' });
-      if (!request.is('application/json')) return response.status(415).json({ error: 'invalid_request' });
-      const body: unknown = request.body;
-      try {
-        const context = await tenant();
-        if (context) {
-          if (operation === '_reserve' && hasOnly(body, ['authorization_reference']) && typeof body.authorization_reference === 'string') {
-            return response.json(await manager.reserve(context, body.authorization_reference));
-          }
-          if (operation === '_sign' && hasOnly(body, ['command', 'holderKey'])) {
-            return response.json(await manager.issue(context, body.command, body.holderKey));
-          }
-          return response.status(400).json({ error: 'invalid_request' });
-        }
-      } catch { /* Never disclose professional, device or ledger details. */ }
-      return response.status(403).json({ error: 'access_denied' });
-    });
-  }
+  router.get('/.well-known/openid-credential-issuer' + root, walletProtocol);
+  router.get('/.well-known/oauth-authorization-server' + root, walletProtocol);
+  router.get(root + '/credential-offers/:reference', walletProtocol);
+  router.post([root + '/token', root + '/nonce', root + '/credential'], walletProtocol);
   return router;
 }
