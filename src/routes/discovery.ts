@@ -3,7 +3,7 @@
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
 
 import * as express from 'express';
-import { bindOrganizationRegistrationEvidence, buildHostOrganizationStatement, getIssuedOrganizationCredential, getParticipantGaiaXCredential } from '../utils/organization-discovery-credential';
+import { bindOrganizationRegistrationEvidence, buildHostOrganizationStatement, getIssuedOrganizationCredential, getParticipantGaiaXCredential, getSignedHostOrganizationCredential } from '../utils/organization-discovery-credential';
 import type { IDiscoveryTenantRegistry } from '../managers/IDiscoveryTenantRegistry';
 import type { PublicOfferingCatalogManager } from '../managers/PublicOfferingCatalogManager';
 import { DiscoveryService } from '../services/DiscoveryService';
@@ -1137,14 +1137,19 @@ export function createDiscoveryRouter(
    *       '200': { description: Original signed OrganizationCredential with a schema.org Organization subject }
    *       '404': { description: Organization credential unavailable }
    */
-  router.get([`${hostScopedWellKnownPrefix}/organization.json`, `${tenantWellKnownPrefix}/organization.json`], resolveTenant, async (_req, res) => {
-    const vaultId = res.locals.vaultId;
-    const entity = await tenantsCacheManager.getTenant(vaultId);
-    const credential = getIssuedOrganizationCredential(entity);
-    if (credential) return res.type('application/json').send(JSON.stringify(credential));
-    const statement = vaultId === 'host' ? buildHostOrganizationStatement(entity) : undefined;
-    if (!statement) return res.status(404).type('text').send('Not Found');
-    return res.json(await signDetachedOrganizationPublication({ ...statement }, statement.issuer, vaultId));
+  router.get([`${hostScopedWellKnownPrefix}/organization.json`, `${tenantWellKnownPrefix}/organization.json`], resolveTenant, async (_req, res, next) => {
+    try {
+      const vaultId = res.locals.vaultId;
+      const entity = await tenantsCacheManager.getTenant(vaultId);
+      const credential = getIssuedOrganizationCredential(entity)
+        ?? (vaultId === 'host' ? getSignedHostOrganizationCredential(entity) : undefined);
+      if (credential) return res.type('application/json').send(JSON.stringify(credential));
+      const statement = vaultId === 'host' ? buildHostOrganizationStatement(entity) : undefined;
+      if (!statement) return res.status(404).type('text').send('Not Found');
+      return res.json(await signDetachedOrganizationPublication({ ...statement }, statement.issuer, vaultId));
+    } catch (error) {
+      return next(error);
+    }
   });
 
   const bindPublicOrganizationEvidence = (

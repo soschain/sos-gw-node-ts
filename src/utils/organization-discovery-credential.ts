@@ -12,16 +12,28 @@ interface OrganizationPublicationRecord {
   selfDescriptionVc?: VerifiableCredentialV2;
 }
 
-/** Selects the original organization VC from records already admitted by the gateway. */
-export function isIssuedOrganizationCredential(value?: VerifiableCredentialV2): value is VerifiableCredentialV2 {
+function isSignedOrganizationCredential(value?: VerifiableCredentialV2): value is VerifiableCredentialV2 {
   if (!value || !Array.isArray(value.type) || !value.type.includes(ReviewedOrganizationCredentialTypes.Organization)
     || !Array.isArray(value['@context']) || !value['@context'].includes('https://schema.org')) return false;
   const subject = value.credentialSubject;
   const proofs = Array.isArray(value.proof) ? value.proof : [value.proof];
   return subject?.['@type'] === 'Organization' && typeof subject.id === 'string'
-    && typeof value.issuer === 'string' && Boolean(value.issuer) && value.issuer !== subject.id
+    && typeof value.issuer === 'string' && Boolean(value.issuer)
     && proofs.some(proof => proof?.verificationMethod?.startsWith(`${value.issuer}#`)
       && Boolean(proof.jws || proof.proofValue));
+}
+
+/** Selects the original organization VC from records already admitted by the gateway. */
+export function isIssuedOrganizationCredential(value?: VerifiableCredentialV2): value is VerifiableCredentialV2 {
+  return isSignedOrganizationCredential(value) && value.issuer !== value.credentialSubject.id;
+}
+
+/** Preserves the admitted original host statement and all proofs attached to it. */
+export function getSignedHostOrganizationCredential(entity?: OrganizationPublicationRecord): VerifiableCredentialV2 | undefined {
+  const credential = entity?.organizationCredential;
+  const hostDid = entity?.didDocument?.id;
+  if (isSignedOrganizationCredential(credential) && credential.issuer === hostDid
+    && credential.credentialSubject.id === hostDid) return credential;
 }
 
 

@@ -613,6 +613,35 @@ describe('Well-Known Tenant Artifacts API', () => {
     expect(JSON.parse(mismatch.text)).toEqual(declaration);
   });
 
+  it('preserves the original host organization statement and its endorsements', async () => {
+    const urn = parseTenantUrn(testTenant1IdentifierUrn)!;
+    const tenantBase = `/${testTenant1AlternateName}/cds-${urn.jurisdiction}/${urn.version}/${urn.sector}/.well-known`;
+    const hostBase = `/host/cds-${EXAMPLE_COVERAGE_SCOPE_EU}/v1/${HostNetworkTypes.Test}/.well-known`;
+    const did = testTenant1DidWebHosted;
+    const organization = {
+      '@context': ['https://www.w3.org/ns/credentials/v2', 'https://schema.org'],
+      type: ['VerifiableCredential', 'OrganizationCredential'],
+      issuer: did,
+      credentialSubject: { id: did, '@type': 'Organization', taxID: testHostIdValue },
+      evidence: [{ type: 'document' }],
+      proof: [did, EXAMPLE_HOSTING_OPERATOR_DID].map(signer => ({
+        verificationMethod: `${signer}#test-key`, jws: 'header..signature',
+      })),
+    };
+    mockTenantsCacheManager.getDidDocument.mockResolvedValue({ id: did } as any);
+    mockTenantsCacheManager.getTenant.mockResolvedValue({
+      didDocument: { id: did }, organizationCredential: organization, claims: testClaimsRegisterTenantExpanded,
+    } as any);
+    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'test-key', use: 'sig', purpose: 'vc_sign' }] } as any);
+    mockKmsService.createDetachedJws.mockResolvedValue('header..signature');
+    const response = await invokeExpress(app, { method: 'GET', url: `${hostBase}/organization.json` });
+    expect(response.status).toBe(200);
+    expect(JSON.parse(response.text)).toEqual(organization);
+    expect(mockKmsService.createDetachedJws).not.toHaveBeenCalled();
+    const tenant = await invokeExpress(app, { method: 'GET', url: `${tenantBase}/organization.json` });
+    expect(tenant.status).toBe(404);
+  });
+
   it('publishes a provisional host organization statement without issuing one for tenants', async () => {
     const urn = parseTenantUrn(testTenant1IdentifierUrn)!;
     const tenantBase = `/${testTenant1AlternateName}/cds-${urn.jurisdiction}/${urn.version}/${urn.sector}/.well-known`;

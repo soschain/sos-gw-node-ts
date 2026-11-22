@@ -12,6 +12,8 @@ Use the scoped host or tenant base URL and append `/.well-known/` followed by th
 
 Start at `organization.json`. Read `credentialSubject.identifier` and `credentialSubject.taxID` when present. Check every available entry in `proof` against its `verificationMethod`. A host self-signature establishes who made the statement and protects its contents. Evidence in an ICA-issued credential describes the checks that the ICA attests to. Each additional proof must verify against the credential it signs and be assessed against the authority of its signer.
 
+When the host has an existing organization statement with additional proofs, the gateway returns that original statement with its complete proof set. A change to the signed contents requires a new signature from each attesting party.
+
 1. Download either representation of the participant declaration. Resolve its issuer's DID, confirm that its assertion key is authorized, and verify the signature. Decoding the JWT only reveals the claims.
 2. If the signed declaration includes a `relatedResource[].id` ending in `/organization.json`, follow that link. Compute a SHA-256 digest of the response bytes before reformatting the JSON, encode the digest in standard Base64, and compare it with `digestSRI` after `sha256-`.
 3. Verify the original ICA credential's proof using the ICA issuer's published verification material. Confirm that the ICA is trusted for organization issuance by the data space and check validity and status where available.

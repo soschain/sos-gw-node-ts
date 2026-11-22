@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Preserve the original signed organization statement of the host and its
+  complete proof set when that statement has been recorded.
+
 - Publish a host-signed organization identity under `organization.json` when the
   host has a configured legal identity and no admitted ICA credential.
 
