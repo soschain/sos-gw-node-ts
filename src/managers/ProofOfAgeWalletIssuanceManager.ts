@@ -13,6 +13,7 @@ import { WalletAuthorizationError } from './ProfessionalWalletIssuanceManager';
 type IssuerContext = Readonly<{ tenantVaultId: string; tenantDid: string; authorizationAudience: string }>;
 type Presentation = Readonly<{ clientId: string; presentation: string }>;
 type Member = Pick<IndividualWalletEligibility, 'actorDid' | 'subjectDid'>;
+type EvidenceHolder = Readonly<{ tenantVaultId: string; holderReference: string }>;
 type HolderKey = Parameters<Parameters<typeof createOpenId4VciIssuer>[0]['issue']>[1];
 type Projection = Readonly<{ docType: string; namespaces: Readonly<Record<string, Readonly<Record<string, boolean>>>> }>;
 type Authorization = Readonly<IssuerContext & Presentation & Member & {
@@ -51,7 +52,7 @@ export class ProofOfAgeWalletIssuanceManager {
     kms: Pick<IKmsService, 'protectConfidentialData' | 'unprotectConfidentialData'>;
     replay: IReplayProtectionStore;
     verify: LedgerPresentationVerifier['verifyIndividualWalletEligibility'];
-    readApprovedEvidence(context: IssuerContext, member: Member): Promise<Readonly<{ revision: string; projection: Projection }> | undefined>;
+    readApprovedEvidence(holder: EvidenceHolder): Promise<Readonly<{ revision: string; projection: Projection }> | undefined>;
     sign(projection: Projection, holder: HolderKey, context: IssuerContext): Promise<string>;
     now?: () => number;
   }) {}
@@ -59,7 +60,7 @@ export class ProofOfAgeWalletIssuanceManager {
   async authorize(tenant: IssuerContext, proof: Presentation): Promise<WalletIssuanceCommand> {
     const context = contextFor(tenant);
     const { actorDid, subjectDid, presentationId, expiresAt } = await this.verify(context, proof);
-    const evidence = await this.readEvidence(context, { actorDid, subjectDid });
+    const evidence = await this.readEvidence(context.tenantVaultId, actorDid);
     await this.reserveOnce(context, 'presentation', `${proof.clientId}:${presentationId}`, expiresAt);
     const reference = randomBytes(32).toString('base64url');
     const authorization: Authorization = {
@@ -100,14 +101,14 @@ export class ProofOfAgeWalletIssuanceManager {
     const { actorDid, subjectDid } = await this.verify(context, authorization);
     if (actorDid !== authorization.actorDid || subjectDid !== authorization.subjectDid ||
       authorization.expiresAt <= this.now()) throw unavailable();
-    const evidence = await this.readEvidence(context, { actorDid, subjectDid });
+    const evidence = await this.readEvidence(context.tenantVaultId, actorDid);
     if (evidence.revision !== authorization.evidenceRevision ||
       digest(evidence.projection) !== authorization.projectionDigest) throw this.evidenceUnavailable();
     return evidence.projection;
   }
 
-  private async readEvidence(context: IssuerContext, member: Member) {
-    const evidence = await this.dependencies.readApprovedEvidence(context, member);
+  private async readEvidence(tenantVaultId: string, holderReference: string) {
+    const evidence = await this.dependencies.readApprovedEvidence({ tenantVaultId, holderReference });
     if (!evidence?.revision || evidence.projection.docType !== this.dependencies.docType) {
       throw this.evidenceUnavailable();
     }

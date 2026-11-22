@@ -9,6 +9,8 @@
   membership before releasing the signed credential.
 - Reject age evidence for a different document type before preparing or
   redeeming the offer advertised by the wallet issuer.
+- Read age approvals for the authenticated holder. A linked card supplies
+  the membership context and cannot substitute another person's approval.
 
 - Provision new credential assertion keys with ML-DSA-65. Use ES256 for the
   SMART Health Card JWS and require a credential-purpose ML-DSA-65 companion

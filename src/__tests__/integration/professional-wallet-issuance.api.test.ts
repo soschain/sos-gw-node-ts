@@ -8,6 +8,8 @@ import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import express from 'express';
 import request from 'supertest';
 import { REPOSITORY_SAFE_EXAMPLES as e } from 'sos-data-utils-ts/repository-privacy';
+import { ApprovedProofOfAgeVault } from 'sos-sdk-node-ts/approved-proof-of-age-vault';
+import { TransactionalMemoryVaultRepository } from 'sos-sdk-node-ts/transactional-vault';
 import { WalletAuthorizationError } from '../../managers/ProfessionalWalletIssuanceManager';
 import { ProofOfAgeWalletIssuanceManager } from '../../managers/ProofOfAgeWalletIssuanceManager';
 import { createMemoryWalletOfferStore } from '../../adapters/professional-wallet-offer-store-mem';
@@ -89,6 +91,7 @@ it('keeps an enabled age offer separate from the employee profile and rejects ca
   const cache = new TenantsCacheManager(vault, () => kms, e.tenantId);
   const kms: KmsService = new KmsService(new CryptographyService(new AdapterCryptoSdkNode()), cache);
   const tenantVaultId = getTenantVaultId(profile.sector, profile.tenantId);
+  const holderReference = `${e.didWeb}:member`;
   const now = Math.floor(Date.now() / 1000);
   const keyPair = await generateKeyPair('ES256');
   const key = await exportJWK(keyPair.publicKey);
@@ -98,6 +101,19 @@ it('keeps an enabled age offer separate from the employee profile and rejects ca
     const projection = { docType: age.doctype, namespaces: { [age.doctype]: { age_over_18: true } } };
     const signerFixture = Buffer.from([0xa0]).toString('base64url');
     let signerCalls = 0;
+    const holder = { tenantVaultId, holderReference };
+    const reviewer = {};
+    const reviews = new ApprovedProofOfAgeVault({
+      store: new TransactionalMemoryVaultRepository(),
+      verifyReview: async (participant, reviewId) => participant === reviewer && reviewId === e.resourceUuid
+        ? { ...holder, revision: reviewId, expiresAt: (now + 60) * 1000, projection }
+        : undefined,
+      resolveHolder: async identity => {
+        expect(identity).toEqual(holder);
+        return holder;
+      },
+      now: () => now * 1000,
+    });
     const ageManager = new ProofOfAgeWalletIssuanceManager({
       docType: age.doctype,
       kms, repository: vault, replay: new ReplayProtectionStoreMem(),
@@ -106,10 +122,10 @@ it('keeps an enabled age offer separate from the employee profile and rejects ca
           tenantDid: e.didWeb, tenantVaultId, authorizationAudience: new URL(ageAction, e.httpsBaseUrl).href,
           clientId: credentials.client_id, presentation: credentials.vp_token,
         });
-        return { actorDid: `${e.didWeb}:member`, subjectDid: `${e.didWeb}:individual`,
+        return { actorDid: holderReference, subjectDid: `${e.didWeb}:individual`,
           clientId: credentials.client_id, presentationId: credentials.vp_token, expiresAt: now + 60 };
       },
-      readApprovedEvidence: async () => ({ revision: 'approved-revision', projection }),
+      readApprovedEvidence: holder => reviews.read(holder),
       sign: async (actual, holder) => {
         expect(actual).toEqual(projection);
         expect(holder).toEqual(key);
@@ -126,6 +142,8 @@ it('keeps an enabled age offer separate from the employee profile and rejects ca
       proofOfAge: { ...age, authorize: ageManager.authorize.bind(ageManager), issue: ageManager.issue.bind(ageManager) },
     }));
     expect((await request(app).post(ageAction).send({ ...credentials, age_over_18: true })).status).toBe(400);
+    expect((await request(app).post(ageAction).send(credentials)).status).toBe(403);
+    await reviews.record(reviewer, e.resourceUuid);
     const begin = await request(app).post(ageAction).send(credentials);
     expect(begin.status).toBe(201);
     expect(begin.headers['cache-control']).toBe('no-store');

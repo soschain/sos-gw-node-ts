@@ -39,9 +39,8 @@ it('only signs once with current approved evidence for the same member and tenan
         if (!active) throw new Error('Registered device inactive');
         return {clientId, actorDid, subjectDid, presentationId: presentation, expiresAt: now + 60};
       },
-      readApprovedEvidence: async (context, identity) => {
-        expect(context).toEqual(tenant);
-        expect(identity).toEqual({actorDid, subjectDid});
+      readApprovedEvidence: async (identity) => {
+        expect(identity).toEqual({tenantVaultId: tenant.tenantVaultId, holderReference: actorDid});
         return revision ? {revision, projection: {
           docType: documentType, namespaces: { [documentType]: { age_over_18: claimIndicatesAdult } },
         }} : undefined;
