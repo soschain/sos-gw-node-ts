@@ -4,6 +4,7 @@ export function registerCoreRouters(options: {
   app: express.Express;
   discoveryRouter: express.Router;
   authorityRouter?: express.Router;
+  professionalWalletRouter?: express.Router;
   ledgerRouter: express.Router;
   apiRouter: express.Router;
   networkRouter: express.Router;
@@ -15,6 +16,7 @@ export function registerCoreRouters(options: {
     app,
     discoveryRouter,
     authorityRouter,
+    professionalWalletRouter,
     ledgerRouter,
     apiRouter,
     networkRouter,
@@ -26,6 +28,9 @@ export function registerCoreRouters(options: {
   app.use('/', discoveryRouter);
   if (authorityRouter) {
     app.use('/', authorityRouter);
+  }
+  if (professionalWalletRouter) {
+    app.use('/', professionalWalletRouter);
   }
   app.use('/', ledgerRouter);
   app.use('/', apiRouter);

@@ -19,6 +19,25 @@ A professional SMART Health Card is a separate signed FHIR representation of the
 
 The gateway's existing `/identity/oidc/credential` route issues the legacy Gaia-X `LegalParticipant` credential. It rejects professional and OpenID4VCI configuration requests. The professional wallet flow requires its own holder-authorized issuance from the tenant.
 
+The enabled professional wallet profile accepts a signed assertion from a
+currently registered professional at
+`/{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/_authorize`.
+The ICA then reserves the opaque reference, authenticates the wallet proof
+and asks the tenant gateway to sign. The gateway rechecks the device and
+licence at signing time. The signed credential binds the wallet's public
+key and carries the professional occupation as a selective disclosure.
+
+Configure `PROFESSIONAL_WALLET_PROFILE_JSON` with `tenantId`, `jurisdiction`,
+`sector`, `configurationId`, and `vct`. Set
+`PROFESSIONAL_WALLET_ICA_BEARER` to the credential authority's independent
+backend secret. The ICA calls the `_reserve` and `_sign` actions on the same
+tenant route. The issuer is the tenant DID, and a tenant ES256 credential
+signing key is required for this profile. The signed assertion audience uses
+the configured gateway base URL and the complete `_authorize` path.
+See the [request examples](./openapi-examples/core-flow-examples.json) under
+`PROFESSIONAL_WALLET_REQUESTS`.
+
+
 ### Shared wallet integration
 
 Antifraud SDK Core owns the transport-independent offer and presentation contracts. Its Node adapter calls the issuer and verifier services from an authenticated backend. Its frontend adapter opens a validated wallet offer and resumes the transaction after the wallet returns. An installed app supplies native linking and secure storage adapters for the same flow.
