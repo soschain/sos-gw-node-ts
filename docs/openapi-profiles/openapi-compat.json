@@ -4,7 +4,7 @@
     "title": "Gateway API - COMPAT",
     "version": "1.0.3",
     "description": "Compatibility profile including legacy and alias routes on top of the core flow.",
-    "x-profile-generated-at": "2026-11-22T10:27:47.004Z",
+    "x-profile-generated-at": "2026-11-22T11:12:33.331Z",
     "x-profile-name": "compat"
   },
   "servers": [],
@@ -4281,6 +4281,9 @@
         "responses": {
           "200": {
             "description": "Issued VC"
+          },
+          "400": {
+            "description": "Credential type or issuance configuration unsupported by this Gaia-X route"
           },
           "401": {
             "description": "Missing or invalid Bearer token"

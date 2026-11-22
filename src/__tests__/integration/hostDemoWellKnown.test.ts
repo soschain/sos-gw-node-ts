@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { Content, CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { EXAMPLE_SIGNED_TERMS_PDF_URL } from 'sos-data-utils-ts/gateway-flow-examples';
+import { ProfessionalCredentialTypes } from 'sos-data-utils-ts/identity-credential-contracts';
 import { AdapterCryptoSdkNode } from '../../gdc-backend-utils-node/adapters/node/crypto';
 import { ORGANIZATION_REGISTRATION_REQUEST } from '../data/example-payloads';
 import { invokeExpress } from './helpers/invokeExpress';
@@ -135,6 +136,15 @@ describe('Host well-known endpoints (demo, mem)', () => {
       expect(issuedVc.status).toBe(200);
       const issuedVcJson = JSON.parse(issuedVc.text);
       expect(issuedVcJson.issuer).toBe(HOST_DID);
+
+      const professionalVc = await invokeExpress(app, {
+        method: 'POST',
+        url: '/host/cds-ES/v1/health-care/identity/oidc/credential',
+        headers: { authorization: 'Bearer demo', 'content-type': 'application/json' },
+        body: { format: 'jwt_vc_json', type: ProfessionalCredentialTypes.EmployeeCredential },
+      });
+      expect(professionalVc.status).toBe(400);
+      expect(JSON.parse(professionalVc.text)).toEqual({ error: 'unknown_credential_configuration' });
     } finally {
       queueAdapter.stop();
       if (previousHostTermsUrl === undefined) delete process.env.HOST_TERMS_URL;

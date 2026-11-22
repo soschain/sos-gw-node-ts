@@ -9,6 +9,22 @@ Use the scoped host or tenant base URL and append `/.well-known/` followed by th
 | `legal-participant.vc.json` | The same Legal Person declaration in a signed JWT. The W3C envelope's top-level `id` contains the JWT after `data:application/vc+jwt,`. |
 | `organization.json` | The `OrganizationCredential` identifies the Schema.org `Organization`, gives its legal identifier and carries any evidence included by the issuer. The host may publish a self-signed statement. An ICA-issued credential is published with its original issuer, evidence and proofs. For enrollment by digitally signed PDF, the ICA's evidence records the document digest and the signature and certificate checks. |
 
+## Professional credentials
+
+The application contract distinguishes an organization's legal identity from a professional's employment authorization. A professional `EmployeeCredential` used in SMART presentations uses Schema.org person properties. It identifies the professional by DID, carries the role in `hasOccupation` and can include a normalized email hash in `sameAs`, a hashed telephone and a reference to public signing material. The base projection omits the name and raw contact fields. A stable contact hash is a pseudonymous identifier.
+
+Deliver a professional credential through an authenticated flow scoped to the holder and organization. The public `vc.json` file below is reserved for organization discovery. A public professional DID can supply verification keys. The credential belongs in the holder's protected profile or wallet. For wallet issuance, OpenID4VCI binds the issued credential to the wallet's public key. OpenID4VP lets the holder prove control of that key when presenting the credential. [OpenID4VCI](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0-final.html) · [OpenID4VP](https://openid.net/specs/openid-4-verifiable-presentations-1_0-final.html)
+
+A professional SMART Health Card is a separate signed FHIR representation of the authorization. It carries an `Organization`, a `Practitioner` and a `PractitionerRole` in a FHIR `Bundle`. Verify its issuer signature and authorization reference. Issuing this representation requires a FHIR projection and signature.
+
+The gateway's existing `/identity/oidc/credential` route issues the legacy Gaia-X `LegalParticipant` credential. It rejects professional and OpenID4VCI configuration requests. The professional wallet flow requires its own holder-authorized issuance from the tenant.
+
+### Shared wallet integration
+
+Antifraud SDK Core owns the transport-independent offer and presentation contracts. Its Node adapter calls the issuer and verifier services from an authenticated backend. Its frontend adapter opens a validated wallet offer and resumes the transaction after the wallet returns. An installed app supplies native linking and secure storage adapters for the same flow.
+
+SOS SDK Core supplies the professional credential profile and the organization, active employment and role checks. SOS SDK Node exposes the server operation to the portal backend. The portal and installed app display the same operation and status. The issuer signs with the tenant's credential signing key after confirming eligibility. The holder's signing key remains in the wallet.
+
 ## Verify the credential and its evidence
 
 Start at `organization.json`. Read `credentialSubject.identifier` and `credentialSubject.taxID` when present. Check every available entry in `proof` against its `verificationMethod`. A host self-signature establishes who made the statement and protects its contents. Evidence in an ICA-issued credential describes the checks that the ICA attests to. Each additional proof must verify against the credential it signs and be assessed against the authority of its signer.

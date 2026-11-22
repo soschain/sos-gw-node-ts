@@ -1093,6 +1093,7 @@ export function createApiRouter(
    *               pqc: { type: boolean }
    *     responses:
    *       '200': { description: Issued VC }
+   *       '400': { description: Credential type or issuance configuration unsupported by this Gaia-X route }
    *       '401': { description: Missing or invalid Bearer token }
    *       '404': { description: Tenant not found }
    */
@@ -1123,6 +1124,13 @@ export function createApiRouter(
           `Invalid Bearer token: ${error?.message || 'verification failed'}`,
         );
       }
+    }
+
+    const issuanceRequest = req.body ?? {};
+    if ((issuanceRequest.type !== undefined && issuanceRequest.type !== 'gx:LegalParticipant')
+      || Object.hasOwn(issuanceRequest, 'credential_configuration_id')
+      || Object.hasOwn(issuanceRequest, 'credential_identifier')) {
+      return res.status(400).json({ error: 'unknown_credential_configuration' });
     }
 
     const { tenantId, sector } = req.params;
