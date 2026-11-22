@@ -46,6 +46,7 @@ function commandFor(reference: string): WalletIssuanceCommand {
 /** Holds one encrypted grant while the wallet completes OpenID4VCI. */
 export class ProofOfAgeWalletIssuanceManager {
   constructor(private readonly dependencies: {
+    docType: string;
     repository: Pick<IVaultRepository, 'get' | 'put' | 'delete'>;
     kms: Pick<IKmsService, 'protectConfidentialData' | 'unprotectConfidentialData'>;
     replay: IReplayProtectionStore;
@@ -58,8 +59,7 @@ export class ProofOfAgeWalletIssuanceManager {
   async authorize(tenant: IssuerContext, proof: Presentation): Promise<WalletIssuanceCommand> {
     const context = contextFor(tenant);
     const { actorDid, subjectDid, presentationId, expiresAt } = await this.verify(context, proof);
-    const evidence = await this.dependencies.readApprovedEvidence(context, { actorDid, subjectDid });
-    if (!evidence?.revision) throw this.evidenceUnavailable();
+    const evidence = await this.readEvidence(context, { actorDid, subjectDid });
     await this.reserveOnce(context, 'presentation', `${proof.clientId}:${presentationId}`, expiresAt);
     const reference = randomBytes(32).toString('base64url');
     const authorization: Authorization = {
@@ -100,11 +100,18 @@ export class ProofOfAgeWalletIssuanceManager {
     const { actorDid, subjectDid } = await this.verify(context, authorization);
     if (actorDid !== authorization.actorDid || subjectDid !== authorization.subjectDid ||
       authorization.expiresAt <= this.now()) throw unavailable();
-    const evidence = await this.dependencies.readApprovedEvidence(context, { actorDid, subjectDid });
-    if (!evidence || evidence.revision !== authorization.evidenceRevision) throw this.evidenceUnavailable();
-    const projection = structuredClone(evidence.projection);
-    if (digest(projection) !== authorization.projectionDigest) throw this.evidenceUnavailable();
-    return projection;
+    const evidence = await this.readEvidence(context, { actorDid, subjectDid });
+    if (evidence.revision !== authorization.evidenceRevision ||
+      digest(evidence.projection) !== authorization.projectionDigest) throw this.evidenceUnavailable();
+    return evidence.projection;
+  }
+
+  private async readEvidence(context: IssuerContext, member: Member) {
+    const evidence = await this.dependencies.readApprovedEvidence(context, member);
+    if (!evidence?.revision || evidence.projection.docType !== this.dependencies.docType) {
+      throw this.evidenceUnavailable();
+    }
+    return { revision: evidence.revision, projection: structuredClone(evidence.projection) };
   }
 
   private async verify(context: IssuerContext, { clientId, presentation }: Presentation) {

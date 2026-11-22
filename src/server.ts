@@ -512,6 +512,7 @@ async function startServer(options?: StartServerOptions) {
   const walletNamespace = createHash('sha256').update(hostCollectionName).digest('hex');
   const proofOfAge = options?.proofOfAge;
   const ageWalletManager = proofOfAge && new ProofOfAgeWalletIssuanceManager({
+    docType: proofOfAge.doctype,
     repository: vaultRepository, kms: kmsService, replay: replayProtectionStore,
     verify: input => localClearingHouseVerifier.verifyIndividualWalletEligibility(input),
     readApprovedEvidence: proofOfAge.readApprovedEvidence, sign: proofOfAge.sign,

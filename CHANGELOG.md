@@ -7,6 +7,8 @@
 - Bind Proof of Age authorizations to an encrypted one-use grant, the
   registered member and the approved evidence revision. Recheck evidence and
   membership before releasing the signed credential.
+- Reject age evidence for a different document type before preparing or
+  redeeming the offer advertised by the wallet issuer.
 
 - Provision new credential assertion keys with ML-DSA-65. Use ES256 for the
   SMART Health Card JWS and require a credential-purpose ML-DSA-65 companion

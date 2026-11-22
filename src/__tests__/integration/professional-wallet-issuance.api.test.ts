@@ -99,6 +99,7 @@ it('keeps an enabled age offer separate from the employee profile and rejects ca
     const signerFixture = Buffer.from([0xa0]).toString('base64url');
     let signerCalls = 0;
     const ageManager = new ProofOfAgeWalletIssuanceManager({
+      docType: age.doctype,
       kms, repository: vault, replay: new ReplayProtectionStoreMem(),
       verify: async context => {
         expect(context).toEqual({

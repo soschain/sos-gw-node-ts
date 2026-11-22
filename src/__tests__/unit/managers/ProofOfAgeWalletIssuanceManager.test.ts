@@ -30,9 +30,11 @@ it('only signs once with current approved evidence for the same member and tenan
     let active = true;
     let supersedeDuringSigning = false;
     let claimIndicatesAdult = true;
+    let documentType = age.docType;
     let signCount = 0;
     const manager = new ProofOfAgeWalletIssuanceManager({
       repository: vault, kms, replay: new ReplayProtectionStoreMem(), now: () => now,
+      docType: age.docType,
       verify: async ({clientId, presentation}) => {
         if (!active) throw new Error('Registered device inactive');
         return {clientId, actorDid, subjectDid, presentationId: presentation, expiresAt: now + 60};
@@ -41,7 +43,7 @@ it('only signs once with current approved evidence for the same member and tenan
         expect(context).toEqual(tenant);
         expect(identity).toEqual({actorDid, subjectDid});
         return revision ? {revision, projection: {
-          ...age, namespaces: { [age.docType]: { age_over_18: claimIndicatesAdult } },
+          docType: documentType, namespaces: { [documentType]: { age_over_18: claimIndicatesAdult } },
         }} : undefined;
       },
       sign: async (projection, key) => {
@@ -53,6 +55,9 @@ it('only signs once with current approved evidence for the same member and tenan
       },
     });
     const begin = (id: string) => manager.authorize(tenant, {clientId: e.resourceUuid, presentation: id});
+    documentType = e.didWeb;
+    await expect(begin(e.resourceUuid)).rejects.toThrow(/evidence/i);
+    documentType = age.docType;
     const grant = await begin(e.resourceUuid);
     await expect(begin(e.resourceUuid)).rejects.toThrow(/unavailable|used/i);
     await expect(manager.issue({...tenant, authorizationAudience: e.httpsBaseUrl}, grant, holderKey)).rejects.toThrow(/unavailable/i);
