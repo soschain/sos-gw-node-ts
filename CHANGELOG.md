@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Publish a host-signed organization identity under `organization.json` when the
+  host has a configured legal identity and no admitted ICA credential.
+
 - Sign a verifiable link from the host and tenant Legal Person publications to
   the original ICA organization credential when the fiscal identifiers match.
   Include the public URL and SHA-256 digest and preserve the original ICA proof.

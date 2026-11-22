@@ -32,11 +32,12 @@ building on the [original SOSCHAIN project documentation](https://github.com/sos
 Use the host base path `/host/cds-{coverage}/{version}/{network}` or the tenant
 base path `/{tenantId}/cds-{jurisdiction}/{version}/{sector}`.
 
-- `GET {basePath}/.well-known/organization.json` returns the original
-  ICA-issued JSON, with `OrganizationCredential` in the credential type and
-  `Organization` in `credentialSubject.@type`. The gateway preserves the
-  issuer and signature. The route returns HTTP 404 when no issued credential
-  is available.
+- `GET {basePath}/.well-known/organization.json` publishes the organization's
+  legal identifier and any evidence included in the signed credential. Its type
+  is `OrganizationCredential` and its Schema.org subject is `Organization`.
+  The host can sign its own identity statement. When an ICA credential is
+  available, the gateway publishes the original with its issuer and proofs.
+  For tenants, the route publishes the admitted ICA credential.
 - `GET {basePath}/.well-known/vc.json` returns the participant-signed Gaia-X
   `gx:LegalPerson` as credential JSON with a detached proof.
 - `GET {basePath}/.well-known/legal-participant.vc.json` returns the

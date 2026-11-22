@@ -613,6 +613,30 @@ describe('Well-Known Tenant Artifacts API', () => {
     expect(JSON.parse(mismatch.text)).toEqual(declaration);
   });
 
+  it('publishes a provisional host organization statement without issuing one for tenants', async () => {
+    const urn = parseTenantUrn(testTenant1IdentifierUrn)!;
+    const tenantBase = `/${testTenant1AlternateName}/cds-${urn.jurisdiction}/${urn.version}/${urn.sector}/.well-known`;
+    const hostBase = `/host/cds-${EXAMPLE_COVERAGE_SCOPE_EU}/v1/${HostNetworkTypes.Test}/.well-known`;
+    const did = testTenant1DidWebHosted;
+    mockTenantsCacheManager.getDidDocument.mockResolvedValue({ id: did } as any);
+    mockTenantsCacheManager.getTenant.mockResolvedValue({
+      didDocument: { id: did }, claims: testClaimsRegisterTenantExpanded,
+    } as any);
+    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'test-key', use: 'sig', purpose: 'vc_sign' }] } as any);
+    mockKmsService.createDetachedJws.mockResolvedValue('header..signature');
+    const host = await invokeExpress(app, { method: 'GET', url: `${hostBase}/organization.json` });
+    expect(host.status).toBe(200);
+    const { proof, ...statement } = JSON.parse(host.text);
+    expect(statement.issuer).toBe(did);
+    expect(statement.type).toContain('OrganizationCredential');
+    expect(statement.credentialSubject).toMatchObject({ id: did, '@type': 'Organization', taxID: testTenant1AlternateName });
+    expect(statement.evidence).toBeUndefined();
+    expect(proof[0].verificationMethod).toBe(`${did}#test-key`);
+    expect(mockKmsService.createDetachedJws).toHaveBeenCalledWith(statement, 'test-key', 'host', 'vc_sign');
+    const tenant = await invokeExpress(app, { method: 'GET', url: `${tenantBase}/organization.json` });
+    expect(tenant.status).toBe(404);
+  });
+
   it('should return the stored self-description (self-description.json) for a hosted tenant', async () => {
     const urnParts = parseTenantUrn(testTenant1IdentifierUrn)!;
     const tenantId = testTenant1AlternateName;

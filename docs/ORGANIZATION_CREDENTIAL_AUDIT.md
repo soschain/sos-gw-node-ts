@@ -6,16 +6,26 @@ Use the scoped host or tenant base URL and append `/.well-known/` followed by th
 | --- | --- |
 | `vc.json` | The organization's Legal Person declaration, signed by the organization with a detached proof. |
 | `legal-participant.vc.json` | The same Legal Person declaration in a signed JWT. The W3C envelope's top-level `id` contains the JWT after `data:application/vc+jwt,`. |
-| `organization.json` | The original `OrganizationCredential` signed by the data space's intermediate certification authority (ICA). Its subject is a Schema.org `Organization`. Where the organization enrolled with a digitally signed PDF, the signed credential contains evidence of the document, its signature and certificate checks, and the document digest. |
+| `organization.json` | The `OrganizationCredential` identifies the Schema.org `Organization`, gives its legal identifier and carries any evidence included by the issuer. The host may publish a self-signed statement. An ICA-issued credential is published with its original issuer, evidence and proofs. For enrollment by digitally signed PDF, the ICA's evidence records the document digest and the signature and certificate checks. |
 
-## Independent verification
+## Verify the credential and its evidence
+
+Start at `organization.json`. Read `credentialSubject.identifier` and `credentialSubject.taxID` when present. Check every available entry in `proof` against its `verificationMethod`. A host self-signature establishes who made the statement and protects its contents. Evidence in an ICA-issued credential describes the checks that the ICA attests to. Each additional proof must verify against the credential it signs and be assessed against the authority of its signer.
 
 1. Download either representation of the participant declaration. Resolve its issuer's DID, confirm that its assertion key is authorized, and verify the signature. Decoding the JWT only reveals the claims.
-2. In the signed declaration, follow the `relatedResource[].id` ending in `/organization.json`. Compute a SHA-256 digest of the response bytes before reformatting the JSON, encode the digest in standard Base64, and compare it with `digestSRI` after `sha256-`.
+2. If the signed declaration includes a `relatedResource[].id` ending in `/organization.json`, follow that link. Compute a SHA-256 digest of the response bytes before reformatting the JSON, encode the digest in standard Base64, and compare it with `digestSRI` after `sha256-`.
 3. Verify the original ICA credential's proof using the ICA issuer's published verification material. Confirm that the ICA is trusted for organization issuance by the data space and check validity and status where available.
 4. Compare `credentialSubject["https://schema.org/taxID"]` in the declaration with `credentialSubject.taxID` in the ICA credential. Review the ICA-signed `evidence` to establish what was checked and whether the identifier came from the certificate or the signed document. An auditor with authorized access to the original PDF can independently check its digest and digital signature.
 
-The gateway publishes the signed link only when the admitted ICA credential contains evidence and its fiscal identifier matches the participant's configured identifier. An unlinked declaration by itself is the participant's assertion. A `404` on `organization.json` means the original credential is unavailable at that URL.
+The gateway publishes the signed link when the admitted ICA credential contains evidence and its fiscal identifier matches the participant's configured identifier. The host's self-signed organization statement remains independently verifiable by checking its signature against the host DID.
+
+With the repository dependencies installed, this Node command runs on Windows, macOS and Linux. Pass the full scoped URL before `/.well-known/`. Repeat `--tenant` for each tenant in the verification inventory.
+
+```text
+node scripts/verify-organization-publications.mjs --host <host-scoped-base-url> --tenant <tenant-scoped-base-url>
+```
+
+The command verifies the JWT envelope, signatures and any signed evidence link. Issuer authorization, credential status and the validity of an underlying document are separate audit checks.
 
 ## Standards and scope
 
