@@ -198,8 +198,8 @@ export class KmsService implements IKmsService {
       dataEncryptionKey = randomBytes(32);
       hmacKey = randomBytes(32);
     }
-    const commSigningKeyPair = await this.crypto.generateKeyPairMlDsa(commDsaSeed);
-    const vcSigningKeyPair = await this.crypto.generateKeyPairMlDsa(vcDsaSeed);
+    const commSigningKeyPair = await this.crypto.generateKeyPairMlDsa(commDsaSeed, 'ML-DSA-44');
+    const vcSigningKeyPair = await this.crypto.generateKeyPairMlDsa(vcDsaSeed, 'ML-DSA-65');
     const encryptionKeyPair = await this.crypto.generateKeyPairMlKem(kemSeed);
     // Mark intended JOSE usage to allow downstream selection logic (`use === 'sig'|'enc'`).
     (commSigningKeyPair.publicJWKey as any).use = 'sig';
@@ -551,10 +551,13 @@ export class KmsService implements IKmsService {
     if (!signingKey) {
       throw new Error(`Signing key '${signerKid}' not found for entity: ${signerVaultId}`);
     }
+    const keyId = signingKey.publicJwk.kid;
+    const reference = protectedHeader?.kid;
+    const kid = reference?.startsWith('did:web:') && reference.endsWith(`#${keyId}`) ? reference : keyId;
     const jwsParts = await this.signJwsObject(payload, signingKey, {
       ...protectedHeader,
       alg: signingKey.publicJwk.alg,
-      kid: signingKey.publicJwk.kid,
+      kid,
     });
     return `${jwsParts.protected}.${jwsParts.payload}.${jwsParts.signature}`;
   }

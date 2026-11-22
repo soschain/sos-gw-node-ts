@@ -6,6 +6,7 @@
 import { jest } from '@jest/globals';
 import express from 'express';
 import { createHash } from 'node:crypto';
+import { compactVerify, CompactSign, exportJWK, generateKeyPair } from 'jose';
 import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { AdapterCryptoSdkNode } from '../../gdc-backend-utils-node/adapters/node/crypto';
 import { createDiscoveryRouter } from '../../routes/discovery';
@@ -464,14 +465,21 @@ describe('Well-Known Tenant Artifacts API', () => {
       issuer: did,
       credentialSubject: { id: did, type: 'gx:LegalPerson' },
     };
-    const signed = { ...statement, proof: { verificationMethod: `${did}#test-key`, jws: 'header..signature' } };
+    const signed = { ...statement, proof: { verificationMethod: `${did}#tenant-gaia-x`, jws: 'header..signature' } };
     mockTenantsCacheManager.getDidDocument.mockResolvedValue({ id: did } as any);
     mockTenantsCacheManager.getTenant.mockResolvedValue({ didDocument: { id: did }, selfDescriptionVc: signed } as any);
-    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'tenant-vc-sign', use: 'sig', purpose: 'vc_sign' }] } as any);
+    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [
+      { kid: 'tenant-vc-sign', use: 'sig', purpose: 'vc_sign', alg: 'ML-DSA-65' },
+      { kid: 'tenant-gaia-x', use: 'sig', kty: 'EC', alg: 'ES256' },
+    ] } as any);
+    mockKmsService.createDetachedJws.mockResolvedValue('header..signature');
     mockKmsService.createCompactJws.mockResolvedValue('header.payload.signature');
 
     const json = await invokeExpress(app, { method: 'GET', url: base + '/vc.json' });
-    expect(JSON.parse(json.text)).toEqual(signed);
+    expect(JSON.parse(json.text)).toMatchObject({
+      ...statement,
+      proof: [{ verificationMethod: `${did}#tenant-gaia-x` }, { verificationMethod: `${did}#tenant-vc-sign` }],
+    });
     const jwt = await invokeExpress(app, { method: 'GET', url: base + '/legal-participant.vc.json' });
     expect(JSON.parse(jwt.text)).toEqual({
       '@context': 'https://www.w3.org/ns/credentials/v2',
@@ -480,7 +488,7 @@ describe('Well-Known Tenant Artifacts API', () => {
     });
     expect(mockKmsService.createCompactJws).toHaveBeenCalledWith(
       { ...statement, '@context': [...statement['@context'], 'https://w3id.org/gaia-x/development#'] },
-      'tenant-vc-sign', testTenant1VaultId, 'vc_sign', expect.any(Object),
+      'tenant-gaia-x', testTenant1VaultId, 'vc_sign', expect.any(Object),
     );
   });
 
@@ -514,6 +522,8 @@ describe('Well-Known Tenant Artifacts API', () => {
     const host = await invokeExpress(app, { method: 'GET', url: hostBase + '/organization.json' });
     expect(host.status).toBe(200);
     expect(JSON.parse(host.text)).toEqual(organization);
+    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'host-vc-sign', use: 'sig', kty: 'EC', alg: 'ES256' }] } as any);
+    mockKmsService.createDetachedJws.mockResolvedValue('header..signature');
     const legacy = await invokeExpress(app, { method: 'GET', url: hostBase + '/vc.json' });
     expect(JSON.parse(legacy.text).type).toContain('LegalPerson');
 
@@ -524,8 +534,11 @@ describe('Well-Known Tenant Artifacts API', () => {
 
   it.each(['host', 'tenant'])('signs the published ICA evidence link only for a matching %s', async (target) => {
     const cryptography = new CryptographyService(new AdapterCryptoSdkNode());
-    const { publicJWKey, secretKeyBytes } = await cryptography.generateKeyPairMlDsa();
+    const { publicJWKey, secretKeyBytes } = await cryptography.generateKeyPairMlDsa(undefined, 'ML-DSA-65');
     const { kid, alg } = publicJWKey;
+    const compatible = await generateKeyPair('ES256');
+    const compatibleKid = 'compatible-signature';
+    const compatiblePublicJwk = { ...await exportJWK(compatible.publicKey), alg: 'ES256', use: 'sig', kid: compatibleKid };
     const icaKeys = await cryptography.generateKeyPairMlDsa();
     const urn = parseTenantUrn(testTenant1IdentifierUrn)!;
     const base = target === 'host'
@@ -569,15 +582,21 @@ describe('Well-Known Tenant Artifacts API', () => {
     };
     mockTenantsCacheManager.getDidDocument.mockResolvedValue({ id: did } as any);
     mockTenantsCacheManager.getTenant.mockResolvedValue(entity as any);
-    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ ...publicJWKey, use: 'sig', purpose: 'vc_sign' }] } as any);
-    mockKmsService.createDetachedJws.mockImplementation(async (payload) => {
+    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [compatiblePublicJwk, { ...publicJWKey, use: 'sig', purpose: 'vc_sign' }] } as any);
+    const signCompatible = (payload: object, header = {}) =>
+      new CompactSign(Buffer.from(JSON.stringify(payload)))
+        .setProtectedHeader({ alg: 'ES256', kid: compatibleKid, ...header })
+        .sign(compatible.privateKey);
+    mockKmsService.createDetachedJws.mockImplementation(async (payload, signingKid) => {
+      if (signingKid === compatibleKid) {
+        const [protectedHeader, , signature] = (await signCompatible(payload)).split('.');
+        return `${protectedHeader}..${signature}`;
+      }
       const signature = await cryptography.signDataJws(payload, { kid, alg }, secretKeyBytes);
       return `${signature.protected}..${signature.signature}`;
     });
-    mockKmsService.createCompactJws.mockImplementation(async (payload, _kid, _vaultId, _purpose, header) => {
-      const signature = await cryptography.signDataJws(payload, { ...header, kid, alg }, secretKeyBytes);
-      return `${signature.protected}.${signature.payload}.${signature.signature}`;
-    });
+    mockKmsService.createCompactJws.mockImplementation(async (payload, _kid, _vaultId, _purpose, header) =>
+      signCompatible(payload, header));
     const original = await invokeExpress(app, { method: 'GET', url: `${base}/organization.json` });
     const json = await invokeExpress(app, { method: 'GET', url: `${base}/vc.json` });
     const jwt = await invokeExpress(app, { method: 'GET', url: `${base}/legal-participant.vc.json` });
@@ -594,23 +613,28 @@ describe('Well-Known Tenant Artifacts API', () => {
     }]);
     expect(statement.credentialSubject['https://schema.org/taxID']).toBe(testHostIdValue);
     expect(statement.credentialSubject['gx:legalRegistrationNumber']).toBeUndefined();
-    expect(proof[0].verificationMethod).toBe(`${did}#${kid}`);
-    const [protectedHeader, , detachedSignature] = proof[0].jws.split('.');
-    const detachedCompact = `${protectedHeader}.${Buffer.from(JSON.stringify(statement)).toString('base64url')}.${detachedSignature}`;
+    expect(proof.map((entry: { verificationMethod: string }) => entry.verificationMethod))
+      .toEqual([`${did}#${compatibleKid}`, `${did}#${kid}`]);
+    const detached = (entry: { jws: string }) => {
+      const [header, , signature] = entry.jws.split('.');
+      return `${header}.${Buffer.from(JSON.stringify(statement)).toString('base64url')}.${signature}`;
+    };
+    expect((await compactVerify(detached(proof[0]), compatible.publicKey)).protectedHeader.alg).toBe('ES256');
+    expect(await cryptography.verifyJws(detached(proof[1]), publicJWKey)).toBe(true);
     const compact = JSON.parse(jwt.text).id.split(',')[1];
-    expect(await cryptography.verifyJws(detachedCompact, publicJWKey)).toBe(true);
-    expect(await cryptography.verifyJws(compact, publicJWKey)).toBe(true);
-    expect(JSON.parse(Buffer.from(compact.split('.')[1], 'base64url').toString())).toEqual(statement);
+    const verified = await compactVerify(compact, compatible.publicKey);
+    expect(verified.protectedHeader).toMatchObject({ typ: 'vc+jwt', cty: 'vc', kid: `${did}#${compatibleKid}`, iss: did });
+    expect(JSON.parse(Buffer.from(verified.payload).toString())).toEqual(statement);
     const vaultId = target === 'host' ? 'host' : testTenant1VaultId;
     expect(mockKmsService.createDetachedJws).toHaveBeenCalledWith(statement, kid, vaultId, 'vc_sign');
-    expect(mockKmsService.createCompactJws).toHaveBeenCalledWith(statement, kid, vaultId, 'vc_sign', expect.any(Object));
+    expect(mockKmsService.createCompactJws).toHaveBeenCalledWith(statement, compatibleKid, vaultId, 'vc_sign', expect.any(Object));
 
     mockTenantsCacheManager.getTenant.mockResolvedValue({
       ...entity,
       claims: testClaimsRegisterTenantExpanded,
     } as any);
     const mismatch = await invokeExpress(app, { method: 'GET', url: `${base}/vc.json` });
-    expect(JSON.parse(mismatch.text)).toEqual(declaration);
+    expect(JSON.parse(mismatch.text).relatedResource).toBeUndefined();
   });
 
   it('preserves the original host organization statement and its endorsements', async () => {
@@ -632,12 +656,14 @@ describe('Well-Known Tenant Artifacts API', () => {
     mockTenantsCacheManager.getTenant.mockResolvedValue({
       didDocument: { id: did }, organizationCredential: organization, claims: testClaimsRegisterTenantExpanded,
     } as any);
-    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'test-key', use: 'sig', purpose: 'vc_sign' }] } as any);
+    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'test-key', use: 'sig', kty: 'EC', alg: 'ES256' }] } as any);
     mockKmsService.createDetachedJws.mockResolvedValue('header..signature');
     const response = await invokeExpress(app, { method: 'GET', url: `${hostBase}/organization.json` });
     expect(response.status).toBe(200);
-    expect(JSON.parse(response.text)).toEqual(organization);
-    expect(mockKmsService.createDetachedJws).not.toHaveBeenCalled();
+    expect(JSON.parse(response.text)).toMatchObject({
+      ...organization,
+      proof: [expect.objectContaining({ verificationMethod: organization.proof[0].verificationMethod }), organization.proof[1]],
+    });
     const tenant = await invokeExpress(app, { method: 'GET', url: `${tenantBase}/organization.json` });
     expect(tenant.status).toBe(404);
   });
@@ -651,7 +677,7 @@ describe('Well-Known Tenant Artifacts API', () => {
     mockTenantsCacheManager.getTenant.mockResolvedValue({
       didDocument: { id: did }, claims: testClaimsRegisterTenantExpanded,
     } as any);
-    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'test-key', use: 'sig', purpose: 'vc_sign' }] } as any);
+    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'test-key', use: 'sig', kty: 'EC', alg: 'ES256' }] } as any);
     mockKmsService.createDetachedJws.mockResolvedValue('header..signature');
     const host = await invokeExpress(app, { method: 'GET', url: `${hostBase}/organization.json` });
     expect(host.status).toBe(200);
@@ -706,7 +732,7 @@ describe('Well-Known Tenant Artifacts API', () => {
       claims: hostClaims,
       governanceVc: { type: ['VerifiableCredential', 'LegalPerson'] },
     } as any);
-    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'host-vc-sign', use: 'sig', purpose: 'vc_sign' }] } as any);
+    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'host-vc-sign', use: 'sig', kty: 'EC', alg: 'ES256' }] } as any);
     mockKmsService.createCompactJws.mockResolvedValue('header.payload.signature');
 
     const offer = await invokeExpress(app, { method: 'GET', url: offerPath, headers });
@@ -745,11 +771,11 @@ describe('Well-Known Tenant Artifacts API', () => {
     const tenantId = testTenant1AlternateName;
     const expectedUrl = `/${tenantId}/cds-${urnParts.jurisdiction}/${urnParts.version}/${urnParts.sector}/.well-known/service-offering-index.json`;
 
-    mockTenantsCacheManager.getDidDocument.mockResolvedValue({ id: testTenant1IdentifierUrn } as any);
-    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'tenant-vc-sign', use: 'sig', purpose: 'vc_sign' }] } as any);
+    mockTenantsCacheManager.getDidDocument.mockResolvedValue({ id: testTenant1DidWebHosted } as any);
+    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'tenant-vc-sign', use: 'sig', kty: 'EC', alg: 'ES256' }] } as any);
     mockKmsService.createCompactJws.mockResolvedValue('header.payload.signature');
     mockTenantsCacheManager.getTenant.mockResolvedValue({
-      didDocument: { id: testTenant1IdentifierUrn },
+      didDocument: { id: testTenant1DidWebHosted },
       claims: {
         [SchemaOrgOrganizationClaim.LegalName]: EXAMPLE_PROVIDER_LEGAL_NAME,
         [SchemaOrgOrganizationClaim.AlternateName]: tenantId,
@@ -791,7 +817,7 @@ describe('Well-Known Tenant Artifacts API', () => {
       'tenant-vc-sign',
       testTenant1VaultId,
       'vc_sign',
-      { typ: 'vc+ld+json+jwt', cty: 'vc+ld+json' },
+      expect.objectContaining({ typ: 'vc+jwt', cty: 'vc' }),
     );
   });
 
@@ -831,11 +857,11 @@ describe('Well-Known Tenant Artifacts API', () => {
     const tenantId = testTenant1AlternateName;
     const expectedUrl = `/${tenantId}/cds-${urnParts.jurisdiction.toLowerCase()}/${urnParts.version}/${urnParts.sector}/.well-known/service-offering-personal-backup.json`;
 
-    mockTenantsCacheManager.getDidDocument.mockResolvedValue({ id: testTenant1IdentifierUrn } as any);
-    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'tenant-vc-sign', use: 'sig', purpose: 'vc_sign' }] } as any);
+    mockTenantsCacheManager.getDidDocument.mockResolvedValue({ id: testTenant1DidWebHosted } as any);
+    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'tenant-vc-sign', use: 'sig', kty: 'EC', alg: 'ES256' }] } as any);
     mockKmsService.createCompactJws.mockResolvedValue('header.payload.signature');
     mockTenantsCacheManager.getTenant.mockResolvedValue({
-      didDocument: { id: testTenant1IdentifierUrn },
+      didDocument: { id: testTenant1DidWebHosted },
       claims: {
         [SchemaOrgOrganizationClaim.LegalName]: EXAMPLE_PROVIDER_LEGAL_NAME,
         [SchemaOrgOrganizationClaim.AlternateName]: tenantId,
@@ -872,7 +898,7 @@ describe('Well-Known Tenant Artifacts API', () => {
       'tenant-vc-sign',
       testTenant1VaultId,
       'vc_sign',
-      { typ: 'vc+ld+json+jwt', cty: 'vc+ld+json' },
+      expect.objectContaining({ typ: 'vc+jwt', cty: 'vc' }),
     );
   });
 
@@ -907,6 +933,8 @@ describe('Well-Known Legal Participant VC API', () => {
       governanceVc: { id: 'urn:uuid:host-legal-participant', issuer: hostDidDoc.id, credentialSubject: { id: hostDidDoc.id, type: 'gx:LegalPerson' } },
     };
 
+    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ kid: 'host-vc-sign', use: 'sig', kty: 'EC', alg: 'ES256' }] } as any);
+    mockKmsService.createCompactJws.mockResolvedValue('header.payload.signature');
     mockTenantsCacheManager.getTenant.mockResolvedValue(hostEntityConfig);
     mockTenantsCacheManager.getDidDocument.mockResolvedValue(hostDidDoc as any);
 

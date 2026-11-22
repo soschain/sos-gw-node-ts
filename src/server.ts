@@ -223,7 +223,8 @@ async function startServer(options?: StartServerOptions) {
     infrastructureReplayProtectionStore,
   } = await buildInfrastructure({
     config, hostCollectionName, initializeKms: false,
-    es256CredentialTenantVaultId: walletProfile ? getTenantVaultId(walletProfile.profile.sector, walletProfile.profile.tenantId) : undefined,
+    es256CredentialTenantVaultId: walletProfile && walletProfile.profile.credentialSigningAlgorithm !== 'ML-DSA-65'
+      ? getTenantVaultId(walletProfile.profile.sector, walletProfile.profile.tenantId) : undefined,
   });
 
   if (observedLedgerBindings) {

@@ -103,7 +103,7 @@ describe('owned KMS and credential byte primitives',()=>{
   if (!assertion?.jws) throw new Error('Employee credential assertion proof is missing.');
   const [protectedHeader, detached, signature] = assertion.jws.split('.');
   expect(detached).toBe('');
-  expect(JSON.parse(Buffer.from(protectedHeader, 'base64url').toString('utf8'))).toMatchObject({ alg: 'ML-DSA-44' });
+  expect(JSON.parse(Buffer.from(protectedHeader, 'base64url').toString('utf8'))).toMatchObject({ alg: 'ML-DSA-65' });
   const data = Buffer.from(JSON.stringify(unsigned)).toString('base64url');
   const payload = Buffer.from(JSON.stringify({ data })).toString('base64url');
   const tenantKey = await service.getPublicVerificationKey(safe.tenantId, undefined, 'vc_sign');

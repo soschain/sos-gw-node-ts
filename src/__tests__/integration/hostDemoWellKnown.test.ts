@@ -3,6 +3,7 @@
 // Copyright 2025 Antifraud Services Inc. under the Apache License, Version 2.0.
 
 import { createHash } from 'node:crypto';
+import { compactVerify, importJWK } from 'jose';
 import { Content, CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 import { SchemaOrgServiceClaim } from 'antifraud-data-utils-ts/schema-org-claims';
 import { EXAMPLE_SIGNED_TERMS_PDF_URL } from 'sos-data-utils-ts/gateway-flow-examples';
@@ -92,11 +93,12 @@ describe('Host well-known endpoints (demo, mem)', () => {
       const hostingOfferJson = JSON.parse(hostingOffer.text);
       const compact = hostingOfferJson.proof.id.split(',')[1];
       const header = Content.base64UrlSafeToJSON(compact.split('.')[0]);
-      const verificationKey = jwksJson.keys.find((key: { kid: string }) => key.kid === header.kid);
+      const verificationKey = jwksJson.keys.find((key: { kid: string }) => `${HOST_DID}#${key.kid}` === header.kid);
       const cryptography = new CryptographyService(new AdapterCryptoSdkNode());
       const participantHeader = Content.base64UrlSafeToJSON(legalJwt.split('.')[0]);
-      const participantKey = jwksJson.keys.find((key: { kid: string }) => key.kid === participantHeader.kid);
-      expect(await cryptography.verifyJws(legalJwt, participantKey)).toBe(true);
+      const participantKey = jwksJson.keys.find((key: { kid: string }) => `${HOST_DID}#${key.kid}` === participantHeader.kid);
+      expect(participantHeader).toMatchObject({ typ: 'vc+jwt', cty: 'vc', iss: HOST_DID, alg: 'ES384' });
+      expect((await compactVerify(legalJwt, await importJWK(participantKey, 'ES384'))).protectedHeader).toEqual(participantHeader);
 
       const organization = await invokeExpress(app, { method: 'GET', url: `${HOST_WELL_KNOWN_PREFIX}/organization.json` });
       expect(organization.status).toBe(200);
@@ -105,15 +107,24 @@ describe('Host well-known endpoints (demo, mem)', () => {
         issuer: HOST_DID,
         credentialSubject: { id: HOST_DID, '@type': 'Organization' },
       });
-      const [organizationHeader, , organizationSignature] = proof[0].jws.split('.');
-      const { kid: organizationKid } = Content.base64UrlSafeToJSON(organizationHeader);
-      const organizationKey = jwksJson.keys.find((key: { kid: string }) => key.kid === organizationKid);
-      expect(proof[0].verificationMethod).toBe(`${HOST_DID}#${organizationKid}`);
-      expect(JSON.parse(rootDidDocument.text).assertionMethod).toContain(proof[0].verificationMethod);
       const organizationPayload = Buffer.from(JSON.stringify(organizationClaims)).toString('base64url');
-      expect(await cryptography.verifyJws(`${organizationHeader}.${organizationPayload}.${organizationSignature}`, organizationKey)).toBe(true);
+      expect(proof).toHaveLength(2);
+      for (const [index, expectedAlgorithm] of ['ES384', 'ML-DSA-65'].entries()) {
+        const [header, , signature] = proof[index].jws.split('.');
+        const { alg, kid } = Content.base64UrlSafeToJSON(header);
+        expect(alg).toBe(expectedAlgorithm);
+        const key = jwksJson.keys.find((key: { kid: string }) => key.kid === kid);
+        expect(proof[index].verificationMethod).toBe(`${HOST_DID}#${kid}`);
+        expect(JSON.parse(rootDidDocument.text).assertionMethod).toContain(proof[index].verificationMethod);
+        const detached = `${header}.${organizationPayload}.${signature}`;
+        if (key.kty === 'EC') {
+          expect((await compactVerify(detached, await importJWK(key, alg))).protectedHeader.alg).toBe(alg);
+        } else {
+          expect(await cryptography.verifyJws(detached, key)).toBe(true);
+        }
+      }
 
-      expect(await cryptography.verifyJws(compact, verificationKey)).toBe(true);
+      expect((await compactVerify(compact, await importJWK(verificationKey, 'ES384'))).protectedHeader).toEqual(header);
       expect(Content.base64UrlSafeToJSON(compact.split('.')[1])).toMatchObject({
         issuer: HOST_DID,
         credentialSubject: {

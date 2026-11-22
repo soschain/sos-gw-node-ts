@@ -1,6 +1,6 @@
 import { createOpenId4VciIssuer, type WalletOfferStore } from 'antifraud-sdk-node-ts';
 import { Router, type RequestHandler } from 'express';
-import { type ProfessionalWalletIssuanceManager, type ProfessionalWalletTenant, WalletAuthorizationError } from '../managers/ProfessionalWalletIssuanceManager';
+import { type ProfessionalCredentialSigningAlgorithm, type ProfessionalWalletIssuanceManager, type ProfessionalWalletTenant, WalletAuthorizationError } from '../managers/ProfessionalWalletIssuanceManager';
 import type { ITenantsManager } from '../managers/ITenantsManager';
 import { getTenantVaultId } from '../utils/tenant';
 
@@ -10,6 +10,7 @@ type WalletProfile = Readonly<{
   sector: string;
   configurationId: string;
   vct: string;
+  credentialSigningAlgorithm?: ProfessionalCredentialSigningAlgorithm;
 }>;
 
 function isProfile(value: unknown): value is WalletProfile {
@@ -18,6 +19,8 @@ function isProfile(value: unknown): value is WalletProfile {
     && profile.tenantId !== 'host' && typeof profile.jurisdiction === 'string' && /^[A-Z]{2}(?:-[A-Z0-9]{1,3})?$/u.test(profile.jurisdiction)
     && typeof profile.sector === 'string' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(profile.sector)
     && typeof profile.configurationId === 'string' && /^[A-Za-z0-9_-]{1,100}$/u.test(profile.configurationId)
+    && (profile.credentialSigningAlgorithm === undefined || profile.credentialSigningAlgorithm === 'ES256'
+      || profile.credentialSigningAlgorithm === 'ML-DSA-65')
     && typeof profile.vct === 'string' && /^https:\/\/[^\s#?]+$/u.test(profile.vct));
 }
 
@@ -50,6 +53,7 @@ export function createProfessionalWalletRouter(options: {
 }) {
   const router = Router({ caseSensitive: true, strict: true });
   const { profile, manager, tenants } = options;
+  const credentialSigningAlgorithm = profile.credentialSigningAlgorithm ?? 'ES256';
   const tenantVaultId = getTenantVaultId(profile.sector, profile.tenantId);
   const root = `/${profile.tenantId}/cds-${profile.jurisdiction}/v1/${profile.sector}/identity/openid/wallet`;
   const apiOrigin = new URL(options.apiBase);
@@ -64,12 +68,17 @@ export function createProfessionalWalletRouter(options: {
   async function tenant(): Promise<ProfessionalWalletTenant | undefined> {
     const tenantDid = await tenants.getTenantDid(tenantVaultId);
     if (!tenantDid || !await tenants.isTenantOperational(tenantVaultId)) return undefined;
-    return { tenantVaultId, tenantDid, authorizationAudience, configurationId: profile.configurationId, vct: profile.vct };
+    return { tenantVaultId, tenantDid, authorizationAudience, configurationId: profile.configurationId, vct: profile.vct, credentialSigningAlgorithm };
   }
 
+  const credentialConfiguration = {
+    format: 'dc+sd-jwt' as const,
+    vct: profile.vct,
+    credential_signing_alg_values_supported: [credentialSigningAlgorithm],
+  };
   const issuer = createOpenId4VciIssuer({
     credentialIssuer, store: options.store, secret: options.secret,
-    credentialConfigurations: { [profile.configurationId]: { format: 'dc+sd-jwt', vct: profile.vct } },
+    credentialConfigurations: { [profile.configurationId]: credentialConfiguration },
     async issue(command, holderKey) {
       const context = await tenant();
       if (!context) return undefined;

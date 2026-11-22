@@ -36,10 +36,13 @@ loopback origin through `PROFESSIONAL_WALLET_PUBLIC_ORIGIN`. All hosted
 gateway replicas use the same base64url `PROFESSIONAL_WALLET_OFFER_SECRET`
 with at least 32 random bytes and the same Firestore database. Enable TTL on
 `deleteAfter` in the `wallet-offers-<sha256(hostCollectionName)>` collection
-group. The tenant uses an ES256 credential signing key published in its DID
-document. Configure the wallet profile before enrolling a new pilot tenant
-to provision its ES256 key. Existing tenants require an already published
-ES256 assertion key. The signed profile assertion targets the exact configured gateway
+group. Set `credentialSigningAlgorithm` to `ML-DSA-65` for the data-space
+wallet profile. `ES256` is the default compatibility profile for existing
+wallet integrations. The tenant publishes the configured assertion key in
+its DID document. Configure an ES256 pilot before enrolling its tenant to
+provision that key. The holder's proof uses its own ES256 key. The issued
+credential continues to use the tenant algorithm advertised by its profile.
+The signed profile assertion targets the exact configured gateway
 `_authorize` URL.
 
 See the [request examples](./openapi-examples/core-flow-examples.json) under
@@ -55,7 +58,18 @@ SOS SDK Core supplies the professional credential profile and the organization, 
 
 Start at `organization.json`. Read `credentialSubject.identifier` and `credentialSubject.taxID` when present. Check every available entry in `proof` against its `verificationMethod`. A host self-signature establishes who made the statement and protects its contents. Evidence in an ICA-issued credential describes the checks that the ICA attests to. Each additional proof must verify against the credential it signs and be assessed against the authority of its signer.
 
-When the host has an existing organization statement with additional proofs, the gateway returns that original statement with its complete proof set. A change to the signed contents requires a new signature from each attesting party.
+The gateway retains every endorsement of the host's existing organization
+statement. For locally issued JSON, it can add a compatible detached EC
+proof alongside a detached ML-DSA-65 assertion over the same contents.
+An ICA-issued organization credential keeps its exact published bytes
+and original proofs. A change to signed contents requires fresh signatures.
+
+The Gaia-X compact VC-JWT uses the issuer's compatible EC assertion key.
+The gateway uses ML-DSA-65 for newly provisioned credential assertion keys,
+including employee issuance through the internal credential issuer. A
+tenant carrying a historical ML-DSA-44 key needs an additive key migration
+before it can publish a new ML-DSA-65 proof. Changing the generation
+default does not rotate stored keys.
 
 1. Download either representation of the participant declaration. Resolve its issuer's DID, confirm that its assertion key is authorized, and verify the signature. Decoding the JWT only reveals the claims.
 2. If the signed declaration includes a `relatedResource[].id` ending in `/organization.json`, follow that link. Compute a SHA-256 digest of the response bytes before reformatting the JSON, encode the digest in standard Base64, and compare it with `digestSRI` after `sha256-`.

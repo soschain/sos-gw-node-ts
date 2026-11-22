@@ -1,5 +1,15 @@
 ## Unreleased
 
+- Provision new credential assertion keys with ML-DSA-65. Use ES256 for the
+  SMART Health Card JWS and require a credential-purpose ML-DSA-65 companion
+  key for veterinary attestations.
+- Publish Gaia-X VC-JWTs with the compatible EC key and the VC-JWT header.
+  Self-published organization JSON adds the ML-DSA-65 proof when the
+  issuer has that assertion key, preserving earlier endorsements and the
+  original ICA-issued credential.
+- Allow the professional wallet issuer to select ML-DSA-65 for a data-space
+  credential profile. Bind the configured issuer algorithm to each offer.
+
 - Serve professional OpenID4VCI offers, discovery, token exchange, nonce and
   credential issuance at the tenant URL. Recheck eligibility before issuing a
   holder-bound SD-JWT with the tenant credential signing key. Require the

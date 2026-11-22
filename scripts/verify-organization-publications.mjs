@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import canonicalize from 'canonicalize';
-import { calculateJwkThumbprint } from 'jose';
+import { calculateJwkThumbprint, compactVerify, importJWK } from 'jose';
 import { verifyPinnedDetachedJws } from 'antifraud-data-utils-ts/clearing-house';
 import { CryptographyService } from 'antifraud-data-utils-ts/cryptography';
 
@@ -71,6 +71,15 @@ async function assertionKey(read, did, kid, icaOrigins) {
   return key;
 }
 
+async function verifyCompactSignature(jws, key) {
+  if (key.kty !== 'EC') return crypto.verifyJws(jws, key);
+  const { alg } = decode(jws.split('.')[0]);
+  assert.ok((alg === 'ES256' && key.crv === 'P-256') || (alg === 'ES384' && key.crv === 'P-384'),
+    'Unsupported EC assertion key or algorithm');
+  await compactVerify(jws, await importJWK(key, alg), { algorithms: [alg] });
+  return true;
+}
+
 async function verifyCredentialProofs(credential, read, icaOrigins) {
   const { proof, ...unsigned } = credential;
   const proofs = Array.isArray(proof) ? proof : [proof];
@@ -90,7 +99,7 @@ async function verifyCredentialProofs(credential, read, icaOrigins) {
       await verifyPinnedDetachedJws(Buffer.from(canonicalize(unsigned)), detached, { ...key, kid: headerKey }, crypto);
     } else {
       const encoded = Buffer.from(JSON.stringify(unsigned)).toString('base64url');
-      assert.ok(await crypto.verifyJws(`${header}.${encoded}.${signature}`, key), 'Credential signature verification failed');
+      assert.ok(await verifyCompactSignature(`${header}.${encoded}.${signature}`, key), 'Credential signature verification failed');
     }
   }
   return proofs.length;
@@ -128,7 +137,7 @@ export async function verifyOrganizationPublication(base, kind, fetchDocument = 
   const claims = decode(encodedClaims);
   assert.equal(claims.credentialSubject?.type ?? claims.credentialSubject?.['@type'], 'gx:LegalPerson');
   assert.equal(claims.issuer, claims.credentialSubject.id, 'The participant declaration must be signed by the participant');
-  assert.ok(await crypto.verifyJws(token, await assertionKey(read, claims.issuer, decode(protectedHeader).kid, icaOrigins)),
+  assert.ok(await verifyCompactSignature(token, await assertionKey(read, claims.issuer, decode(protectedHeader).kid, icaOrigins)),
     'Participant JWT signature verification failed');
 
   const verifiedJson = ['vc.json', 'self-description.json'];

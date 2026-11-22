@@ -12,7 +12,7 @@ type VeterinaryCredentialKms = Pick<IKmsService,
 
 const CredentialAlgorithms = Object.freeze({
   SmartHealthCard: 'ES256',
-  CompanionProofPrefix: 'ML-DSA-',
+  CompanionProof: 'ML-DSA-65',
 });
 
 /**
@@ -73,7 +73,7 @@ export class VeterinaryHealthCardCredentialManager {
     const detached = await Promise.all(input.attesters.map(async attester => {
       const keySet = await this.kms.getPublicJwks(attester.vaultId);
       const key = keySet.keys.find(candidate => candidate.kid === attester.keyId);
-      if (!key || !String(key.alg || '').startsWith(CredentialAlgorithms.CompanionProofPrefix) || key.use !== 'sig') {
+      if (!key || key.alg !== CredentialAlgorithms.CompanionProof || key.use !== 'sig' || key.purpose !== 'vc_sign') {
         throw new Error('veterinary_attester_mldsa_credential_key_required');
       }
       return this.kms.createDetachedJwsForBytes!(exactPayload, attester.keyId, attester.vaultId, 'vc_sign');

@@ -11,7 +11,7 @@ import { createProfessionalWalletRouter } from '../../routes/professional-wallet
 
 it('publishes an offer and OpenID metadata only at its configured tenant', async () => {
   const profile = { tenantId: e.tenantId, jurisdiction: 'EU', sector: 'health-care',
-    configurationId: 'employee', vct: `${e.httpsBaseUrl}/types/employee` };
+    configurationId: 'employee', credentialSigningAlgorithm: 'ML-DSA-65' as const, vct: `${e.httpsBaseUrl}/types/employee` };
   const apiBase = e.httpsBaseUrl;
   const expectedPath = `/${profile.tenantId}/cds-${profile.jurisdiction}/v1/${profile.sector}/identity/openid/wallet`;
   const secret = randomBytes(32);
@@ -54,6 +54,10 @@ it('publishes an offer and OpenID metadata only at its configured tenant', async
   expect(metadata.status).toBe(200);
   expect(metadata.body.credential_issuer).toBe(issuer);
   expect(metadata.body.credential_endpoint).toBe(issuer + '/credential');
+  expect(metadata.body.credential_configurations_supported[profile.configurationId]).toMatchObject({
+    credential_signing_alg_values_supported: [profile.credentialSigningAlgorithm],
+    proof_types_supported: { jwt: { proof_signing_alg_values_supported: ['ES256'] } },
+  });
   const offer = await request(app).get(new URL(begin.body.offerUri).pathname);
   expect(offer.body.credential_issuer).toBe(issuer);
   expect(offer.body.credential_configuration_ids).toEqual([profile.configurationId]);

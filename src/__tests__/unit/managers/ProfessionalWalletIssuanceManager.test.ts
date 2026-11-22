@@ -77,6 +77,21 @@ it('rechecks active eligibility and signs one SD-JWT VC with the existing tenant
     const [, name, value] = JSON.parse(Buffer.from(disclosure, 'base64url').toString('utf8'));
     expect([name, value]).toEqual(['hasOccupation', role]);
     expect(payload).not.toHaveProperty('hasOccupation');
+    const dataSpaceTenant = { ...tenant, configurationId: 'employee-pqc', credentialSigningAlgorithm: 'ML-DSA-65' as const };
+    const pqcAuthorization = await manager.begin(dataSpaceTenant, {
+      clientId: e.resourceUuid, presentation: `${e.resourceUuid}-pqc`,
+    });
+    await expect(manager.reserve({ ...dataSpaceTenant, credentialSigningAlgorithm: 'ES256' as const }, pqcAuthorization))
+      .rejects.toThrow(/unavailable/i);
+    const pqcOffer = await manager.reserve(dataSpaceTenant, pqcAuthorization);
+    const pqc = await manager.issue(dataSpaceTenant, pqcOffer.command, holderKey);
+    const [pqcJwt] = pqc.credential.split('~');
+    const pqcKey = await kms.getPublicVerificationKey(tenant.tenantVaultId, undefined, 'vc_sign');
+    if (!pqcKey) throw new Error('Missing tenant credential assertion key');
+    const pqcHeader = JSON.parse(Buffer.from(pqcJwt.split('.')[0], 'base64url').toString('utf8'));
+    expect(pqcHeader).toMatchObject({ alg: 'ML-DSA-65', kid: pqcKey.kid });
+    expect(await new CryptographyService(new AdapterCryptoSdkNode()).verifyJws(pqcJwt, pqcKey)).toBe(true);
+
   } finally {
     if (previous === undefined) delete process.env.LEGACY_SIGN_ALG;
     else process.env.LEGACY_SIGN_ALG = previous;
