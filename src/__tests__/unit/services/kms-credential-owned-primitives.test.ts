@@ -1,4 +1,4 @@
-// Flow contract: actual KMS indexes retain HMAC-SHA3-256 UTF-8/base64url bytes and tenant-key separation; credential serialization retains JSON order/Unicode and vc_sign purpose, while only existing AF/Node primitives replace legacy imports.
+// Flow contract: actual KMS indexes retain HMAC-SHA3-256 UTF-8/base64url bytes and tenant-key separation. Organization and employee credentials preserve their signed JSON bytes and use the issuer's vc_sign key.
 import {afterEach,describe,expect,it,jest} from '@jest/globals';
 import {readFileSync} from 'node:fs';
 import {createHash,createHmac} from 'node:crypto';
@@ -86,4 +86,32 @@ describe('owned KMS and credential byte primitives',()=>{
   expect(await crypto.verifyJws(parts,communicationKey)).toBe(false);
   expect(await crypto.verifyJws({...parts,payload:Buffer.from('{"data":"changed"}').toString('base64url')},vcKey)).toBe(false);
  });
+ it('signs the employee credential with the tenant post-quantum assertion key', async () => {
+  const { service, vault, crypto } = await harness();
+  await service.provisionKeys(safe.tenantId);
+  const tenantIdentifier = safe.organizationScopedResources.organizationUrn;
+  const manager = new CredentialManager(vault, service, {
+   getTenantIdentifierUrn: async () => tenantIdentifier,
+  }, safe.domain);
+  const employeeIdentifier = `urn:uuid:${safe.resourceUuid}`;
+  const credential = await manager.issueEmployeeCredential(
+   { tenantId: safe.tenantId, tenantVaultId: safe.tenantId }, employeeIdentifier, {}, undefined,
+  );
+  const { proof, ...unsigned } = credential;
+  expect(unsigned).toMatchObject({ issuer: tenantIdentifier, credentialSubject: { identifier: employeeIdentifier } });
+  const assertion = Array.isArray(proof) ? proof[0] : proof;
+  if (!assertion?.jws) throw new Error('Employee credential assertion proof is missing.');
+  const [protectedHeader, detached, signature] = assertion.jws.split('.');
+  expect(detached).toBe('');
+  expect(JSON.parse(Buffer.from(protectedHeader, 'base64url').toString('utf8'))).toMatchObject({ alg: 'ML-DSA-44' });
+  const data = Buffer.from(JSON.stringify(unsigned)).toString('base64url');
+  const payload = Buffer.from(JSON.stringify({ data })).toString('base64url');
+  const tenantKey = await service.getPublicVerificationKey(safe.tenantId, undefined, 'vc_sign');
+  const hostKey = await service.getPublicVerificationKey('host', undefined, 'vc_sign');
+  if (!tenantKey || !hostKey) throw new Error('Managed credential keys are missing.');
+  expect(assertion.verificationMethod).toBe(`${tenantIdentifier}#${tenantKey.kid}`);
+  expect(await crypto.verifyJws({ protected: protectedHeader, payload, signature }, tenantKey)).toBe(true);
+  expect(await crypto.verifyJws({ protected: protectedHeader, payload, signature }, hostKey)).toBe(false);
+ });
+
 });
