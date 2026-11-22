@@ -3,7 +3,7 @@
 // Always create JSDoc, do not use strings inline in keys nor values, use types instead, and reuse the data test examples.
 
 import * as express from 'express';
-import { getParticipantGaiaXCredential, isIssuedOrganizationCredential } from '../utils/organization-discovery-credential';
+import { bindOrganizationRegistrationEvidence, getIssuedOrganizationCredential, getParticipantGaiaXCredential } from '../utils/organization-discovery-credential';
 import type { IDiscoveryTenantRegistry } from '../managers/IDiscoveryTenantRegistry';
 import type { PublicOfferingCatalogManager } from '../managers/PublicOfferingCatalogManager';
 import { DiscoveryService } from '../services/DiscoveryService';
@@ -613,13 +613,18 @@ export function createDiscoveryRouter(
     return { service, credential };
   };
 
-  /** Signs a Gaia-X VC draft as the VC-JWT enveloped credential required by ICAM 25.11. */
-  const signGaiaXEnvelopedCredential = async (credential: Record<string, unknown>, vaultId: string) => {
+  const getCredentialSignerKid = async (vaultId: string) => {
     const jwks = await kmsService.getPublicJwks(vaultId);
     const signer = jwks.keys.find((key: any) => key.use === 'sig' && key.purpose === 'vc_sign')
       || jwks.keys.find((key: any) => key.use === 'sig');
     if (!signer?.kid) throw new Error(`No VC signing key found for '${vaultId}'.`);
-    const jwt = await kmsService.createCompactJws(credential, signer.kid, vaultId, 'vc_sign', {
+    return signer.kid;
+  };
+
+  /** Signs a Gaia-X VC draft as the VC-JWT enveloped credential required by ICAM 25.11. */
+  const signGaiaXEnvelopedCredential = async (credential: Record<string, unknown>, vaultId: string) => {
+    const kid = await getCredentialSignerKid(vaultId);
+    const jwt = await kmsService.createCompactJws(credential, kid, vaultId, 'vc_sign', {
       typ: 'vc+ld+json+jwt',
       cty: 'vc+ld+json',
     });
@@ -780,6 +785,7 @@ export function createDiscoveryRouter(
    *   get:
    *     tags: [Discovery]
    *     summary: Gaia-X Legal Participant VC (host)
+   *     description: Signed JWT envelope with a digest-bound ICA organization credential link when the fiscal identifiers match.
    *     parameters:
    *       - $ref: '#/components/parameters/HostCoverageScope'
    *       - $ref: '#/components/parameters/Version'
@@ -791,6 +797,7 @@ export function createDiscoveryRouter(
    *   get:
    *     tags: [Discovery]
    *     summary: Gaia-X Legal Participant VC (tenant)
+   *     description: Signed JWT envelope with a digest-bound ICA organization credential link when the fiscal identifiers match.
    *     parameters:
    *       - $ref: '#/components/parameters/TenantId'
    *       - $ref: '#/components/parameters/Jurisdiction'
@@ -1118,17 +1125,66 @@ export function createDiscoveryRouter(
    */
   router.get([`${hostScopedWellKnownPrefix}/organization.json`, `${tenantWellKnownPrefix}/organization.json`], resolveTenant, async (_req, res) => {
     const entity = await tenantsCacheManager.getTenant(res.locals.vaultId);
-    const credential = entity?.organizationCredential ?? entity?.governanceVc;
-    if (!isIssuedOrganizationCredential(credential)) return res.status(404).type('text').send('Not Found');
-    return res.json(credential);
+    const credential = getIssuedOrganizationCredential(entity);
+    if (!credential) return res.status(404).type('text').send('Not Found');
+    return res.type('application/json').send(JSON.stringify(credential));
   });
 
-  // Published Gaia-X declaration with its participant's original detached proof.
+  const bindPublicOrganizationEvidence = (
+    req: express.Request,
+    declaration: NonNullable<ReturnType<typeof getParticipantGaiaXCredential>>,
+    entity: NonNullable<Parameters<typeof getParticipantGaiaXCredential>[0]>,
+  ) => bindOrganizationRegistrationEvidence(
+    declaration,
+    entity,
+    `${req.baseUrl}${req.path.slice(0, req.path.lastIndexOf('/'))}/organization.json`,
+    configuredPublicUrl?.origin,
+  );
+
+  /**
+   * @openapi
+   * /host/cds-{hostCoverageScope}/{version}/{hostNetwork}/.well-known/vc.json:
+   *   get:
+   *     tags: [Discovery]
+   *     summary: Participant-signed Legal Person declaration for the host
+   *     parameters:
+   *       - $ref: '#/components/parameters/HostCoverageScope'
+   *       - $ref: '#/components/parameters/Version'
+   *       - $ref: '#/components/parameters/HostRegistrySector'
+   *     responses:
+   *       '200': { description: Credential JSON with a digest-bound ICA link when the fiscal identifiers match }
+   *       '404': { description: Legal Person declaration unavailable }
+   * /{tenantId}/cds-{jurisdiction}/{version}/{sector}/.well-known/vc.json:
+   *   get:
+   *     tags: [Discovery]
+   *     summary: Participant-signed Legal Person declaration for the tenant
+   *     parameters:
+   *       - $ref: '#/components/parameters/TenantId'
+   *       - $ref: '#/components/parameters/Jurisdiction'
+   *       - $ref: '#/components/parameters/Version'
+   *       - $ref: '#/components/parameters/Sector'
+   *     responses:
+   *       '200': { description: Credential JSON with a digest-bound ICA link when the fiscal identifiers match }
+   *       '404': { description: Legal Person declaration unavailable }
+   */
   router.get([`${hostScopedWellKnownPrefix}/vc.json`, `${tenantWellKnownPrefix}/vc.json`], resolveTenant, async (req, res) => {
-    const entityConfig = await tenantsCacheManager.getTenant(res.locals.vaultId);
+    const vaultId = res.locals.vaultId;
+    const entityConfig = await tenantsCacheManager.getTenant(vaultId);
     const vc = getParticipantGaiaXCredential(entityConfig);
     if (!vc) return res.status(404).type('text').send('Not Found');
-    res.json(vc);
+    const statement = bindPublicOrganizationEvidence(req, vc, entityConfig);
+    if (!statement) return res.json(vc);
+    const kid = await getCredentialSignerKid(vaultId);
+    return res.json({
+      ...statement,
+      proof: [{
+        type: 'JsonWebSignature2020',
+        created: new Date().toISOString(),
+        proofPurpose: 'assertionMethod',
+        verificationMethod: `${statement.issuer}#${kid}`,
+        jws: await kmsService.createDetachedJws(statement, kid, vaultId, 'vc_sign'),
+      }],
+    });
   });
 
   router.get(
@@ -1207,14 +1263,15 @@ export function createDiscoveryRouter(
     }
   });
 
-  router.get([`${hostScopedWellKnownPrefix}/legal-participant.vc.json`, `${tenantWellKnownPrefix}/legal-participant.vc.json`], resolveTenant, async (_req, res) => {
+  router.get([`${hostScopedWellKnownPrefix}/legal-participant.vc.json`, `${tenantWellKnownPrefix}/legal-participant.vc.json`], resolveTenant, async (req, res) => {
     const vaultId = res.locals.vaultId;
     const entity = await tenantsCacheManager.getTenant(vaultId);
     const credential = getParticipantGaiaXCredential(entity);
     if (!credential) return res.status(404).type('text').send('Not Found');
     const { proof, ...statement } = credential;
     const contexts = [...new Set([...(statement['@context'] ?? []), 'https://w3id.org/gaia-x/development#'])];
-    const wrapped = await signGaiaXEnvelopedCredential({ ...statement, '@context': contexts }, vaultId);
+    const payload = bindPublicOrganizationEvidence(req, credential, entity) ?? { ...statement, '@context': contexts };
+    const wrapped = await signGaiaXEnvelopedCredential(payload, vaultId);
     return res.json({ '@context': 'https://www.w3.org/ns/credentials/v2', ...wrapped.proof });
   });
 

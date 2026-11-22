@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Sign a verifiable link from the host and tenant Legal Person publications to
+  the original ICA organization credential when the fiscal identifiers match.
+  Include the public URL and SHA-256 digest and preserve the original ICA proof.
+
 - Publish the original ICA organization credential at host and tenant `organization.json` routes and keep the participant-signed Gaia-X statement distinct in its JSON and JWT publications.
 
 - Preserve offering versions when a controller edits a published product or

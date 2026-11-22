@@ -38,13 +38,18 @@ base path `/{tenantId}/cds-{jurisdiction}/{version}/{sector}`.
   issuer and signature. The route returns HTTP 404 when no issued credential
   is available.
 - `GET {basePath}/.well-known/vc.json` returns the participant-signed Gaia-X
-  `gx:LegalPerson` as credential JSON with its original detached proof.
+  `gx:LegalPerson` as credential JSON with a detached proof.
 - `GET {basePath}/.well-known/legal-participant.vc.json` returns the
   participant-signed Gaia-X declaration as a JWT in a W3C
   `EnvelopedVerifiableCredential`. Read the token after
   `data:application/vc+jwt,` in the top-level `id`.
   Older gateway revisions provided the JWT under `proof.id`. Update
   discovery readers to understand both locations before rollout.
+
+When the participant's fiscal identifier matches the admitted ICA credential,
+both signed formats link to that credential and include its SHA-256 digest.
+See [Verify legal identity and fiscal registration](docs/ORGANIZATION_CREDENTIAL_AUDIT.md)
+for the audit checks, evidence format, and Gaia-X Loire reference.
 
 The organization credential describes the legal entity. A hosting service
 credential describes the service provided by that entity.

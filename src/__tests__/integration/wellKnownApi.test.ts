@@ -11,7 +11,7 @@ import { AdapterCryptoSdkNode } from '../../gdc-backend-utils-node/adapters/node
 import { createDiscoveryRouter } from '../../routes/discovery';
 import { DiscoveryService } from '../../services/DiscoveryService';
 import type { TenantsCacheManager } from '../../managers/TenantsCacheManager';
-import { testHostDomain, testTenant1AlternateName, testTenant1DidWebHosted, testTenant1IdentifierUrn, testTenant1VaultId } from '../data/organization.data';
+import { testClaimsRegisterTenantExpanded, testHostDomain, testHostIdValue, testTenant1AlternateName, testTenant1DidWebHosted, testTenant1IdentifierUrn, testTenant1VaultId } from '../data/organization.data';
 import { DidDocument } from '../../gdc-backend-utils-node/models/did';
 import { IKmsService } from '../../gdc-backend-utils-node/models/IKmsService';
 import type { ConfidentialStorageDoc } from 'sos-data-utils-ts/confidential-storage';
@@ -520,6 +520,97 @@ describe('Well-Known Tenant Artifacts API', () => {
     mockTenantsCacheManager.getTenant.mockResolvedValue({ governanceVc: { ...organization, issuer: hostDid } } as any);
     const missing = await invokeExpress(app, { method: 'GET', url: hostBase + '/organization.json' });
     expect(missing.status).toBe(404);
+  });
+
+  it.each(['host', 'tenant'])('signs the published ICA evidence link only for a matching %s', async (target) => {
+    const cryptography = new CryptographyService(new AdapterCryptoSdkNode());
+    const { publicJWKey, secretKeyBytes } = await cryptography.generateKeyPairMlDsa();
+    const { kid, alg } = publicJWKey;
+    const icaKeys = await cryptography.generateKeyPairMlDsa();
+    const urn = parseTenantUrn(testTenant1IdentifierUrn)!;
+    const base = target === 'host'
+      ? `/host/cds-${EXAMPLE_COVERAGE_SCOPE_EU}/v1/${HostNetworkTypes.Test}/.well-known`
+      : `/${testTenant1AlternateName}/cds-${urn.jurisdiction}/${urn.version}/${urn.sector}/.well-known`;
+    const did = target === 'host' ? `did:web:${testHostDomain}` : testTenant1DidWebHosted;
+    const organizationClaims = {
+      '@context': ['https://www.w3.org/ns/credentials/v2', 'https://schema.org'],
+      type: ['VerifiableCredential', 'OrganizationCredential'],
+      issuer: EXAMPLE_HOSTING_OPERATOR_DID,
+      credentialSubject: { id: did, '@type': 'Organization', taxID: testHostIdValue },
+      evidence: [{ type: 'document' }],
+    };
+    const icaSignature = await cryptography.signDataJws(organizationClaims, {
+      kid: icaKeys.publicJWKey.kid,
+      alg: icaKeys.publicJWKey.alg,
+    }, icaKeys.secretKeyBytes);
+    const organization = {
+      ...organizationClaims,
+      proof: {
+        verificationMethod: `${EXAMPLE_HOSTING_OPERATOR_DID}#${icaKeys.publicJWKey.kid}`,
+        jws: `${icaSignature.protected}..${icaSignature.signature}`,
+      },
+    };
+    const declaration = {
+      '@context': ['https://www.w3.org/ns/credentials/v2'],
+      type: ['VerifiableCredential', 'LegalPerson'],
+      issuer: did,
+      credentialSubject: {
+        id: did,
+        type: 'gx:LegalPerson',
+        'gx:legalRegistrationNumber': { id: `${did}#ica-legal-registration-evidence` },
+      },
+      proof: [{ verificationMethod: `${did}#test-key`, jws: 'header..signature' }],
+    };
+    const entity = {
+      didDocument: { id: did }, selfDescriptionVc: declaration, organizationCredential: organization,
+      claims: target === 'host'
+        ? { [SchemaOrgOrganizationClaim.IdentifierValue]: testHostIdValue }
+        : { ...testClaimsRegisterTenantExpanded, [SchemaOrgOrganizationClaim.TaxId]: testHostIdValue },
+    };
+    mockTenantsCacheManager.getDidDocument.mockResolvedValue({ id: did } as any);
+    mockTenantsCacheManager.getTenant.mockResolvedValue(entity as any);
+    mockKmsService.getPublicJwks.mockResolvedValue({ keys: [{ ...publicJWKey, use: 'sig', purpose: 'vc_sign' }] } as any);
+    mockKmsService.createDetachedJws.mockImplementation(async (payload) => {
+      const signature = await cryptography.signDataJws(payload, { kid, alg }, secretKeyBytes);
+      return `${signature.protected}..${signature.signature}`;
+    });
+    mockKmsService.createCompactJws.mockImplementation(async (payload, _kid, _vaultId, _purpose, header) => {
+      const signature = await cryptography.signDataJws(payload, { ...header, kid, alg }, secretKeyBytes);
+      return `${signature.protected}.${signature.payload}.${signature.signature}`;
+    });
+    const original = await invokeExpress(app, { method: 'GET', url: `${base}/organization.json` });
+    const json = await invokeExpress(app, { method: 'GET', url: `${base}/vc.json` });
+    const jwt = await invokeExpress(app, { method: 'GET', url: `${base}/legal-participant.vc.json` });
+    const { proof: publishedIcaProof, ...publishedIcaClaims } = JSON.parse(original.text);
+    expect({ ...publishedIcaClaims, proof: publishedIcaProof }).toEqual(organization);
+    const [icaHeader, , icaDetachedSignature] = publishedIcaProof.jws.split('.');
+    const icaCompact = `${icaHeader}.${Buffer.from(JSON.stringify(publishedIcaClaims)).toString('base64url')}.${icaDetachedSignature}`;
+    expect(await cryptography.verifyJws(icaCompact, icaKeys.publicJWKey)).toBe(true);
+    expect(jwt.status).toBe(200);
+    const { proof, ...statement } = JSON.parse(json.text);
+    expect(statement.relatedResource).toEqual([{
+      id: `https://${testHostDomain}${base}/organization.json`,
+      digestSRI: `sha256-${createHash('sha256').update(original.text).digest('base64')}`,
+    }]);
+    expect(statement.credentialSubject['https://schema.org/taxID']).toBe(testHostIdValue);
+    expect(statement.credentialSubject['gx:legalRegistrationNumber']).toBeUndefined();
+    expect(proof[0].verificationMethod).toBe(`${did}#${kid}`);
+    const [protectedHeader, , detachedSignature] = proof[0].jws.split('.');
+    const detachedCompact = `${protectedHeader}.${Buffer.from(JSON.stringify(statement)).toString('base64url')}.${detachedSignature}`;
+    const compact = JSON.parse(jwt.text).id.split(',')[1];
+    expect(await cryptography.verifyJws(detachedCompact, publicJWKey)).toBe(true);
+    expect(await cryptography.verifyJws(compact, publicJWKey)).toBe(true);
+    expect(JSON.parse(Buffer.from(compact.split('.')[1], 'base64url').toString())).toEqual(statement);
+    const vaultId = target === 'host' ? 'host' : testTenant1VaultId;
+    expect(mockKmsService.createDetachedJws).toHaveBeenCalledWith(statement, kid, vaultId, 'vc_sign');
+    expect(mockKmsService.createCompactJws).toHaveBeenCalledWith(statement, kid, vaultId, 'vc_sign', expect.any(Object));
+
+    mockTenantsCacheManager.getTenant.mockResolvedValue({
+      ...entity,
+      claims: testClaimsRegisterTenantExpanded,
+    } as any);
+    const mismatch = await invokeExpress(app, { method: 'GET', url: `${base}/vc.json` });
+    expect(JSON.parse(mismatch.text)).toEqual(declaration);
   });
 
   it('should return the stored self-description (self-description.json) for a hosted tenant', async () => {
