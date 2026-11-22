@@ -1,4 +1,4 @@
-import { createOpenId4VciIssuer, type WalletOfferStore } from 'antifraud-sdk-node-ts';
+import { createOpenId4VciIssuer, type WalletIssuanceCommand, type WalletOfferStore } from 'antifraud-sdk-node-ts';
 import { Router, type RequestHandler } from 'express';
 import { type ProfessionalCredentialSigningAlgorithm, type ProfessionalWalletIssuanceManager, type ProfessionalWalletTenant, WalletAuthorizationError } from '../managers/ProfessionalWalletIssuanceManager';
 import type { ITenantsManager } from '../managers/ITenantsManager';
@@ -11,6 +11,16 @@ type WalletProfile = Readonly<{
   configurationId: string;
   vct: string;
   credentialSigningAlgorithm?: ProfessionalCredentialSigningAlgorithm;
+}>;
+
+type WalletProfileProof = Readonly<{ clientId: string; presentation: string }>;
+type AgeIssuerContext = Pick<ProfessionalWalletTenant, 'tenantDid' | 'tenantVaultId' | 'authorizationAudience'>;
+type WalletHolderKey = Parameters<Parameters<typeof createOpenId4VciIssuer>[0]['issue']>[1];
+type AgeCredentialIssuer = Readonly<{
+  configurationId: string;
+  doctype: string;
+  authorize(context: AgeIssuerContext, input: WalletProfileProof): Promise<WalletIssuanceCommand>;
+  issue(context: AgeIssuerContext, command: WalletIssuanceCommand, holderKey: WalletHolderKey): Promise<string | undefined>;
 }>;
 
 function isProfile(value: unknown): value is WalletProfile {
@@ -49,10 +59,14 @@ export function createProfessionalWalletRouter(options: {
   secret: Uint8Array;
   store: WalletOfferStore;
   manager: Pick<ProfessionalWalletIssuanceManager, 'begin' | 'reserve' | 'issue'>;
+  proofOfAge?: AgeCredentialIssuer;
   tenants: Pick<ITenantsManager, 'isTenantOperational' | 'getTenantDid'>;
 }) {
   const router = Router({ caseSensitive: true, strict: true });
-  const { profile, manager, tenants } = options;
+  const { profile, manager, tenants, proofOfAge } = options;
+  if (proofOfAge?.configurationId === profile.configurationId) {
+    throw new Error('Age and professional credentials require distinct wallet configurations.');
+  }
   const credentialSigningAlgorithm = profile.credentialSigningAlgorithm ?? 'ES256';
   const tenantVaultId = getTenantVaultId(profile.sector, profile.tenantId);
   const root = `/${profile.tenantId}/cds-${profile.jurisdiction}/v1/${profile.sector}/identity/openid/wallet`;
@@ -64,6 +78,8 @@ export function createProfessionalWalletRouter(options: {
     throw new Error('Professional wallet issuer requires the public HTTPS gateway origin.');
   }
   const authorizationAudience = new URL(root + '/_authorize', apiOrigin).href;
+  const ageAction = root + '/_authorize-proof-of-age';
+  const ageAudience = new URL(ageAction, apiOrigin).href;
   const credentialIssuer = new URL(root, publicOrigin).href;
   async function tenant(): Promise<ProfessionalWalletTenant | undefined> {
     const tenantDid = await tenants.getTenantDid(tenantVaultId);
@@ -76,13 +92,24 @@ export function createProfessionalWalletRouter(options: {
     vct: profile.vct,
     credential_signing_alg_values_supported: [credentialSigningAlgorithm],
   };
+  const ageCredentialConfiguration = proofOfAge && {
+    format: 'mso_mdoc' as const,
+    doctype: proofOfAge.doctype,
+    credential_signing_alg_values_supported: [-7],
+  };
   const issuer = createOpenId4VciIssuer({
     credentialIssuer, store: options.store, secret: options.secret,
-    credentialConfigurations: { [profile.configurationId]: credentialConfiguration },
-    async issue(command, holderKey) {
+    credentialConfigurations: {
+      [profile.configurationId]: credentialConfiguration,
+      ...(proofOfAge && ageCredentialConfiguration && { [proofOfAge.configurationId]: ageCredentialConfiguration }),
+    },
+    async issue(command, holderKey, configurationId) {
       const context = await tenant();
       if (!context) return undefined;
       try {
+        if (proofOfAge && configurationId === proofOfAge.configurationId) {
+          return await proofOfAge.issue({ ...context, authorizationAudience: ageAudience }, command, holderKey);
+        }
         return (await manager.issue(context, command, holderKey)).credential;
       } catch (error) {
         if (error instanceof WalletAuthorizationError) return undefined;
@@ -90,6 +117,30 @@ export function createProfessionalWalletRouter(options: {
       }
     },
   });
+
+  function authorizeOffer(
+    prepare: (context: ProfessionalWalletTenant, input: WalletProfileProof) => Promise<Readonly<{
+      command: WalletIssuanceCommand; configurationId: string;
+    }>>,
+  ): RequestHandler {
+    return async (request, response) => {
+      response.set('Cache-Control', 'no-store');
+      if (!request.is('application/json')) return response.status(415).json({ error: 'invalid_request' });
+      const body: unknown = request.body;
+      if (!hasOnly(body, ['client_id', 'vp_token']) || typeof body.client_id !== 'string' || !body.client_id || body.client_id.length > 256
+        || typeof body.vp_token !== 'string' || !body.vp_token || body.vp_token.length > 32_768) {
+        return response.status(400).json({ error: 'invalid_request' });
+      }
+      try {
+        const context = await tenant();
+        if (context) {
+          const { command, configurationId } = await prepare(context, { clientId: body.client_id, presentation: body.vp_token });
+          return response.status(201).json(await issuer.prepare(command, configurationId));
+        }
+      } catch { /* Never disclose device, evidence or ledger details. */ }
+      return response.status(403).json({ error: 'access_denied' });
+    };
+  }
 
   /**
    * @openapi
@@ -115,24 +166,42 @@ export function createProfessionalWalletRouter(options: {
    *       '403': { description: Professional authorization unavailable }
    *       '415': { description: Expected JSON }
    */
-  router.post(root + '/_authorize', async (request, response) => {
-    response.set('Cache-Control', 'no-store');
-    if (!request.is('application/json')) return response.status(415).json({ error: 'invalid_request' });
-    const body: unknown = request.body;
-    if (!hasOnly(body, ['client_id', 'vp_token']) || typeof body.client_id !== 'string' || !body.client_id || body.client_id.length > 256
-      || typeof body.vp_token !== 'string' || !body.vp_token || body.vp_token.length > 32_768) {
-      return response.status(400).json({ error: 'invalid_request' });
-    }
-    try {
-      const context = await tenant();
-      if (context) {
-        const reference = await manager.begin(context, { clientId: body.client_id, presentation: body.vp_token });
-        const { command, configurationId } = await manager.reserve(context, reference);
-        return response.status(201).json(await issuer.prepare(command, configurationId));
-      }
-    } catch { /* Never disclose professional, device or ledger details. */ }
-    return response.status(403).json({ error: 'access_denied' });
-  });
+  router.post(root + '/_authorize', authorizeOffer(async (context, input) => {
+    const reference = await manager.begin(context, input);
+    return manager.reserve(context, reference);
+  }));
+
+  /**
+   * @openapi
+   * /{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/_authorize-proof-of-age:
+   *   post:
+   *     tags: [2. Device and Identity Registration]
+   *     summary: Prepare an offer for the registered member's own Proof of Age
+   *     description: Available when a tenant's trusted Proof of Age issuer is configured. The server supplies the evidence.
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             additionalProperties: false
+   *             required: [client_id, vp_token]
+   *             properties:
+   *               client_id: { type: string }
+   *               vp_token: { type: string }
+   *     responses:
+   *       '201': { description: Tenant credential offer URL and one-use transaction code }
+   *       '400': { description: Invalid request format }
+   *       '403': { description: Holder or evidence not authorized }
+   *       '404': { description: Proof of Age issuer unavailable }
+   *       '415': { description: Expected JSON }
+   */
+  if (proofOfAge) {
+    router.post(ageAction, authorizeOffer(async (context, input) => ({
+      command: await proofOfAge.authorize({ ...context, authorizationAudience: ageAudience }, input),
+      configurationId: proofOfAge.configurationId,
+    })));
+  }
 
   const walletProtocol: RequestHandler = async (request, response) => {
     try {
@@ -203,7 +272,7 @@ export function createProfessionalWalletRouter(options: {
    *     tags: [2. Device and Identity Registration]
    *     summary: Issue a tenant-signed credential after verifying a wallet holder proof
    *     responses:
-   *       '200': { description: Tenant-signed SD-JWT VC }
+   *       '200': { description: Signed credential in the format of the selected tenant configuration }
    *       '400': { description: Invalid request, proof or nonce }
    *       '401': { description: Invalid or redeemed access token }
    */

@@ -5,6 +5,7 @@ import { randomBytes } from 'node:crypto';
 import express from 'express';
 import request from 'supertest';
 import { REPOSITORY_SAFE_EXAMPLES as e } from 'sos-data-utils-ts/repository-privacy';
+import { IdentityAttestationCapability } from 'antifraud-data-utils-ts/identity-assurance';
 import { WalletAuthorizationError } from '../../managers/ProfessionalWalletIssuanceManager';
 import { createMemoryWalletOfferStore } from '../../adapters/professional-wallet-offer-store-mem';
 import { createProfessionalWalletRouter } from '../../routes/professional-wallet';
@@ -63,5 +64,43 @@ it('publishes an offer and OpenID metadata only at its configured tenant', async
   expect(offer.body.credential_configuration_ids).toEqual([profile.configurationId]);
   expect((await request(app).post(expectedPath + '/_reserve')).status).toBe(404);
   expect((await request(app).post(expectedPath + '/_sign')).status).toBe(404);
+  expect((await request(app).post(expectedPath + '/_authorize-proof-of-age').send(credentials)).status).toBe(404);
   expect(order).toEqual(['authorize', 'reserve']);
+});
+
+it('keeps an enabled age offer separate from the employee profile and rejects caller evidence', async () => {
+  const profile = { tenantId: e.tenantId, jurisdiction: 'EU', sector: 'health-care',
+    configurationId: 'employee', vct: `${e.httpsBaseUrl}/types/employee` };
+  const issuerPath = `/${profile.tenantId}/cds-${profile.jurisdiction}/v1/${profile.sector}/identity/openid/wallet`;
+  const ageAction = issuerPath + '/_authorize-proof-of-age';
+  const age = { configurationId: 'proof_of_age', doctype: 'eu.europa.ec.av.1' };
+  const denyProfessional = async (): Promise<never> => { throw new Error('Employee issuer must not authorize age'); };
+  const reference = randomBytes(32).toString('base64url');
+  const credentials = { client_id: e.resourceUuid, vp_token: 'signed-personal-member-presentation' };
+  const calls: string[] = [];
+  const app = express().use(express.json()).use(createProfessionalWalletRouter({
+    profile, apiBase: e.httpsBaseUrl, secret: randomBytes(32), store: createMemoryWalletOfferStore(),
+    tenants: { isTenantOperational: async () => true, getTenantDid: async () => e.didWeb },
+    manager: { begin: denyProfessional, reserve: denyProfessional, issue: denyProfessional },
+    proofOfAge: { ...age, authorize: async (context, input) => {
+      expect(context.tenantDid).toBe(e.didWeb);
+      expect(context.authorizationAudience).toBe(new URL(ageAction, e.httpsBaseUrl).href);
+      expect(input).toEqual({ clientId: credentials.client_id, presentation: credentials.vp_token });
+      calls.push(input.clientId);
+      return { actorReference: reference, subjectReference: reference,
+        verificationTransactionId: reference, capability: IdentityAttestationCapability.VerifyClaim };
+    }, issue: denyProfessional },
+  }));
+  expect((await request(app).post(ageAction).send({ ...credentials, age_over_18: true })).status).toBe(400);
+  expect(calls).toEqual([]);
+  const begin = await request(app).post(ageAction).send(credentials);
+  expect(begin.status).toBe(201);
+  expect(begin.headers['cache-control']).toBe('no-store');
+  const offer = await request(app).get(new URL(begin.body.offerUri).pathname);
+  expect(offer.body.credential_configuration_ids).toEqual([age.configurationId]);
+  const metadata = await request(app).get('/.well-known/openid-credential-issuer' + issuerPath);
+  expect(metadata.body.credential_configurations_supported[age.configurationId]).toMatchObject({
+    format: 'mso_mdoc', doctype: age.doctype, cryptographic_binding_methods_supported: ['cose_key'],
+  });
+  expect(calls).toEqual([credentials.client_id]);
 });

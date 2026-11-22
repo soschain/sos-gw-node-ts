@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Verify registered individual wallet presentations against the current device
+  and membership, with the exact authorization audience and no clinical scopes.
+- Support an explicitly configured Proof of Age mdoc issuer alongside the
+  professional SD-JWT issuer. Reject evidence supplied in the wallet request.
+
 - Provision new credential assertion keys with ML-DSA-65. Use ES256 for the
   SMART Health Card JWS and require a credential-purpose ML-DSA-65 companion
   key for veterinary attestations.

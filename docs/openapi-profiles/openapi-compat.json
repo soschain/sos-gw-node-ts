@@ -4,7 +4,7 @@
     "title": "Gateway API - COMPAT",
     "version": "1.0.3",
     "description": "Compatibility profile including legacy and alias routes on top of the core flow.",
-    "x-profile-generated-at": "2026-11-22T12:49:35.411Z",
+    "x-profile-generated-at": "2026-11-22T16:43:19.774Z",
     "x-profile-name": "compat"
   },
   "servers": [],
@@ -2995,6 +2995,56 @@
         "x-profile": "compat"
       }
     },
+    "/{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet/_authorize-proof-of-age": {
+      "post": {
+        "tags": [
+          "2. Device and Identity Registration"
+        ],
+        "summary": "Prepare an offer for the registered member's own Proof of Age",
+        "description": "Available when a tenant's trusted Proof of Age issuer is configured. The server supplies the evidence.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "client_id",
+                  "vp_token"
+                ],
+                "properties": {
+                  "client_id": {
+                    "type": "string"
+                  },
+                  "vp_token": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tenant credential offer URL and one-use transaction code"
+          },
+          "400": {
+            "description": "Invalid request format"
+          },
+          "403": {
+            "description": "Holder or evidence not authorized"
+          },
+          "404": {
+            "description": "Proof of Age issuer unavailable"
+          },
+          "415": {
+            "description": "Expected JSON"
+          }
+        },
+        "x-profile": "compat"
+      }
+    },
     "/.well-known/openid-credential-issuer/{tenantId}/cds-{jurisdiction}/v1/{sector}/identity/openid/wallet": {
       "get": {
         "tags": [
@@ -3083,7 +3133,7 @@
         "summary": "Issue a tenant-signed credential after verifying a wallet holder proof",
         "responses": {
           "200": {
-            "description": "Tenant-signed SD-JWT VC"
+            "description": "Signed credential in the format of the selected tenant configuration"
           },
           "400": {
             "description": "Invalid request",
