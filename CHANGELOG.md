@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Reuse the current device, employment and role checks for a tenant-bound
+  professional wallet authorization with an exact audience and bounded
+  validity. The authorization grants no index or data access.
+
 - Reject professional credential requests at the historical Gaia-X issuance
   route and document organization publications and private wallet delivery.
 

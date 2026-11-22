@@ -1,4 +1,5 @@
 // Flow contract: verify real credential and presentation signatures, re-read current key/status/permission evidence, reject the same token after revocation, and keep first-controller ICA authority separate from enrolled Fabric evidence. Synthetic data comes from the governed repository examples.
+import { jest } from '@jest/globals';
 import { createServer, type Server } from 'node:http';
 import canonicalize from 'canonicalize';
 import { exportJWK, generateKeyPair, SignJWT, FlattenedSign, type JWK, type KeyLike } from 'jose';
@@ -80,6 +81,37 @@ describe('native current-state presentation verifier', () => {
     const f = await ledgerFixture();
     const verifier = new LedgerPresentationVerifier({ ...f.options, network: 'test-network' });
     await expect(verifier.verifyVpToken(f.request)).rejects.toThrow(/Fabric|authoritative/i);
+  });
+});
+
+describe('professional wallet issuance authority', () => {
+  it('binds a signed registered profile to one tenant and rechecks its current authority at redemption', async () => {
+    const fixture = await ledgerFixture();
+    const authority = { actorDid, acr, role: HealthcareActorRoles.GeneralistMedicalPractitioner };
+    const projection = buildProfessionalEmployeeCredential({ actorDid, role: authority.role });
+    let licensed = true;
+    const verifyRegisteredIdentity = jest.fn<NonNullable<ConstructorParameters<typeof LedgerPresentationVerifier>[0]['verifyRegisteredIdentity']>>(async () => {
+      if (!licensed) throw new Error('Professional licence is inactive.');
+      return authority;
+    });
+    const verifier = new LedgerPresentationVerifier({ ...fixture.options, verifyRegisteredIdentity });
+    const audience = `${e.httpsBaseUrl}/identity/wallet-authorization`;
+    const payload = { iss: holder, aud: audience, iat: now, exp: now + 120, jti: e.resourceUuid,
+      vp: { holder, verifiableCredential: [projection] } };
+    const request = { tenantDid: e.didWeb, tenantVaultId: e.tenantId, clientId: holder,
+      authorizationAudience: audience, presentation: await sign(payload, holderPrivate, holderKey) };
+    await expect(verifier.verifyProfessionalWalletEligibility(request)).resolves.toEqual({
+      actorDid, role: authority.role, clientId: holder, presentationId: e.resourceUuid, expiresAt: now + 120,
+    });
+    expect(verifyRegisteredIdentity).toHaveBeenCalledWith(projection, holder, holderKey,
+      expect.objectContaining({ holderVaultId: request.tenantVaultId, tenantDid: request.tenantDid }));
+    const wrongAudience = await sign({ ...payload, aud: e.didWeb }, holderPrivate, holderKey);
+    await expect(verifier.verifyProfessionalWalletEligibility({ ...request, presentation: wrongAudience })).rejects.toThrow(/audience/i);
+    const noExpiry = await sign({ ...payload, exp: undefined }, holderPrivate, holderKey);
+    await expect(verifier.verifyProfessionalWalletEligibility({ ...request, presentation: noExpiry })).rejects.toThrow(/expir|validity/i);
+    await expect(verifier.verifyProfessionalWalletEligibility({ ...request, presentation: fixture.request.vpToken })).rejects.toThrow(/registered professional/i);
+    licensed = false;
+    await expect(verifier.verifyProfessionalWalletEligibility(request)).rejects.toThrow(/licence is inactive/i);
   });
 });
 

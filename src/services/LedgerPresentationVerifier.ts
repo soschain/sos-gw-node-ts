@@ -6,7 +6,7 @@ import { summarizeProfessionalIdentityCredential } from 'sos-data-utils-ts/profe
 import { summarizeIndividualMemberIdentityCredential } from 'sos-data-utils-ts/individual-smart';
 import canonicalize from 'canonicalize';
 import { createHash } from 'node:crypto';
-import { decodeJwt, decodeProtectedHeader, type JSONWebKeySet, type JWK } from 'jose';
+import { decodeJwt, decodeProtectedHeader, type JSONWebKeySet, type JWK, type JWTPayload } from 'jose';
 import type { ICryptography } from 'antifraud-data-utils-ts/cryptography';
 import type { ICredentialLedgerAdapter } from '../adapters/ICredentialLedgerAdapter';
 import { verifyPinnedDetachedJws, verifyPinnedJwt } from 'antifraud-data-utils-ts/clearing-house';
@@ -17,6 +17,17 @@ export type VerifiedPresentationIdentity = {
   actorDid: string; acr: string; subjectDid?: string; role?: string;
   email?: string; phone?: string; sameAs?: readonly string[];
 };
+
+const professionalAssurance = 'urn:antifraud:acr:openid4vp:employee';
+const walletAuthorizationLifetime = 600;
+
+export type ProfessionalWalletEligibility = Readonly<{
+  actorDid: string;
+  role: string;
+  clientId: string;
+  presentationId: string;
+  expiresAt: number;
+}>;
 
 /** Verifies signatures, current key/credential state and authorization through the configured provider. */
 export class LedgerPresentationVerifier implements IClearingHouseService {
@@ -35,6 +46,38 @@ export class LedgerPresentationVerifier implements IClearingHouseService {
   }) {}
 
   async verifyVpToken(request: ClearingHouseVerificationRequest): Promise<ClearingHouseVerificationResult> {
+    return (await this.verifyPresentation(request)).result;
+  }
+
+  /** Reads current tenant employment without granting any index or data access. */
+  async verifyProfessionalWalletEligibility(input: {
+    tenantDid: string;
+    tenantVaultId: string;
+    clientId: string;
+    authorizationAudience: string;
+    presentation: string;
+  }): Promise<ProfessionalWalletEligibility> {
+    if (!input.tenantVaultId || !input.clientId || !input.authorizationAudience || input.presentation.length > 32_768) {
+      throw new Error('Wallet authorization requires a bounded presentation and tenant context.');
+    }
+    const { identity, payload } = await this.verifyPresentation({
+      tenantDid: input.tenantDid,
+      tenantVaultId: input.tenantVaultId,
+      holderVaultId: input.tenantVaultId,
+      authenticatedClientId: input.clientId,
+      vpToken: input.presentation,
+      acrValues: [professionalAssurance],
+      tokenIssuer: input.authorizationAudience,
+    }, true);
+    if (!identity?.role || !payload.jti || !payload.exp) throw new Error('Professional wallet eligibility is incomplete.');
+    return { actorDid: identity.actorDid, role: identity.role, clientId: input.clientId,
+      presentationId: payload.jti, expiresAt: payload.exp };
+  }
+
+  private async verifyPresentation(
+    request: ClearingHouseVerificationRequest,
+    walletAuthorization = false,
+  ): Promise<{ result: ClearingHouseVerificationResult; identity?: VerifiedPresentationIdentity; payload: JWTPayload }> {
     if (this.options.network !== 'test' && this.options.ledgerKind !== 'fabric') throw new Error('Network verification requires the authoritative Fabric ledger.');
     const now = this.options.now?.() ?? Math.floor(Date.now() / 1000);
     const tenantDid = String(request.tenantDid || '');
@@ -42,6 +85,10 @@ export class LedgerPresentationVerifier implements IClearingHouseService {
     const unverified = decodeJwt(request.vpToken);
     const unverifiedVp = (unverified.vp || unverified) as Record<string, any>;
     const projection = Array.isArray(unverifiedVp.verifiableCredential) && unverifiedVp.verifiableCredential.some((value: any) => value && typeof value === 'object' && !value.issuer && !value.iss && !value.proof && (summarizeProfessionalIdentityCredential(value) || summarizeIndividualMemberIdentityCredential(value)));
+    if (walletAuthorization && (!projection || unverifiedVp.verifiableCredential.length !== 1
+      || !summarizeProfessionalIdentityCredential(unverifiedVp.verifiableCredential[0]))) {
+      throw new Error('Wallet authorization requires exactly one registered professional identity projection.');
+    }
     const holder = String(unverifiedVp.holder || unverified.iss || '');
     if (projection && (!request.authenticatedClientId || request.authenticatedClientId !== holder)) throw new Error('Registered identity projection requires fresh authenticated client context.');
     const holderKeys = await this.options.resolveHolderKeys(holder, tenantDid, request);
@@ -52,9 +99,17 @@ export class LedgerPresentationVerifier implements IClearingHouseService {
     const issuer = String(unverified.iss || '');
     if (projection && issuer !== holder && issuer !== header.kid) throw new Error('Wallet presentation issuer does not match its registered client or signing key.');
     const payload = await verifyPinnedJwt(request.vpToken, holderKeys, issuer, now, {
-      audience: projection && unverified.aud === undefined ? undefined : request.tokenIssuer || tenantDid,
-      cryptography: this.options.cryptography, requireJwtTimes: !projection,
+      audience: projection && !walletAuthorization && unverified.aud === undefined ? undefined : request.tokenIssuer || tenantDid,
+      cryptography: this.options.cryptography, requireJwtTimes: !projection || walletAuthorization,
     });
+    if (walletAuthorization) {
+      const { aud, iat, exp, jti } = payload;
+      if (aud !== request.tokenIssuer) throw new Error('Wallet authorization audience must match exactly.');
+      if (typeof iat !== 'number' || typeof exp !== 'number' || !Number.isSafeInteger(iat) || !Number.isSafeInteger(exp)
+        || exp <= iat || exp - iat > walletAuthorizationLifetime || !jti || !/^[A-Za-z0-9_:-]{1,128}$/u.test(jti)) {
+        throw new Error('Wallet authorization validity or presentation identifier is invalid.');
+      }
+    }
     const vp = (payload.vp || payload) as Record<string, any>;
     if (!Array.isArray(vp.verifiableCredential) || vp.verifiableCredential.length === 0) throw new Error('Presentation contains no credentials.');
     let issuerKeysChecked = true;
@@ -118,7 +173,7 @@ export class LedgerPresentationVerifier implements IClearingHouseService {
         if (material !== toJwkThumbprintSha256Urn(holderKey as any)) throw new Error('Credential holder key binding does not match the presentation signer.');
       }
       if (professional && (!request.tokenSubject || professional.actorDid === request.tokenSubject)) {
-        const acr = 'urn:antifraud:acr:openid4vp:employee'; provedAssurance.add(acr);
+        const acr = professionalAssurance; provedAssurance.add(acr);
         rememberIdentity({ actorDid: professional.actorDid, acr, role: professional.role, sameAs: professional.sameAs });
       }
       if (individual && (!request.tokenSubject || individual.actorDid === request.tokenSubject)) {
@@ -134,8 +189,11 @@ export class LedgerPresentationVerifier implements IClearingHouseService {
     if (!acr || !request.acrValues.includes(acr)) throw new Error('Presentation does not prove the requested assurance context.');
     if (!provedAssurance.has(acr)) throw new Error('Issuer-signed credentials do not prove the requested professional assurance.');
     if (request.tokenSubject && !subjects.has(request.tokenSubject)) throw new Error('Credential subject does not match the professional.');
-    if (request.tokenScope) await this.options.authorize(request, verifiedIdentities.get(acr));
-    return { acr, amr: ['openid4vp', 'vc'], vpHash: createHash('sha256').update(request.vpToken).digest('hex'), ledgerVerified: true,
-      trustChecks: { revocationChecked: true, issuerKeyStatusChecked: issuerKeysChecked, subjectKeyStatusChecked: true, onChainChecked: this.options.ledgerKind === 'fabric' } };
+    const identity = verifiedIdentities.get(acr);
+    if (request.tokenScope) await this.options.authorize(request, identity);
+    return { identity, payload, result: {
+      acr, amr: ['openid4vp', 'vc'], vpHash: createHash('sha256').update(request.vpToken).digest('hex'), ledgerVerified: true,
+      trustChecks: { revocationChecked: true, issuerKeyStatusChecked: issuerKeysChecked, subjectKeyStatusChecked: true, onChainChecked: this.options.ledgerKind === 'fabric' },
+    } };
   }
 }
