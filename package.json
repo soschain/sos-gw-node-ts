@@ -78,7 +78,7 @@
     "test:integration": "NODE_OPTIONS='--experimental-vm-modules --max-old-space-size=8192' jest --runInBand --coverage src/__tests__/integration",
     "pretest:e2e": "npm run check:environment-template && node --test scripts/tests/e2e-execution-policy.test.mjs",
     "test:e2e": "NODE_OPTIONS='--experimental-vm-modules --max-old-space-size=8192' TEST_ENV=e2e jest --runInBand --no-coverage src/__tests__/e2e",
-    "test:organization-registration:local": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --no-coverage src/__tests__/unit/managers/create-pending-tenant-registration-replay.test.ts src/__tests__/integration/organizationApi.test.ts src/__tests__/integration/organization-registration-restart.api.test.ts",
+    "test:organization-registration:local": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand --no-coverage src/__tests__/unit/managers/create-pending-tenant-registration-replay.test.ts src/__tests__/integration/organizationApi.test.ts src/__tests__/integration/organization-registration-restart.api.test.ts",
     "test:e2e:test-network-unid": "NODE_OPTIONS=--experimental-vm-modules TEST_ENV=e2e jest --no-coverage src/__tests__/e2e/consentaccess.test-network-unid.e2e.spec.ts",
     "test:e2e:real": "bash ./scripts/test-e2e-real-precheck.sh",
     "ica:a4:fullcycle": "node ./scripts/run-ica-a4-fullcycle.mjs",

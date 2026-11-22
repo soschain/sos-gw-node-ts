@@ -64,10 +64,17 @@ test('checks exact JWT envelopes and all organization proofs for host and tenant
     const jwt = await sign(claims, did);
     const envelope = { '@context': context, type: 'EnvelopedVerifiableCredential', id: `data:application/vc+jwt,${jwt.protected}.${jwt.payload}.${jwt.signature}` };
     documents.set(participantPath, envelope);
+    for (const filename of ['vc.json', 'self-description.json']) {
+      documents.set(`${path}/.well-known/${filename}`, {
+        ...claims,
+        proof: { verificationMethod: `${did}#${signers.get(did).publicJWKey.kid}`, jws: `${jwt.protected}..${jwt.signature}` },
+      });
+    }
     const result = await verifyOrganizationPublication(base, kind, fetchDocument);
     assert.equal(result.selfSigned, kind === 'host');
     assert.equal(result.proofs, kind === 'host' ? 1 : 2);
     assert.equal(result.linkedEvidence, kind === 'tenant');
+    assert.deepEqual(result.verifiedJson, ['vc.json', 'self-description.json']);
     documents.set(participantPath, { ...claims, proof: envelope });
     await assert.rejects(verifyOrganizationPublication(base, kind, fetchDocument), /envelope fields/);
     documents.set(participantPath, envelope);

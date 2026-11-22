@@ -1,5 +1,8 @@
 ## Unreleased
 
+- Verify both signed Gaia-X JSON publications alongside the participant JWT
+  and organization credential in the portable Node verifier.
+
 - Verify archived organization credentials against trusted ICA `did:jwt`
   assertion keys using the portable Node verifier.
 
