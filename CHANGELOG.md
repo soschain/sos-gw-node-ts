@@ -1,5 +1,9 @@
 ## Unreleased
 
+- Add tenant-scoped professional wallet authorization, ICA-only reservation
+  and signing routes. Recheck current eligibility before issuing a
+  holder-bound SD-JWT with the tenant credential signing key.
+
 - Reuse the current device, employment and role checks for a tenant-bound
   professional wallet authorization with an exact audience and bounded
   validity. The authorization grants no index or data access.

@@ -1583,3 +1583,13 @@ export const FAMILY_MEMBER_RELATIONSHIP_MESSAGE = {
     }]
   }
 };
+
+/** Placeholders identify values returned or produced at the preceding wallet step. */
+export const PROFESSIONAL_WALLET_REQUESTS = {
+  authorize: { client_id: SAFE.resourceUuid, vp_token: '<signed registered-profile presentation>' },
+  reserve: { authorization_reference: '<reference returned by authorize>' },
+  sign: {
+    command: '<opaque command returned by reserve>',
+    holderKey: '<P-256 public JWK verified in the wallet proof>',
+  },
+};

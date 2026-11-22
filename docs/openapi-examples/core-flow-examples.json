@@ -508,5 +508,18 @@
         }
       }
     }
+  },
+  "PROFESSIONAL_WALLET_REQUESTS": {
+    "authorize": {
+      "client_id": "00000000-0000-4000-8000-000000000001",
+      "vp_token": "<signed registered-profile presentation>"
+    },
+    "reserve": {
+      "authorization_reference": "<reference returned by authorize>"
+    },
+    "sign": {
+      "command": "<opaque command returned by reserve>",
+      "holderKey": "<P-256 public JWK verified in the wallet proof>"
+    }
   }
 }

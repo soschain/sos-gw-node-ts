@@ -1,3 +1,5 @@
+import { createProfessionalWalletRouter, readProfessionalWalletProfile } from './routes/professional-wallet';
+import { ProfessionalWalletIssuanceManager } from './managers/ProfessionalWalletIssuanceManager';
 import { GaiaXComplianceManager } from './managers/GaiaXComplianceManager';
 import { GaiaXComplianceService } from './services/GaiaXComplianceService';
 import { TenantPresentationVerificationManager } from './managers/TenantPresentationVerificationManager';
@@ -486,10 +488,19 @@ async function startServer(options?: StartServerOptions) {
   const ledgerRouter = createCredentialLedgerRouter(credentialLedgerAdapter, asyncResponseStore, tenantManager, config.networkMode);
   const webhooksRouter = createWebhooksRouter(queueAdapter);
   const authRouter = createAuthRouter(appAuthManager, tokenManager);
+  const walletProfile = readProfessionalWalletProfile(process.env);
+  const professionalWalletRouter = walletProfile ? createProfessionalWalletRouter({
+    ...walletProfile, apiBase: config.apiBaseUrl, tenants: tenantManager,
+    manager: new ProfessionalWalletIssuanceManager({
+      repository: vaultRepository, kms: kmsService, replay: replayProtectionStore,
+      verify: input => localClearingHouseVerifier.verifyProfessionalWalletEligibility(input),
+    }),
+  }) : undefined;
   registerCoreRouters({
     app,
     discoveryRouter,
     authorityRouter,
+    professionalWalletRouter,
     ledgerRouter,
     apiRouter,
     networkRouter,
