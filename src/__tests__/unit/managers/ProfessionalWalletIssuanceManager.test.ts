@@ -40,6 +40,12 @@ it('rechecks active eligibility and signs one SD-JWT VC with the existing tenant
       now: () => now,
     });
     const begin = (presentationId: string) => manager.begin(tenant, { clientId: e.resourceUuid, presentation: presentationId });
+    const unavailableTenant = { ...tenant, tenantVaultId: `${tenant.tenantVaultId}-es384` };
+    process.env.LEGACY_SIGN_ALG = 'ES384';
+    await kms.provisionKeys(unavailableTenant.tenantVaultId);
+    process.env.LEGACY_SIGN_ALG = 'ES256';
+    await expect(manager.begin(unavailableTenant, { clientId: e.resourceUuid, presentation: e.resourceUuid }))
+      .rejects.toThrow(/signing key is unavailable/i);
     const first = await begin(e.resourceUuid);
     await expect(begin(e.resourceUuid)).rejects.toThrow(/already used/i);
     const firstOffer = await manager.reserve(tenant, first);
