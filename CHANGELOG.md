@@ -1,4 +1,4 @@
-## Unreleased
+## 2.2.0 - 2026-11-23
 
 - Verify registered individual wallet presentations against the current device
   and membership, with the exact authorization audience and no clinical scopes.
