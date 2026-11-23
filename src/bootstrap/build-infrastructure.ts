@@ -30,6 +30,7 @@ export async function buildInfrastructure(options: {
   hostCollectionName: string;
   /** Server bootstrap defers this until Fabric ledger protection is verified. */
   initializeKms?: boolean;
+  es256CredentialTenantVaultId?: string;
 }): Promise<{
   vaultRepository: IVaultRepository;
   storageAdapter: IStorageAdapter;
@@ -123,18 +124,13 @@ export async function buildInfrastructure(options: {
     console.warn('[GW-API] Envelope provider is memory. Use this only for dev/test.');
   }
   console.log(`[GW-API] Using envelope provider: ${envelopeProvider}`);
+  const kmsOptions = { wrappedKeyRepository, envelopeAdapter, es256CredentialTenantVaultId: options.es256CredentialTenantVaultId };
   if (config.nodeEnv === 'demo') {
-    const realKmsService = new KmsService(cryptographyService, tenantManager, {
-      wrappedKeyRepository,
-      envelopeAdapter,
-    });
+    const realKmsService = new KmsService(cryptographyService, tenantManager, kmsOptions);
     kmsService = new DemoKmsService(realKmsService);
     console.log('[GW-API] Using DemoKmsService (with real key generation).');
   } else {
-    kmsService = new KmsService(cryptographyService, tenantManager, {
-      wrappedKeyRepository,
-      envelopeAdapter,
-    });
+    kmsService = new KmsService(cryptographyService, tenantManager, kmsOptions);
     console.log('[GW-API] Using KmsService.');
   }
   if (options.initializeKms !== false) {

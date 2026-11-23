@@ -1,6 +1,6 @@
 // Flow contract: verify public JWT and organization proofs for host and tenant without a shell.
 import assert from 'node:assert/strict';
-import { createHash, generateKeyPairSync, randomBytes, randomUUID, sign } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomBytes, randomUUID, sign as signBytes } from 'node:crypto';
 import test from 'node:test';
 import { calculateJwkThumbprint } from 'jose';
 import canonicalize from 'canonicalize';
@@ -13,7 +13,7 @@ const crypto = new CryptographyService({
   digestString: async (value, alg) => createHash(alg.replaceAll('-', '').toLowerCase()).update(value).digest('hex'),
 });
 
-test('checks exact JWT envelopes and all organization proofs for host and tenant', async () => {
+async function checkOrganizationPublications(profile) {
   const origin = new URL(EXAMPLE_GATEWAY_PUBLIC_ORIGIN);
   const hostDid = `did:web:${origin.hostname}`;
   const icaDid = `${hostDid}:ica`;
@@ -21,12 +21,22 @@ test('checks exact JWT envelopes and all organization proofs for host and tenant
   const context = 'https://www.w3.org/ns/credentials/v2';
   const documents = new Map();
   const signers = new Map();
+  const classicalSigners = new Map();
   const taxID = 'A12345678';
   for (const [did, path] of [[hostDid, '/.well-known/did.json'], [icaDid, '/ica/did.json'], [tenantDid, '/tenant/did.json']]) {
-    const signer = await crypto.generateKeyPairMlDsa();
+    const signer = await crypto.generateKeyPairMlDsa(undefined, profile === 'dual-proof' ? 'ML-DSA-65' : 'ML-DSA-44');
     const id = `${did}#${signer.publicJWKey.kid}`;
     signers.set(did, signer);
-    documents.set(path, { id: did, assertionMethod: [id], verificationMethod: [{ id, publicKeyJwk: signer.publicJWKey }] });
+    const document = { id: did, assertionMethod: [id], verificationMethod: [{ id, publicKeyJwk: signer.publicJWKey }] };
+    if (profile === 'dual-proof') {
+      const { publicKey, privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' });
+      const jwk = publicKey.export({ format: 'jwk' });
+      const method = `${did}#${await calculateJwkThumbprint(jwk)}`;
+      classicalSigners.set(did, { method, privateKey });
+      document.assertionMethod.push(method);
+      document.verificationMethod.push({ id: method, publicKeyJwk: jwk });
+    }
+    documents.set(path, document);
   }
   const sign = (claims, did) => {
     const { publicJWKey: { alg, kid }, secretKeyBytes } = signers.get(did);
@@ -61,13 +71,27 @@ test('checks exact JWT envelopes and all organization proofs for host and tenant
         digestSRI: `sha256-${createHash('sha256').update(JSON.stringify(organization)).digest('base64')}`,
       }] } : {}),
     };
-    const jwt = await sign(claims, did);
+    const pqc = await sign(claims, did);
+    const classical = classicalSigners.get(did);
+    let jwt = pqc;
+    if (classical) {
+      const header = Buffer.from(JSON.stringify({
+        alg: 'ES256', kid: classical.method, typ: 'vc+jwt', cty: 'vc', iss: did,
+      })).toString('base64url');
+      const signature = signBytes('sha256', Buffer.from(`${header}.${pqc.payload}`), {
+        key: classical.privateKey, dsaEncoding: 'ieee-p1363',
+      }).toString('base64url');
+      jwt = { protected: header, payload: pqc.payload, signature };
+    }
     const envelope = { '@context': context, type: 'EnvelopedVerifiableCredential', id: `data:application/vc+jwt,${jwt.protected}.${jwt.payload}.${jwt.signature}` };
     documents.set(participantPath, envelope);
     for (const filename of ['vc.json', 'self-description.json']) {
       documents.set(`${path}/.well-known/${filename}`, {
         ...claims,
-        proof: { verificationMethod: `${did}#${signers.get(did).publicJWKey.kid}`, jws: `${jwt.protected}..${jwt.signature}` },
+        proof: [
+          ...(classical ? [{ verificationMethod: classical.method, jws: `${jwt.protected}..${jwt.signature}` }] : []),
+          { verificationMethod: `${did}#${signers.get(did).publicJWKey.kid}`, jws: `${pqc.protected}..${pqc.signature}` },
+        ],
       });
     }
     const result = await verifyOrganizationPublication(base, kind, fetchDocument);
@@ -81,8 +105,12 @@ test('checks exact JWT envelopes and all organization proofs for host and tenant
     documents.set(organizationPath, { ...organization, credentialSubject: { ...organization.credentialSubject, taxID: `${taxID}0` } });
     await assert.rejects(verifyOrganizationPublication(base, kind, fetchDocument), /signature verification failed/);
   }
-});
+}
 
+for (const profile of ['historical', 'dual-proof']) {
+  test(`checks exact JWT envelopes and all organization proofs for host and tenant (${profile})`,
+    () => checkOrganizationPublications(profile));
+}
 
 test('checks an archived ICA organization credential against its published did:jwt signing key', async () => {
   const origin = new URL(EXAMPLE_GATEWAY_PUBLIC_ORIGIN);
@@ -98,7 +126,7 @@ test('checks an archived ICA organization credential against its published did:j
     evidence: [{ type: 'document' }], issuer, type: ['VerifiableCredential', 'OrganizationCredential'] };
   const encodedHeader = Buffer.from(JSON.stringify({ alg: 'ES384', kid: verificationMethod })).toString('base64url');
   const payload = Buffer.from(canonicalize(unsigned)).toString('base64url');
-  const signature = sign('sha384', Buffer.from(`${encodedHeader}.${payload}`), { key: privateKey, dsaEncoding: 'ieee-p1363' }).toString('base64url');
+  const signature = signBytes('sha384', Buffer.from(`${encodedHeader}.${payload}`), { key: privateKey, dsaEncoding: 'ieee-p1363' }).toString('base64url');
   const credential = { ...unsigned, proof: { verificationMethod, jws: `${encodedHeader}..${signature}` } };
   const discovery = { id: did, alsoKnownAs: [issuer], assertionMethod: [methodId], verificationMethod: [{ id: methodId, publicKeyJwk }] };
   const artifact = new URL('/tenant/.well-known/legal-participant.vc.json', origin);

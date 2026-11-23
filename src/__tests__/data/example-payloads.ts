@@ -1587,9 +1587,13 @@ export const FAMILY_MEMBER_RELATIONSHIP_MESSAGE = {
 /** Placeholders identify values returned or produced at the preceding wallet step. */
 export const PROFESSIONAL_WALLET_REQUESTS = {
   authorize: { client_id: SAFE.resourceUuid, vp_token: '<signed registered-profile presentation>' },
-  reserve: { authorization_reference: '<reference returned by authorize>' },
-  sign: {
-    command: '<opaque command returned by reserve>',
-    holderKey: '<P-256 public JWK verified in the wallet proof>',
+  token: {
+    grant_type: 'urn:ietf:params:oauth:grant-type:pre-authorized_code',
+    'pre-authorized_code': '<code from the offer>',
+    tx_code: '<six-digit code shown in the portal>',
+  },
+  credential: {
+    credential_configuration_id: '<configuration ID from the offer>',
+    proofs: { jwt: ['<wallet key proof signed for the tenant issuer and its nonce>'] },
   },
 };

@@ -8,12 +8,15 @@ import type { IKmsService } from '../gdc-backend-utils-node/models/IKmsService';
 import type { LedgerPresentationVerifier } from '../services/LedgerPresentationVerifier';
 import { getEnvSectionId } from '../utils/section-env';
 
+export type ProfessionalCredentialSigningAlgorithm = 'ES256' | 'ML-DSA-65';
+
 export type ProfessionalWalletTenant = Readonly<{
   tenantVaultId: string;
   tenantDid: string;
   authorizationAudience: string;
   configurationId: string;
   vct: string;
+  credentialSigningAlgorithm?: ProfessionalCredentialSigningAlgorithm;
 }>;
 
 type WalletAuthorization = Readonly<{
@@ -24,6 +27,7 @@ type WalletAuthorization = Readonly<{
   offered: boolean;
   configurationId: string;
   vct: string;
+  credentialSigningAlgorithm?: ProfessionalCredentialSigningAlgorithm;
   authorizationAudience: string;
 }>;
 
@@ -74,11 +78,12 @@ export class ProfessionalWalletIssuanceManager {
   async begin(tenant: ProfessionalWalletTenant, input: { clientId: string; presentation: string }): Promise<string> {
     const { clientId, presentation } = input;
     const { presentationId, expiresAt } = await this.dependencies.verify({ ...tenant, clientId, presentation });
+    await this.getSigningKeyId(tenant);
     await this.reserveOnce(tenant, 'presentation', `${clientId}:${presentationId}`, expiresAt);
     const reference = randomBytes(32).toString('base64url');
-    const { tenantDid, configurationId, vct, authorizationAudience } = tenant;
+    const { tenantDid, configurationId, vct, authorizationAudience, credentialSigningAlgorithm = 'ES256' } = tenant;
     await this.write(tenant, reference, { tenantDid, clientId, presentation, expiresAt,
-      configurationId, vct, authorizationAudience, offered: false }, 0);
+      configurationId, vct, authorizationAudience, credentialSigningAlgorithm, offered: false }, 0);
     return reference;
   }
 
@@ -101,8 +106,7 @@ export class ProfessionalWalletIssuanceManager {
     const { authorization } = await this.read(tenant, reference);
     if (!authorization.offered) throw new WalletAuthorizationError('Wallet authorization has no reserved offer.');
     const { role } = await this.dependencies.verify({ ...tenant, clientId: authorization.clientId, presentation: authorization.presentation });
-    const key = await this.dependencies.kms.getPublicVerificationKey(tenant.tenantVaultId, 'ES256', 'vc_sign');
-    if (!key?.kid) throw new Error('Tenant wallet credential signing key is unavailable.');
+    const signingKeyId = await this.getSigningKeyId(tenant);
     await this.reserveOnce(tenant, 'sign', reference, authorization.expiresAt);
     if (!await this.dependencies.repository.delete(tenant.tenantVaultId, reference, section())) {
       throw new Error('Wallet authorization could not be consumed.');
@@ -119,8 +123,18 @@ export class ProfessionalWalletIssuanceManager {
       cnf: { jwk: holderKey },
       _sd_alg: 'sha-256',
       _sd: [hash(disclosure).digest('base64url')],
-    }, key.kid, tenant.tenantVaultId, 'vc_sign', { typ: 'dc+sd-jwt' });
+    }, signingKeyId, tenant.tenantVaultId, 'vc_sign', { typ: 'dc+sd-jwt' });
     return { issuanceId, credential: `${credential}~${disclosure}~` };
+  }
+
+  private async getSigningKeyId(tenant: ProfessionalWalletTenant): Promise<string> {
+    const algorithm = tenant.credentialSigningAlgorithm ?? 'ES256';
+    // The default credential slot excludes communication keys even on a historical tenant.
+    const key = await this.dependencies.kms.getPublicVerificationKey(
+      tenant.tenantVaultId, algorithm === 'ES256' ? algorithm : undefined, 'vc_sign',
+    );
+    if (!key?.kid || !('alg' in key) || key.alg !== algorithm) throw new Error('Tenant wallet credential signing key is unavailable.');
+    return key.kid;
   }
 
   private async read(tenant: ProfessionalWalletTenant, reference: string) {
@@ -131,6 +145,7 @@ export class ProfessionalWalletIssuanceManager {
     const authorization = await this.dependencies.kms.unprotectConfidentialData<WalletAuthorization>(document, tenant.tenantVaultId);
     if (!authorization || authorization.expiresAt <= this.now()
       || authorization.tenantDid !== tenant.tenantDid || authorization.configurationId !== tenant.configurationId
+      || (authorization.credentialSigningAlgorithm ?? 'ES256') !== (tenant.credentialSigningAlgorithm ?? 'ES256')
       || authorization.vct !== tenant.vct || authorization.authorizationAudience !== tenant.authorizationAudience) {
       throw new WalletAuthorizationError('Wallet authorization is unavailable.');
     }

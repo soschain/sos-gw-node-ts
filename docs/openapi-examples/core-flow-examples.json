@@ -514,12 +514,18 @@
       "client_id": "00000000-0000-4000-8000-000000000001",
       "vp_token": "<signed registered-profile presentation>"
     },
-    "reserve": {
-      "authorization_reference": "<reference returned by authorize>"
+    "token": {
+      "grant_type": "urn:ietf:params:oauth:grant-type:pre-authorized_code",
+      "pre-authorized_code": "<code from the offer>",
+      "tx_code": "<six-digit code shown in the portal>"
     },
-    "sign": {
-      "command": "<opaque command returned by reserve>",
-      "holderKey": "<P-256 public JWK verified in the wallet proof>"
+    "credential": {
+      "credential_configuration_id": "<configuration ID from the offer>",
+      "proofs": {
+        "jwt": [
+          "<wallet key proof signed for the tenant issuer and its nonce>"
+        ]
+      }
     }
   }
 }

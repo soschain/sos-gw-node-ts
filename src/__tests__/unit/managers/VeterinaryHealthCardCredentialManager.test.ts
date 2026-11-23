@@ -17,18 +17,19 @@ describe('VeterinaryHealthCardCredentialManager', () => {
     const pqcHeader = Content.objectToRawBase64UrlSafe({
       alg: CredentialAlgorithms.CompanionProof, kid: 'attester-pqc', b64: false, crit: ['b64'],
     });
+    let attesterAlgorithm: string = CredentialAlgorithms.CompanionProof;
     const kms = {
       getPublicJwks: jest.fn(async (vaultId: string) => ({
         keys: vaultId === 'tenant-vault'
           ? [{ kty: 'EC', crv: 'P-256', alg: CredentialAlgorithms.SmartHealthCard, use: 'sig', kid: 'tenant-es256' }]
-          : [{ kty: 'AKP', alg: CredentialAlgorithms.CompanionProof, use: 'sig', purpose: 'vc_sign', kid: 'attester-pqc' }],
+          : [{ kty: 'AKP', alg: attesterAlgorithm, use: 'sig', purpose: 'vc_sign', kid: 'attester-pqc' }],
       })),
       createCompactJwsFromEncodedPayload: jest.fn(async (payload: string) => `header.${payload}.signature`),
       createDetachedJwsForBytes: jest.fn(async () => `${pqcHeader}..signature`),
     };
     const manager = new VeterinaryHealthCardCredentialManager(kms as any);
 
-    const result = await manager.issueFromAuthoritativeBundle({
+    const fixture = {
       tenantVaultId: 'tenant-vault',
       issuer: 'https://issuer.example/tenant',
       notBefore: 1788825600,
@@ -39,7 +40,8 @@ describe('VeterinaryHealthCardCredentialManager', () => {
         entry: [{ resource: { resourceType: ResourceTypesFhirR4.Immunization, status: 'completed' } }],
       },
       attesters: [{ vaultId: 'attester-vault', keyId: 'attester-pqc' }],
-    });
+    };
+    const result = await manager.issueFromAuthoritativeBundle(fixture);
 
     expect(kms.createCompactJwsFromEncodedPayload).toHaveBeenCalledWith(
       expect.any(String), 'tenant-es256', 'tenant-vault', 'vc_sign', { zip: 'DEF' },
@@ -57,6 +59,9 @@ describe('VeterinaryHealthCardCredentialManager', () => {
     expect(result.pqcCompanionProofs[0]).toMatch(new RegExp(`^${PostQuantumDetachedProofPrefix}`));
     expect(result.pqcQr).toHaveLength(1);
     expect(result.pqcQr[0].every(value => value.startsWith(PostQuantumDetachedProofPrefix))).toBe(true);
+    attesterAlgorithm = 'ML-DSA-44';
+    await expect(manager.issueFromAuthoritativeBundle(fixture)).rejects.toThrow('veterinary_attester_mldsa_credential_key_required');
+    expect(kms.createDetachedJwsForBytes).toHaveBeenCalledTimes(1);
   });
 
   it('fails closed when the tenant has no dedicated ES256 credential key', async () => {

@@ -613,34 +613,46 @@ export function createDiscoveryRouter(
     return { service, credential };
   };
 
-  const getCredentialSignerKid = async (vaultId: string) => {
-    const jwks = await kmsService.getPublicJwks(vaultId);
-    const signer = jwks.keys.find((key: any) => key.use === 'sig' && key.purpose === 'vc_sign')
-      || jwks.keys.find((key: any) => key.use === 'sig');
-    if (!signer?.kid) throw new Error(`No VC signing key found for '${vaultId}'.`);
-    return signer.kid;
+  const getPublicationSigningKeys = async (vaultId: string) => {
+    const { keys } = await kmsService.getPublicJwks(vaultId);
+    const compatible = keys.find(key => key.kty === 'EC' && key.use === 'sig'
+      && (key.alg === 'ES256' || key.alg === 'ES384'));
+    if (!compatible?.kid) throw new Error('A compatible credential signing key is required for publication.');
+    const postQuantum = keys.find(key => key.use === 'sig' && key.purpose === 'vc_sign' && key.alg === 'ML-DSA-65');
+    return { compatible, postQuantum };
   };
 
-  const signDetachedOrganizationPublication = async (statement: Record<string, unknown>, issuer: string, vaultId: string) => {
-    const kid = await getCredentialSignerKid(vaultId);
-    return {
-      ...statement,
-      proof: [{
+  const signDetachedOrganizationPublication = async (credential: Record<string, unknown>, issuer: string, vaultId: string) => {
+    const { proof, ...statement } = credential;
+    const { compatible, postQuantum } = await getPublicationSigningKeys(vaultId);
+    const created = new Date().toISOString();
+    const signers = postQuantum ? [compatible, postQuantum] : [compatible];
+    const existing = (Array.isArray(proof) ? proof : proof ? [proof] : []) as Record<string, unknown>[];
+    const attestations = await Promise.all(signers.map(async ({ kid }) => {
+      const verificationMethod = `${issuer}#${kid}`;
+      return existing.find(proof => proof?.verificationMethod === verificationMethod) ?? {
         type: 'JsonWebSignature2020',
-        created: new Date().toISOString(),
+        created,
         proofPurpose: 'assertionMethod',
-        verificationMethod: `${issuer}#${kid}`,
-        jws: await kmsService.createDetachedJws(statement, kid, vaultId, 'vc_sign'),
-      }],
-    };
+        verificationMethod,
+        jws: await kmsService.createDetachedJws(statement, kid!, vaultId, 'vc_sign'),
+      };
+    }));
+    const currentMethods = new Set(attestations.map(proof => proof.verificationMethod));
+    return { ...statement, proof: [...attestations,
+      ...existing.filter(proof => !currentMethods.has(proof?.verificationMethod))] };
   };
 
-  /** Signs a Gaia-X VC draft as the VC-JWT enveloped credential required by ICAM 25.11. */
+  /** Signs the compatible compact VC-JWT before it is published in its envelope. */
   const signGaiaXEnvelopedCredential = async (credential: Record<string, unknown>, vaultId: string) => {
-    const kid = await getCredentialSignerKid(vaultId);
-    const jwt = await kmsService.createCompactJws(credential, kid, vaultId, 'vc_sign', {
-      typ: 'vc+ld+json+jwt',
-      cty: 'vc+ld+json',
+    const { compatible } = await getPublicationSigningKeys(vaultId);
+    const issuer = credential.issuer;
+    if (typeof issuer !== 'string' || !issuer.startsWith('did:web:')) throw new Error('Expected a did:web credential issuer.');
+    const jwt = await kmsService.createCompactJws(credential, compatible.kid!, vaultId, 'vc_sign', {
+      typ: 'vc+jwt',
+      cty: 'vc',
+      kid: `${issuer}#${compatible.kid}`,
+      iss: issuer,
     });
     return {
       ...credential,
@@ -1141,10 +1153,10 @@ export function createDiscoveryRouter(
     try {
       const vaultId = res.locals.vaultId;
       const entity = await tenantsCacheManager.getTenant(vaultId);
-      const credential = getIssuedOrganizationCredential(entity)
-        ?? (vaultId === 'host' ? getSignedHostOrganizationCredential(entity) : undefined);
-      if (credential) return res.type('application/json').send(JSON.stringify(credential));
-      const statement = vaultId === 'host' ? buildHostOrganizationStatement(entity) : undefined;
+      const issued = getIssuedOrganizationCredential(entity);
+      if (issued) return res.type('application/json').send(JSON.stringify(issued));
+      const statement = vaultId === 'host'
+        ? getSignedHostOrganizationCredential(entity) ?? buildHostOrganizationStatement(entity) : undefined;
       if (!statement) return res.status(404).type('text').send('Not Found');
       return res.json(await signDetachedOrganizationPublication({ ...statement }, statement.issuer, vaultId));
     } catch (error) {
@@ -1194,9 +1206,8 @@ export function createDiscoveryRouter(
     const entityConfig = await tenantsCacheManager.getTenant(vaultId);
     const vc = getParticipantGaiaXCredential(entityConfig);
     if (!vc) return res.status(404).type('text').send('Not Found');
-    const statement = bindPublicOrganizationEvidence(req, vc, entityConfig);
-    if (!statement) return res.json(vc);
-    return res.json(await signDetachedOrganizationPublication(statement, statement.issuer, vaultId));
+    const statement = bindPublicOrganizationEvidence(req, vc, entityConfig) ?? vc;
+    return res.json(await signDetachedOrganizationPublication({ ...statement }, statement.issuer, vaultId));
   });
 
   router.get(
@@ -1206,7 +1217,11 @@ export function createDiscoveryRouter(
       const entityConfig = await tenantsCacheManager.getTenant(res.locals.vaultId);
       const selfDescription = entityConfig?.selfDescriptionVc;
       if (!selfDescription) return res.status(404).type('text').send('Not Found');
-      res.json(selfDescription);
+      if (!entityConfig?.didDocument?.id || selfDescription.issuer !== entityConfig.didDocument.id
+        || selfDescription.credentialSubject?.id !== selfDescription.issuer) return res.json(selfDescription);
+      return res.json(await signDetachedOrganizationPublication(
+        { ...selfDescription }, selfDescription.issuer, res.locals.vaultId,
+      ));
     },
   );
 

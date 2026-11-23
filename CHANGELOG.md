@@ -1,8 +1,33 @@
 ## Unreleased
 
-- Add tenant-scoped professional wallet authorization, ICA-only reservation
-  and signing routes. Recheck current eligibility before issuing a
-  holder-bound SD-JWT with the tenant credential signing key.
+- Verify registered individual wallet presentations against the current device
+  and membership, with the exact authorization audience and no clinical scopes.
+- Support an explicitly configured Proof of Age mdoc issuer alongside the
+  professional SD-JWT issuer. Reject evidence supplied in the wallet request.
+- Bind Proof of Age authorizations to an encrypted one-use grant, the
+  registered member and the approved evidence revision. Recheck evidence and
+  membership before releasing the signed credential.
+- Reject age evidence for a different document type before preparing or
+  redeeming the offer advertised by the wallet issuer.
+- Read age approvals for the authenticated holder. A linked card supplies
+  the membership context and cannot substitute another person's approval.
+
+- Provision new credential assertion keys with ML-DSA-65. Use ES256 for the
+  SMART Health Card JWS and require a credential-purpose ML-DSA-65 companion
+  key for veterinary attestations.
+- Publish Gaia-X VC-JWTs with the compatible EC key and the VC-JWT header.
+  Self-published organization JSON adds the ML-DSA-65 proof when the
+  issuer has that assertion key, preserving earlier endorsements and the
+  original ICA-issued credential.
+- Allow the professional wallet issuer to select ML-DSA-65 for a data-space
+  credential profile. Bind the configured issuer algorithm to each offer.
+
+- Serve professional OpenID4VCI offers, discovery, token exchange, nonce and
+  credential issuance at the tenant URL. Recheck eligibility before issuing a
+  holder-bound SD-JWT with the tenant credential signing key. Require the
+  signing key before preparing an offer and provision ES256 for the selected
+  wallet tenant during new enrollment. Keep enrollment
+  and organization accreditation in the ICA.
 
 - Reuse the current device, employment and role checks for a tenant-bound
   professional wallet authorization with an exact audience and bounded
